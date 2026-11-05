@@ -199,6 +199,17 @@ Launcher into an air combo, the KNOCK//BACK and catching the rebound, guard, dod
 an OTG, a Part Toss, a Spring Burst, your Legend Art, and a last round where the dummy fights back. The dummy only
 swings when a lesson wants it to and nobody can lose. Finishing it the first time is worth **900 Tokens**.
 
+## Combo Trials
+
+**COMBO TRIALS** in the hub (`js/trials.js`): every fighter's combos on its own **base** move list (a figure of that
+line, never a mixed string), seven trials each, seventy in all: the string, the pause combo, the Launcher into an air
+combo, the KNOCK//BACK with the rebound catch, a Special cancel, the line's signature trick (the Samurai's Rising Cut
+into Tsubame Gaeshi, the Pirate's sand and Quick Shot, the Monk's mashed Flurry, the Viking's full wind-up, the Ninja's
+Shadow Dash, the Summoner's Sic 'Em, the Paladin's crumple, the Dragoon's Vault, the Bard on the beat), and a Legend Art
+finish. A panel lists the steps in your own keys; each ticks off as it lands, and the trial resets (with why) if the
+combo drops or a wrong move comes out. **DEMO** plays it for you, and the same bot proves every one of the seventy
+can be done. Clears are saved per collector and count toward REWARDS (*Combo scholar*, *Mastered*, *Professor*).
+
 ## Rewards
 
 **REWARDS** in the hub (`js/rewards.js`, after the design of Post Parade's quests): everything you do is counted three
@@ -249,6 +260,7 @@ shake** setting (Full, Reduced, Off).
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
+| `js/trials.js` | COMBO TRIALS: the seventy trials, the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |
 | `tools/harness.js` | Test helpers: step the game at a fixed rate, script inputs, log callouts |

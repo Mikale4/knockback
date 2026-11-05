@@ -176,6 +176,7 @@
           item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
           item('TUTORIAL', Tutorial.done() ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +900 tokens.', () => Tutorial.start(), Tutorial.done() ? '' : 'hot'),
           item('TRAINING', 'A dummy, full meters, every system to practise.', () => Menu.training()),
+          item('COMBO TRIALS', 'Every fighter\'s combos, step by step, with a demo.', () => Trials.open()),
           item('WORKSHOP', 'Snap parts together. Three builds.', () => Menu.workshop()),
           (() => { const n = Rewards.ready(); const b = item('REWARDS', n ? n + ' ready to claim · daily and weekly jobs, fighter mastery, milestones, awards' : 'Daily and weekly jobs, fighter mastery, milestones and awards.', () => Rewards.screen(), n ? 'gold' : ''); if (n) b.append(el('em', { class: 'badge' }, n)); return b; })(),
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),

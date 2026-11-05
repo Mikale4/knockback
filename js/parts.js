@@ -149,7 +149,7 @@
   mv('fiAirC', { name: 'Whirlwind Kick', pose: 'whirlKick', su: 0.07, ac: 0.24, rc: 0.2, dmg: 10, multi: 3, kb: [3, 5.5], air: 1, rad: 1.1, reach: 0.5, h: 0.9, trail: 0, sfx: 'whoosh' });
   // VIKING · Bearded Axe: hold Light to wind up any swing; the string ends in a 360° whirlwind
   mv('axA', { name: 'Hack', pose: 'hack', su: 0.13, ac: 0.08, rc: 0.21, dmg: 48, reach: 1.3, kb: [3.2, 0], stun: 0.38, lunge: 3, chargeL: 1, armorSU: 1, sfx: 'heavy', nx: { l: 'axB' } });
-  mv('axB', { name: 'Hew', pose: 'hew', su: 0.13, ac: 0.08, rc: 0.21, dmg: 52, reach: 1.3, kb: [3.2, 0], stun: 0.55, lunge: 3, chargeL: 1, armorSU: 1, sfx: 'heavy', nx: { l: 'axC', p: 'axP' } });
+  mv('axB', { name: 'Hew', pose: 'hew', su: 0.13, ac: 0.08, rc: 0.21, dmg: 52, reach: 1.3, kb: [3.2, 0], stun: 0.75, lunge: 3, chargeL: 1, armorSU: 1, sfx: 'heavy', nx: { l: 'axC', p: 'axP' } });
   mv('axC', { name: 'Whirlwind', pose: 'whirlwind', su: 0.14, ac: 0.24, rc: 0.3, dmg: 30, multi: 3, around: 1, rad: 1.6, kb: [11, 6], launch: 1, finisher: 1, chargeL: 1, sfx: 'heavy' });
   mv('axP', { name: 'Skull Splitter', pose: 'skullSplit', su: 0.22, ac: 0.08, rc: 0.34, dmg: 78, reach: 1.35, kb: [2, -11], launch: 1, spike: 1, chargeL: 1, armorSU: 1, finisher: 1, zone: 'high', sfx: 'heavy' });
   mv('axAirA', { name: 'Air Chop', pose: 'hack', su: 0.1, dmg: 44, kb: [3, 3.5], air: 1, reach: 1.25, h: 0.9, sfx: 'heavy', nx: { l: 'axAirB' } });

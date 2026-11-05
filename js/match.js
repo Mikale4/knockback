@@ -143,7 +143,7 @@
       for (const f of M.fighters) { f.pos.y = 7; f.grounded = false; f.setState('intro'); f.dropIn = true; }
       for (const f of M.fighters) if (f.st.perk === 'familiar') M.summon(f, 1, true);   // FAMILIAR: an imp from the start
       M.phase = 'intro'; M.phaseT = 0; M.clock = opts.time; M.slow = 1; M.slowT = 0;
-      if (!M.attract) HUD.banner(M.training ? (opts.tutorial ? 'TUTORIAL' : 'TRAINING') : (M.round === 1 && !opts.final ? 'ROUND 1' : opts.final && M.wins[0] === opts.wins - 1 && M.wins[1] === opts.wins - 1 ? 'FINAL ROUND' : 'ROUND ' + M.round), 'round', 1.2);
+      if (!M.attract) HUD.banner(M.training ? (opts.tutorial ? 'TUTORIAL' : opts.trials ? 'COMBO TRIALS' : 'TRAINING') : (M.round === 1 && !opts.final ? 'ROUND 1' : opts.final && M.wins[0] === opts.wins - 1 && M.wins[1] === opts.wins - 1 ? 'FINAL ROUND' : 'ROUND ' + M.round), 'round', 1.2);
     }
     M.restart = () => { M.round = 1; M.wins = [0, 0]; for (const f of M.fighters) { f.hype = 0; f.burst = 60; } place(); };
     place();
@@ -278,7 +278,7 @@
       mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
       const trail = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(look === 'bolt' ? opt.col : L.tcol, look === 'kunai' ? 0.45 : 0.8));
       trail.scale.set(L.tw, L.tw, 0.001); trail.visible = false; scene.add(trail);
-      M.projs.push({ kind: 'dart', look, f, mv, k: f.kind, charge: opt.charge || 0, pos: from.clone(), from: from.clone(), dir: dir.clone().normalize(), speed: L.speed, range, dist: 0, w: L.w,
+      M.projs.push({ kind: 'dart', look, f, mv, k: f.kind, charge: opt.charge || 0, pos: from.clone(), from: from.clone(), back: f.pos.clone().setY(f.pos.y + 1.15), dir: dir.clone().normalize(), speed: L.speed, range, dist: 0, w: L.w,
         mesh, trail, own, grp: opt.grp || { done: false }, id: 's' + (++shotId), visual: !!opt.visual, col: opt.col, t: 0, stuck: null });
     }
     /* where a moving point (a to b) meets their body: standing (shins to head) or, for an OTG, lying on the floor */
@@ -583,7 +583,7 @@
           if (p.t > 0.38) M.projs.splice(i, 1);
         } else if (p.kind === 'dart') {
           if (p.stuck != null) { p.stuck -= dt; if (p.stuck <= 0) { killDart(p); M.projs.splice(i, 1); } continue; }   // a kunai left in the wall
-          const f = p.f, o = M.opp(f), a = _q.copy(p.pos), step = Math.min(p.speed * dt, p.range - p.dist);
+          const f = p.f, o = M.opp(f), a = _q.copy(p.back || p.pos), step = Math.min(p.speed * dt, p.range - p.dist); p.back = null;
           p.pos.addScaledVector(p.dir, step); p.dist += step;
           let end = null, what = null;
           if (!p.visual && !p.grp.done && o) { const q = bodyHit(f, o, a, p.pos, p.w, p.mv, p.k); if (q) { end = q; what = 'fighter'; } }

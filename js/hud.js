@@ -42,7 +42,7 @@
         refs.banner = el('div', { class: 'banner' }), refs.cut = el('div', { class: 'supercut' }),
         refs.cine = el('div', { class: 'cine' }, refs.cTint = el('div', { class: 'ctint' }), el('i', { class: 'cbar t' }), el('i', { class: 'cbar b' }), refs.cFlash = el('div', { class: 'cflash' }), refs.cTitle = el('div', { class: 'ctitle' })));
       root.classList.remove('cinema');
-      if (M.training && !M.opts.tutorial) root.append(HUD.trainingPanel());
+      if (M.training && !M.opts.tutorial && !M.opts.trials) root.append(HUD.trainingPanel());
       comboT = [0, 0];
     },
     hide(match) { if (match && match !== M) return; if (root) { root.hidden = true; root.innerHTML = ''; root.classList.remove('cinema'); } const p = $('pause'); if (p) p.remove(); M = null; },

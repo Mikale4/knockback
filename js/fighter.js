@@ -370,13 +370,13 @@
       if (k === 'air' && hit && this.st.sig === 'airdash' && (this.airDashes || 0) < 2 && t >= su + ac * 0.3 && I.take('dodge', 0.2)) {
         const o = this.opp; this.airDashes = (this.airDashes || 0) + 1; this.move = null; this.setState('air'); this.airStr = 0;
         if (o) { const d = _v.subVectors(o.pos, this.pos); d.y = 0; const l = d.length() || 1; this.vel.set(d.x / l * 9, Math.max(2.5, (o.pos.y - this.pos.y) * 4), d.z / l * 9); this.yaw = Math.atan2(d.x, d.z); }
-        FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 10, color: 0x30243f, speed: 2.5, size: 0.1, gravity: -1, life: 0.35 }); SFX.play('dodge');
+        FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 10, color: 0x30243f, speed: 2.5, size: 0.1, gravity: -1, life: 0.35 }); SFX.play('dodge'); this.m.event('airdash', { f: this });
         return true;
       }
       // DRAGOON signature: Jump off an air hit, a fresh jump and a fresh air string (twice a jump)
       if (k === 'air' && hit && this.st.sig === 'pogo' && this.pogos < 2 && t >= su + ac * 0.3 && I.take('jump', 0.2)) {
         this.pogos++; this.move = null; this.airStr = 0; this.vel.y = this.st.jump * 0.9; this.vel.x *= 0.3; this.vel.z *= 0.3; this.grounded = false; this.setState('air');
-        FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 1.2, life: 0.25, color: 0xffc890 }); SFX.play('tech'); this.m.call(this, 'VAULT', 'small');
+        FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 1.2, life: 0.25, color: 0xffc890 }); SFX.play('tech'); this.m.call(this, 'VAULT', 'small'); this.m.event('vault', { f: this });
         return true;
       }
       if (k === 'air' && hit && t >= su + ac * 0.3 && I.take('heavy', 0.2)) { this.startMove(this.broken.armL ? 'bodyDrop' : this.st.airHeavy, 'airHeavy'); return true; }

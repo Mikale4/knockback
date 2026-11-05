@@ -26,7 +26,7 @@
       App.setView(m);
       if (window.Rewards) Rewards.watch(m, opts);
     },
-    quitMatch() { if (window.Tutorial && Tutorial.running()) return Tutorial.quit(); App.setView(null); Menu.hub(); },
+    quitMatch() { if (window.Tutorial && Tutorial.running()) return Tutorial.quit(); if (window.Trials && Trials.running()) return Trials.quit(); App.setView(null); Menu.hub(); },
   };
   window.App = App;
   /* step away (another tab, another window) and the fight pauses itself */

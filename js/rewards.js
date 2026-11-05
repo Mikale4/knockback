@@ -100,6 +100,7 @@
     { id: 'c_throws', cat: 'tech', name: 'Grappler', desc: 'Throw someone {n} times.', value: L('throws'), tiers: [10, 50, 150, 400], weight: 0.8 },
     { id: 'c_otgs', cat: 'tech', name: 'Off the ground', desc: 'Land {n} OTGs.', value: L('otgs'), tiers: [10, 50, 150, 400], weight: 0.8 },
     { id: 'c_extends', cat: 'tech', name: 'Spare change', desc: 'Extend {n} combos with a Part Toss.', value: L('extends'), tiers: [5, 25, 75, 200], weight: 1 },
+    { id: 'c_trials', cat: 'tech', name: 'Combo scholar', desc: 'Clear {n} combo trials.', value: c => c.owned.trials, tiers: [5, 20, 40, 70], weight: 1.2 },
     { id: 'c_bursts', cat: 'tech', name: 'Breakout', desc: 'Spring Burst out of {n} combos.', value: L('bursts'), tiers: [5, 25, 75, 200], weight: 0.8 },
     { id: 'c_parts', cat: 'collect', name: 'Collector', desc: 'Own {n} different parts.', value: c => c.owned.parts, tiers: [20, 50, 100, 160, 240], weight: 1.2 },
     { id: 'c_capsules', cat: 'collect', name: 'Capsule fiend', desc: 'Open {n} capsules.', value: L('capsules'), tiers: [10, 50, 150, 400, 1000], weight: 1 },
@@ -130,6 +131,8 @@
     { id: 'a_throwko', name: 'Thrown out', desc: 'Win a round with a throw.', pay: 100, check: (c, F) => F && F.throwKO },
     { id: 'a_artko', name: 'Legendary finish', desc: 'Win a round with a Legend Art.', pay: 150, check: (c, F) => F && F.artKO },
     { id: 'a_graduate', name: 'Graduate', desc: 'Finish the tutorial.', pay: 0, check: c => c.life.tutorials >= 1 },
+    { id: 'a_trials', name: 'Mastered', desc: 'Clear every combo trial for one fighter.', pay: 300, check: c => c.owned.trialLines >= 1 },
+    { id: 'a_trialsAll', name: 'Professor', desc: 'Clear every combo trial for every fighter.', pay: 2000, check: c => c.owned.trialLines >= 10 },
   ];
 
   /* -------------------------------------------------------- the counters */
@@ -145,7 +148,11 @@
     return q;
   }
   /* what is read live rather than counted */
-  const owned = () => ({ parts: Inv.count(), mixedBuilds: (Auth.S.builds || []).filter(b => b.armR.line !== b.armL.line).length });
+  const owned = () => {
+    const T = Auth.S.trials || {}, lists = window.Trials ? Trials.all() : null;
+    return { parts: Inv.count(), mixedBuilds: (Auth.S.builds || []).filter(b => b.armR.line !== b.armL.line).length,
+      trials: Object.values(T).reduce((n, o) => n + Object.keys(o).length, 0), trialLines: lists ? KB.LINE_ORDER.filter(l => Object.keys(T[l] || {}).length >= lists[l].length).length : 0 };
+  };
   const ctx = q => ({ life: q.life, day: q.day, week: q.week, owned: owned() });
   /* add counts (n), best-ever numbers (best) and per-line wins (cardWin) to all three scopes */
   function add(n, best, cardWin) {
