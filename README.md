@@ -6,7 +6,9 @@ Viking, Ninja — and every figure is six snap-on parts you can mix freely.
 **The gimmick is the name:** launch someone into a wall and they **bounce back off it**, still helpless, so you can keep
 the combo going and knock them back into the wall again. The ways out of that loop are taken from Guilty Gear.
 
-## Run it
+**Play:** https://mikale4.github.io/knockback/ (keyboard or gamepad). Your collector and collection are saved in your browser.
+
+## Run it locally
 
 Open `index.html` through any static server, for example:
 
