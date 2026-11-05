@@ -185,5 +185,12 @@
     return o;
   }
 
-  window.Anim = { READY, P, STATE, PARTS, readyFor, blend, fill, drive, set, run };
+  /* a hybrid pose 'hy|R|L' (a mixed finisher): the body and right arm of R, the left arm of L -- it swings both */
+  function compose(name) {
+    if (!name || name.slice(0, 3) !== 'hy|') return null;
+    const [, r, l] = name.split('|'), A = P[r], B = P[l]; if (!A || !B) return null;
+    const mix = (a, b) => Object.assign({}, a, { armL: b.armL || a.armL, wL: b.wL || a.wL });
+    return (P[name] = { wind: mix(A.wind, B.wind), strike: mix(A.strike, B.strike), spin: A.spin });
+  }
+  window.Anim = { READY, P, STATE, PARTS, readyFor, blend, fill, drive, set, run, compose };
 })();

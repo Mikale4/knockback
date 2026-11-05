@@ -356,7 +356,8 @@
       set, setDmg: set === 2 ? 1.08 : set === 1 ? 1.04 : 1,
       armor: { head: Math.round(H.armor * m('head')), armR: Math.round(R.armor * m('armR')), armL: Math.round(L.armor * m('armL')), legs: Math.round(G.armor * m('legs')) },
       passive: K.passive, special: H.special, uses: H.uses, super: K.super,
-      light: R.light, air: R.air, sig: R.sig, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
+      ...(() => { const mixed = b.armR.line !== b.armL.line && M['hx:' + b.armR.line + ':' + b.armL.line + ':0']; return { mixed: !!mixed, light: mixed ? 'hx:' + b.armR.line + ':' + b.armL.line + ':0' : R.light, air: mixed ? 'hxa:' + b.armR.line + ':' + b.armL.line + ':0' : R.air }; })(),
+      lightPure: R.light, airPure: R.air, sig: R.sig, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
       trailR: R.trail, trailL: L.trail,
     };
     return S;
@@ -372,6 +373,75 @@
   }
   const key = (line, slot, r) => line + ':' + slot + ':' + r;
   const itemName = (line, slot) => P[line][slot].name;
+
+
+  /* ======================================================================
+     MIXED STRINGS. An R-arm and an L-arm from different lines make a string of their own:
+     the R-arm opens (its first two hits), the L-arm's weapon cuts in, the R-arm's third hit if it has
+     one, then a HYBRID FINISHER that swings both arms and carries the L-arm line's effect. In the air,
+     the R-arm's air string ends in a hybrid air finisher. Ten lines make 90 pairings, and every one has
+     its own string, finisher and air finisher (named for the R-arm's weapon and the L-arm's effect).
+     ====================================================================== */
+  const PREFIX = { samurai: 'Iaido', knight: 'Longsword', pirate: 'Cutlass', monk: 'Iron Fist', viking: 'Axe', ninja: 'Tantō', summoner: 'Staff', paladin: 'Hammer', dragoon: 'Lance', bard: 'Lute' };
+  // the L-arm's weapon cutting into the string
+  const OFF = {
+    samurai: { name: 'Kote Strike', pose: 'jabL', stun: 0.5 },
+    knight: { name: 'Shield Check', pose: 'bash', armorSU: 1, stun: 0.48 },
+    pirate: { name: 'Pistol Pop', pose: 'shoot', type: 'proj', proj: 'shot', range: 3.4, dmg: 18, kb: [1.5, 0], stun: 0.5, sfx: 'shot', trail: 0 },
+    monk: { name: 'Thunder Jab', pose: 'palm', multi: 2, dmg: 13 },
+    viking: { name: 'Boss Smash', pose: 'bash', armorSU: 1, kb: [3.5, 0] },
+    ninja: { name: 'Chain Lash', pose: 'chainThrow', pull: 1, reach: 1.9, stun: 0.5 },
+    summoner: { name: 'Hex Spark', pose: 'cast', hexfx: 1, command: 1 },
+    paladin: { name: 'Holy Bash', pose: 'bash', heal: 0.3, holy: 1 },
+    dragoon: { name: 'Gauntlet Hook', pose: 'jabL', dmg: 26 },
+    bard: { name: 'Tambourine Slap', pose: 'jabL', notes: 1, beat: 1 },
+  };
+  // the L-arm line's effect on a hybrid finisher: its name on the ground (n) and in the air (a), and what it does
+  const FIN = {
+    samurai: { n: 'Severance', a: 'Moonfall', g: { crumple: 0.9, kb: [3, 0], dmgK: 1.15 }, air: { launch: 1, spike: 1, kb: [2, -13], dmgK: 1.15 } },
+    knight: { n: 'Rampart', a: 'Bulwark Drop', g: { launch: 1, kb: [17, 4.5], armorSU: 1 }, air: { launch: 1, spike: 1, dive: 1, kb: [2, -13] } },
+    pirate: { n: 'Cannonade', a: 'Powder Dive', g: { launch: 1, blast: 1, kb: [12, 9] }, air: { launch: 1, spike: 1, blast: 1, kb: [3, -12] } },
+    monk: { n: 'Tempest', a: 'Storm', g: { launch: 1, multi: 4, kb: [13, 5] }, air: { launch: 1, multi: 4, kb: [8, 6] } },
+    viking: { n: 'Quake', a: 'Meteor', g: { launch: 1, spike: 1, quake: 1, kb: [2, -12] }, air: { launch: 1, spike: 1, dive: 1, quake: 1, kb: [2, -14] } },
+    ninja: { n: 'Eclipse', a: 'Shadowfall', g: { launch: 1, cross: 1, kb: [12, 6] }, air: { launch: 1, spike: 1, cross: 1, kb: [2, -12] } },
+    summoner: { n: 'Hexbloom', a: 'Spiritfall', g: { launch: 1, hexfx: 1, command: 1, kb: [2, 12.5] }, air: { launch: 1, spike: 1, hexfx: 1, command: 1, kb: [2, -12] } },
+    paladin: { n: 'Daybreak', a: 'Sunfall', g: { launch: 1, around: 1, holy: 1, heal: 0.4, kb: [9, 9] }, air: { launch: 1, spike: 1, holy: 1, heal: 0.3, kb: [2, -12] } },
+    dragoon: { n: 'Updraft', a: 'Skyrend', g: { launch: 1, kb: [1.5, 14.5] }, air: { launch: 1, kb: [2, 12] } },
+    bard: { n: 'Refrain', a: 'Fortissimo', g: { dizzy: 0.9, notes: 1, kb: [2, 0] }, air: { launch: 1, multi: 3, notes: 1, kb: [6, 5] } },
+  };
+  const KEEP = ['beat', 'heal', 'chargeL', 'armorSU'];   // the R-arm's signature rides along on its finisher
+  const chainOf = root => { const out = []; let id = root; while (id && out.length < 8) { out.push(id); id = (M[id].nx || {}).l; } return out; };
+  function hybridFinisher(base, first, A, B, air) {
+    const proj = base.type === 'proj', mv = {
+      name: PREFIX[A] + ' ' + (air ? FIN[B].a : FIN[B].n), type: 'melee', hybrid: 1, finisher: 1, mix: [A, B],
+      pose: 'hy|' + (proj ? first.pose : base.pose) + '|' + OFF[B].pose,
+      su: Math.max(0.08, base.su) + 0.02, ac: Math.max(0.08, base.ac || 0.06), rc: (base.rc || 0.2) + 0.05,
+      reach: proj ? 1.3 : base.reach || 1.2, rad: (base.rad || 0.8) + 0.1, h: air ? 0.9 : base.h || 1.1, lunge: proj ? 3 : base.lunge || 2,
+      zone: 'mid', sfx: 'heavy', trail: 1, hype: 1.2, stun: 0.5, kb: [10, 5],
+      dmg: Math.round(base.dmg * (base.multi ? base.multi * 0.6 : 1) * 1.2 + 8),
+    };
+    if (air) mv.air = 1;
+    for (const k of KEEP) if (base[k]) mv[k] = base[k];
+    const e = FIN[B][air ? 'air' : 'g'];
+    Object.assign(mv, e);
+    if (e.dmgK) { mv.dmg = Math.round(mv.dmg * e.dmgK); delete mv.dmgK; }
+    if (mv.multi) { mv.dmg = Math.round(mv.dmg * 1.4 / mv.multi); mv.ac = Math.max(mv.ac, 0.06 * mv.multi); }
+    return mv;
+  }
+  for (const A of LINE_ORDER) for (const B of LINE_ORDER) {
+    if (A === B) continue;
+    const R = P[A].armR, g = chainOf(R.light), air = chainOf(R.air);
+    const link = (seq, pre, air) => seq.forEach((s, i) => {
+      const id = pre + i, next = i + 1 < seq.length ? pre + (i + 1) : null; let mv;
+      if (s === 'OFF') mv = Object.assign({ name: OFF[B].name, type: 'melee', su: 0.07, ac: 0.07, rc: 0.16, dmg: 22, kb: [2.5, 0], stun: 0.45, reach: 1.15, rad: 0.85, h: 1.1, lunge: 3, zone: 'mid', sfx: 'slash', trail: 1, hype: 1, offhand: 1, mix: [A, B] }, OFF[B]);
+      else if (s === 'FIN') mv = hybridFinisher(M[(air ? air : g)[(air ? air : g).length - 1]], M[(air ? air : g)[0]], A, B, !!air);
+      else { mv = Object.assign({}, M[s]); delete mv.finisher; }
+      mv.id = id; mv.nx = Object.assign({}, mv.nx || {}); if (next) mv.nx.l = next; else delete mv.nx.l;
+      M[id] = mv;
+    });
+    link([g[0], g[1], 'OFF', ...(g.length >= 4 ? [g[2]] : []), 'FIN'], 'hx:' + A + ':' + B + ':', null);
+    link([...air.slice(0, -1), 'FIN'], 'hxa:' + A + ':' + B + ':', air);
+  }
 
   window.KB = { SLOTS, SLOT_NAME, RARITY, LINES, LINE_ORDER, PARTS: P, MOVES: M, PASSIVE, stats, mintBuild, randomBuild, key, itemName, part };
 })();

@@ -291,7 +291,7 @@
           seg('ARENA', cfg.arena, [['random', 'Random'], ...Arena.LIST.map(a => [a, Arena.THEMES[a].name])], v => cfg.arena = v),
           seg('ROUNDS', cfg.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => cfg.wins = +v),
           seg('RARITY BONUS', cfg.bonus, [[true, 'On'], [false, 'Off (fair)']], v => cfg.bonus = v === true || v === 'true'),
-          two ? el('p', { class: 'note' }, 'P1: WASD + J K L I U O, Space, L-Shift · P2: arrows + Numpad 1-6, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Controllers: the first pad is P1, the second P2 (swap them, and rebind anything, in OPTIONS).') : null,
+          two ? el('p', { class: 'note' }, 'P1: arrows + Z X C / A S D, Space, L-Shift · P2: I J K L + Numpad 1-6, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Controllers: the first pad is P1, the second P2 (swap them, and rebind anything, in OPTIONS).') : null,
           watch ? el('p', { class: 'note' }, 'Sit back and watch two CPUs fight. Random figures are re-rolled every fight. Esc pauses. No tokens for watching.') : null,
           btn(watch ? 'WATCH!' : 'FIGHT!', () => Menu.versusStart(cfg), 'big wide fight'))));
     },

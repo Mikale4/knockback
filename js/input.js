@@ -19,8 +19,8 @@
   const ACTIONS = ['light', 'heavy', 'guard', 'special', 'snap', 'super', 'jump', 'dodge'];
   const LABEL = { light: 'Light attack', heavy: 'Heavy / Knock', guard: 'Guard (+Light = Throw)', special: 'Head Special', snap: 'Snap Cancel / Burst', super: 'Legend Art (Super)', jump: 'Jump', dodge: 'Dodge / Tech', up: 'Move up', down: 'Move down', left: 'Move left', right: 'Move right' };
   const DEFAULT = [
-    { up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'], light: ['KeyJ'], heavy: ['KeyK'], guard: ['KeyL'], special: ['KeyI'], snap: ['KeyU'], super: ['KeyO'], jump: ['Space'], dodge: ['ShiftLeft'] },
-    { up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'], light: ['Numpad1', 'Comma'], heavy: ['Numpad2', 'Period'], guard: ['Numpad3', 'Slash'], special: ['Numpad5', 'Semicolon'], snap: ['Numpad4', 'Quote'], super: ['Numpad6', 'BracketRight'], jump: ['Numpad0', 'ShiftRight'], dodge: ['NumpadDecimal', 'Backslash'] },
+    { up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'], light: ['KeyZ'], heavy: ['KeyX'], guard: ['KeyC'], special: ['KeyA'], snap: ['KeyD'], super: ['KeyS'], jump: ['Space'], dodge: ['ShiftLeft'] },
+    { up: ['KeyI'], down: ['KeyK'], left: ['KeyJ'], right: ['KeyL'], light: ['Numpad1', 'Comma'], heavy: ['Numpad2', 'Period'], guard: ['Numpad3', 'Slash'], special: ['Numpad5', 'Semicolon'], snap: ['Numpad4', 'Quote'], super: ['Numpad6', 'BracketRight'], jump: ['Numpad0', 'ShiftRight'], dodge: ['NumpadDecimal', 'Backslash'] },
   ];
   /* the standard pad layout (button indices): bottom, right, left, top face buttons, LB RB LT RT */
   const PAD_DEFAULT = { jump: 0, dodge: 1, light: 2, heavy: 3, special: 4, guard: 5, super: 6, snap: 7 };
@@ -35,8 +35,9 @@
 
   const keys = new Set();
   const copy = o => JSON.parse(JSON.stringify(o));
+  const BINDS_V = 2;
   let binds = U.read('kb.binds', null);
-  if (!binds || binds.length !== 2) binds = copy(DEFAULT);
+  if (!binds || binds.length !== 2 || U.read('kb.bindsV', 1) < BINDS_V) { binds = copy(DEFAULT); U.write('kb.binds', binds); U.write('kb.bindsV', BINDS_V); }
   let padBinds = U.read('kb.padbinds', null);
   if (!padBinds || padBinds.length !== 2) padBinds = [Object.assign({}, PAD_DEFAULT), Object.assign({}, PAD_DEFAULT)];
   const settings = Object.assign({ deadzone: 0.22, swap: false }, U.read('kb.padset', {}));

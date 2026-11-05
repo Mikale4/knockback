@@ -23,13 +23,13 @@ plain JavaScript and Three.js (`lib/three.min.js`).
 
 | Action | Keyboard P1 | Keyboard P2 | Xbox | PlayStation |
 |---|---|---|---|---|
-| Move | WASD | Arrows | Left stick / d-pad | Left stick / d-pad |
-| Light (R-ARM string) | J | Num 1 or `,` | X | □ |
-| Heavy / KNOCK (L-ARM) | K (hold to charge) | Num 2 or `.` | Y | △ |
-| Guard (+ Light = Grab, + Special = Part Toss) | L | Num 3 or `/` | RB | R1 |
-| Head Special | I | Num 5 or `;` | LB | L1 |
-| Snap Cancel / Spring Burst | U | Num 4 or `'` | RT | R2 |
-| Legend Art (super) | O | Num 6 or `]` | LT | L2 |
+| Move | Arrow keys | I J K L | Left stick / d-pad | Left stick / d-pad |
+| Light (R-ARM string) | Z | Num 1 or `,` | X | □ |
+| Heavy / KNOCK (L-ARM) | X (hold to charge) | Num 2 or `.` | Y | △ |
+| Guard (+ Light = Grab, + Special = Part Toss) | C | Num 3 or `/` | RB | R1 |
+| Head Special | A | Num 5 or `;` | LB | L1 |
+| Snap Cancel / Spring Burst | D | Num 4 or `'` | RT | R2 |
+| Legend Art (super) | S | Num 6 or `]` | LT | L2 |
 | Jump | Space | Num 0 or R-Shift | A | ✕ |
 | Dodge / Tech | L-Shift | Num . or `\` | B | ○ |
 | Pause / move list | Esc | | Menu | Options |
@@ -132,6 +132,31 @@ the Ninja's kunai (they stick in walls), the Summoner's spirit bolts and her Hex
 notes riding on them, and the Ninja's **Chain Hook** (the weighted chain flies out, whips round them, and the Ninja
 yanks them in along the floor). Every one is aimed: it leads a moving target, finds them high, low or on the floor,
 and the Part Toss homes in. The Ninja's **Shadow Step** works twice a round, 3 seconds apart.
+
+## Mixed strings (every pair of arms has its own)
+
+Put an R-arm and an L-arm from **different lines** on one figure and they make a string of their own. The R-arm
+opens with its first two hits, the L-arm's weapon cuts in, the R-arm's third hit follows if it has one, and it ends
+in a **hybrid finisher** that swings both arms. The finisher is named for the R-arm's weapon and does what the
+L-arm's line does. The air string ends in a hybrid air finisher the same way. Ten lines make **90 pairings**: 90
+mixed strings, 90 finishers and 90 air finishers, each its own. A pure pair (both arms from one line) keeps that
+line's own string, and losing the L-arm drops you back to the R-arm's own string.
+
+| L-arm line | Cuts in with | Finisher (ground / air) | What it does |
+|---|---|---|---|
+| Samurai | Kote Strike | Severance / Moonfall | big hit that crumples them / a spike |
+| Knight | Shield Check (armour) | Rampart / Bulwark Drop | a long KNOCK into the wall / a diving spike |
+| Pirate | Pistol Pop (a shot) | Cannonade / Powder Dive | an explosion that launches / an explosive spike |
+| Monk | Thunder Jab (2 hits) | Tempest / Storm | a four-hit flurry |
+| Viking | Boss Smash (armour) | Quake / Meteor | slams them into the floor for a ground bounce |
+| Ninja | Chain Lash (drags them in) | Eclipse / Shadowfall | blinks behind them first |
+| Summoner | Hex Spark (imps pounce) | Hexbloom / Spiritfall | a hex burst, every imp pounces, up into a juggle |
+| Paladin | Holy Bash (heals) | Daybreak / Sunfall | holy shockwave all round, heals you |
+| Dragoon | Gauntlet Hook | Updraft / Skyrend | sends them sky-high for an air combo |
+| Bard | Tambourine Slap (notes) | Refrain / Fortissimo | leaves them dizzy / a three-hit chord |
+
+So a Viking axe with a Pirate flintlock goes **Hack › Hew › Pistol Pop › Axe Cannonade**, and in the air
+**Air Chop › Axe Powder Dive**. The move list (pause, or MOVE LIST in the Workshop) shows your figure's.
 
 ## Parts (the Medabots-style build system)
 

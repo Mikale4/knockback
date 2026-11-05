@@ -269,8 +269,8 @@
     }
 
     /* --------------------------------------------------------------- attacks */
-    lightRoot() { return this.broken.armR ? 'stump1' : this.st.light; }
-    airRoot() { return this.broken.armR ? 'stumpAir' : this.st.air; }
+    lightRoot() { return this.broken.armR ? 'stump1' : this.broken.armL ? this.st.lightPure || this.st.light : this.st.light; }
+    airRoot() { return this.broken.armR ? 'stumpAir' : this.broken.armL ? this.st.airPure || this.st.air : this.st.air; }
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
       const mv = KB.MOVES[id]; if (!mv) return;
@@ -462,7 +462,7 @@
       // weapon trail
       if (mv.trail) { const w = this.isLeftMove() ? 'wL' : 'wR', T = this.isLeftMove() ? this.trailL : this.trailR; if (!this.fig.detached[w === 'wL' ? 'armL' : 'armR']) T.push(this.fig.socket(w, [0, 0, 3]), this.fig.socket(w, [0, 0, w === 'wR' ? 14 : 10])); }
     }
-    isLeftMove() { if (this.move && this.move.twoHand) return false; return ['heavy', 'launch', 'airHeavy', 'gun'].includes(this.kind) || (this.move && /^(jabL|heavyDiag|bash|shoot)/.test(this.move.pose)); }
+    isLeftMove() { if (this.move && this.move.offhand) return true; if (this.move && this.move.twoHand) return false; return ['heavy', 'launch', 'airHeavy', 'gun'].includes(this.kind) || (this.move && /^(jabL|heavyDiag|bash|shoot)/.test(this.move.pose)); }
     addBuff(b) {
       if (b.id === 'bulwark') { this.armorT = b.t; this.buffs.bulwark = b.t; this.m.call(this, 'BULWARK', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.6, normal: new V3(0, 1, 0), color: 0x66aaff }); }
       if (b.id === 'fury') { this.buffs.fury = b.t; this.m.call(this, 'FURY', 'buff'); }
@@ -836,7 +836,7 @@
       const R = this.ready, st = this.state;
       if (st === 'attack' && this.move) {
         const mv = Object.assign({}, this.move, { ac: this.move.ac + (this.acExt || 0) }), t = this.moveT;
-        let P = Anim.P[this.pose2 || mv.pose] || Anim.P.slashA;
+        let P = Anim.P[this.pose2 || mv.pose] || Anim.compose(this.pose2 || mv.pose) || Anim.P.slashA;
         if (P.alt && t >= mv.su && t < mv.su + mv.ac) P = Anim.P[P.alt[Math.floor((t - mv.su) / 0.06) % P.alt.length]];
         if (this.kind === 'super' && this.superPhase === 'seq' && this.pose2) { pose = Anim.blend(R, Anim.P[this.pose2][this.pose2ph || 'strike'], 1, R); rate = 40; }
         else if (this.kind === 'super' && this.superPhase === 'catch' && (mv.catchType === 'leap' || mv.catchType === 'jump')) { pose = Anim.blend(R, mv.catchType === 'jump' && this.catchT > 0.9 ? Anim.P.plunge.strike : P.wind, 1, R); rate = 20; }
@@ -892,7 +892,7 @@
     /* the Flintlock stays holstered until it fires, and the Cutlass is put away while it is out */
     holster(dt) {
       const L = KB.PARTS[this.build.armL.line].armL; if (!L.holster) return;
-      const drawn = this.state === 'attack' && this.move && ['heavy', 'launch', 'airHeavy', 'gun'].includes(this.kind) && !this.broken.armL;
+      const drawn = this.state === 'attack' && this.move && (['heavy', 'launch', 'airHeavy', 'gun'].includes(this.kind) || this.move.offhand || this.move.hybrid) && !this.broken.armL;
       this.drawnT = drawn ? 0.25 : Math.max(0, (this.drawnT || 0) - dt);
       const out = this.drawnT > 0, wL = this.fig.parts.wL, wR = this.fig.parts.wR;
       if (wL.visible !== out) { wL.visible = out; if (!this.fig.detached.armL) FX.burst(this.fig.socket('armL', [0, -9, 0]), { n: 4, color: 0xd8d0c0, speed: 1.2, size: 0.06, life: 0.3, gravity: -1 }); }
@@ -1003,6 +1003,10 @@
       const hs = o.multiHit ? 0.018 : 0.045 + Math.min(0.12, dmg * 0.0009) + (counter ? 0.05 : 0);
       if (!o.remote) att.hitstop = hs; vic.hitstop = o.remote ? Math.min(hs, 0.05) : hs;
       if (mv.holy) { FX.ring(atPos.clone(), { r1: 1.6, life: 0.3, normal: m.camDir(), color: 0xfff07a }); FX.burst(atPos, { n: 10, color: [0xfff07a, 0xffffff], glow: true, speed: 4, size: 0.07, gravity: -2, life: 0.5 }); }
+      if (mv.blast) { FX.burst(atPos, { n: 22, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 6, size: 0.11, life: 0.5 }); FX.spark(atPos, { color: 0xffb040, size: 2 }); FX.ring(atPos.clone(), { r1: 1.6, life: 0.3, normal: m.camDir(), color: 0xffa040 }); SFX.play('boom'); FX.addShake(0.4); }
+      if (mv.hexfx) { const hc = KB.LINES.summoner.pal.glow; FX.ring(atPos.clone(), { r1: 1.5, life: 0.35, normal: m.camDir(), color: hc }); FX.burst(atPos, { n: 12, color: [hc, 0xffffff], glow: true, speed: 4, size: 0.07, life: 0.4, gravity: 0 }); }
+      if (mv.quake) { FX.addShake(0.5); FX.ring(_c.copy(vic.pos).setY(0.06), { r1: 2.4, life: 0.4 }); FX.burst(_c.copy(vic.pos).setY(0.1), { n: 14, color: m.arena.dust, speed: 4, size: 0.1 }); }
+      if (mv.hybrid && !o.multiHit) m.call(att, mv.name.toUpperCase() + '!', 'buff');
       if (mv.notes) { FX.burst(atPos, { n: 6, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 3, size: 0.09, gravity: -2.5, life: 0.6 }); m.noteFX(atPos.clone(), 2); }
       vic.flash = 0.7; vic.flashCol = counter ? 0xff5050 : 0xffffff;
       const power = U.clamp(mv.kb[0] / 10 + dmg / 80, 0.5, 2.5);
