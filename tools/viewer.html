@@ -20,7 +20,7 @@ lines.forEach((l, i) => {
   let b = KB.mintBuild(l, rr != null ? rr : (i % 4));
   if (q.get('mix')) b = KB.randomBuild(3);
   const F = Models.figure(b); F.root.position.set((i - 2.5) * 1.6, 0, 0); F.root.rotation.y = +(q.get('rot') || 0.45); sc.add(F.root); figs.push(F);
-  const pn = q.get('pose') || 'ready';
+  const pn = q.get('poses') ? q.get('poses').split(',')[i] : (q.get('pose') || 'ready');
   let pose = Anim.readyFor(b);
   if (Anim.P[pn]) pose = Anim.blend(Anim.readyFor(b), Anim.P[pn][q.get('ph') || 'strike'], 1, Anim.readyFor(b));
   else if (Anim.STATE[pn]) pose = Anim.fill(Anim.STATE[pn]);

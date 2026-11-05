@@ -64,6 +64,20 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
     at the last moment: no chip, attacker shoved), **Guard Crush** when the guard gauge empties, **Throw tech**.
 - **Snap Cancel** — Snap during your own move with 50 Hype: cancel its recovery to extend a combo.
 
+## Every line fights its own way
+
+Your R-ARM decides your string, its **pause branch** (let a move finish, wait a beat, press Light again), your air
+string and a signature; your stance comes from it too.
+
+| Line | Light string | Pause branch | Air string | Signature |
+|---|---|---|---|---|
+| Samurai (Katana) | Kiri › Kesa › Tsuki › Rising Cut (launches up) | Issen: dash through them, knock them back the other way | Kiri › Kesa › Tsubame Gaeshi (2-hit spike) | **Kaeshi**: Light right after a Just Guard is a crumpling riposte |
+| Knight (Longsword) | Cleave › Backswing › Judgment (ground-bounce slam) | Pommel Strike (crumple) | Cleave › Plunging Thrust (dive) | **Steadfast**: armour in the startup of every swing after the first |
+| Pirate (Cutlass) | Cut › Backcut › Flourish (spin) › Boot to the Face | Sand in the Eyes (dizzy) | Cut › Backcut › Cannonball (dive) | **Dirty Fighting**; with the Flintlock, Heavy mid-string is a **Quick Shot** gun cancel |
+| Monk (Fists) | Jab › Cross › Hundred Fists (mash to extend) › Dragon Palm | Leg Sweep (launcher) | Knee › Spin Kick › Whirlwind Kick | **Flow**: moves speed up as a combo goes on |
+| Viking (Axe) | Hack › Hew › Whirlwind (hits all around) | Skull Splitter (ground bounce) | Chop › Axe Drill (spinning dive) | **Wind-up**: hold Light on any swing for armour, +60% damage, a crumple |
+| Ninja (Tantō) | Flick › Backflick › Vanishing Stab (blinks behind) › Shadow Slash | Kunai Toss | Flick › Backflick › Kunai Rain | **Shadow Dash**: Dodge after an air hit to dash at them |
+
 ## Parts (the Medabots-style build system)
 
 | Slot | What it gives |

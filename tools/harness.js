@@ -54,3 +54,20 @@ window.__loopTest = (l1, l2, secs, opt) => {
   });
   return { errs: __errs, calls: __calls.slice(), hp: Math.round(b.hp) + '/' + b.maxHp, walls: m.arena.walls.map(w => w.id + ':' + Math.round(w.stress) + (w.broken ? 'B' : '')), rec: a.records, bst: b.state, log: log.slice(0, 70).join(' ') };
 };
+/* play a scripted input sequence for P1 against a training dummy and report what happened.
+   steps: [[frame, action, holdFrames, stickX]] ; returns the moves P1 started, callouts, and the dummy's combo */
+window.__seq = (l1, l2, steps, secs, setup) => {
+  __calls.length = 0;
+  const m = __train(l1, l2), [a, b] = m.fighters; a.pos.set(-1.2, 0, 0); b.pos.set(0, 0, 0); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2;
+  if (setup) setup(m, a, b);
+  const moves = [], holds = {};
+  let maxHits = 0, maxBounce = 0, lastMove = null;
+  __step(secs || 3, i => {
+    const f = __pad();
+    for (const s of steps) if (s[0] === i) { holds[s[1]] = i + (s[2] || 1); if (s[3] != null) f.move.x = s[3]; }
+    for (const k in holds) if (i < holds[k]) f.held[k] = true;
+    if (a.move && a.move !== lastMove) { moves.push(a.move.id); lastMove = a.move; } if (!a.move) lastMove = null;
+    maxHits = Math.max(maxHits, b.combo.hits); maxBounce = Math.max(maxBounce, b.combo.bounces);
+  });
+  return { moves: moves.join(' '), calls: __calls.join(', '), hits: maxHits, bounces: maxBounce, dmg: Math.round(b.maxHp - b.hp), errs: __errs.length };
+};

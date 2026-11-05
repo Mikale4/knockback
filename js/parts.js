@@ -49,11 +49,6 @@
   const mv = (id, o) => { M[id] = Object.assign({ id, type: 'melee', su: 0.08, ac: 0.06, rc: 0.15, dmg: 30, kb: [2.5, 0], stun: 0.32, reach: 1.15, rad: 0.8, h: 1.1, lunge: 2, zone: 'mid', sfx: 'slash', trail: 1, hype: 1 }, o); };
 
   // SAMURAI
-  mv('katana1', { name: 'Kiri', pose: 'slashA', su: 0.07, dmg: 28, lunge: 3 });
-  mv('katana2', { name: 'Kaeshi', pose: 'slashB', su: 0.07, dmg: 28, lunge: 3 });
-  mv('katana3', { name: 'Tsuki', pose: 'thrust', su: 0.08, dmg: 32, reach: 1.45, kb: [3.2, 0], lunge: 5 });
-  mv('katana4', { name: 'Rising Cut', pose: 'upslash', su: 0.12, ac: 0.08, rc: 0.24, dmg: 52, kb: [10.5, 7], launch: 1, lunge: 4, finisher: 1 });
-  mv('katanaAir', { name: 'Air Slash', pose: 'slashA', su: 0.07, dmg: 30, kb: [3, 4], air: 1, h: 1.0 });
   mv('kesa', { name: 'Kesa-giri', pose: 'twoHandDiag', twoHand: 1, su: 0.2, ac: 0.08, rc: 0.3, dmg: 84, kb: [16, 5.5], launch: 1, lunge: 4, charge: 1, zone: 'mid', sfx: 'heavy' });
   mv('tsubame', { name: 'Tsubame', pose: 'twoHandUp', twoHand: 1, su: 0.1, ac: 0.08, rc: 0.28, dmg: 40, kb: [1.4, 13], launch: 1, lunge: 2, launcher: 1 });
   mv('kabutowari', { name: 'Kabuto-wari', pose: 'twoHandOver', twoHand: 1, su: 0.12, ac: 0.1, rc: 0.25, dmg: 58, kb: [2.5, -14], launch: 1, spike: 1, air: 1, zone: 'high', h: 0.6, sfx: 'heavy' });
@@ -62,10 +57,6 @@
   mv('thousandCuts', { name: 'Thousand Cuts', type: 'super', pose: 'iai', su: 0.28, catchType: 'dash', dist: 6.5, rad: 1.1, seq: 'cuts', dmg: 300, kb: [20, 8], zone: 'mid' });
 
   // KNIGHT
-  mv('long1', { name: 'Cleave', pose: 'slashA', su: 0.1, ac: 0.07, rc: 0.19, dmg: 38, reach: 1.35, kb: [3, 0], lunge: 3 });
-  mv('long2', { name: 'Backswing', pose: 'slashB', su: 0.1, ac: 0.07, rc: 0.19, dmg: 42, reach: 1.35, kb: [3, 0], lunge: 3 });
-  mv('long3', { name: 'Judgment', pose: 'overhead', su: 0.16, ac: 0.08, rc: 0.3, dmg: 70, reach: 1.4, kb: [13, 4], launch: 1, lunge: 4, finisher: 1, zone: 'high', sfx: 'heavy' });
-  mv('longAir', { name: 'Air Cleave', pose: 'slashA', su: 0.09, dmg: 40, kb: [3, 4], air: 1, reach: 1.3, h: 1.0 });
   mv('shieldBash', { name: 'Shield Bash', pose: 'bash', su: 0.17, ac: 0.08, rc: 0.3, dmg: 80, reach: 1.1, rad: 0.95, kb: [18.5, 4], launch: 1, lunge: 6, armor: 1, charge: 1, trail: 0, sfx: 'heavy' });
   mv('shieldUpper', { name: 'Shield Upper', pose: 'bashUp', su: 0.11, ac: 0.08, rc: 0.28, dmg: 40, kb: [1, 12.5], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
   mv('shieldDrop', { name: 'Shield Drop', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 55, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
@@ -74,11 +65,6 @@
   mv('lanceCharge', { name: 'Holy Lance Charge', type: 'super', pose: 'lance', su: 0.32, catchType: 'dash', dist: 10, rad: 1.1, seq: 'charge', armor: 1, dmg: 280, kb: [27, 3], zone: 'mid' });
 
   // PIRATE
-  mv('cut1', { name: 'Cut', pose: 'slashA', su: 0.06, rc: 0.13, dmg: 25, lunge: 3 });
-  mv('cut2', { name: 'Cut', pose: 'slashB', su: 0.06, rc: 0.13, dmg: 25, lunge: 3 });
-  mv('cut3', { name: 'Stab', pose: 'thrust', su: 0.06, rc: 0.13, dmg: 30, reach: 1.35, lunge: 4 });
-  mv('cut4', { name: 'Flourish', pose: 'spin', su: 0.1, ac: 0.12, rc: 0.24, dmg: 46, rad: 1.2, reach: 0.6, kb: [10, 6], launch: 1, finisher: 1 });
-  mv('cutAir', { name: 'Air Cut', pose: 'slashA', su: 0.06, dmg: 28, kb: [3, 4], air: 1, h: 1.0 });
   mv('pointBlank', { name: 'Point Blank', type: 'proj', proj: 'shot', pose: 'shoot', su: 0.2, rc: 0.32, dmg: 74, kb: [15, 5], launch: 1, range: 6.5, charge: 1, trail: 0, sfx: 'shot' });
   mv('pistolWhip', { name: 'Pistol Whip', pose: 'upslash', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1.5, 12.5], launch: 1, launcher: 1, trail: 0, sfx: 'whoosh' });
   mv('airShot', { name: 'Plunging Shot', type: 'proj', proj: 'shotDown', pose: 'shootDown', su: 0.14, rc: 0.28, dmg: 50, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'shot' });
@@ -87,12 +73,6 @@
   mv('broadside', { name: 'Broadside', type: 'super', pose: 'shoot', su: 0.3, catchType: 'proj', range: 10, seq: 'cannon', dmg: 290, kb: [14, 16], zone: 'high' });
 
   // MONK
-  mv('fist1', { name: 'Jab', pose: 'jabL', su: 0.05, ac: 0.05, rc: 0.11, dmg: 18, reach: 1.0, kb: [1.8, 0], stun: 0.28, lunge: 3, trail: 0, sfx: 'whoosh' });
-  mv('fist2', { name: 'Cross', pose: 'jabR', su: 0.05, ac: 0.05, rc: 0.11, dmg: 18, reach: 1.0, kb: [1.8, 0], stun: 0.28, lunge: 3, trail: 0, sfx: 'whoosh' });
-  mv('fist3', { name: 'Hook', pose: 'jabL', su: 0.05, ac: 0.05, rc: 0.11, dmg: 22, reach: 1.0, kb: [2, 0], stun: 0.3, lunge: 3, trail: 0, sfx: 'whoosh' });
-  mv('fist4', { name: 'Body Blow', pose: 'jabR', su: 0.05, ac: 0.05, rc: 0.11, dmg: 22, reach: 1.0, kb: [2, 0], stun: 0.3, lunge: 3, trail: 0, sfx: 'whoosh' });
-  mv('fist5', { name: 'Rush Punch', pose: 'punch', su: 0.1, ac: 0.07, rc: 0.24, dmg: 44, reach: 1.15, kb: [12, 5], launch: 1, lunge: 6, finisher: 1, trail: 0, sfx: 'heavy' });
-  mv('fistAir', { name: 'Air Kick', pose: 'airKick', su: 0.05, dmg: 24, kb: [3, 4.5], air: 1, reach: 1.0, h: 0.9, trail: 0, sfx: 'whoosh' });
   mv('thunderPalm', { name: 'Thunder Palm', pose: 'palm', su: 0.2, ac: 0.07, rc: 0.3, dmg: 92, reach: 1.15, kb: [21, 4], launch: 1, lunge: 5, charge: 1, trail: 0, sfx: 'heavy' });
   mv('risingPalm', { name: 'Rising Palm', pose: 'palmUp', su: 0.09, ac: 0.08, rc: 0.27, dmg: 36, kb: [1, 13.5], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
   mv('axeKick', { name: 'Axe Kick', pose: 'axeKick', su: 0.12, ac: 0.1, rc: 0.24, dmg: 54, kb: [2, -14], launch: 1, spike: 1, air: 1, zone: 'high', h: 0.6, trail: 0, sfx: 'heavy' });
@@ -101,10 +81,6 @@
   mv('hundredPalm', { name: 'Hundred Hands', type: 'super', pose: 'punch', su: 0.26, catchType: 'melee', lunge: 9, reach: 1.2, rad: 1.0, seq: 'hundred', dmg: 300, kb: [24, 6], zone: 'mid' });
 
   // VIKING
-  mv('axe1', { name: 'Hack', pose: 'slashA', su: 0.13, ac: 0.08, rc: 0.21, dmg: 48, reach: 1.3, kb: [3.2, 0], stun: 0.36, lunge: 3, sfx: 'heavy' });
-  mv('axe2', { name: 'Hew', pose: 'slashB', su: 0.13, ac: 0.08, rc: 0.21, dmg: 52, reach: 1.3, kb: [3.2, 0], stun: 0.36, lunge: 3, sfx: 'heavy' });
-  mv('axe3', { name: 'Cleave', pose: 'overhead', su: 0.2, ac: 0.08, rc: 0.32, dmg: 85, reach: 1.35, kb: [15, 6], launch: 1, lunge: 4, finisher: 1, zone: 'high', sfx: 'heavy' });
-  mv('axeAir', { name: 'Air Chop', pose: 'overhead', su: 0.1, dmg: 45, kb: [3, 3.5], air: 1, reach: 1.25, h: 0.9, sfx: 'heavy' });
   mv('shieldRam', { name: 'Shield Ram', pose: 'bash', su: 0.18, ac: 0.1, rc: 0.3, dmg: 80, reach: 1.1, rad: 0.95, kb: [17, 6], launch: 1, lunge: 9, armor: 1, charge: 1, trail: 0, sfx: 'heavy' });
   mv('upperHaft', { name: 'Haft Upper', pose: 'bashUp', su: 0.11, ac: 0.08, rc: 0.28, dmg: 42, kb: [1, 12], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
   mv('skullDrop', { name: 'Skull Drop', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 58, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
@@ -113,11 +89,6 @@
   mv('ragnarok', { name: 'Ragnarök', type: 'super', pose: 'slam', su: 0.5, catchType: 'radial', rad: 3.6, leap: 1, seq: 'quake', dmg: 270, kb: [8, 16], zone: 'high' });
 
   // NINJA
-  mv('tanto1', { name: 'Flick', pose: 'slashA', su: 0.045, ac: 0.05, rc: 0.1, dmg: 20, reach: 1.05, kb: [2, 0], stun: 0.28, lunge: 4 });
-  mv('tanto2', { name: 'Flick', pose: 'slashB', su: 0.045, ac: 0.05, rc: 0.1, dmg: 20, reach: 1.05, kb: [2, 0], stun: 0.28, lunge: 4 });
-  mv('tanto3', { name: 'Pierce', pose: 'thrust', su: 0.05, ac: 0.05, rc: 0.1, dmg: 24, reach: 1.2, kb: [2.4, 0], stun: 0.3, lunge: 5 });
-  mv('tanto4', { name: 'Shadow Slash', pose: 'spin', su: 0.09, ac: 0.1, rc: 0.22, dmg: 42, rad: 1.15, reach: 0.7, kb: [11, 6], launch: 1, finisher: 1 });
-  mv('tantoAir', { name: 'Air Flick', pose: 'slashA', su: 0.045, dmg: 22, kb: [3, 4.5], air: 1, h: 1.0 });
   mv('chainHook', { name: 'Chain Hook', type: 'proj', proj: 'chain', pose: 'shoot', su: 0.17, rc: 0.3, dmg: 48, kb: [0, 3], pull: 1, stun: 0.6, range: 5, charge: 1, trail: 0, sfx: 'whoosh' });
   mv('sickleRise', { name: 'Sickle Rise', pose: 'upslash', su: 0.09, ac: 0.08, rc: 0.26, dmg: 36, kb: [1.4, 13], launch: 1, launcher: 1 });
   mv('chainDrop', { name: 'Chain Drop', pose: 'overhead', su: 0.12, ac: 0.1, rc: 0.24, dmg: 50, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.6 });
@@ -125,8 +96,68 @@
   mv('shadowKick', { name: 'Shadow Kick', pose: 'knee', su: 0.07, ac: 0.1, rc: 0.24, dmg: 34, kb: [9, 5], launch: 1, lunge: 9, trail: 0, sfx: 'whoosh' });
   mv('cloneBarrage', { name: 'Shadow Clone Arts', type: 'super', pose: 'backstab', su: 0.26, catchType: 'dash', dist: 7.5, rad: 1.1, seq: 'clones', dmg: 290, kb: [16, 11], zone: 'mid' });
 
+
+  /* ---- the R-ARM strings: each line its own tree.
+     nx.l is the next Light; nx.p is the PAUSE branch (let the move finish, wait a beat, then Light).
+     multi: hits that many times; rapid: mash Light to extend it; cross: blink behind them first;
+     around: hits all around; dive: drives down through the air; crumple / dizzy: a long helpless stagger;
+     kbBack: knocks them back the way you came; chargeL: hold Light to wind it up; armorSU: armour in startup. */
+  // SAMURAI · Katana: precise cuts that end launching UP; the pause branch dashes through them
+  mv('kaA', { name: 'Kiri', pose: 'kiri', su: 0.07, dmg: 28, lunge: 3, nx: { l: 'kaB' } });
+  mv('kaB', { name: 'Kesa', pose: 'kesa', su: 0.07, dmg: 30, lunge: 3, stun: 0.5, nx: { l: 'kaC', p: 'kaP' } });
+  mv('kaC', { name: 'Tsuki', pose: 'tsuki', su: 0.08, dmg: 34, reach: 1.6, kb: [3.5, 0], lunge: 6, nx: { l: 'kaD' } });
+  mv('kaD', { name: 'Rising Cut', pose: 'upslash', su: 0.11, ac: 0.08, rc: 0.24, dmg: 48, kb: [2, 12.5], launch: 1, lunge: 3, finisher: 1, launcher: 1 });
+  mv('kaP', { name: 'Issen', type: 'dash', pose: 'iai', su: 0.15, ac: 0.1, rc: 0.3, dmg: 66, dist: 3.4, rad: 0.95, kb: [13, 5], launch: 1, kbBack: 1, inv: 1, finisher: 1 });
+  mv('kaAirA', { name: 'Air Kiri', pose: 'kiri', su: 0.06, dmg: 26, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'kaAirB' } });
+  mv('kaAirB', { name: 'Air Kesa', pose: 'kesa', su: 0.06, dmg: 26, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'kaAirC' } });
+  mv('kaAirC', { name: 'Tsubame Gaeshi', pose: 'tsubameAir', su: 0.08, ac: 0.14, rc: 0.24, dmg: 22, multi: 2, kb: [2, -13], launch: 1, spike: 1, air: 1, h: 0.8 });
+  mv('kaeshi', { name: 'Kaeshi', pose: 'iai', su: 0.03, ac: 0.08, rc: 0.25, dmg: 55, reach: 1.3, rad: 1, crumple: 0.9, inv: 1, lunge: 4 });
+  // KNIGHT · Longsword: three slow armoured swings; the last one slams them into the floor
+  mv('loA', { name: 'Cleave', pose: 'cleave', su: 0.1, ac: 0.07, rc: 0.19, dmg: 38, reach: 1.4, kb: [3, 0], lunge: 3, nx: { l: 'loB' } });
+  mv('loB', { name: 'Backswing', pose: 'backswing', su: 0.11, ac: 0.07, rc: 0.2, dmg: 42, reach: 1.4, kb: [3, 0], lunge: 3, armorSU: 1, stun: 0.5, nx: { l: 'loC', p: 'loP' } });
+  mv('loC', { name: 'Judgment', pose: 'judgment', su: 0.18, ac: 0.08, rc: 0.32, dmg: 70, reach: 1.45, kb: [2, -10], launch: 1, spike: 1, armorSU: 1, finisher: 1, zone: 'high', sfx: 'heavy' });
+  mv('loP', { name: 'Pommel Strike', pose: 'pommel', su: 0.06, ac: 0.06, rc: 0.22, dmg: 30, reach: 1.0, crumple: 1.0, lunge: 4, trail: 0, sfx: 'heavy', zone: 'high' });
+  mv('loAirA', { name: 'Air Cleave', pose: 'cleave', su: 0.09, dmg: 40, kb: [3, 4], air: 1, reach: 1.3, h: 1, nx: { l: 'loAirB' } });
+  mv('loAirB', { name: 'Plunging Thrust', pose: 'plunge', su: 0.12, ac: 0.3, rc: 0.25, dmg: 48, kb: [2, -12], launch: 1, spike: 1, air: 1, dive: 1, reach: 1.2, h: 0.5, sfx: 'heavy' });
+  // PIRATE · Cutlass: a flashy spin, then a boot to the face; the pause branch throws sand
+  mv('cuA', { name: 'Cut', pose: 'cutA', su: 0.06, rc: 0.13, dmg: 24, lunge: 3, nx: { l: 'cuB' } });
+  mv('cuB', { name: 'Backcut', pose: 'cutB', su: 0.06, rc: 0.13, dmg: 24, lunge: 3, stun: 0.5, nx: { l: 'cuC', p: 'cuP' } });
+  mv('cuC', { name: 'Flourish', pose: 'flourish', su: 0.08, ac: 0.16, rc: 0.16, dmg: 16, multi: 2, rad: 1.2, reach: 0.6, kb: [2, 0], nx: { l: 'cuD' } });
+  mv('cuD', { name: 'Boot to the Face', pose: 'bootKick', su: 0.09, ac: 0.07, rc: 0.26, dmg: 44, reach: 1.15, kb: [13, 4.5], launch: 1, lunge: 5, finisher: 1, trail: 0, sfx: 'heavy' });
+  mv('cuP', { name: 'Sand in the Eyes', pose: 'sandToss', su: 0.08, ac: 0.08, rc: 0.3, dmg: 8, reach: 1.5, rad: 1.0, dizzy: 1.1, trail: 0, sfx: 'whoosh', zone: 'high' });
+  mv('cuAirA', { name: 'Air Cut', pose: 'cutA', su: 0.06, dmg: 24, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'cuAirB' } });
+  mv('cuAirB', { name: 'Air Backcut', pose: 'cutB', su: 0.06, dmg: 24, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'cuAirC' } });
+  mv('cuAirC', { name: 'Cannonball', pose: 'cannonball', su: 0.1, ac: 0.3, rc: 0.22, dmg: 40, kb: [9, -6], launch: 1, spike: 1, dive: 1, air: 1, h: 0.6, trail: 0, sfx: 'heavy' });
+  mv('quickShot', { name: 'Quick Shot', type: 'proj', proj: 'shot', pose: 'shoot', su: 0.08, rc: 0.16, dmg: 26, kb: [1.5, 0], stun: 0.55, range: 5, trail: 0, sfx: 'shot' });
+  // MONK · Fists: a mashable flurry into a palm; the pause branch sweeps the legs
+  mv('fiA', { name: 'Jab', pose: 'jabL', su: 0.05, ac: 0.05, rc: 0.11, dmg: 16, reach: 1.0, kb: [1.6, 0], stun: 0.28, lunge: 3, trail: 0, sfx: 'whoosh', nx: { l: 'fiB' } });
+  mv('fiB', { name: 'Cross', pose: 'jabR', su: 0.05, ac: 0.05, rc: 0.11, dmg: 18, reach: 1.0, kb: [1.6, 0], stun: 0.45, lunge: 3, trail: 0, sfx: 'whoosh', nx: { l: 'fiC', p: 'fiP' } });
+  mv('fiC', { name: 'Hundred Fists', pose: 'flurry', su: 0.06, ac: 0.36, rc: 0.12, dmg: 7, multi: 6, rapid: 2, reach: 1.05, kb: [0.8, 0], stun: 0.32, trail: 0, sfx: 'whoosh', nx: { l: 'fiD' } });
+  mv('fiD', { name: 'Dragon Palm', pose: 'dragonPalm', su: 0.1, ac: 0.07, rc: 0.26, dmg: 42, reach: 1.15, kb: [14, 4], launch: 1, lunge: 6, finisher: 1, trail: 0, sfx: 'heavy' });
+  mv('fiP', { name: 'Leg Sweep', pose: 'sweep', su: 0.08, ac: 0.08, rc: 0.26, dmg: 28, kb: [1.5, 7.5], launch: 1, launcher: 1, zone: 'low', h: 0.35, reach: 1.1, lunge: 4, trail: 0, sfx: 'whoosh' });
+  mv('fiAirA', { name: 'Air Knee', pose: 'knee', su: 0.05, dmg: 20, kb: [2.5, 5], air: 1, reach: 0.95, h: 0.9, trail: 0, sfx: 'whoosh', nx: { l: 'fiAirB' } });
+  mv('fiAirB', { name: 'Spin Kick', pose: 'spinKick', su: 0.06, dmg: 22, kb: [2.5, 5], air: 1, reach: 1.05, h: 0.9, trail: 0, sfx: 'whoosh', nx: { l: 'fiAirC' } });
+  mv('fiAirC', { name: 'Whirlwind Kick', pose: 'whirlKick', su: 0.07, ac: 0.24, rc: 0.2, dmg: 10, multi: 3, kb: [3, 5.5], air: 1, rad: 1.1, reach: 0.5, h: 0.9, trail: 0, sfx: 'whoosh' });
+  // VIKING · Bearded Axe: hold Light to wind up any swing; the string ends in a 360° whirlwind
+  mv('axA', { name: 'Hack', pose: 'hack', su: 0.13, ac: 0.08, rc: 0.21, dmg: 48, reach: 1.3, kb: [3.2, 0], stun: 0.38, lunge: 3, chargeL: 1, armorSU: 1, sfx: 'heavy', nx: { l: 'axB' } });
+  mv('axB', { name: 'Hew', pose: 'hew', su: 0.13, ac: 0.08, rc: 0.21, dmg: 52, reach: 1.3, kb: [3.2, 0], stun: 0.55, lunge: 3, chargeL: 1, armorSU: 1, sfx: 'heavy', nx: { l: 'axC', p: 'axP' } });
+  mv('axC', { name: 'Whirlwind', pose: 'whirlwind', su: 0.14, ac: 0.24, rc: 0.3, dmg: 30, multi: 3, around: 1, rad: 1.6, kb: [11, 6], launch: 1, finisher: 1, chargeL: 1, sfx: 'heavy' });
+  mv('axP', { name: 'Skull Splitter', pose: 'skullSplit', su: 0.22, ac: 0.08, rc: 0.34, dmg: 78, reach: 1.35, kb: [2, -11], launch: 1, spike: 1, chargeL: 1, armorSU: 1, finisher: 1, zone: 'high', sfx: 'heavy' });
+  mv('axAirA', { name: 'Air Chop', pose: 'hack', su: 0.1, dmg: 44, kb: [3, 3.5], air: 1, reach: 1.25, h: 0.9, sfx: 'heavy', nx: { l: 'axAirB' } });
+  mv('axAirB', { name: 'Axe Drill', pose: 'drill', su: 0.1, ac: 0.3, rc: 0.25, dmg: 16, multi: 3, kb: [2, -12], launch: 1, spike: 1, dive: 1, air: 1, rad: 1.0, reach: 0.6, h: 0.5, sfx: 'heavy' });
+  // NINJA · Tantō: reverse-grip flicks, a blink behind them, then a shadow spin; the pause branch throws kunai
+  mv('taA', { name: 'Flick', pose: 'flickA', su: 0.045, ac: 0.05, rc: 0.1, dmg: 20, reach: 1.05, kb: [2, 0], stun: 0.28, lunge: 4, nx: { l: 'taB' } });
+  mv('taB', { name: 'Backflick', pose: 'flickB', su: 0.045, ac: 0.05, rc: 0.1, dmg: 20, reach: 1.05, kb: [2, 0], stun: 0.45, lunge: 4, nx: { l: 'taC', p: 'taP' } });
+  mv('taC', { name: 'Vanishing Stab', pose: 'vanish', su: 0.07, ac: 0.06, rc: 0.12, dmg: 26, reach: 1.1, kb: [2.5, 0], stun: 0.36, cross: 1, nx: { l: 'taD' } });
+  mv('taD', { name: 'Shadow Slash', pose: 'shadowSlash', su: 0.08, ac: 0.1, rc: 0.22, dmg: 40, rad: 1.15, reach: 0.7, kb: [11, 6], launch: 1, finisher: 1 });
+  mv('taP', { name: 'Kunai Toss', type: 'proj', proj: 'kunai', pose: 'kunaiToss', su: 0.08, rc: 0.22, dmg: 30, kb: [2, 0], stun: 0.45, range: 6.5, trail: 0, sfx: 'whoosh' });
+  mv('taAirA', { name: 'Air Flick', pose: 'flickA', su: 0.045, dmg: 20, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'taAirB' } });
+  mv('taAirB', { name: 'Air Backflick', pose: 'flickB', su: 0.045, dmg: 20, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'taAirC' } });
+  mv('taAirC', { name: 'Kunai Rain', type: 'proj', proj: 'kunaiDown', pose: 'kunaiToss', su: 0.07, rc: 0.22, dmg: 36, kb: [2, -11], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'whoosh' });
+
   // GENERIC (broken arms fall back on these) and the universal throw
-  mv('stump1', { name: 'Stump Jab', pose: 'jabL', su: 0.07, dmg: 12, reach: 0.9, kb: [1.5, 0], trail: 0, sfx: 'whoosh' });
+  mv('stump1', { name: 'Stump Jab', pose: 'jabL', su: 0.07, dmg: 12, reach: 0.9, kb: [1.5, 0], trail: 0, sfx: 'whoosh', nx: { l: 'stump1b' } });
+  mv('stump1b', { name: 'Stump Jab', pose: 'jabR', su: 0.07, dmg: 12, reach: 0.9, kb: [1.5, 0], trail: 0, sfx: 'whoosh', nx: { l: 'stump2' } });
   mv('stump2', { name: 'Shoulder', pose: 'bash', su: 0.1, dmg: 22, reach: 0.95, kb: [8, 3.5], launch: 1, lunge: 4, finisher: 1, trail: 0, sfx: 'heavy' });
   mv('stumpAir', { name: 'Air Knee', pose: 'knee', su: 0.07, dmg: 16, kb: [2.5, 4], air: 1, reach: 0.9, trail: 0, sfx: 'whoosh' });
   mv('tackle', { name: 'Tackle', pose: 'bash', su: 0.18, dmg: 40, reach: 1.0, kb: [11, 4], launch: 1, lunge: 7, charge: 1, trail: 0, sfx: 'heavy' });
@@ -139,7 +170,7 @@
     samurai: {
       head: { name: 'Crescent Kabuto', armor: 110, weight: 1.0, special: 'iai', uses: 3, hype: 1.0, desc: 'SPECIAL: Iai Flash. Dash through the foe in a single cut (invulnerable).' },
       core: { name: 'Lacquered Ō-yoroi', hp: 1000, def: 0.06, weight: 1.0, guard: 0, desc: 'Balanced lacquer plate. No weak spots, no tricks.' },
-      armR: { name: 'Katana', armor: 130, weight: 1.0, light: ['katana1', 'katana2', 'katana3', 'katana4'], air: 'katanaAir', trail: 0xffffff, desc: 'The one blade. LIGHT: 4-hit string ending in a Rising Cut. With the Kote it is gripped in both hands.' },
+      armR: { name: 'Katana', armor: 130, weight: 1.0, light: 'kaA', air: 'kaAirA', sig: 'riposte', sigName: 'Kaeshi-waza', sigDesc: 'After a Just Guard, press Light: an instant riposte that crumples them.', trail: 0xffffff, desc: 'Kiri › Kesa › Tsuki › Rising Cut (launches up). Pause after Kesa: Issen, a dash through them that knocks them back the other way. SIGNATURE: Kaeshi riposte after a Just Guard.' },
       armL: { name: 'Lacquered Kote', armor: 125, weight: 0.95, heavy: 'kesa', launch: 'tsubame', airHeavy: 'kabutowari', guard: 90, chip: 1, trail: 0xffd0d0, desc: 'An armoured gauntlet, hand free for a two-handed grip. HEAVY: Kesa-giri, a two-handed diagonal KNOCK with the right-hand weapon. Guard: medium.' },
       legs: { name: 'Hakama & Waraji', armor: 170, weight: 1.0, speed: 6.3, jump: 11.5, airJumps: 1, dashAtk: 'ashibarai', perk: null, desc: 'Even footing. DASH ATTACK: Ashi-barai, a low sweep that pops them up.' },
       card: { name: 'Way of the Blade', super: 'thousandCuts', passive: 'bushido', desc: 'LEGEND ART: Thousand Cuts. PASSIVE (Bushido): +15% damage under 35% HP.' },
@@ -147,7 +178,7 @@
     knight: {
       head: { name: 'Great Helm', armor: 160, weight: 1.15, special: 'bulwark', uses: 3, hype: 0.9, desc: 'SPECIAL: Bulwark. 3 s of super armour and 25% less damage.' },
       core: { name: 'Plate Cuirass', hp: 1150, def: 0.12, weight: 1.3, guard: 30, desc: 'The most HP and defence. Heavy: you fly less, you move less.' },
-      armR: { name: 'Longsword', armor: 150, weight: 1.15, light: ['long1', 'long2', 'long3'], air: 'longAir', trail: 0xcfe2ff, desc: 'LIGHT: 3 slow, long, heavy-hitting swings.' },
+      armR: { name: 'Longsword', armor: 150, weight: 1.15, light: 'loA', air: 'loAirA', sig: 'steadfast', sigName: 'Steadfast', sigDesc: 'Every swing after the first has armour in its startup: trade through jabs.', trail: 0xcfe2ff, desc: 'Cleave › Backswing › Judgment, a slam that ground-bounces them. Pause after Backswing: Pommel Strike crumples. Air: two hits ending in a diving thrust. SIGNATURE: armoured swings.' },
       armL: { name: 'Kite Shield', armor: 180, weight: 1.25, heavy: 'shieldBash', launch: 'shieldUpper', airHeavy: 'shieldDrop', guard: 165, chip: 0.5, trail: 0xcfe2ff, desc: 'HEAVY: Shield Bash, armoured, the biggest shove. Guard: huge, half chip.' },
       legs: { name: 'Iron Sabatons', armor: 220, weight: 1.35, speed: 5.1, jump: 9.8, airJumps: 1, dashAtk: 'stomp', perk: 'anchor', desc: 'Slow but planted: 15% less knockback taken. DASH ATTACK: Sabaton Stomp.' },
       card: { name: 'Oath of the Keep', super: 'lanceCharge', passive: 'plateFaith', desc: 'LEGEND ART: Holy Lance Charge, armoured. PASSIVE: guard +40%, chip -30%.' },
@@ -155,15 +186,15 @@
     pirate: {
       head: { name: "Captain's Tricorne", armor: 105, weight: 0.95, special: 'powderKeg', uses: 3, hype: 1.15, desc: 'SPECIAL: Powder Keg. Lob a bomb that blows them off their feet.' },
       core: { name: 'Frock Coat', hp: 950, def: 0.04, weight: 0.95, guard: 0, desc: 'Light and loose. Builds Hype faster.', hypeBonus: 0.1 },
-      armR: { name: 'Cutlass', armor: 125, weight: 0.95, light: ['cut1', 'cut2', 'cut3', 'cut4'], air: 'cutAir', trail: 0xfff1c0, desc: 'LIGHT: quick 4-hit string ending in a spinning Flourish.' },
-      armL: { name: 'Flintlock', armor: 110, weight: 0.9, heavy: 'pointBlank', launch: 'pistolWhip', airHeavy: 'airShot', guard: 70, chip: 1.1, trail: 0xffd28a, holster: 1, desc: 'Holstered until he fires (the cutlass is put away while it is out). HEAVY: Point Blank, a shot that reaches 6 m. Guard: weak.' },
+      armR: { name: 'Cutlass', armor: 125, weight: 0.95, light: 'cuA', air: 'cuAirA', sig: 'dirty', sigName: 'Dirty Fighting', sigDesc: 'Pause after the Backcut and throw sand: they stand there dizzy.', trail: 0xfff1c0, desc: 'Cut › Backcut › Flourish (spin) › Boot to the Face. Pause after Backcut: Sand in the Eyes (dizzy). Air ends in a Cannonball dive. With the Flintlock: Heavy mid-string is a Quick Shot.' },
+      armL: { name: 'Flintlock', armor: 110, weight: 0.9, heavy: 'pointBlank', launch: 'pistolWhip', airHeavy: 'airShot', guard: 70, chip: 1.1, trail: 0xffd28a, holster: 1, gunCancel: 'quickShot', desc: 'Holstered until he fires (the cutlass is put away while it is out). HEAVY: Point Blank, a shot that reaches 6 m. Guard: weak.' },
       legs: { name: 'Peg & Boot', armor: 165, weight: 0.95, speed: 6.2, jump: 11, airJumps: 1, dashAtk: 'pegSweep', perk: 'sealegs', desc: 'Sea legs: dodges travel 30% further. DASH ATTACK: Peg Sweep.' },
       card: { name: 'Jolly Plunder', super: 'broadside', passive: 'plunder', desc: 'LEGEND ART: Broadside, a cannon barrage. PASSIVE (Plunder): +35% Hype gain.' },
     },
     monk: {
       head: { name: 'Serene Mind', armor: 100, weight: 0.9, special: 'mantra', uses: 3, hype: 1.0, desc: 'SPECIAL: Mantra. Heal 7% HP and repair every part 25%.' },
       core: { name: 'Saffron Robe', hp: 900, def: 0.03, weight: 0.85, guard: -10, desc: 'Light as a leaf. Burst refills 25% faster.', burstBonus: 0.25 },
-      armR: { name: 'Iron Fist Wraps', armor: 120, weight: 0.85, light: ['fist1', 'fist2', 'fist3', 'fist4', 'fist5'], air: 'fistAir', trail: 0xffe0a0, desc: 'LIGHT: 5 lightning jabs, the fastest string, short reach.' },
+      armR: { name: 'Iron Fist Wraps', armor: 120, weight: 0.85, light: 'fiA', air: 'fiAirA', sig: 'flow', sigName: 'Flow', sigDesc: 'Every hit of a combo makes your next moves faster (up to +25%).', trail: 0xffe0a0, desc: 'Jab › Cross › Hundred Fists (mash Light to extend) › Dragon Palm. Pause after Cross: Leg Sweep launcher. Air: Knee › Spin Kick › Whirlwind Kick. SIGNATURE: Flow, combos speed up.' },
       armL: { name: 'Thunder Palm', armor: 115, weight: 0.85, heavy: 'thunderPalm', launch: 'risingPalm', airHeavy: 'axeKick', guard: 60, chip: 1.2, trail: 0x9ff7ff, desc: 'HEAVY: Thunder Palm, the strongest straight KNOCK. Guard: weak.' },
       legs: { name: 'Cloud Steps', armor: 150, weight: 0.85, speed: 6.6, jump: 12.5, airJumps: 2, dashAtk: 'flyingKnee', perk: 'cloudstep', desc: 'Triple jump and two air dodges. DASH ATTACK: Flying Knee launcher.' },
       card: { name: 'Hundred Hands', super: 'hundredPalm', passive: 'innerPeace', desc: 'LEGEND ART: Hundred Hands. PASSIVE (Inner Peace): Burst fills 45% faster.' },
@@ -171,7 +202,7 @@
     viking: {
       head: { name: 'Horned Helm', armor: 145, weight: 1.15, special: 'warHorn', uses: 3, hype: 0.95, desc: 'SPECIAL: War Horn. A roar that blows them back; +15% damage for 5 s.' },
       core: { name: 'Fur & Mail', hp: 1100, def: 0.08, weight: 1.25, guard: 15, desc: 'Thick fur over mail. Lots of HP.' },
-      armR: { name: 'Bearded Axe', armor: 150, weight: 1.2, light: ['axe1', 'axe2', 'axe3'], air: 'axeAir', trail: 0xd8e8ff, desc: 'LIGHT: 3 slow, brutal chops. Each one hurts.' },
+      armR: { name: 'Bearded Axe', armor: 150, weight: 1.2, light: 'axA', air: 'axAirA', sig: 'windup', sigName: 'Wind-up', sigDesc: 'Hold Light to wind up any axe swing: armour while you hold, +60% damage, and a full charge crumples.', trail: 0xd8e8ff, desc: 'Hack › Hew › Whirlwind (hits all around). Pause after Hew: Skull Splitter. Air: Chop › Axe Drill. SIGNATURE: hold Light to wind up any swing.' },
       armL: { name: 'Round Shield', armor: 170, weight: 1.2, heavy: 'shieldRam', launch: 'upperHaft', airHeavy: 'skullDrop', guard: 140, chip: 0.7, trail: 0xd8e8ff, desc: 'HEAVY: Shield Ram, armoured and long. Guard: strong.' },
       legs: { name: 'Fur Boots', armor: 200, weight: 1.25, speed: 5.5, jump: 10, airJumps: 1, dashAtk: 'bullRush', perk: 'unstoppable', desc: 'Dash attacks carry super armour. DASH ATTACK: Bull Rush.' },
       card: { name: 'Ragnarök', super: 'ragnarok', passive: 'fury', desc: 'LEGEND ART: Ragnarök, a leaping quake. PASSIVE (Fury): up to +18% damage as HP falls.' },
@@ -179,7 +210,7 @@
     ninja: {
       head: { name: 'Shinobi Hood', armor: 95, weight: 0.85, special: 'shadowStep', uses: 3, hype: 1.05, desc: 'SPECIAL: Shadow Step. Vanish behind them and stab.' },
       core: { name: 'Shinobi Shōzoku', hp: 880, def: 0.02, weight: 0.8, guard: -10, desc: 'Barely there. The lightest core: fast, but you fly far.' },
-      armR: { name: 'Tantō', armor: 110, weight: 0.8, light: ['tanto1', 'tanto2', 'tanto3', 'tanto4'], air: 'tantoAir', trail: 0xd9b8ff, desc: 'LIGHT: the quickest blade string, ending in a Shadow Slash.' },
+      armR: { name: 'Tantō', armor: 110, weight: 0.8, light: 'taA', air: 'taAirA', sig: 'airdash', sigName: 'Shadow Dash', sigDesc: 'Dodge after an air hit: dash at them through the air and keep the combo going (twice a jump).', trail: 0xd9b8ff, desc: 'Flick › Backflick › Vanishing Stab (blinks behind them) › Shadow Slash. Pause after Backflick: Kunai Toss. Air ends in Kunai Rain. SIGNATURE: air-dash after an air hit.' },
       armL: { name: 'Kusarigama', armor: 110, weight: 0.85, heavy: 'chainHook', launch: 'sickleRise', airHeavy: 'chainDrop', guard: 70, chip: 1.1, trail: 0xd9b8ff, desc: 'HEAVY: Chain Hook, drag them in from 5 m. Guard: weak.' },
       legs: { name: 'Tabi Boots', armor: 145, weight: 0.8, speed: 7.4, jump: 12, airJumps: 2, dashAtk: 'shadowKick', perk: 'walljump', desc: 'The fastest legs, a triple jump, and WALL JUMPS. DASH ATTACK: Shadow Kick.' },
       card: { name: 'Shadow Clone Arts', super: 'cloneBarrage', passive: 'vanish', desc: 'LEGEND ART: four clones strike at once. PASSIVE (Vanish): longer dodge, shorter cooldown.' },
@@ -219,7 +250,7 @@
       set, setDmg: set === 2 ? 1.08 : set === 1 ? 1.04 : 1,
       armor: { head: Math.round(H.armor * m('head')), armR: Math.round(R.armor * m('armR')), armL: Math.round(L.armor * m('armL')), legs: Math.round(G.armor * m('legs')) },
       passive: K.passive, special: H.special, uses: H.uses, super: K.super,
-      light: R.light, air: R.air, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
+      light: R.light, air: R.air, sig: R.sig, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
       trailR: R.trail, trailL: L.trail,
     };
     return S;

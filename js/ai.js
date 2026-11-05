@@ -42,6 +42,7 @@
       this.wait -= dt;
 
       // ---- being comboed
+      if ((f.state === 'guard' || f.state === 'guardstun') && f.riposteT > m.time && r() < L.skill[lv]) { this.guardT = 0; this.press('light'); return; }
       if (f.state === 'tumble' || f.state === 'hit' || f.state === 'held') {
         this.stop();
         if (f.burst >= 100 && f.combo.hits >= this.burstAt && r() < L.burst[lv] * dt * 6 && !f.heldBySuper) { this.press('snap'); this.burstAt = U.rndi(3, 8); return; }
@@ -67,28 +68,43 @@
       if (f.state === 'attack') {
         const mv = f.move; if (!mv) return;
         const hitNow = f.moveHit, skill = L.skill[lv];
+        const nx = mv.nx || {};
+        if (mv.chargeL && f.kind === 'light' && this.windUpFor === mv.id && this.windUp > 0) { this.windUp -= dt; this.held.light = true; }
+        if (mv.rapid && f.moveT > mv.su && r() < 0.5) this.press('light');
         if (f.kind === 'light' && hitNow) {
-          const last = f.chain >= f.lightString().length - 1;
           const aim = this.wallAim(f, o);
-          if (!last && r() < skill) {
-            // before the finisher: wall close behind them? finish into it. Otherwise launch.
-            if (f.chain >= f.lightString().length - 2 || aim) this.press('light');
-            else if (r() < 0.3) this.press('heavy'); else this.press('light');
+          if (nx.l && r() < skill) {
+            // sometimes take the pause branch: let this one finish, then press again after a beat
+            if (nx.p && r() < 0.012 * (lv + 1) / dt * 0.016) { this.wantPause = true; }
+            else if (!this.wantPause) {
+              if (!aim && !mv.finisher && r() < 0.18) this.press('heavy'); else this.press('light');
+              if (KB.MOVES[nx.l].chargeL && r() < 0.35) { this.windUpFor = nx.l; this.windUp = U.rnd(0.15, 0.5); }
+            }
           }
           if (aim && r() < L.wallAim[lv]) this.stickTo(aim.x, aim.z); else this.stop();
-          if (last && aim && f.hype >= 50 && r() < 0.1 * lv) this.press('snap');
+          if (!nx.l && aim && f.hype >= 50 && r() < 0.1 * lv) this.press('snap');
           return;
         }
+        if (f.kind === 'gun' && hitNow && r() < skill) { this.press('light'); return; }
         if (f.kind === 'launch' && hitNow && r() < skill) { this.press('jump'); return; }
-        if (f.kind === 'air' && hitNow && r() < skill) { if (f.airAtks < 3) this.press('light'); else this.press('heavy'); return; }
+        if (f.kind === 'air' && hitNow && r() < skill) {
+          if (f.st.sig === 'airdash' && (f.airDashes || 0) < 2 && o.pos.distanceTo(f.pos) > 1.4 && r() < 0.4) { this.press('dodge'); return; }
+          if (nx.l) this.press('light'); else this.press('heavy'); return;
+        }
         if ((f.kind === 'heavy') && mv.charge && f.input.held.heavy !== undefined) { const aim = this.wallAim(f, o); if (aim) this.stickTo(aim.x, aim.z); if (this.chargeHold > 0) { this.chargeHold -= dt; this.held.heavy = true; } }
         if (hitNow && f.hype >= 100 && r() < 0.25 * lv) this.press('super');
         return;
       }
       if (f.state === 'air') {
-        if (o.state === 'tumble' && d < 2 && Math.abs(o.pos.y - f.pos.y) < 1.4) { this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.6); this.press('light'); return; }
+        if (o.state === 'tumble' && d < 2 && Math.abs(o.pos.y - f.pos.y) < 1.4 && !f.airStr) { this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.6); this.press('light'); return; }
+        if (o.state === 'tumble' && f.airJumps > 0 && o.pos.y > f.pos.y + 1 && r() < 0.05) { this.press('jump'); return; }
         this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.5); return;
       }
+      // a pause combo, timed: the string move ended, the window is open
+      if (this.wantPause && f.pauseWin) { if (m.time >= f.pauseWin.from + 0.02) { this.press('light'); this.wantPause = false; } return; }
+      if (!f.pauseWin) this.wantPause = false;
+      // the Samurai's riposte after a Just Guard
+      if (f.riposteT > m.time && r() < L.skill[lv]) { this.press('light'); return; }
       if (this.wait > 0) return;
 
       // ---- defence: they're swinging at us

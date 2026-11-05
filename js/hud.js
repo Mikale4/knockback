@@ -124,14 +124,19 @@
     moveList(build, pi) {
       const S = KB.stats(build), B = Input.binds[pi || 0], k = a => Input.keyName((B[a] || [])[0]);
       const nm = id => KB.MOVES[id].name;
+      const chain = root => { const out = []; let id = root; while (id && out.length < 8) { out.push(id); id = (KB.MOVES[id].nx || {}).l; } return out; };
+      const L = chain(S.light), A = chain(S.air), pi2 = L.findIndex(id => (KB.MOVES[id].nx || {}).p);
       const row = (keys, name, note) => el('div', { class: 'mrow' }, el('kbd', null, keys), el('b', null, name), note ? el('span', null, note) : null);
       return el('div', { class: 'movelist' },
         el('h3', null, build.name || 'Your figure'),
-        row(k('light') + ' ×' + S.light.length, S.light.map(nm).join(' › '), 'R-ARM string'),
+        row(k('light') + ' ×' + L.length, L.map(nm).join(' › '), 'R-ARM string'),
+        pi2 >= 0 ? row(k('light') + ' ×' + (pi2 + 1) + ', pause, ' + k('light'), nm(KB.MOVES[L[pi2]].nx.p), 'PAUSE combo: let it finish, wait a beat, press again') : null,
         row(k('light') + '… ' + k('heavy'), nm(S.launch), 'launcher, then ' + k('jump') + ' to follow'),
         row(k('light') + '… toward + ' + k('heavy'), nm(S.heavy), 'KNOCK them back into the wall mid-combo'),
         row(k('heavy') + ' (hold)', nm(S.heavy), 'the KNOCK: aim it at a wall'),
-        row('air ' + k('light'), nm(S.air), 'up to 4 in the air'),
+        row('air ' + k('light') + ' ×' + A.length, A.map(nm).join(' › '), 'air string, one per jump'),
+        S.gunCancel ? row(k('light') + '… ' + k('heavy'), nm(S.gunCancel), 'gun cancel (Flintlock), once a combo; then Light starts the string again') : null,
+        S.sig ? row('★ ' + S.sigName, S.sigDesc, 'R-ARM signature') : null,
         row('air ' + k('heavy'), nm(S.airHeavy), 'spike: ground bounce'),
         row(k('dodge') + ' › ' + k('light'), nm(S.dashAtk), 'dash attack (LEGS)'),
         row(k('special'), nm(S.special), S.uses + ' uses a round (HEAD)'),

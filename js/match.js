@@ -119,6 +119,16 @@
         tracer(from, end, 0x50525e, 0.05); SFX.play('whoosh');
         for (let i = 0; i < 6; i++) FX.burst(from.clone().lerp(end, i / 6), { n: 1, color: 0x8a8fa0, speed: 0.5, size: 0.07, life: 0.25, gravity: 0 });
         if (hit && o.inv <= 0) Combat.hit(f, o, mv, { kind: f.kind, charge, at: hit, from: f.pos.clone(), dir: F.clone().multiplyScalar(-1), proj: true });
+      } else if (mv.proj === 'kunai' || mv.proj === 'kunaiDown') {
+        const from = f.fig.detached.armR ? _v.copy(f.pos).setY(1.2).addScaledVector(F, 0.4).clone() : f.fig.socket('armR', [0, -9, 1]);
+        const base = mv.proj === 'kunaiDown' ? new V3(F.x * 0.72, -0.7, F.z * 0.72).normalize() : F.clone();
+        let hitP = null;
+        for (const a of [-0.18, 0, 0.18]) {
+          const dir = base.clone().applyAxisAngle(new V3(0, 1, 0), a), h = rayHit(f, o, from, dir, mv.range);
+          tracer(from, h || from.clone().addScaledVector(dir, mv.range), 0xd8dde6, 0.04); if (h && !hitP) hitP = h;
+        }
+        SFX.play('whoosh');
+        if (hitP && o.inv <= 0) Combat.hit(f, o, mv, { kind: f.kind, at: hitP, from: f.pos.clone(), dir: F.clone(), proj: true });
       } else if (mv.proj === 'bomb') {
         const g = new VX.Grid(); g.ell(0, 0, 0, 2, 2, 2, 0x22222a); g.set(0, 3, 0, 0x8a5a2b); g.set(0, 4, 0, VX.glow(0xffa020));
         const mesh = VX.object(g, 0.07); scene.add(mesh);
@@ -178,7 +188,7 @@
           const d = Math.hypot(f.pos.x - g.position.x, f.pos.z - g.position.z);
           if (d > 0.85) continue;
           if (f === p.owner) {
-            f.fig.reattach(p.part); f.broken[p.part] = false; f.armor[p.part] = Math.round(f.armorMax[p.part] * 0.35);
+            f.fig.reattach(p.part); f.broken[p.part] = false; f.armor[p.part] = Math.round(f.armorMax[p.part] * 0.55);
             SFX.play('snapon'); M.call(f, 'SNAP ON!', 'heal'); M.picks.splice(i, 1); break;
           } else if (p.rest || p.t > 1) { // kick it away
             const k = _v.set(g.position.x - f.pos.x, 0, g.position.z - f.pos.z).normalize();
