@@ -20,8 +20,22 @@ then visit http://localhost:8766. (The server sends no-cache headers so edits sh
 plain JavaScript and Three.js (`lib/three.min.js`).
 
 **Publishing:** pushing to `main` updates the GitHub Pages site. Run `python tools/bump.py` first: it stamps the
-game's scripts and stylesheet in `index.html` with a new `?v=`, because GitHub Pages lets browsers keep a file for
-10 minutes (phones sometimes longer) and a player could otherwise get the new page with old scripts.
+game's scripts and stylesheet in `index.html` with a new `?v=` (and `sw.js` with the same version), because GitHub
+Pages lets browsers keep a file for 10 minutes (phones sometimes longer) and a player could otherwise get the new page
+with old scripts.
+
+**Install and offline:** the game installs as an app (`manifest.webmanifest`, icons in `icons/`, drawn by
+`python tools/make_icons.py`): an icon on the home screen or desktop, full screen, and it plays offline once it has
+loaded (online rooms still need the internet). OPTIONS has the INSTALL button where the browser offers it (Chrome,
+Edge, Android), or the steps for an iPhone or iPad (Share, then Add to Home Screen). `sw.js` is the offline copy (a
+service worker): the page always comes from the network when there is one, so a new version shows up on the next
+load; the stamped files are served from the copy; a new version clears the old copy. It isn't used on the local test
+server (every edit has to show up at once); add `?sw=1` to the address to test it there.
+
+**Graphics (OPTIONS):** AUTO (MEDIUM on phones and tablets, HIGH on computers, and it steps down a level by itself if a
+fight can't hold ~50 fps), HIGH, MEDIUM or LOW: the resolution, the shadows and how many particles effects throw (looks
+only; the fight plays the same at every level). SHOW FPS puts a counter in the corner. On phones the screen doesn't dim
+or lock in the middle of a fight.
 
 ## Controls
 

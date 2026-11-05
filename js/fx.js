@@ -33,9 +33,10 @@
       if (!starTex) starTex = starTexture();
     },
     /* a spray of voxel cubes */
+    amount: 1,   // (the GRAPHICS level: fewer particles on MEDIUM and LOW)
     burst(pos, o) {
       if (U.quiet) return;
-      o = o || {}; const n = o.n || 10;
+      o = o || {}; const n = Math.max(1, Math.round((o.n || 10) * FX.amount));
       for (let i = 0; i < n && P.length < MAX * 2; i++) {
         const sp = (o.speed || 5) * U.vrnd(0.4, 1.1), a = U.vrand() * Math.PI * 2, up = o.up != null ? o.up : 0.6;
         let dx = Math.cos(a), dz = Math.sin(a), dy = U.vrnd(-0.2, 1) * up + (o.lift || 0);

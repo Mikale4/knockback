@@ -691,3 +691,6 @@ button.plate { cursor: pointer; color: var(--ink); font-family: var(--body); } b
 .rpend { position: fixed; inset: 0; z-index: 35; display: grid; place-items: center; align-content: center; gap: 10px; background: rgba(6, 4, 12, .55); text-align: center; }
 .rpend h2 { margin: 0; font: clamp(44px, 8vw, 80px) var(--head); letter-spacing: 3px; color: var(--yel); text-shadow: 0 4px 0 #000; }
 @media (max-width: 640px) { .olquick { grid-template-columns: 1fr; } .rprowl { grid-template-columns: minmax(0, 1fr) auto; } .rpfigs, .rprowl .olt { display: none; } .rpb { min-width: 34px; padding: 0 5px; } }
+
+/* the FPS counter (Options: SHOW FPS) */
+#fps { position: fixed; right: 8px; bottom: calc(6px + env(safe-area-inset-bottom)); z-index: 60; font: 800 11px var(--body); color: #9dff7a; background: rgba(0,0,0,.55); border-radius: 6px; padding: 2px 6px; pointer-events: none; }

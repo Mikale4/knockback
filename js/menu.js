@@ -188,7 +188,7 @@
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),
           item('SHELF', 'Your collection and records.', () => Menu.shelf()),
           item('HOW TO PLAY', 'The wall bounce, and how to get out of it.', () => Menu.howto()),
-          item('OPTIONS', 'Sound and controls.', () => Menu.options())),
+          item('OPTIONS', 'Sound, controls, graphics, install the app.', () => Menu.options())),
         el('button', { class: 'plate', title: 'Change your figure', onclick: () => { SFX.play('ok'); Menu.pickActive(); } }, el('small', null, 'ACTIVE FIGURE · CHANGE ▸'), el('b', null, b.name), el('span', null, 'HP ' + st.hp + ' · ' + KB.LINES[b.core.line].name + ' core' + (st.set === 2 ? ' · MINT SET' : '')))));
     },
     /* ---------------------------------------------------------- workshop */
@@ -452,8 +452,18 @@
         el('div', { class: 'panel optp' },
           el('div', { class: 'vols' }, vol('sfx'), vol('music')),
           el('h2', { class: 'osec' }, 'DISPLAY'),
+          el('div', { class: 'seg' }, el('span', null, 'GRAPHICS'), el('div', null, ...[['auto', 'Auto'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([v, t]) =>
+            el('button', { class: App.gfx.mode === v ? 'on' : '', onclick: () => { App.setGfx(v); Menu.options(); } }, t + (v === 'auto' && App.gfx.mode === 'auto' ? ' (' + App.gfx.level + ')' : ''))))),
+          el('p', { class: 'note' }, 'Lower it if fights stutter on your phone: it lowers the resolution, the shadows and the particles. AUTO picks for you, and steps down by itself if a fight runs slow.'),
+          el('div', { class: 'seg' }, el('span', null, 'SHOW FPS'), el('div', null, ...[[true, 'On'], [false, 'Off']].map(([v, t]) =>
+            el('button', { class: App.gfx.fps === v ? 'on' : '', onclick: () => { App.setFps(v); Menu.options(); } }, t)))),
           el('div', { class: 'seg' }, el('span', null, 'SCREEN SHAKE'), el('div', null, ...[[1, 'Full'], [0.45, 'Reduced'], [0, 'Off']].map(([v, t]) =>
             el('button', { class: FX.shakeK === v ? 'on' : '', onclick: () => { FX.shakeK = v; try { localStorage.setItem('kb.shake', JSON.stringify(v)); } catch (e) { /* fine */ } Menu.options(); } }, t)))),
+          el('h2', { class: 'osec' }, 'INSTALL THE GAME'),
+          App.install.installed ? el('p', { class: 'note' }, 'You\'re playing the installed app. ✓')
+            : App.install.evt ? el('div', { class: 'row' }, btn('INSTALL KNOCK//BACK', async () => { await App.install.prompt(); Menu.options(); }, 'big'), el('p', { class: 'note' }, 'An icon on your home screen or desktop, full screen, and it plays offline once it has loaded (online rooms still need the internet).'))
+              : App.install.ios ? el('p', { class: 'note' }, 'On an iPhone or iPad: tap Share (the square with the arrow) in Safari, then "Add to Home Screen". The game opens full screen from its icon, and plays offline once it has loaded.')
+                : el('p', { class: 'note' }, 'Your browser can install the game as an app: in Chrome or Edge, use the install icon at the right end of the address bar (or the ⋮ menu: Install KNOCK//BACK). On a phone, use the browser menu: Add to Home Screen.'),
           el('h2', { class: 'osec' }, 'KEYBOARD'),
           el('p', { class: 'note' }, 'Click a slot and press the key you want. Each action takes two keys. A key that was already doing something else swaps over. Esc cancels; Backspace clears an alternate.'),
           el('div', { class: 'bindcols' }, table(0), table(1)),
