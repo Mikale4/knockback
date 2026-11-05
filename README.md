@@ -188,12 +188,28 @@ stages, a daily bonus) — never real money.
 
 Accounts are local (this browser's storage), with salted password hashes. It is not a secure account system.
 
+## Tutorial
+
+New collectors are offered it right after opening their first figure, and it's in the hub (**TUTORIAL**) and HOW TO
+PLAY any time after (`js/tutorial.js`). It's a real fight in the Toy Shelf against a Knight dummy where nothing happens
+until you do it: a card over the fight gives one lesson at a time, in your own keys (or your controller's buttons, or
+the touch buttons), and the next opens once you've done it (or SKIP). Fourteen lessons: move, jump, your string, the
+Launcher into an air combo, the KNOCK//BACK and catching the rebound, guard, dodge, grab-pummel-throw, your Special,
+an OTG, a Part Toss, a Spring Burst, your Legend Art, and a last round where the dummy fights back. The dummy only
+swings when a lesson wants it to and nobody can lose. Finishing it the first time is worth **300 Tokens**.
+
 ## Modes
 
 Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CPU at four levels, two players on one keyboard / two pads, or
 **CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that
-ignores rarity bonuses) · Training (dummy settings, full meters, combo readout) ·
+ignores rarity bonuses; it remembers your setup) · Training (dummy settings, full meters, combo readout, and a start
+by a wall to practise wall combos; R resets) ·
 Workshop (three builds) · Shelf (collection and records).
+
+**Small comforts:** a fight pauses itself if you switch tab or window; Esc goes back (or closes a pop-up) on every
+menu screen; the pause menu has the volume; a **LEGEND ART READY** prompt (with your key) appears under a full Hype bar;
+the mouse cursor hides in a fight; Enter or Space takes the main button on the results; and OPTIONS has a **screen
+shake** setting (Full, Reduced, Off).
 
 ## Files
 
@@ -211,4 +227,5 @@ Workshop (three builds) · Shelf (collection and records).
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
+| `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |
 | `tools/harness.js` | Test helpers: step the game at a fixed rate, script inputs, log callouts |

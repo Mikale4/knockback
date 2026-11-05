@@ -24,6 +24,7 @@
       R.tags = el('div', { class: 'tags' }));
     const low = el('div', { class: 'plow p' + (i + 1) },
       el('div', { class: 'hypebox' }, el('span', { class: 'hlabel' }, 'HYPE'), el('div', { class: 'bar hype' }, R.hype = el('i'), el('em')), R.hypen = el('b', { class: 'hypen' }, '0')),
+      R.ready = el('div', { class: 'artready' }),
       el('div', { class: 'uses' }, el('span', null, 'SPECIAL'), R.uses = el('span', { class: 'usepips' })),
       R.combo = el('div', { class: 'combo' }, R.cn = el('b'), R.cl = el('span'), R.cb = el('em'), R.cd = el('small')));
     R.box = box; R.low = low; R.f = f; R.lastHp = f.hp; R.trailHp = f.hp;
@@ -41,7 +42,7 @@
         refs.banner = el('div', { class: 'banner' }), refs.cut = el('div', { class: 'supercut' }),
         refs.cine = el('div', { class: 'cine' }, refs.cTint = el('div', { class: 'ctint' }), el('i', { class: 'cbar t' }), el('i', { class: 'cbar b' }), refs.cFlash = el('div', { class: 'cflash' }), refs.cTitle = el('div', { class: 'ctitle' })));
       root.classList.remove('cinema');
-      if (M.training) root.append(HUD.trainingPanel());
+      if (M.training && !M.opts.tutorial) root.append(HUD.trainingPanel());
       comboT = [0, 0];
     },
     hide(match) { if (match && match !== M) return; if (root) { root.hidden = true; root.innerHTML = ''; root.classList.remove('cinema'); } const p = $('pause'); if (p) p.remove(); M = null; },
@@ -61,6 +62,7 @@
         R.burst.style.width = f.burst + '%'; R.burst.parentNode.classList.toggle('full', f.burst >= 100);
         R.guard.style.width = (f.guardHp / f.guardMax * 100) + '%';
         R.hype.style.width = f.hype + '%'; R.hypen.textContent = Math.floor(f.hype); R.hype.parentNode.classList.toggle('max', f.hype >= 100); R.hype.parentNode.classList.toggle('half', f.hype >= 50);
+        { const human = !(M.ai && M.ai[f.idx]) && !M.attract && M.opts.mode !== 'watch', on = human && f.hype >= 100 && !M.cine && f.state !== 'ko'; if (on !== R.readyOn) { R.readyOn = on; R.ready.classList.toggle('on', on); if (on) R.ready.textContent = 'LEGEND ART READY · ' + (U.touch && !Input.usingPad(f.idx) ? 'SUPER' : Input.prompt(f.idx, 'super')); } }
         R.uses.textContent = f.broken.head ? '✕' : '◆'.repeat(f.uses) + '◇'.repeat(Math.max(0, f.st.uses - f.uses));
         const pd = (el, k) => { const v = f.broken[k] ? 0 : f.armor[k] / f.armorMax[k]; el.className = el.className.split(' ')[0] + (f.broken[k] ? ' off' : v < 0.35 ? ' red' : v < 0.65 ? ' yel' : ''); };
         pd(R.ph, 'head'); pd(R.pr, 'armR'); pd(R.pl, 'armL'); pd(R.pg, 'legs');
@@ -105,8 +107,9 @@
         el('b', { onclick: () => panel.classList.toggle('min') }, 'TRAINING ', el('i', null, '▾')),
         sel('Dummy', 'dummy', [['stand', 'Stand'], ['guard', 'Guard'], ['jump', 'Jump'], ['tech', 'Tech + Burst'], ['cpu', 'CPU']]),
         sel('Meters', 'meter', [['true', 'Always full'], ['false', 'Normal']]),
+        sel('Start', 'spot', [['centre', 'Centre'], ['wall', 'By a wall']]),
         el('span', { class: 'hint' }, U.touch ? 'Pause button: move list' : 'R: reset positions · Esc: pause / move list'),
-        U.touch ? el('button', { class: 'btn small', onclick: () => M.restart() }, 'RESET') : null,
+        U.touch ? el('button', { class: 'btn small', onclick: () => M.trainReset() }, 'RESET') : null,
         refs.tr = el('div', { class: 'trread' }, 'LAST COMBO'));
       return panel;
     },
@@ -121,7 +124,8 @@
             el('div', { class: 'col' },
               el('button', { class: 'btn big', onclick: close }, 'RESUME'),
               el('button', { class: 'btn', onclick: () => { close(); match.restart(); } }, 'RESTART'),
-              el('button', { class: 'btn ghost', onclick: () => { close(); App.quitMatch(); } }, 'QUIT TO MENU')),
+              el('button', { class: 'btn ghost', onclick: () => { close(); App.quitMatch(); } }, 'QUIT TO MENU'),
+              ...['sfx', 'music'].map(k => el('label', { class: 'vol pvol' }, k.toUpperCase(), el('input', { type: 'range', min: 0, max: 1, step: 0.05, value: SFX.vol[k], oninput: e => SFX.setVol(k, +e.target.value) })))),
             el('div', { class: 'col wide' }, HUD.moveList(match.fighters[0].build, 0)))));
       document.body.append(ov);
       const onKey = e => { if (e.code === 'Escape') { e.preventDefault(); close(); window.removeEventListener('keydown', onKey, true); } };

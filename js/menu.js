@@ -138,12 +138,29 @@
         const L = KB.LINES[line];
         const close = modal(el('div', { class: 'confirm' }, el('h2', null, 'Open ' + L.figure + '?'),
           el('p', null, 'You get the full ', el('b', null, L.name), ' set (all six parts, Standard), and 1,500 Tokens for the Capsule Machine.'),
-          btn('OPEN THE BOX', () => { close(); Auth.starter(line); SFX.play('reveal', { r: 2 }); Menu.hub(); setTimeout(() => toast('+1,500 TOKENS · Try the CAPSULES!', 'gold'), 300); }, 'big')));
+          btn('OPEN THE BOX', () => { close(); Auth.starter(line); SFX.play('reveal', { r: 2 }); Menu.offerTutorial(); }, 'big')));
       };
       App.screen(el('div', { class: 'screen starter' }, el('h1', null, 'CHOOSE YOUR FIRST FIGURE'),
         el('p', { class: 'sub' }, 'Every figure is six snap-on parts. Mix lines later with parts from the Capsule Machine.'),
         el('div', { class: 'packs' }, ...packs)));
     },
+    /* a new collector: the tutorial, played for real (tutorial.js), or straight to the hub */
+    offerTutorial() {
+      useRoom(activeBuild());
+      App.screen(el('div', { class: 'screen tutoffer' },
+        el('div', { class: 'panel tutofferp' },
+          el('small', null, 'NEW COLLECTOR'),
+          el('h2', null, 'LEARN TO FIGHT?'),
+          el('p', null, 'A quick tutorial, played for real with ', el('b', null, activeBuild().name), ' against a training dummy: moving, your string, the wall bounce, guarding, grabs, and everything else, one lesson at a time. About five minutes. Finish it for ', el('b', null, '+300 TOKENS'), '.'),
+          el('div', { class: 'row' }, btn('START THE TUTORIAL', () => Tutorial.start({ onboard: true }), 'big'), btn('SKIP FOR NOW', () => Menu.afterTutorial(false), 'ghost')),
+          el('p', { class: 'fine' }, 'It is always in the hub (TUTORIAL) if you skip it.'))));
+    },
+    afterTutorial(finished) {
+      Menu.hub();
+      setTimeout(() => toast('+1,500 TOKENS · Try the CAPSULES!', 'gold'), 300);
+      if (!finished) setTimeout(() => toast('The TUTORIAL is in the hub whenever you want it.'), 1600);
+    },
+    activeBuild: () => activeBuild(),
     /* -------------------------------------------------------------- hub */
     hub() {
       Music.play('menu'); useRoom(activeBuild(), -1);
@@ -155,6 +172,7 @@
         el('div', { class: 'hubmenu' },
           item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
           item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
+          item('TUTORIAL', Tutorial.done() ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +300 tokens.', () => Tutorial.start(), Tutorial.done() ? '' : 'hot'),
           item('TRAINING', 'A dummy, full meters, every system to practise.', () => Menu.training()),
           item('WORKSHOP', 'Snap parts together. Three builds.', () => Menu.workshop()),
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),
@@ -268,8 +286,8 @@
        Three ways to fight: you against the CPU, two players, or CPU vs CPU (watch). */
     versus(cfg) {
       Music.play('menu');
-      cfg = cfg || Menu._vs || { mode: 'cpu', p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, w1: 'random', w2: 'random', l1: 2, l2: 2, arena: 'random', wins: 2, bonus: true };
-      Menu._vs = cfg;
+      cfg = cfg || Menu._vs || (S().vs ? Object.assign({}, S().vs) : null) || { mode: 'cpu', p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, w1: 'random', w2: 'random', l1: 2, l2: 2, arena: 'random', wins: 2, bonus: true };
+      Menu._vs = cfg; S().vs = Object.assign({}, cfg); if (S().vs.p1 >= S().builds.length) S().vs.p1 = 0; Auth.save();
       const mine = S().builds, watch = cfg.mode === 'watch', two = cfg.mode === 'two';
       const opp = [['random', 'Random figure'], ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].figure])];
       const anyFig = [['random', 'Random'], ...mine.map((b, i) => ['mine:' + i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].name])];
@@ -345,6 +363,7 @@
       const sec = (h, ...p) => el('div', { class: 'howsec' }, el('h3', null, h), ...p.map(x => el('p', null, x)));
       App.screen(el('div', { class: 'screen howto' }, topbar('HOW TO PLAY', () => Menu.hub()),
         el('div', { class: 'panel howp' },
+          el('div', { class: 'row' }, btn(Tutorial.done() ? 'PLAY THE TUTORIAL AGAIN' : 'PLAY THE TUTORIAL', () => Tutorial.start(), 'big')),
           sec('THE GIMMICK: KNOCK//BACK', 'Launch someone into a wall fast enough and they BOUNCE back off it, still helpless. Keep hitting them. Every bounce in a combo hits harder. Hold a direction as a launcher lands to aim it at a wall.'),
           sec('THE WALL CAN BREAK', 'Each bounce cracks the wall (watch the cracks, and the wall map under the timer). When it gives out, or on a 4th bounce in one combo, it is a WALL BREAK: big damage, they fly out of the arena (RING OUT), and you get MOMENTUM (+10% damage, faster Hype). The wall snaps back after a few seconds.'),
           sec('GETTING OUT OF IT', 'SPRING BURST: press Snap while being hit with a full Burst gauge to blow them away. If they are guarding, it is blocked: they can bait it.', 'WALL TECH: from the second bounce of a combo, press Dodge just before you hit the wall to kick off it. Mashing locks you out for a moment.', 'Combos DECAY: each hit is worth less, hitstun shortens and gravity grows the longer a combo runs. QUICK RISE: Dodge as you land. RECOVER: any button once hitstun ends in the air.'),
@@ -384,6 +403,9 @@
       App.screen(el('div', { class: 'screen options' }, topbar('OPTIONS', () => { Input.cancelListen(); Menu.hub(); }),
         el('div', { class: 'panel optp' },
           el('div', { class: 'vols' }, vol('sfx'), vol('music')),
+          el('h2', { class: 'osec' }, 'DISPLAY'),
+          el('div', { class: 'seg' }, el('span', null, 'SCREEN SHAKE'), el('div', null, ...[[1, 'Full'], [0.45, 'Reduced'], [0, 'Off']].map(([v, t]) =>
+            el('button', { class: FX.shakeK === v ? 'on' : '', onclick: () => { FX.shakeK = v; try { localStorage.setItem('kb.shake', JSON.stringify(v)); } catch (e) { /* fine */ } Menu.options(); } }, t)))),
           el('h2', { class: 'osec' }, 'KEYBOARD'),
           el('p', { class: 'note' }, 'Click a slot and press the key you want. Each action takes two keys. A key that was already doing something else swaps over. Esc cancels; Backspace clears an alternate.'),
           el('div', { class: 'bindcols' }, table(0), table(1)),
@@ -401,6 +423,7 @@
     padToast(gp, on) { toast((on ? '🎮 ' + Input.padName(Input.padType(gp)) + ' connected' : 'Controller disconnected'), on ? 'gold' : ''); },
     /* ---------------------------------------------------------- results */
     results(res, opts) {
+      setTimeout(() => { const onKey = e => { if (!document.querySelector('.screen.results')) return window.removeEventListener('keydown', onKey); if (e.code === 'Enter' || e.code === 'Space') { const b = document.querySelector('.screen.results .btn.big'); if (b) { e.preventDefault(); window.removeEventListener('keydown', onKey); b.click(); } } }; window.addEventListener('keydown', onKey); }, 600);
       Music.play('menu'); const hud = U.$('hud'); if (hud) hud.hidden = true;
       const watch = opts.mode === 'watch';
       const win = res.winner === 0, me = res.records[watch ? res.winner : 0];

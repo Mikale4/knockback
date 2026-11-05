@@ -94,7 +94,7 @@
 
   class Player {
     constructor(i) {
-      this.i = i; this.move = { x: 0, y: 0 }; this.held = {}; this.prev = {}; this.edge = {}; this.at = {}; this.dirAt = {}; this.pad = null;
+      this.i = i; this.move = { x: 0, y: 0 }; this.held = {}; this.prev = {}; this.edge = {}; this.at = {}; this.dirAt = {}; this.guardAt = {}; this.pad = null;
       this.cpu = null; // an AI controller that writes into this player instead of the devices
     }
     poll(t, pads, useKeys) {
@@ -124,7 +124,7 @@
       this.move.x = mx; this.move.y = my;
       for (const a of ACTIONS.concat('pause')) {
         this.edge[a] = !!H[a] && !this.prev[a];
-        if (this.edge[a]) { this.at[a] = t; this.dirAt[a] = { x: mx, y: my }; }
+        if (this.edge[a]) { this.at[a] = t; this.dirAt[a] = { x: mx, y: my }; this.guardAt[a] = !!H.guard; }
         this.prev[a] = !!H[a]; this.held[a] = !!H[a];
       }
     }

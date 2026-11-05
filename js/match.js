@@ -20,7 +20,7 @@
     const M = {
       opts, scene, camera, arena, time: 0, phase: 'intro', phaseT: 0, round: 1, wins: [0, 0], clock: opts.time,
       frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [], minions: [], cine: null, camShot: null,
-      training: opts.mode === 'training' ? { dummy: 'stand', meter: true, godP2: false, reset: 0 } : null,
+      training: opts.mode === 'training' ? { dummy: 'stand', meter: true, godP2: false, reset: 0, spot: 'centre' } : null,
       attract: opts.mode === 'attract', results: null, camT: new V3(0, 0, 0), camP: new V3(0, 8, 14), camShake: 0,
     };
     // the players
@@ -38,7 +38,13 @@
     M.call = (f, text, cls, pos) => FX.call(pos || _v.copy(f.pos).setY(f.pos.y + 2.25), text, cls, camera);
     M.hitstopAll = t => { for (const f of M.fighters) f.hitstop = Math.max(f.hitstop, t); };
     M.slowmo = (s, d) => { M.slow = s; M.slowT = d; };
-    M.event = (type, data) => { if (type === 'wallbreak') HUD.banner('WALL BREAK', 'break', 1.1); };
+    /* things that happen in the fight (the tutorial listens): M.on(fn) -> off() */
+    const subs = [];
+    M.on = fn => { subs.push(fn); return () => { const i = subs.indexOf(fn); if (i >= 0) subs.splice(i, 1); }; };
+    M.event = (type, data) => {
+      if (type === 'wallbreak') HUD.banner('WALL BREAK', 'break', 1.1);
+      for (const fn of subs.slice()) { try { fn(type, data || {}); } catch (e) { console.error(e); } }
+    };
     M.comboShow = (att, vic) => HUD.combo(att.idx, vic.combo);
 
     /* ------------------------------------------- the SUMMONER's imps
@@ -528,6 +534,7 @@
           if (M.phaseT > 3.6) nextRound();
         }
         if (M.training) trainingTick(dt);
+        if (M.tick) M.tick(dt);
       }
       updProjs(dt); updPicks(dt); updMinions(dt); arena.update(dt);
       for (let i = M.clones.length - 1; i >= 0; i--) { const c = M.clones[i]; c.t += dt; c.f.root.position.lerpVectors(c.from, c.to, U.clamp(c.t / 0.22, 0, 1)); if (c.t > 0.4) { c.f.root.traverse(o => { if (o.isMesh && o.material.opacity) o.material.opacity *= 0.8; }); } if (c.t > 0.7) { c.f.dispose(); M.clones.splice(i, 1); } }
@@ -718,11 +725,18 @@
       }
       M.round++; opts.final = true; place();
     }
+    /* training: back to the start (the centre, or with the dummy against a wall to practise wall combos) */
+    M.trainReset = () => {
+      const T = M.training; place(); M.phase = 'fight';
+      for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); f.trailR.pts.length = 0; f.trailL.pts.length = 0; }
+      if (T.spot === 'wall') { const [a, b] = M.fighters, W = arena.W; a.pos.set(W - 3.4, 0, 0.6); b.pos.set(W - 2.0, 0, 0.6); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2; }
+    };
     function trainingTick(dt) {
       const T = M.training, d = M.fighters[1], p = M.fighters[0];
       M.ai[1].dummy = T.dummy;
       for (const f of M.fighters) if (!f.comboing && f.state !== 'ko') { f.idleT = (f.idleT || 0) + dt; if (f.idleT > 1.2) { f.hp = U.smooth(f.hp, f.maxHp, 6, dt); for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; } } else f.idleT = 0;
-      if (Input.keyDown('KeyR') || Input.keyDown('Backspace')) { if (!T.resetHeld) { T.resetHeld = true; place(); M.phase = 'fight'; for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); } } } else T.resetHeld = false;
+      if (Input.keyDown('KeyR') || Input.keyDown('Backspace')) { if (!T.resetHeld) { T.resetHeld = true; M.trainReset(); } } else T.resetHeld = false;
+      if (T.spot !== T.lastSpot) { T.lastSpot = T.spot; if (M.phase === 'fight' && T.spot) M.trainReset(); }
     }
     M.dispose = () => {
       M.disposed = true; if (M.cine) Arts.end(M.cine);

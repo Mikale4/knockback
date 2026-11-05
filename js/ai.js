@@ -354,6 +354,13 @@
     }
     dummyThink(dt) {
       const f = this.f; this.stop();
+      if (this.dummy === 'tut') {
+        const c = this.cue, o = f.opp; if (!c || !o) return;
+        if (U.dist(f.pos, o.pos) > 1.5 && f.state !== 'attack') { this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.8); return; }
+        if (this.m.time >= c.next && c.n > 0) { this.press(c.btn); c.n--; c.next = this.m.time + c.gap; }
+        if (c.n <= 0 && f.state !== 'attack') this.cue = null;
+        return;
+      }
       if (this.dummy === 'guard' && !f.inHitstun) this.held.guard = true;
       if (this.dummy === 'jump' && f.grounded && Math.random() < dt * 1.2) this.press('jump');
       if (this.dummy === 'tech') {

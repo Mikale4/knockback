@@ -25,9 +25,25 @@
       const m = Match.create(Object.assign({}, o, { onEnd: res => setTimeout(() => { if (App.view === m) Menu.results(res, opts); }, 900) }));
       App.setView(m);
     },
-    quitMatch() { App.setView(null); Menu.hub(); },
+    quitMatch() { if (window.Tutorial && Tutorial.running()) return Tutorial.quit(); App.setView(null); Menu.hub(); },
   };
   window.App = App;
+  /* step away (another tab, another window) and the fight pauses itself */
+  const autoPause = () => { const v = App.view; if (v && v.fighters && !v.attract && v.opts && v.opts.mode !== 'watch' && v.phase !== 'end' && !v.paused && !v.disposed) HUD.pause(v); };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+  window.addEventListener('blur', autoPause);
+  /* in a fight, the cursor hides once it stops moving */
+  let curT = null;
+  window.addEventListener('mousemove', () => { document.body.classList.remove('nocursor'); clearTimeout(curT); curT = setTimeout(() => { const v = App.view; if (v && v.fighters && !v.attract && !v.paused) document.body.classList.add('nocursor'); }, 1800); });
+  /* Esc on a menu screen: close the pop-up, or go back */
+  window.addEventListener('keydown', e => {
+    if (e.code !== 'Escape' || e.repeat) return;
+    const v = App.view; if (v && v.fighters && !v.attract) return;          // in a fight Esc pauses (match.js)
+    if (document.querySelector('.kbtn.wait')) return;                        // a key slot is waiting for its key
+    const ov = [...document.querySelectorAll('.overlay')].pop();
+    if (ov) { const c = ov.querySelector('.mfoot button'); if (c) { e.preventDefault(); c.click(); } return; }
+    const b = document.querySelector('#screens .backbtn'); if (b) { e.preventDefault(); b.click(); }
+  });
   window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 200)); resize();
 
   let last = performance.now(), errs = 0;

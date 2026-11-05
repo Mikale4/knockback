@@ -83,7 +83,8 @@
       e.style.left = ((v.x + 1) / 2 * 100) + '%'; e.style.top = ((1 - v.y) / 2 * 100) + '%';
       layer.append(e); setTimeout(() => e.remove(), 1100);
     },
-    addShake(a) { shake.amt = Math.min(1.2, shake.amt + a); },
+    shakeK: (() => { try { const v = JSON.parse(localStorage.getItem('kb.shake')); return v == null ? 1 : v; } catch (e) { return 1; } })(),
+    addShake(a) { shake.amt = Math.min(1.2, shake.amt + a * FX.shakeK); },
     update(dt) {
       // shake decays; its offset is applied by whoever owns the camera
       shake.amt = Math.max(0, shake.amt - dt * 2.8);
