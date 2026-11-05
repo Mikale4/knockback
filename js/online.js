@@ -251,7 +251,7 @@
       if (!Dir.subs) return;                       // stopped meanwhile
       Dir.subs = BROKERS.map(url => {
         const c = mqtt.connect(url, { clientId: 'kbl_' + rid(), keepalive: 30, reconnectPeriod: 5000, connectTimeout: 8000, clean: true });
-        c.on('connect', () => { c.subscribe(Dir.topic + '+'); if (Dir.state !== 'up') { Dir.state = 'up'; Dir.changed(); } });
+        c.on('connect', () => { c.subscribe(Dir.topic + '+'); if (Dir.state !== 'up') { Dir.state = 'up'; Dir.upAt = performance.now(); Dir.changed(); } });
         c.on('message', (t, m) => Dir.got(t, m));
         c.on('error', () => {});
         return c;
@@ -496,8 +496,14 @@
   function guestGot(d) {
     if (!N || !d || !d.t) return;
     switch (d.t) {
-      case 'welcome': N.myId = d.you; N.stage = 'room'; N.status = ''; (d.chat || []).forEach(c => N.chat.push(c)); SFX.play('ok'); Online.open(true); return;
+      case 'welcome': {
+        N.myId = d.you; N.stage = 'room'; N.status = ''; (d.chat || []).forEach(c => N.chat.push(c)); SFX.play('ok');
+        const quick = N.quick; N.quick = null;
+        if (quick) { Dir.stopBrowse(); act({ t: 'ready', on: true }); toastMsg('Quick Match: you\'re in a room, ready to fight.'); }
+        Online.open(true); return;
+      }
       case 'deny': {
+        if (N.quick) { quickFailed(); return; }
         const code = N.code, pick = N.pick, peer = N.peer; N.leaving = true; try { peer.destroy(); } catch (e) { /* fine */ }
         N = freshN(pick); N.status = DENY[d.why] || 'Couldn\'t join that room.';
         if (d.why === 'pass' || d.why === 'wrongpass') { N.needPass = code; N.codeIn = code; }
@@ -525,6 +531,7 @@
   /* the room went away (the host closed it, you were removed, the link dropped) */
   function roomGone(text) {
     if (!N || N.leaving || N.host) return;
+    if (N.quick && N.stage === 'joining') { quickFailed(); return; }
     const peer = N.peer, pick = N.pick; N.leaving = true;
     if (G) endFight();
     try { peer && peer.destroy(); } catch (e) { /* fine */ }
@@ -647,7 +654,7 @@
     const builds = cfg.builds.map((b, i) => Object.assign({}, b, { name: cfg.names[i] }));
     // the end of the match waits for its frame to be settled (a guessed KO can still be taken back)
     const opts = { mode: 'online', online: true, local: Math.max(0, local), builds, cpu: [null, null], arena: cfg.arena, wins: cfg.wins, time: cfg.time || 99, bonus: cfg.bonus, inputs: net,
-      onEnd: res => { if (!G) return; if (G.watch) watchEnd(res); else if (!G.ended && !G.endQ) G.endQ = { f: G.simF, res }; } };
+      onEnd: res => { if (!G) return; if (G.replay) replayEnd(res); else if (G.watch) watchEnd(res); else if (!G.ended && !G.endQ) G.endQ = { f: G.simF, res }; } };
     App.screen(null); Music.play('battle');
     const m = Match.create(opts); App.setView(m);
     if (watch) Touch.show(true);                  // (watching: no touch buttons, just the pause key)
@@ -666,6 +673,7 @@
       syncs: 0, rollbacks: 0, rbFrames: 0, rbMax: 0, rbMs: 0, rbSum: 0, guesses: 0, skips: 0 };
     G.tx = msg => linkSend(L, msg);
     G.mirror = (f, d) => toHost({ t: 'sin', fid: cfg.fid, s: side, f, d });   // your buttons, for the watchers
+    G.rec = { inputs: [[], []], snaps: {}, fp: {} }; G.recTop = 0;              // the settled fight, for the replay
     for (let k = 0; k < D; k++) { G.inputs[0][k] = ZERO; G.inputs[1][k] = ZERO; }
     G.step = m.update; m.update = frame;
     // events (rewards listen) wait for their frame to be settled too, with the combos as they were then
@@ -786,13 +794,14 @@
   /* frames below min(settled, simulated) are final: their events go to the listeners, their fingerprints to your friend */
   function settle() {
     const done = Math.min(G.conf, G.f), m = G.m;
+    while (G.recTop < done) { const f = G.recTop++; G.rec.inputs[0].push(G.inputs[0][f] || ZERO); G.rec.inputs[1].push(G.inputs[1][f] || ZERO); }
     while (G.evq.length && G.evq[0].f < done) {
       const e = G.evq.shift(), F = m.fighters, keep = F.map(x => x.combo);
       F.forEach((x, i) => { x.combo = e.combos[i]; });
       try { m.dispatch(e.type, e.d); } finally { F.forEach((x, i) => { x.combo = keep[i]; }); }
     }
-    for (const h in G.hq) if (+h <= done) { const v = G.hq[h]; delete G.hq[h]; G.mine[h] = v; G.tx({ t: 'h', f: +h, h: v }); checkHash(+h); }
-    if (G.endQ && G.endQ.f < done) { const r = G.endQ.res; G.endQ = null; G.ended = true; matchEnd(r); }
+    for (const h in G.hq) if (+h <= done) { const v = G.hq[h]; delete G.hq[h]; G.mine[h] = v; if (+h % 300 === 0) G.rec.fp[h] = v; G.tx({ t: 'h', f: +h, h: v }); checkHash(+h); }
+    if (G.endQ && G.endQ.f < done) { const q = G.endQ; G.endQ = null; G.ended = true; matchEnd(q.res, q.f); }
   }
 
   /* ------------------------------------------- fingerprints and resync */
@@ -819,10 +828,10 @@
     if (G.conf < G.syncAt || G.f > G.syncAt) return G.f > G.syncAt ? (G.syncAt = null, true) : false;
     if (G.local === 0) {
       if (G.m.cine) { G.syncAt += 30; G.tx({ t: 'resync', at: G.syncAt }); return true; }
-      const s = valueSnap(); G.tx({ t: 'snap', at: G.syncAt, s }); toHost({ t: 'ssnap', fid: G.cfg.fid, at: G.syncAt, s });   // (the watchers take it too) G.hashFloor = G.syncAt; G.syncAt = null; G.syncs++; return true;
+      const s = valueSnap(); G.rec.snaps[G.syncAt] = s; G.tx({ t: 'snap', at: G.syncAt, s }); toHost({ t: 'ssnap', fid: G.cfg.fid, at: G.syncAt, s });   // (the watchers take it too) G.hashFloor = G.syncAt; G.syncAt = null; G.syncs++; return true;
     }
     if (!G.snap || G.snap.at !== G.syncAt) return false;
-    valueRestore(G.snap.s); G.hashFloor = G.syncAt; G.snap = null; G.syncAt = null; G.syncs++;
+    G.rec.snaps[G.syncAt] = G.snap.s; valueRestore(G.snap.s); G.hashFloor = G.syncAt; G.snap = null; G.syncAt = null; G.syncs++;
     return true;
   }
   /* the fight by value, to send (the fighters and the match; it's a safety net that should never be needed) */
@@ -899,16 +908,20 @@
     withRng(G.R, () => G.step(STEP));
     Input.now = now0;
     if (G && Online._t.debug && (f + 1) % HASH_EVERY === 0) (G.dbg = G.dbg || {})[f + 1] = fpStr();
+    if (G && (f + 1) % 300 === 0) { const h = fingerprint(); if (G.replay) { const want = G.replay.fp && G.replay.fp[f + 1]; if (want != null && want !== h && !G.mism) replayMismatch(); } else (G.fp = G.fp || {})[f + 1] = h; }
   }
   function watchEnd(res) {
     if (!G || !G.watch || G.ended) return;
     G.ended = true;
-    const names = G.cfg.names, w = res.winner, t = names[w] + ' wins ' + res.wins[w] + '–' + res.wins[1 - w] + '.';
+    const names = G.cfg.names, w = res.winner, end = G.simF, I = G.log.inputs;
+    const dense = s2 => Array.from({ length: end + 1 }, (_, f) => I[s2][f] || ZERO);
+    const saved = Replays.add(buildReplay(G.cfg, -1, [dense(0), dense(1)], G.log.snaps, G.fp, end, res));
+    const t = names[w] + ' wins ' + res.wins[w] + '–' + res.wins[1 - w] + '.' + (saved ? ' Replay saved.' : '');
     const g = G; later(2200, () => { if (G === g) toRoom(t); });
   }
 
   /* ===================================================== the end of your fight */
-  function matchEnd(res) {
+  function matchEnd(res, endF) {
     if (!G || G.watch) return;
     const local = G.local, opts = G.opts, win = res.winner === local, rec = res.records[local], cfg = G.cfg;
     const S = Auth.S, reward = win ? 100 : 40;
@@ -918,6 +931,7 @@
     const awards = window.Rewards ? Rewards.fightDone(res, opts) : [];
     const recs = { maxCombo: rec.maxCombo, maxBounces: rec.maxBounces, breaks: rec.breaks, dmg: rec.dmg }, wins = res.wins.slice();
     toHost({ t: 'fover', fid: cfg.fid, winner: res.winner, wins });
+    const saved = Replays.add(buildReplay(cfg, local, G.rec.inputs, G.rec.snaps, G.rec.fp, endF, res));
     const g = G;
     later(900, () => {
       if (!N || G !== g) return;
@@ -931,6 +945,7 @@
           el('div', { class: 'recs' }, stat('BEST COMBO', recs.maxCombo), stat('MOST BOUNCES', recs.maxBounces), stat('WALL BREAKS', recs.breaks), stat('DAMAGE', Math.round(recs.dmg))),
           el('div', { class: 'reward' }, el('i', { class: 'coin' }), '+' + reward + ' TOKENS'),
           ...awards.map(a => el('div', { class: 'reward gold' }, '★ AWARD: ' + a.name + (a.pay ? '  +' + a.pay : ''))),
+          saved ? el('p', { class: 'note' }, 'Replay saved: watch it again from REPLAYS (in the hub).') : null,
           N.ui = el('div', { class: 'againnote' }),
           el('div', { class: 'olchatbtns' }, ...[0, 7, 3].map(i => el('button', { onclick: () => act({ t: 'chat', i }) }, CHAT[i]))),
           el('div', { class: 'row' },
@@ -955,6 +970,7 @@
   }
   Online.menu = () => {
     if (!G) return;
+    if (G.replay) { G.paused = !G.paused; return; }
     if (G.menu) { G.menu.remove(); G.menu = null; return; }
     const { btn } = Menu.ui;
     G.menu = G.watch
@@ -1021,6 +1037,8 @@
         [code, pass].forEach(x => x && x.addEventListener('keydown', e => { if (e.key === 'Enter') join(); }));
         body = [
           el('p', { class: 'note' }, 'Rooms hold up to six: two fight, everyone else watches and waits for their turn. Join a room from the list, host your own, or join a private room by its code.'),
+          el('div', { class: 'olquick' }, btn('QUICK MATCH', () => Online.quick(), 'big wide fight', 'Into an open public room, ready to fight, or open one and wait'),
+            btn('REPLAYS', () => Online.replays(() => Online.open()), 'ghost', Replays.list().length + ' saved')),
           el('div', { class: 'olrow' },
             el('div', { class: 'olbox' }, el('h3', null, 'HOST'), el('p', null, 'Make a room: public or private (with a password), your rules.'), btn('HOST A ROOM', () => { N.stage = 'create'; N.status = ''; render(); }, 'big')),
             el('div', { class: 'olbox' }, el('h3', null, 'JOIN BY CODE'), el('p', null, N.needPass ? 'Room ' + N.needPass + ' needs its password.' : 'Got a code from a friend?'), code, pass, btn('JOIN', join, 'big'))),
@@ -1041,8 +1059,8 @@
           seg('PLAYERS', f.max, [2, 3, 4, 5, 6].map(n => [n, String(n)]), v => { f.max = +v; render(); }),
           el('p', { class: 'note' }, 'You can change all of this, and the fight rules, from inside the room.'),
           el('div', { class: 'row' }, btn('CREATE ROOM', go, 'big'), btn('BACK', () => { N.stage = 'menu'; N.status = ''; Online.open(true); }, 'ghost'))];
-      } else if (N.stage === 'joining' || N.stage === 'creating') {
-        body = [el('p', { class: 'olwait' }, N.stage === 'creating' ? 'Opening your room...' : 'Joining room ' + N.code + '...'), btn('CANCEL', () => Online.open(), 'ghost')];
+      } else if (N.stage === 'joining' || N.stage === 'creating' || N.stage === 'quick') {
+        body = [el('p', { class: 'olwait' }, N.stage === 'quick' ? 'QUICK MATCH: looking for an open room...' : N.stage === 'creating' ? 'Opening your room...' : (N.quick ? 'QUICK MATCH: joining ' : 'Joining room ') + N.code + '...'), btn('CANCEL', () => Online.open(), 'ghost')];
       } else if (N.stage === 'room' && R) {
         const me = memberOf(N.myId) || {}, F = R.fight, pair = nextPair(), fighting = F && F.ids.includes(N.myId);
         const qpos = id => R.queue.indexOf(id);
@@ -1145,7 +1163,7 @@
     };
     N.redraw = render;
     Dir.onChange = () => fillList();
-    if (N.stage === 'menu') Dir.browse(); else if (!N.host) Dir.stopBrowse();
+    if (N.stage === 'menu' || N.stage === 'quick') Dir.browse(); else if (!N.host && !N.quick) Dir.stopBrowse();   // (quick match keeps the list while it tries rooms)
     if (N.stage !== 'fight' && N.stage !== 'watch') { useMenuRoom(); render(); }
   };
 
@@ -1166,6 +1184,7 @@
         requeue(); clearInterval(N.tickT); N.tickT = setInterval(hostTick, 1000);
         Dir.host(code, listing);
         sysSay('Room open. Its code is ' + code + '.');
+        if (o.quick) { act({ t: 'ready', on: true }); sysSay('Opened by Quick Match: waiting for someone to join.'); }
         Online.open(true);
       });
       peer.on('connection', conn => { if (N !== S) return; if (conn.metadata && conn.metadata.fid) fightConn(conn); else hostConn(conn); });
@@ -1180,11 +1199,11 @@
     open();
   };
   /* joining: by code (with a password for a private room) */
-  Online.join = async (code, pass) => {
+  Online.join = async (code, pass, quickNow) => {
     if (N && N.room) Online.leave(true);
     if (!N) N = freshN();
-    Dir.stopBrowse();
-    const S0 = N; Object.assign(N, { stage: 'joining', host: false, code, status: '', needPass: null, passFor: null }); draw();
+    if (!quickNow) Dir.stopBrowse();
+    const S0 = N; Object.assign(N, { stage: 'joining', host: false, code, status: '', needPass: null, passFor: null, quick: quickNow ? N.quick : null }); draw();
     try { await loadPeer(); } catch (e) { if (N === S0) { N.stage = 'menu'; N.status = e.message; Online.open(true); } return; }
     if (N !== S0) return;
     const peer = new (PeerC())({ debug: 0 }), S = N; N.peer = peer;
@@ -1196,7 +1215,7 @@
       conn.on('data', d => { if (N === S) guestGot(d); });
       conn.on('close', () => { if (N === S) roomGone(N.stage === 'joining' ? 'Couldn\'t join room ' + code + '.' : 'Lost the connection to the room.'); });
       conn.on('error', () => {});
-      later(12000, () => { if (N === S && N.stage === 'joining') roomGone('No answer from room ' + code + '. It may have closed, or check the code.'); });
+      later(N.quick ? 7000 : 12000, () => { if (N === S && N.stage === 'joining') roomGone('No answer from room ' + code + '. It may have closed, or check the code.'); });
     });
     peer.on('connection', c => { if (N === S && c.metadata && c.metadata.fid) fightConn(c); else { try { c.close(); } catch (e) { /* fine */ } } });
     peer.on('error', e => { if (N !== S || N.peer !== peer) return; if (N.stage === 'joining') roomGone(why(e)); });
@@ -1213,10 +1232,201 @@
     N = null;
     if (!quiet) Menu.hub();
   };
+
+  /* ===================================================== quick match
+     Into the best open public room (one with someone waiting comes first), ready to fight; if there's none, or none
+     answers, a public room of your own, ready, for the next person who presses QUICK MATCH. */
+  Online.quick = async () => {
+    if (N && N.room) Online.leave(true);
+    if (!N) N = freshN();
+    const S0 = N; Object.assign(N, { stage: 'quick', status: '', quick: { tried: new Set() } }); Online.open(true);
+    Dir.browse();
+    const t0 = performance.now();
+    while (N === S0 && performance.now() - t0 < 8000) {                // the list fills in about a second once it's up
+      if (Dir.state === 'down' || Dir.disabled) break;
+      if (Dir.state === 'up' && (Dir.rooms.size || performance.now() - (Dir.upAt || t0) > 1800)) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    if (N !== S0) return;
+    if (Dir.state !== 'up') { N.quick = null; N.stage = 'menu'; N.status = 'Couldn\'t reach the room list, so Quick Match can\'t find anyone. Host a room and share its code instead.'; Online.open(true); return; }
+    quickNext();
+  };
+  function quickNext() {
+    const Q = N.quick; if (!Q) return;
+    // someone waiting on their own first, then any open room, then one mid-fight with a seat (you're next in line)
+    const rank = r => r.state === 'open' ? (r.n === 1 ? 0 : 1) : 2;
+    const rooms = [...Dir.rooms.values()].filter(r => (r.state === 'open' || r.state === 'fight') && !r.priv && r.n < r.max && !Q.tried.has(r.code))
+      .sort((a, b) => rank(a) - rank(b) || a.n - b.n || b.ts - a.ts);
+    if (!rooms.length) { const Qn = N.quick; N.quick = null; Online.create({ name: (Auth.user.user + '\'s quick match').slice(0, 24), priv: false, listed: true, max: ROOM_MAX, quick: true }); toastMsg('No open rooms: opened one. Waiting for someone to join.'); return; }
+    Q.tried.add(rooms[0].code); Online.join(rooms[0].code, '', true);
+  }
+  function quickFailed() {
+    const Q = N.quick, pick = N.pick, peer = N.peer; N.leaving = true;
+    try { peer && peer.destroy(); } catch (e) { /* fine */ }
+    N = freshN(pick); N.quick = Q; N.stage = 'quick'; Online.open(true);
+    Dir.browse(); quickNext();
+  }
+
+  /* ===================================================== replays
+     A replay is the fight's start (seed, figures, rules) plus both fighters' buttons, frame by frame: the game plays
+     it out again exactly (the fight is deterministic). Buttons are stored as runs ([frames, buttons, x, y]), which
+     shrinks a two-minute fight to a few kilobytes. Every online fight you play or watch to the end is saved (the last
+     30, plus up to 20 you KEEP); EXPORT gives a .kbr file to send a friend, IMPORT plays theirs. Fingerprints every
+     5 s say whether a replay still plays the same in this version of the game. */
+  const BUILD = (() => { const sc = document.currentScript && document.currentScript.src; const m = sc && sc.match(/[?&]v=(\w+)/); return m ? m[1] : 'dev'; })();
+  const rleEnc = arr => { const out = []; let pk = null, n = 0, px = null; for (const x of arr) { const v = x || ZERO, k = v[0] + ',' + v[1] + ',' + v[2]; if (k === pk) n++; else { if (pk != null) out.push(n, px[0], px[1], px[2]); pk = k; px = v; n = 1; } } if (pk != null) out.push(n, px[0], px[1], px[2]); return out; };
+  const rleDec = a => { const out = []; for (let i = 0; i + 3 < a.length; i += 4) { const x = [a[i + 1] | 0, a[i + 2] | 0, a[i + 3] | 0]; for (let k = 0; k < a[i]; k++) out.push(x); } return out; };
+  function buildReplay(cfg, side, inputs, snaps, fp, end, res) {
+    return { kb: 'replay', v: 1, game: VERSION, build: BUILD, id: rid(), at: Date.now(), side, end: end | 0, winner: res.winner, score: res.wins.slice(0, 2),
+      cfg: { seed: cfg.seed, arena: cfg.arena, wins: cfg.wins, time: cfg.time, bonus: cfg.bonus, builds: cfg.builds, names: cfg.names },
+      in: [rleEnc(inputs[0].slice(0, end + 1)), rleEnc(inputs[1].slice(0, end + 1))], snaps: snaps || {}, fp: fp || {}, keep: false };
+  }
+  const Replays = {
+    key: () => 'kb.replays.' + (Auth.user ? Auth.user.id : 'guest'),
+    list() { const L = U.read(Replays.key(), []); return Array.isArray(L) ? L : []; },
+    put(L) {
+      for (let k = 0; k < 60; k++) {
+        try { localStorage.setItem(Replays.key(), JSON.stringify(L)); return true; }
+        catch (e) { let i = -1; for (let j = L.length - 1; j >= 0; j--) if (!L[j].keep) { i = j; break; } if (i < 0) return false; L.splice(i, 1); }   // storage full: the oldest unkept goes
+      }
+      return false;
+    },
+    add(r) {
+      try {
+        const L = Replays.list(); L.unshift(r); let n = 0;
+        for (let i = 0; i < L.length; i++) if (!L[i].keep && ++n > 30) { L.splice(i, 1); i--; }
+        return Replays.put(L);
+      } catch (e) { return false; }
+    },
+    valid: r => !!r && r.kb === 'replay' && r.cfg && Array.isArray(r.in) && r.in.length === 2 && r.in.every(Array.isArray) && Array.isArray(r.cfg.builds) && r.cfg.builds.length === 2 && r.cfg.builds.every(goodBuild) && Array.isArray(r.cfg.names) && KB.LINES && Arena.LIST.includes(r.cfg.arena),
+  };
+  Online.Replays = Replays;
+
+  /* the replay player: pause, speed, back / forward 5 s, restart; Esc (or ✕) to leave */
+  function playReplay(r, back, o) {
+    o = o || {};
+    if (G) { if (G.key) window.removeEventListener('keydown', G.key, true); endFight(); }
+    const { m, R, net, opts } = makeMatch(r.cfg, -1, true);
+    Touch.hide();
+    G = { m, R, net, watch: true, replay: r, back, f: 0, simF: 0, acc: 0, waitT: 0, speed: o.speed || 1, paused: false, seekTo: o.seekTo || null,
+      inputs: [rleDec(r.in[0]), rleDec(r.in[1])], log: { snaps: r.snaps || {}, top: [0, 0] }, cfg: r.cfg, opts, ended: false, mism: false };
+    G.step = m.update; m.update = replayFrame;
+    m.evHook = () => {};
+    replayUi();
+  }
+  function replayUi() {
+    const g = G, r = g.replay, { btn } = Menu.ui;
+    const time = f => { const s2 = Math.floor(f / 60); return Math.floor(s2 / 60) + ':' + String(s2 % 60).padStart(2, '0'); };
+    const sp = [0.5, 1, 2, 4];
+    const bar = el('div', { class: 'rpbar' });
+    const fill = el('i'), track = el('div', { class: 'rptrack', onclick: e => { const b = track.getBoundingClientRect(); seekTo(Math.round((e.clientX - b.left) / b.width * r.end)); } }, fill);
+    const lab = el('span', { class: 'rptime' }), note = el('div', { class: 'rpnote' });
+    const play = el('button', { class: 'rpb', title: 'Pause (Space)', onclick: () => { g.paused = !g.paused; draw2(); } });
+    const speeds = sp.map(v => el('button', { class: 'rpb sp', onclick: () => { g.speed = v; draw2(); } }, v === 0.5 ? '½×' : v + '×'));
+    bar.append(
+      el('b', { class: 'rpname' }, 'REPLAY · ' + r.cfg.names[0] + ' vs ' + r.cfg.names[1]),
+      el('div', { class: 'rprow' },
+        el('button', { class: 'rpb', title: 'Restart', onclick: () => seekTo(0) }, '⏮'),
+        el('button', { class: 'rpb', title: 'Back 5 s (←)', onclick: () => seekTo(g.f - 300) }, '−5s'),
+        play,
+        el('button', { class: 'rpb', title: 'Forward 5 s (→)', onclick: () => seekTo(g.f + 300) }, '+5s'),
+        ...speeds,
+        el('button', { class: 'rpb x', title: 'Leave (Esc)', onclick: () => leaveReplay() }, '✕')),
+      el('div', { class: 'rprow' }, track, lab), note);
+    document.body.append(bar);
+    g.bar = bar; g.ui = bar;
+    const draw2 = () => { if (G !== g) return; play.textContent = g.paused ? '▶' : '❚❚'; speeds.forEach((b, i) => b.classList.toggle('on', sp[i] === g.speed)); };
+    g.drawBar = () => { if (G !== g) return; const f = Math.min(g.f, r.end); fill.style.width = (100 * f / Math.max(1, r.end)) + '%'; lab.textContent = (g.seekTo != null ? 'skipping... ' : '') + time(f) + ' / ' + time(r.end); note.textContent = g.mism ? 'This replay was made with an older version of the game: it may not play out the same.' : r.build !== BUILD ? 'Made with another version of the game.' : ''; };
+    g.key = e => {
+      if (G !== g || e.repeat) return;
+      if (e.code === 'Space') { e.preventDefault(); g.paused = !g.paused; draw2(); }
+      else if (e.code === 'ArrowLeft') seekTo(g.f - 300); else if (e.code === 'ArrowRight') seekTo(g.f + 300);
+      else if (e.code === 'Escape') leaveReplay();
+    };
+    window.addEventListener('keydown', g.key, true);
+    draw2(); g.drawBar();
+  }
+  function seekTo(f) {
+    const g = G; if (!g || !g.replay) return;
+    f = U.clamp(f | 0, 0, g.replay.end + 120);
+    if (f < g.f) { playReplay(g.replay, g.back, { seekTo: f, speed: g.speed }); return; }   // back: from the start again (quickly)
+    g.seekTo = f; g.drawBar();
+  }
+  function replayFrame(realDt) {
+    const g = G; if (!g || !g.replay) return;
+    if (g.seekTo != null) {                     // skipping: quietly, about 15 s of fight per screen frame
+      U.quiet = true;
+      try { let k = 0; while (G === g && g.f < g.seekTo && k < 900) { watchStep(g.f); g.f++; k++; } } finally { U.quiet = false; }
+      if (G === g && g.f >= g.seekTo) { g.seekTo = null; g.acc = 0; }
+      if (G === g) g.drawBar(); return;
+    }
+    if (g.paused) { g.drawBar(); return; }
+    g.acc = Math.min(g.acc + realDt * g.speed, STEP * 12);
+    let n = 0;
+    while (G === g && g.acc >= STEP && n < 8) { watchStep(g.f); if (G !== g) return; g.f++; g.acc -= STEP; n++; }
+    if (G === g) g.drawBar();
+  }
+  function replayMismatch() { if (G && G.replay) { G.mism = true; G.drawBar(); } }
+  function replayEnd(res) {
+    const g = G; if (!g || !g.replay || g.ended) return;
+    g.ended = true;
+    const { btn } = Menu.ui, names = g.cfg.names, w = res.winner;
+    const ov = el('div', { class: 'rpend' }, el('h2', null, names[w] + ' WINS'), el('div', { class: 'score' }, res.wins[0] + ' — ' + res.wins[1]),
+      el('div', { class: 'row' }, btn('WATCH AGAIN', () => { ov.remove(); seekTo(0); }, 'big'), btn('BACK', () => leaveReplay(), 'ghost')));
+    later(1500, () => { if (G === g) { document.body.append(ov); g.endOv = ov; } });
+  }
+  function leaveReplay() {
+    const g = G; if (!g || !g.replay) return;
+    window.removeEventListener('keydown', g.key, true);
+    if (g.endOv) g.endOv.remove();
+    endFight(); App.setView(null);
+    (g.back || (() => Menu.hub()))();
+  }
+
+  /* the REPLAYS screen (the hub, or the ONLINE lobby) */
+  Online.replays = back => {
+    back = back || (() => Menu.hub());
+    if (N) Online.leave(true);
+    if (!App.view || App.view.fighters) App.setView(null);
+    Music.play('menu');
+    const { btn, topbar } = Menu.ui;
+    const when = t => { const d = new Date(t); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); };
+    const len = f => { const s2 = Math.floor(f / 60); return Math.floor(s2 / 60) + ':' + String(s2 % 60).padStart(2, '0'); };
+    const render = () => {
+      const L = Replays.list(), kept = L.filter(r => r.keep).length;
+      const imp = el('input', { type: 'file', accept: '.kbr,.json,application/json', style: { display: 'none' }, onchange: async e => {
+        const file = e.target.files && e.target.files[0]; if (!file) return;
+        try { const r = JSON.parse(await file.text()); if (!Replays.valid(r)) throw new Error('bad'); r.id = rid(); r.keep = true; r.imported = true; const L2 = Replays.list(); L2.unshift(r); if (!Replays.put(L2)) throw new Error('full'); toastMsg('Replay imported (kept).'); render(); }
+        catch (x) { toastMsg(x.message === 'full' ? 'No room left to store replays: delete some first.' : 'That file isn\'t a KNOCK//BACK replay.'); }
+      } });
+      const row = r => {
+        const won = r.side >= 0 ? r.winner === r.side : null, n = r.cfg.names;
+        return el('div', { class: 'rprowl' + (r.keep ? ' kept' : '') },
+          el('div', { class: 'rpfigs' }, ...r.cfg.builds.map(b => el('img', { src: Models.figIcon(b), alt: '' }))),
+          el('div', { class: 'rpt' }, el('b', null, n[0] + ' vs ' + n[1]),
+            el('small', null, (won == null ? 'Watched' : won ? 'You won' : 'You lost') + ' · ' + r.score[0] + '–' + r.score[1] + ' · ' + len(r.end) + ' · ' + (Arena.THEMES[r.cfg.arena] ? Arena.THEMES[r.cfg.arena].name : r.cfg.arena) + ' · ' + when(r.at) + (r.imported ? ' · imported' : ''))),
+          won == null ? null : el('em', { class: 'olt ' + (won ? 'r' : 'f') }, won ? 'WIN' : 'LOSS'),
+          el('div', { class: 'rpacts' },
+            btn('WATCH', () => playReplay(r, () => Online.replays(back)), 'small'),
+            el('button', { class: 'rpkeep' + (r.keep ? ' on' : ''), title: r.keep ? 'Kept (not deleted when new replays come in)' : 'Keep it', onclick: () => { const L2 = Replays.list(), x = L2.find(y => y.id === r.id); if (!x) return; if (!x.keep && L2.filter(y => y.keep).length >= 20) { toastMsg('You can keep 20 replays: un-keep one first.'); return; } x.keep = !x.keep; Replays.put(L2); render(); } }, r.keep ? '★' : '☆'),
+            el('button', { class: 'rpkeep', title: 'Export a .kbr file (to send a friend)', onclick: () => {
+              const name = ('knockback-replay-' + n[0] + '-vs-' + n[1] + '-' + new Date(r.at).toISOString().slice(0, 10)).replace(/[^\w.-]+/g, '_') + '.kbr';
+              const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(r)], { type: 'application/json' })), download: name }); document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            } }, '⤓'),
+            el('button', { class: 'rpkeep', title: 'Delete', onclick: () => { if (r.keep) { toastMsg('Un-keep it first.'); return; } Replays.put(Replays.list().filter(y => y.id !== r.id)); render(); } }, '✕')));
+      };
+      App.screen(el('div', { class: 'screen replays' }, topbar('REPLAYS', back),
+        el('div', { class: 'panel rppanel' },
+          el('p', { class: 'note' }, 'Every online fight you play, or watch to the end, is saved here: the last 30, plus up to 20 you keep (★). ⤓ exports a replay as a file to send a friend; IMPORT plays one they sent you.'),
+          el('div', { class: 'row' }, btn('IMPORT A REPLAY', () => imp.click(), 'ghost'), imp, el('small', { class: 'rpcount' }, L.length + ' saved · ' + kept + ' kept')),
+          L.length ? el('div', { class: 'rplist' }, ...L.map(row)) : el('p', { class: 'olempty' }, 'No replays yet. Fight (or watch a fight) online and it shows up here.'))));
+    };
+    render();
+  };
   Online.running = () => !!G;
   // (tests)
   Online._t = { rng, withRng, onIn: null, prepSnap, snapshot, restoreSnap, hashSnap, Dir, H, act,
-    usePeer: C => { PeerImpl = C; }, N: () => N, G: () => G, tick: () => hostTick(), later: runLater, debug: 0, deepFilter: null,
+    usePeer: C => { PeerImpl = C; }, N: () => N, G: () => G, playReplay, seekTo, rleEnc, rleDec, tick: () => hostTick(), later: runLater, debug: 0, deepFilter: null,
     pick: k => { N.pick = k; N.me = meInfo(); if (N.room) act({ t: 'fig', me: N.me }); draw(); },
     info: () => G && !G.watch ? { f: G.f, conf: G.conf, D: G.D, local: G.local, syncs: G.syncs, desyncs: G.desyncs || 0, rollbacks: G.rollbacks, rbFrames: G.rbFrames, rbMax: G.rbMax, rbMs: Math.round(G.rbMs * 10) / 10, rbAvg: Math.round(G.rbSum / Math.max(1, G.rollbacks) * 100) / 100, guesses: G.guesses, skips: G.skips, adv: Math.round(G.adv * 100) / 100, hp: G.m.fighters.map(f => Math.round(f.hp)), fp: fingerprint(), stage: N && N.stage, link: G.link && G.link.mode }
       : G && G.watch ? { watch: true, f: G.f, avail: Math.min(G.log.top[0], G.log.top[1]), hp: G.m.fighters.map(f => Math.round(f.hp)), fp: fingerprint(), stage: N && N.stage }

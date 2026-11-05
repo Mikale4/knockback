@@ -198,6 +198,15 @@ Accounts are local (this browser's storage), with salted password hashes. It is 
 **ONLINE** in the hub (`js/online.js`): rooms of up to **six** over the internet. Two fight; everyone else **watches the
 fight live** and waits for their turn.
 
+- **QUICK MATCH:** one button: into the best open public room (one with someone waiting on their own first, then any
+  open room, then one mid-fight with a seat, where you're next in line), ready to fight. If there's none, it opens a
+  public room of yours, ready, for the next person who presses it.
+- **REPLAYS** (the hub, or the ONLINE lobby): every online fight you play, or watch to the end, is saved: the last 30,
+  plus up to 20 you keep (★). A replay is the fight's start plus both fighters' buttons, stored as runs, so a fight is a
+  few kilobytes; the game plays it out again exactly. The player: pause (Space), back / forward 5 s (← →), restart,
+  ½× to 4×, a progress bar you can click; Esc leaves. ⤓ exports a `.kbr` file to send a friend; IMPORT plays theirs.
+  Fingerprints every 5 s tell you if a replay no longer plays the same (made with a different version of the game).
+  Only online fights for now: offline fights don't run on fixed, seeded steps, so they can't be replayed yet.
 - **The room list:** public and private rooms are listed; join one with a tap (a private room asks for its password).
   You can also join any room by its five-letter **code**, or keep yours off the list (code only). The list lives on two
   free public MQTT brokers (no account, no server of ours): each host keeps a short note about its room there (name,

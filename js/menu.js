@@ -179,6 +179,7 @@
           item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
           item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
           item('ONLINE', 'Rooms of up to six, public or private: fight, watch, wait your turn.', () => Online.open(), 'hot'),
+          item('REPLAYS', 'Your online fights and the ones you watched: watch again, keep, share.', () => Online.replays()),
           item('TUTORIAL', Tutorial.done() ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +900 tokens.', () => Tutorial.start(), Tutorial.done() ? '' : 'hot'),
           item('TRAINING', 'A dummy, full meters, every system to practise.', () => Menu.training()),
           item('COMBO TRIALS', 'Every fighter\'s combos, step by step, with a demo.', () => Trials.open()),

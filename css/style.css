@@ -668,3 +668,26 @@ button.plate { cursor: pointer; color: var(--ink); font-family: var(--body); } b
 .actfig { display: grid; justify-items: center; gap: 2px; background: var(--panel2); border: 2px solid var(--line); border-bottom: 5px solid var(--lc); border-radius: 12px; padding: 8px; color: var(--ink); cursor: pointer; }
 .actfig img { width: 72px; height: 72px; object-fit: contain; } .actfig b { font: 20px var(--head); letter-spacing: 1px; text-align: center; } .actfig small { color: var(--dim); font-size: 11px; text-align: center; }
 .actfig.on { border-color: var(--yel); box-shadow: 0 0 0 2px var(--yel) inset; }
+
+/* quick match, replays (online.js) */
+.olquick { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 10px 0; } .olquick .btn small { font-size: 11px; }
+.rppanel { width: min(880px, calc(100% - 32px)); margin: 0 auto 16px; overflow: auto; flex: 1; min-height: 0; box-sizing: border-box; }
+.rpcount { color: var(--dim); align-self: center; }
+.rplist { display: grid; gap: 6px; margin-top: 10px; }
+.rprowl { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; background: var(--panel2); border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.rprowl.kept { border-color: var(--yel); }
+.rpfigs { display: flex; } .rpfigs img { width: 40px; height: 40px; object-fit: contain; }
+.rpt { min-width: 0; display: grid; } .rpt b { font: 20px var(--head); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .rpt small { color: var(--dim); font-size: 11.5px; }
+.rpacts { display: flex; gap: 4px; align-items: center; }
+.rpkeep { background: #15111f; color: var(--ink); border: 2px solid var(--line); border-radius: 8px; width: 34px; height: 30px; font: 900 15px var(--body); cursor: pointer; } .rpkeep.on { color: var(--yel); border-color: var(--yel); }
+.rpbar { position: fixed; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 30; background: rgba(14, 12, 22, .92); border: 2px solid var(--line); border-radius: 12px; padding: 6px 10px; display: grid; gap: 4px; width: min(560px, calc(100% - 24px)); box-sizing: border-box; color: var(--ink); }
+.rpname { font: 16px var(--head); letter-spacing: 1px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rprow { display: flex; gap: 4px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.rpb { background: #15111f; color: var(--ink); border: 2px solid var(--line); border-radius: 8px; min-width: 38px; height: 32px; padding: 0 8px; font: 900 13px var(--body); cursor: pointer; }
+.rpb.on { background: var(--yel); color: #000; border-color: #000; } .rpb.x { margin-left: 6px; }
+.rptrack { flex: 1; height: 10px; background: rgba(255,255,255,.12); border-radius: 5px; overflow: hidden; cursor: pointer; } .rptrack i { display: block; height: 100%; width: 0; background: var(--cyan); }
+.rptime { font: 700 12px var(--body); color: var(--dim); min-width: 92px; text-align: right; }
+.rpnote { font-size: 11.5px; color: #ffb02e; text-align: center; } .rpnote:empty { display: none; }
+.rpend { position: fixed; inset: 0; z-index: 35; display: grid; place-items: center; align-content: center; gap: 10px; background: rgba(6, 4, 12, .55); text-align: center; }
+.rpend h2 { margin: 0; font: clamp(44px, 8vw, 80px) var(--head); letter-spacing: 3px; color: var(--yel); text-shadow: 0 4px 0 #000; }
+@media (max-width: 640px) { .olquick { grid-template-columns: 1fr; } .rprowl { grid-template-columns: minmax(0, 1fr) auto; } .rpfigs, .rprowl .olt { display: none; } .rpb { min-width: 34px; padding: 0 5px; } }
