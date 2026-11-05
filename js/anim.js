@@ -19,6 +19,10 @@
     pirate: { torso: [0.02, 0.4, 0.04], head: [0.08, -0.35, 0.1], armR: [-0.95, 0.35, -0.4], wR: [0.85, 0, 0], armL: [0.15, 0, 0.5], wL: [0.2, 0, 0], legL: [-0.18, 0, 0.14], legR: [0.32, 0, -0.08], hy: -0.3 },
     viking: { torso: [0.2, 0.15, 0], head: [-0.05, -0.1, 0], armR: [-0.3, 0, -0.3], wR: [0.35, 0, 0], armL: [-0.45, 0, 0.35], wL: [0.3, 0, 0], legL: [-0.36, 0, 0.16], legR: [0.3, 0, -0.16], hy: -1.1 },
     ninja: { torso: [0.38, 0.45, 0], head: [-0.2, -0.45, 0], armR: [-0.95, 0.3, -0.45], wR: [-1.4, 0, 0], armL: [-1.25, -0.3, 0.45], wL: [0.3, 0, 0], legL: [-0.85, 0, 0.22], legR: [0.5, 0, -0.2], hy: -2.5 },
+    summoner: { torso: [0.04, 0.2, 0], head: [0, -0.2, 0], armR: [-0.5, 0.2, -0.22], wR: [-0.85, 0, 0], armL: [-1.1, -0.35, 0.25], wL: [0.95, 0, 0], legL: [-0.2, 0, 0.05], legR: [0.2, 0, -0.05], hy: -0.2 },
+    paladin: { torso: [0.06, 0.25, 0], head: [0, -0.2, 0], armR: [-1.05, 0.35, -0.3], wR: [-1.35, 0, 0], armL: [-0.95, -0.45, 0.35], wL: [0.75, 0.35, 0], legL: [-0.4, 0, 0.14], legR: [0.32, 0, -0.14], hy: -0.8 },
+    dragoon: { torso: [0.2, 0.35, 0], head: [-0.05, -0.3, 0], armR: [-0.8, 0.25, 0.3], wR: [0.55, 0, 0], armL: [-1.15, -0.25, -0.62], wL: [0.3, 0, 0], legL: [-0.6, 0, 0.2], legR: [0.45, 0, -0.2], hy: -1.6 },
+    bard: { torso: [-0.05, 0.3, 0.05], head: [0.05, -0.3, 0.12], armR: [-1.1, 0.4, -0.25], wR: [-1.2, 0, 0], armL: [-0.3, 0, 0.6], wL: [0.4, 0, 0], legL: [-0.1, 0, 0.1], legR: [0.25, 0, -0.2], hy: -0.2 },
     shield: { torso: [0.1, 0.3, 0], head: [0, -0.25, 0], armR: [-0.6, 0.2, -0.2], wR: [0.5, 0, 0], armL: [-0.95, -0.45, 0.35], wL: [0.75, 0.35, 0], legL: [-0.3, 0, 0.07], legR: [0.26, 0, -0.07], hy: -0.5 },
   };
   /* each move pose: wind (held through startup) and strike (the active frames) */
@@ -66,6 +70,19 @@
     vanish: { wind: { hy: -2.5, torso: [0.6, 0, 0], armR: [-0.5, 0, -0.4], wR: [-1.5, 0, 0] }, strike: { armR: [-1.6, 0, 0.2], wR: [1.5, 0, 0], torso: [0.35, 0.4, 0], hy: -1.8, legR: [0.8, 0, 0], legL: [-0.7, 0, 0] } },
     shadowSlash: { spin: 1, wind: { armR: [-1.3, 0, -1.2], wR: [-1.4, 0, 0], hy: -2 }, strike: { armR: [-1.5, 0, -1.5], wR: [-1.4, 0, 0], armL: [-1.3, 0, 1.3], hy: -1.6 } },
     kunaiToss: { wind: { armR: [-2.6, 0, -0.5], wR: [0, 0, 0], torso: [0, -0.5, 0] }, strike: { armR: [-1.3, 0, 0.3], torso: [0.25, 0.5, 0], armL: [-0.8, 0, 0.6] } },
+    // SUMMONER
+    point: { wind: { armR: [-2.6, 0, -0.2], wR: [1.1, 0, 0], torso: [0, -0.3, 0] }, strike: { armR: [-1.7, 0, 0.1], wR: [1.6, 0, 0], torso: [0.15, 0.4, 0], armL: [-0.5, 0, 0.4], hy: -0.6, legR: [0.4, 0, 0], legL: [-0.4, 0, 0] } },
+    cast: { wind: { armR: [-0.7, 0, -0.3], armL: [-0.7, 0, 0.3], torso: [0, -0.4, 0], hy: -0.4 }, strike: { armR: [-1.6, 0, 0.15], wR: [1.55, 0, 0], armL: [-1.5, 0, -0.1], wL: [1.5, 0, 0], torso: [0.2, 0.3, 0], hy: -0.8, legR: [0.4, 0, 0], legL: [-0.45, 0, 0] } },
+    summon: { wind: { armR: [-2.9, 0, -0.2], wR: [1.33, 0, 0], armL: [-1.3, 0, 0.4], wL: [0.9, 0, 0], torso: [-0.2, 0, 0], head: [-0.3, 0, 0] }, strike: { armR: [-3.0, 0, -0.1], wR: [1.4, 0, 0], armL: [-1.5, 0, 0.6], wL: [0.9, 0, 0], torso: [-0.3, 0, 0], head: [-0.4, 0, 0], hy: 0.4 } },
+    // DRAGOON
+    tsukiPull: { wind: { torso: [0, -0.4, 0], armR: [-1.0, 0, -0.2], armL: [-1.0, 0, -0.5], wR: [1.0, 0, 0] }, strike: { torso: [0.15, 0.2, 0], armR: [-1.3, 0, -0.1], armL: [-1.25, 0, -0.45], wR: [1.3, 0, 0], hy: -1.2, legL: [-0.6, 0, 0], legR: [0.5, 0, 0] } },
+    twinThrust: { alt: ['tsuki', 'tsukiPull'], wind: { torso: [0, -0.6, 0], armR: [-0.9, 0, -0.3], armL: [-0.95, 0, -0.5], wR: [1.0, 0, 0], legR: [0.3, 0, 0] }, strike: { torso: [0.28, 0.42, 0], armR: [-1.6, 0, 0.05], armL: [-1.55, 0, -0.35], wR: [1.57, 0, 0], legL: [-0.95, 0, 0], legR: [0.75, 0, 0], hy: -1.7 } },
+    lanceWheel: { spin: 1, wind: { armR: [-1.4, 0, -1.3], armL: [-1.3, 0, -0.9], wR: [1.45, 0, 0], torso: [0, -0.7, 0], hy: -1.2 }, strike: { armR: [-1.55, 0, -1.5], armL: [-1.5, 0, -1.2], wR: [1.5, 0, 0], hy: -1.6, legL: [-0.5, 0, 0.3], legR: [0.4, 0, -0.3] } },
+    breath: { wind: { torso: [-0.3, 0, 0], head: [-0.5, 0, 0], armR: [-0.4, 0, -0.5], armL: [-0.4, 0, 0.5] }, strike: { torso: [0.35, 0, 0], head: [0.25, 0, 0], hy: -0.8, armR: [-0.3, 0, -0.7], armL: [-0.3, 0, 0.7], legL: [-0.4, 0, 0], legR: [0.4, 0, 0] } },
+    // BARD
+    strum: { wind: { armR: [-1.2, 0.6, 0.6], wR: [1.2, 0.8, 0], armL: [-1.0, -0.4, 0.2], torso: [0, -0.3, 0] }, strike: { armR: [-1.3, 0.7, 0.8], wR: [1.3, 0.9, 0.3], armL: [-1.2, -0.5, -0.3], torso: [-0.2, 0.3, 0], head: [-0.3, 0, 0.15], hy: -0.5 } },
+    // the Legend Art cinematics
+    sheathe: { wind: { armR: [-0.6, 0, 0.7], wR: [2.6, 0, 0], torso: [0.1, -0.3, 0] }, strike: { armR: [-0.3, 0, 0.55], wR: [2.9, 0, 0], armL: [-0.5, 0, -0.4], torso: [0.12, -0.35, 0], head: [0.25, 0, 0], hy: -0.4 } },
     heavyDiag: { wind: { torso: [0, 0.65, 0], armL: [-2.7, 0, 0.6], wL: [1.3, 0, 0], hy: -0.4 }, strike: { torso: [0.3, -0.55, 0], armL: [-0.6, 0, -0.55], wL: [1.3, 0, 0], hy: -1.2, legL: [-0.6, 0, 0], legR: [0.5, 0, 0] } },
     bash: { wind: { torso: [0, 0.55, 0], armL: [-0.8, -0.6, 0.45], wL: [0.6, 0.4, 0], hy: -0.8 }, strike: { torso: [0.15, -0.45, 0], armL: [-1.5, 0, 0], wL: [1.45, 0, 0], hy: -1, legR: [0.75, 0, 0], legL: [-0.65, 0, 0] } },
     bashUp: { wind: { torso: [0.35, 0, 0], armL: [0.35, 0, 0.3], wL: [1.0, 0, 0], hy: -1.5 }, strike: { torso: [-0.3, 0, 0], armL: [-2.9, 0, 0.1], wL: [1.5, 0, 0], hy: 0.6, legL: [-0.3, 0, 0] } },
@@ -117,9 +134,9 @@
     const k = build.armR.line + '|' + build.armL.line; if (CACHE.has(k)) return CACHE.get(k);
     const R = build.armR.line, L = build.armL.line;
     let base = R === 'monk' ? READY.fists : READY[R] || READY.blade;
-    if (R === 'samurai' && L === 'samurai') base = READY.twohand;
+    if (R === 'samurai' && (L === 'samurai' || L === 'dragoon')) base = READY.twohand;   // a free left hand joins the grip
     const out = blend(base, base, 0, base);
-    if (L === 'knight' || L === 'viking') { out.armL = READY.shield.armL.slice(); out.wL = READY.shield.wL.slice(); }
+    if (L === 'knight' || L === 'viking' || L === 'paladin') { out.armL = READY.shield.armL.slice(); out.wL = READY.shield.wL.slice(); }
     CACHE.set(k, out); return out;
   }
   /* a + (b - a) * t, part by part (missing parts fall back to `base`) */
@@ -159,7 +176,10 @@
     o.hy = -0.3 - Math.abs(c) * 0.8;
     if (style === 'ninja') { o.armL = [0.95, 0, 0.25]; o.armR = [0.95, 0, -0.25]; o.torso = [0.55, 0, 0]; o.head = [-0.35, 0, 0]; o.hy = -1.2 - Math.abs(c) * 0.6; }
     if (style === 'viking') { o.torso = [0.25, c * 0.15, 0]; o.hy -= 0.4; }
-    if (style === 'knight') { o.legL[0] *= 0.7; o.legR[0] *= 0.7; o.hy *= 0.6; }
+    if (style === 'knight' || style === 'paladin') { o.legL[0] *= 0.7; o.legR[0] *= 0.7; o.hy *= 0.6; }
+    if (style === 'dragoon') { o.torso = [0.4, 0.2, 0]; o.armR = base.armR.slice(); o.armL = base.armL.slice(); o.hy = -0.9 - Math.abs(c) * 0.6; }
+    if (style === 'summoner') { o.armR = base.armR.slice(); o.legL[0] *= 0.6; o.legR[0] *= 0.6; o.hy = -0.2 - Math.abs(c) * 0.3; }
+    if (style === 'bard') { o.hy = -0.1 - Math.abs(c) * 1.5; o.head = [0, -0.2, s * 0.18]; o.armR = base.armR.slice(); }
     return o;
   }
 

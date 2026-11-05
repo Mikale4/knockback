@@ -89,7 +89,7 @@
     const crackMat = new THREE.MeshBasicMaterial({ color: 0x1a0f08 }), hotMat = new THREE.MeshBasicMaterial({ color: 0xff7a20, toneMapped: false });
     const seg = new THREE.BoxGeometry(1, 1, 1);
     const A = {
-      id, name: T.name, W, D, walls, group, outY: T.outY, dust: T.dust, wallColors: Array.from(colors).slice(0, 6),
+      id, name: T.name, W, D, walls, group, outY: T.outY, dust: T.dust, wallColors: Array.from(colors).slice(0, 6), hemi, sun, base: { hemi: hemi.intensity, sun: sun.intensity },
       /* a bounce adds stress and spreads a crack from where it hit */
       stress(w, add, at) {
         const before = w.stress; w.stress = Math.min(99, w.stress + add);

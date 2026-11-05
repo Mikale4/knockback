@@ -332,6 +332,210 @@
     },
   };
 
+  /* ---------------------------------------------------------------- SUMMONER */
+  D.summoner = {
+    head(g, p) {
+      g.box(-3, 0, -3, 3, 5, 3, p.skin); eyes(g, p, 3, 3); g.box(-1, 1, 3, 1, 1, 3, shade(p.skin, 0.82));
+      g.box(-4, 0, -4, 4, 7, -4, p.main); g.boxM(4, 0, -3, 4, 7, 3, p.main); g.box(-4, 6, -3, 4, 7, 3, p.main);   // the hood
+      g.boxM(4, 0, 4, 4, 7, 4, p.main); g.box(-3, 6, 4, 3, 7, 4, p.main); g.box(-4, 7, 5, 4, 7, 5, p.accent); g.boxM(4, 0, 5, 4, 6, 5, shade(p.main, 0.8));   // its gold-trimmed brim
+      g.box(-3, 5, 3, 3, 5, 3, shade(p.skin, 0.55));                                                              // shadow under the brim
+      g.box(-2, 8, -4, 2, 8, 1, p.main); g.box(-1, 9, -4, 1, 9, -2, p.main); g.set(0, 9, -5, p.main); g.set(0, 8, -5, p.main);
+      g.set(0, 7, 5, p.gem); g.setM(1, 7, 5, p.accent);
+    },
+    torso(g, p) {
+      g.box(-4, 0, -2, 4, 8, 2, p.main); g.cut(-4, 0, -2, -4, 1, 2); g.cut(4, 0, -2, 4, 1, 2);
+      g.box(-1, 0, 3, 1, 7, 3, p.second); g.box(-4, 1, 3, 4, 1, 3, p.dark); g.set(0, 1, 4, p.accent);
+      g.box(-4, 7, -3, 4, 8, 3, p.second); g.box(-3, 8, 3, 3, 8, 3, p.accent); g.cut(-1, 8, -1, 1, 8, 1);    // the mantle
+      g.set(0, 4, 4, p.gem); g.set(0, 5, 4, p.accent); g.setM(1, 4, 4, p.accent);                           // a rune pendant
+      g.box(-1, 9, -1, 1, 9, 1, p.joint);
+    },
+    hips(g, p) {
+      g.box(-4, -1, -3, 4, 0, 3, p.main);
+      for (let y = -8; y <= -2; y++) { const w = y < -5 ? 5 : 4; g.box(-w, y, 3, w, y, 3, p.main); g.box(-w, y, -3, w, y, -3, p.main); g.boxM(w, y, -2, w, y, 2, p.main); }
+      g.box(-1, -8, 3, 1, -1, 3, p.second); g.box(-5, -8, 3, 5, -8, 3, p.accent); g.box(-5, -8, -3, 5, -8, -3, p.accent); g.boxM(5, -8, -2, 5, -8, 2, p.accent);
+    },
+    arm(g, p, o) {
+      g.box(-1, -4, -1, 1, 1, 1, p.main); g.box(-2, 0, -2, 2, 1, 2, p.second);
+      g.box(-2, -7, -2, 2, -5, 2, p.main); g.box(-2, -7, -2, 2, -7, 2, p.accent); g.set(o * 2, -6, 0, p.second);
+      hand(g, p.skin); elbow(g, p, o);
+    },
+    wR(g, p) {
+      g.box(0, 0, -6, 0, 0, 11, WOOD); g.set(0, 0, -7, p.accent); g.box(0, 0, 2, 0, 0, 3, LEATHER);
+      g.box(-1, -1, 12, 1, 1, 12, p.accent);
+      g.ell(0, 0, 14, 1, 1, 1, G(p.glow));
+      for (const [x, y] of [[-2, 0], [2, 0], [0, 2], [0, -2]]) g.box(x, y, 13, x, y, 15, p.accent);
+      g.set(0, 0, 16, p.accent);
+    },
+    wL(g, p) {
+      g.box(-2, -1, 1, 2, 1, 7, p.second); g.box(-1, 0, 2, 2, 0, 7, BONE); g.box(-2, -1, 1, -2, 1, 7, p.dark);
+      g.box(-1, 2, 3, 1, 2, 5, p.accent); g.set(0, 2, 4, p.gem); g.box(2, -1, 1, 2, 1, 1, p.accent); g.box(2, -1, 7, 2, 1, 7, p.accent);
+    },
+    leg(g, p, o) {
+      g.box(-1, -9, -1, 1, 0, 1, p.cloth);
+      g.box(-1, -11, -1, 1, -10, 2, p.skin); g.box(-1, -11, -1, 1, -11, 2, LEATHER); g.box(-1, -10, 1, 1, -10, 1, LEATHER);
+      knee(g, p, o);
+    },
+  };
+
+  /* ---------------------------------------------------------------- PALADIN */
+  D.paladin = {
+    head(g, p) {
+      g.box(-3, 0, -3, 3, 5, 3, p.skin); eyes(g, p, 3, 3); g.box(-1, 1, 3, 1, 1, 3, shade(p.skin, 0.85));
+      g.box(-4, 4, -4, 4, 7, 3, p.main); g.cut(-4, 7, -4, -4, 7, 3); g.cut(4, 7, -4, 4, 7, 3);
+      g.box(-4, 0, -4, 4, 4, -4, p.main); g.boxM(4, 0, -3, 4, 3, 2, p.main);
+      g.box(-4, 4, 4, 4, 4, 4, p.accent); g.box(0, 1, 4, 0, 4, 4, p.main);
+      g.box(-2, 8, -2, 2, 8, 2, p.main); g.box(-1, 8, 3, 1, 9, 3, p.accent); g.set(0, 9, 4, p.gem); g.set(0, 10, 3, p.accent);
+      [[5, -1, 1], [6, -2, 0], [7, -3, -1], [8, -4, -2], [9, -4, -3]].forEach(([y, z0, z1]) => g.boxM(5, y, z0, 5, y, z1, y > 7 ? p.accent : p.metal));
+    },
+    torso(g, p) {
+      g.box(-4, 0, -2, 4, 8, 2, p.main); g.cut(-4, 0, -2, -4, 1, 2); g.cut(4, 0, -2, 4, 1, 2);
+      g.box(-3, 3, 3, 3, 7, 3, p.main);
+      g.box(-2, 0, 3, 2, 6, 3, p.cloth); g.box(-2, 6, 3, 2, 6, 3, p.accent); g.boxM(2, 0, 3, 2, 6, 3, p.accent);
+      g.set(0, 4, 4, p.gem); g.setM(1, 4, 4, p.accent); g.set(0, 5, 4, p.accent); g.set(0, 3, 4, p.accent);
+      g.box(-4, 8, -2, 4, 8, 2, p.accent); g.box(-4, 0, -2, 4, 0, 2, LEATHER);
+      g.box(-1, 9, -1, 1, 9, 1, p.joint);
+    },
+    hips(g, p) {
+      g.box(-4, -2, -2, 4, 0, 2, p.main); g.box(-4, 0, -2, 4, 0, 2, LEATHER); g.set(0, 0, 3, p.accent);
+      g.box(-2, -8, 3, 2, -1, 3, p.cloth); g.box(-2, -8, 3, 2, -8, 3, p.accent);
+      g.box(-2, -7, -3, 2, -1, -3, p.cloth); g.box(-2, -7, -3, 2, -7, -3, p.accent);
+      g.boxM(4, -4, -2, 4, -2, 2, p.main); g.boxM(4, -4, -2, 4, -4, 2, p.accent);
+    },
+    arm(g, p, o) {
+      g.ell(0, 0, 0, 2.2, 1.6, 2.2, p.main); g.box(-2, -1, -2, 2, -1, 2, p.accent); g.set(o * 3, 0, 0, p.accent);
+      g.box(-1, -4, -1, 1, -2, 1, p.dark);
+      g.box(-1, -7, -1, 1, -5, 1, p.main); g.box(-2, -7, -2, 2, -7, 2, p.accent);
+      hand(g, p.main); elbow(g, p, o);
+    },
+    wR(g, p) {
+      g.box(0, 0, -2, 0, 0, 9, WOOD2); g.set(0, 0, -3, p.accent); g.box(0, 0, 0, 0, 0, 1, LEATHER); g.set(0, 0, 9, p.accent);
+      g.box(-1, -3, 10, 1, 3, 12, p.metal); g.box(-1, -3, 10, 1, -3, 12, p.accent); g.box(-1, 3, 10, 1, 3, 12, p.accent);
+      g.setM(2, 0, 11, p.gem); g.set(0, 0, 13, p.metal); g.set(0, 0, 14, p.metal);
+    },
+    wL(g, p) {
+      g.box(0, 0, -1, 0, 0, 1, LEATHER);
+      g.box(-4, -6, 2, 4, 9, 2, p.main);
+      g.box(-4, -6, 2, 4, -6, 2, p.accent); g.box(-4, 9, 2, 4, 9, 2, p.accent); g.boxM(4, -6, 2, 4, 9, 2, p.accent);
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.set(Math.round(Math.cos(a) * 2.6), 3 + Math.round(Math.sin(a) * 2.6), 3, p.accent); }
+      g.ell(0, 3, 3, 1, 1, 0, p.gem); g.box(0, -4, 3, 0, -1, 3, p.cloth);
+    },
+    leg(g, p, o) {
+      g.box(-1, -4, -1, 1, 0, 1, p.main); g.box(-1, -5, 2, 1, -5, 2, p.accent);
+      g.box(-1, -9, -1, 1, -6, 1, p.main); g.box(-1, -9, 2, 1, -6, 2, p.main); g.box(-1, -6, 2, 1, -6, 2, p.accent);
+      g.box(-1, -11, -1, 1, -10, 3, p.main); g.box(-1, -11, -1, 1, -11, 3, p.dark); g.set(0, -10, 3, p.accent);
+      knee(g, p, o);
+    },
+  };
+
+  /* ---------------------------------------------------------------- DRAGOON */
+  D.dragoon = {
+    head(g, p) {
+      g.box(-3, 0, -3, 3, 6, 3, p.main); g.box(-3, 7, -2, 3, 7, 2, p.main);
+      g.box(-3, 3, 3, 3, 3, 3, p.dark); g.setM(2, 3, 3, G(p.glow));                            // the visor slit, eyes burning
+      g.box(-2, 4, 4, 2, 6, 5, p.main); g.box(-1, 5, 6, 1, 6, 6, p.main); g.set(0, 6, 7, p.main); // the dragon's snout over the brow
+      g.box(-2, 4, 6, 2, 4, 6, p.accent); g.setM(2, 5, 6, p.accent);                            // its teeth
+      g.box(-3, 0, 4, 3, 2, 4, p.second); g.box(-2, 0, 5, 2, 1, 5, p.second);                   // the jaw guard
+      [[3, 6, -1], [3, 6, -2], [4, 7, -3], [4, 7, -4], [4, 8, -5], [4, 8, -6], [4, 9, -7]].forEach(([x, y, z]) => { g.setM(x, y, z, p.accent); g.setM(x, y - 1, z, shade(p.accent & 0xffffff, 0.8)); });
+      for (let i = 0; i < 5; i++) g.set(0, 8 - i, -3 - (i >> 1), i % 2 ? p.second : p.main);
+    },
+    torso(g, p) {
+      g.box(-4, 0, -2, 4, 8, 2, (x, y) => (x + (y >> 1)) % 2 ? p.main : shade(p.main, 0.78));
+      g.cut(-4, 0, -2, -4, 1, 2); g.cut(4, 0, -2, 4, 1, 2);
+      g.box(-3, 4, 3, 3, 7, 3, p.accent); g.box(-1, 5, 4, 1, 6, 4, p.second); g.set(0, 6, 5, p.gem);
+      g.box(-4, 0, -2, 4, 1, 2, p.second); g.box(-4, 0, 3, -2, 1, 3, p.second);
+      g.box(-1, 9, -1, 1, 9, 1, p.joint);
+    },
+    hips(g, p) {
+      g.box(-4, -2, -2, 4, 0, 2, p.main); g.box(-4, 0, -2, 4, 0, 2, p.dark);
+      g.boxM(3, -6, 3, 4, -1, 3, (x, y) => y % 2 ? p.main : p.accent);
+      for (let i = 0; i < 7; i++) g.set(0, -1 - i, -3 - (i >> 1), i % 2 ? p.main : p.second);
+    },
+    arm(g, p, o) {
+      g.box(-2, -1, -2, 2, 1, 2, p.main); g.box(-1, 2, -1, 1, 2, 1, p.main); g.set(o * 2, 2, 0, p.accent); g.set(o * 2, 3, -1, p.accent); g.set(o * 2, 4, -2, p.accent);
+      g.box(-1, -4, -1, 1, -2, 1, p.dark);
+      g.box(-1, -7, -1, 1, -5, 1, p.accent); g.set(0, -6, 2, p.second);
+      hand(g, p.main); g.set(-1, -9, 2, p.accent); g.set(1, -9, 2, p.accent);
+      elbow(g, p, o);
+    },
+    wR(g, p) {
+      g.box(0, 0, -7, 0, 0, 14, p.dark); g.set(0, 0, -8, p.accent);
+      for (const z of [-4, 4, 10]) g.set(0, 0, z, p.second);
+      g.box(-2, 0, 15, 2, 0, 15, p.accent); g.box(0, -1, 15, 0, 1, 15, p.accent); g.setM(3, 0, 14, p.accent);
+      g.box(-1, 0, 16, 1, 0, 19, p.metal); g.box(0, -1, 16, 0, 1, 19, p.metal); g.set(0, 0, 20, p.metal); g.set(0, 0, 21, p.metal);
+    },
+    wL(g, p) { /* the gauntlet's hand is free: it grips the lance two-handed */ },
+    leg(g, p, o) {
+      g.box(-1, -4, -1, 1, 0, 1, p.cloth);
+      g.box(-1, -9, -1, 1, -5, 1, (x, y) => y % 2 ? p.main : shade(p.main, 0.78)); g.box(-1, -6, 2, 1, -5, 2, p.accent); g.set(0, -4, 2, p.accent);
+      g.box(-1, -11, -1, 1, -10, 2, p.main); g.box(-1, -11, -1, 1, -11, 2, p.dark); g.set(-1, -11, 3, p.accent); g.set(1, -11, 3, p.accent);
+      knee(g, p, o);
+    },
+  };
+
+  /* ---------------------------------------------------------------- BARD */
+  D.bard = {
+    head(g, p) {
+      const hair = 0xc8743a;
+      g.box(-3, 0, -3, 3, 5, 3, p.skin); eyes(g, p, 3, 3); g.box(-1, 1, 3, 1, 1, 3, 0xa83a4a); g.setM(2, 2, 3, mix(p.skin, 0xff8080, 0.35));
+      g.box(-3, 1, -3, 3, 5, -3, hair); g.boxM(3, 1, -2, 3, 4, 0, hair); g.boxM(4, 1, -1, 4, 2, 0, hair);
+      g.box(-4, 5, -4, 4, 6, 4, p.main); g.box(-3, 7, -3, 4, 7, 3, p.main); g.box(-1, 8, -2, 4, 8, 2, p.main); g.box(2, 9, -1, 4, 9, 1, p.main);
+      g.box(-4, 5, 4, 4, 5, 4, p.second); g.box(-4, 5, -4, -4, 5, 4, p.second);
+      [[-3, 7, -1], [-4, 8, -2], [-4, 9, -3], [-5, 10, -4], [-5, 10, -5], [-5, 11, -6], [-5, 11, -7], [-5, 12, -8]].forEach(([x, y, z], i) => g.set(x, y, z, i > 5 ? p.gem : WHITE));
+    },
+    torso(g, p) {
+      g.box(-4, 0, -2, 4, 8, 2, (x) => Math.abs(x) % 3 === 1 ? p.second : p.main);
+      g.cut(-4, 0, -2, -4, 1, 2); g.cut(4, 0, -2, 4, 1, 2);
+      g.box(-1, 1, 3, 1, 7, 3, p.second); for (let y = 2; y <= 6; y += 2) g.set(0, y, 3, p.accent);
+      g.box(-3, 8, -3, 3, 8, 3, WHITE); g.box(-2, 7, 3, 2, 7, 3, WHITE); g.cut(-1, 8, -1, 1, 8, 1);          // the ruff
+      g.box(-4, 0, -2, 4, 1, 2, p.dark); g.set(0, 1, 3, p.accent);
+      g.box(-1, 9, -1, 1, 9, 1, p.joint);
+    },
+    hips(g, p) {
+      g.box(-4, -3, -2, 4, 0, 2, p.main); g.box(-4, -3, -2, 4, -3, 2, p.accent); g.box(-4, 0, -2, 4, 0, 2, p.dark);
+      g.box(3, -4, 3, 4, -1, 3, LEATHER); g.set(4, -2, 4, p.accent);
+    },
+    arm(g, p, o) {
+      g.ell(0, -1, 0, 2, 2, 2, (x, y, z) => (x + z + y) % 2 ? p.main : p.second);
+      g.box(-1, -7, -1, 1, -4, 1, p.main); g.box(-1, -7, -1, 1, -7, 1, WHITE);
+      hand(g, p.skin); elbow(g, p, o);
+    },
+    wR(g, p) {
+      g.box(0, 0, -2, 0, 0, 7, WOOD2); g.box(0, 1, -3, 0, 1, -1, WOOD2); g.setM(1, 1, -3, p.accent); g.setM(1, 1, -1, p.accent);   // the neck and pegbox
+      g.box(0, 1, 0, 0, 1, 7, BONE);                                                                                                // strings
+      g.ell(0, 0, 11, 3, 1, 3.5, WOOD); g.ell(0, 1, 11, 2, 0, 2.5, shade(WOOD, 1.15)); g.ell(0, 2, 11, 1, 0, 1, p.dark);              // the bowl and its sound hole
+      g.box(0, 2, 13, 0, 2, 14, p.accent);
+    },
+    wL(g, p) {
+      g.box(0, 0, -1, 0, 0, 1, WOOD);
+      for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; g.set(Math.round(Math.cos(a) * 3), Math.round(Math.sin(a) * 3), 3, i % 3 ? WOOD : p.metal); }
+      for (let i = 0; i < 12; i += 3) { const a = i * Math.PI / 6 + 0.3; g.set(Math.round(Math.cos(a) * 3.6), Math.round(Math.sin(a) * 3.6), 3, p.accent); }
+      g.ell(0, 0, 3, 2, 2, 0, BONE); g.set(0, 0, 4, p.gem);
+    },
+    leg(g, p, o) {
+      g.box(-1, -9, -1, 1, 0, 1, p.cloth); g.box(-1, -3, -1, 1, -3, 1, p.second);
+      g.box(-1, -11, -1, 1, -10, 2, p.main); g.box(0, -11, 3, 0, -10, 3, p.main); g.set(0, -9, 4, p.main); g.set(0, -9, 4, p.accent);
+      knee(g, p, o);
+    },
+  };
+
+  /* ---------------------------------------------------------------- the SUMMONER's imp */
+  const IMPS = new Map();
+  function imp(line, r) {
+    const k = line + ':' + r;
+    if (!IMPS.has(k)) {
+      const p = palette(line, r), g = new VX.Grid(); g.jit = 0.04;
+      const body = p.second, dark = shade(body & 0xffffff, 0.68), belly = mix(body & 0xffffff, 0xffffff, 0.35);
+      g.ell(0, 4, 0, 2.2, 2.6, 2, body); g.box(-1, 2, 2, 1, 4, 2, belly);
+      g.setM(1, 5, 2, G(p.glow)); g.box(-1, 3, 3, 1, 3, 3, dark); g.setM(1, 3, 3, BONE);                 // eyes and a fanged grin
+      g.setM(2, 7, 0, p.accent); g.setM(2, 8, -1, p.accent); g.setM(3, 8, -2, p.accent);                  // horns
+      g.boxM(1, 0, 0, 1, 1, 1, dark); g.boxM(3, 3, 1, 3, 4, 1, dark); g.setM(3, 2, 2, dark);              // feet and little arms
+      g.boxM(3, 5, -2, 4, 6, -2, p.main); g.setM(5, 7, -2, p.main);                                       // wings
+      g.set(0, 2, -3, dark); g.set(0, 2, -4, dark); g.set(0, 3, -5, G(p.glow));                            // a tail with a spark on the end
+      IMPS.set(k, VX.object(g, 0.052));
+    }
+    return IMPS.get(k).clone();
+  }
+
   /* -------------------------------------------------------- geometry cache */
   const GEO = new Map();
   function geo(line, piece, r, draw) {
@@ -503,5 +707,5 @@
     CARDS.set(k, c); return c;
   }
 
-  window.Models = { S, D, palette, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER };
+  window.Models = { S, D, palette, imp, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER };
 })();

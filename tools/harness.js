@@ -71,3 +71,18 @@ window.__seq = (l1, l2, steps, secs, setup) => {
   });
   return { moves: moves.join(' '), calls: __calls.join(', '), hits: maxHits, bounces: maxBounce, dmg: Math.round(b.maxHp - b.hp), errs: __errs.length };
 };
+/* a Legend Art from a distance: P1 (full Hype) presses Super at range `dist`; reports the catch, the cinematic and the damage */
+window.__superTest = (l1, l2, dist, opt) => {
+  __calls.length = 0; opt = opt || {};
+  const m = __train(l1, l2), [a, b] = m.fighters; a.pos.set(-dist / 2, 0, 0); b.pos.set(dist / 2, 0, 0); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2;
+  if (opt.dummy) m.training.dummy = opt.dummy;
+  a.hype = 100; const hp0 = b.hp; let cine = false, cineT = 0, phases = [], maxY = 0;
+  __step(opt.secs || 5, i => {
+    const f = __pad(); if (i === 2) f.held.super = true;
+    if (opt.each) opt.each(i, m, a, b, f);
+    if (m.cine) { cine = true; cineT += 1 / 60; }
+    if (a.superPhase && phases[phases.length - 1] !== a.superPhase) phases.push(a.superPhase);
+    maxY = Math.max(maxY, a.pos.y);
+  });
+  return { cine, cineT: +cineT.toFixed(2), phases: phases.join('>'), dmg: Math.round(hp0 - b.hp), bst: b.state, calls: __calls.join(', '), errs: __errs.slice(0, 3), maxY: +maxY.toFixed(1), left: !!m.cine };
+};

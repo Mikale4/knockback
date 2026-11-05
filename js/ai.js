@@ -30,11 +30,14 @@
       }
       return best && bd < 7 ? { x: -best.n.x, z: -best.n.z, dist: bd, w: best } : null;
     }
+    /* how far away a Legend Art can still catch them */
+    superReach(mv) { return { dash: (mv.dist || 6) * 1.25, melee: (mv.close || 2) + 1.6, proj: (mv.range || 8) - 0.5, leap: 12, jump: 14, mark: 9, wave: mv.rad - 0.3, radial: mv.rad + 0.2 }[mv.catchType] || 3.5; }
     think(dt) {
       // a press lasts one frame: release last frame's pulses
       for (const a of Input.ACTIONS) this.held[a] = false;
       for (const a of this.pulse) this.held[a] = true; this.pulse.clear();
       const f = this.f, o = f.opp, m = this.m; if (!o) return;
+      if (m.cine) { this.stop(); this.guardT = 0; return; }
       if (this.guardT > 0) { this.guardT -= dt; this.held.guard = true; }
       if (this.dummy && this.dummy !== 'cpu') return this.dummyThink(dt);
       if (m.phase !== 'fight') { this.stop(); return; }
@@ -89,13 +92,15 @@
         if (f.kind === 'launch' && hitNow && r() < skill) { this.press('jump'); return; }
         if (f.kind === 'air' && hitNow && r() < skill) {
           if (f.st.sig === 'airdash' && (f.airDashes || 0) < 2 && o.pos.distanceTo(f.pos) > 1.4 && r() < 0.4) { this.press('dodge'); return; }
+          if (f.st.sig === 'pogo' && f.pogos < 2 && !nx.l && r() < 0.5) { this.press('jump'); this.pogoNext = true; return; }
           if (nx.l) this.press('light'); else this.press('heavy'); return;
         }
         if ((f.kind === 'heavy') && mv.charge && f.input.held.heavy !== undefined) { const aim = this.wallAim(f, o); if (aim) this.stickTo(aim.x, aim.z); if (this.chargeHold > 0) { this.chargeHold -= dt; this.held.heavy = true; } }
-        if (hitNow && f.hype >= 100 && r() < 0.25 * lv) this.press('super');
+        if (hitNow && f.hype >= 100 && d < this.superReach(KB.MOVES[f.st.super]) && r() < 0.25 * lv) this.press('super');
         return;
       }
       if (f.state === 'air') {
+        if (this.pogoNext && !f.airStr && d < 2.4) { this.pogoNext = false; this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.6); this.press('light'); return; }
         if (o.state === 'tumble' && d < 2 && Math.abs(o.pos.y - f.pos.y) < 1.4 && !f.airStr) { this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.6); this.press('light'); return; }
         if (o.state === 'tumble' && f.airJumps > 0 && o.pos.y > f.pos.y + 1 && r() < 0.05) { this.press('jump'); return; }
         this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.5); return;
@@ -132,10 +137,11 @@
       }
 
       // ---- neutral
-      if (f.hype >= 100 && d < 3.5 && r() < 0.015 * (lv + 1)) { this.press('super'); return; }
+      if (f.hype >= 100 && d < Math.min(6, this.superReach(KB.MOVES[f.st.super])) && r() < 0.015 * (lv + 1)) { this.press('super'); return; }
       const sp = KB.MOVES[f.st.special];
       if (f.uses > 0 && !f.broken.head && r() < 0.006 * (lv + 1)) {
-        const ok = sp.type === 'proj' ? d > 3 && d < 8 : sp.type === 'teleport' ? d > 3 : sp.type === 'dash' ? d > 2 && d < 5.5 : sp.type === 'radial' ? d < 2.5 : sp.type === 'buff' ? d > 4 : false;
+        const imps = m.minions.filter(mn => mn.owner === f).length;
+        const ok = sp.type === 'proj' ? d > (sp.proj === 'breath' ? 0 : 3) && d < (sp.proj === 'breath' ? 3.2 : 8) : sp.type === 'teleport' ? d > 3 : sp.type === 'dash' ? d > 2 && d < 5.5 : sp.type === 'radial' ? d < 2.5 : sp.type === 'buff' ? d > 4 : sp.type === 'summon' ? imps < f.st.minions - 1 && d > 2.2 : false;
         if (ok) { this.press('special'); this.wait = 0.4; return; }
       }
       const heavy = KB.MOVES[f.st.heavy];
@@ -156,7 +162,7 @@
       if (r() < L.aggro[lv] * dt * 8) {
         if (o.state === 'guard' && r() < 0.5 + lv * 0.12) { this.guardT = 0.12; this.held.guard = true; this.press('light'); }
         else if (r() < 0.22) { const aim = this.wallAim(f, o); if (aim) this.stickTo(aim.x, aim.z); this.press('heavy'); this.chargeHold = aim && r() < 0.5 ? U.rnd(0.1, 0.5) : 0; }
-        else this.press('light');
+        else { if (f.st.sig === 'beat' && !Music.beat(m).near && r() < 0.25 * lv) return; this.press('light'); }
         this.wait = L.react[lv] * 0.6;
       } else if (r() < 0.02) { this.guardT = 0.3; }
     }

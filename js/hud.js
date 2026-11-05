@@ -38,11 +38,13 @@
       refs.timer = el('div', { class: 'timer' }, '99');
       refs.walls = el('div', { class: 'wallmap' }, ...['N', 'E', 'S', 'W'].map(id => el('i', { class: 'w' + id, 'data-w': id })), refs.dots = el('div', { class: 'wm-dots' }, el('b', { class: 'd1' }), el('b', { class: 'd2' })));
       root.append(el('div', { class: 'top' }, refs[0].box, el('div', { class: 'mid' }, refs.timer, refs.walls), refs[1].box), refs[0].low, refs[1].low,
-        refs.banner = el('div', { class: 'banner' }), refs.cut = el('div', { class: 'supercut' }));
+        refs.banner = el('div', { class: 'banner' }), refs.cut = el('div', { class: 'supercut' }),
+        refs.cine = el('div', { class: 'cine' }, refs.cTint = el('div', { class: 'ctint' }), el('i', { class: 'cbar t' }), el('i', { class: 'cbar b' }), refs.cFlash = el('div', { class: 'cflash' }), refs.cTitle = el('div', { class: 'ctitle' })));
+      root.classList.remove('cinema');
       if (M.training) root.append(HUD.trainingPanel());
       comboT = [0, 0];
     },
-    hide(match) { if (match && match !== M) return; if (root) { root.hidden = true; root.innerHTML = ''; } const p = $('pause'); if (p) p.remove(); M = null; },
+    hide(match) { if (match && match !== M) return; if (root) { root.hidden = true; root.innerHTML = ''; root.classList.remove('cinema'); } const p = $('pause'); if (p) p.remove(); M = null; },
     update(match) {
       if (!refs || match !== M) return;
       const dt = 1 / 60;
@@ -92,6 +94,11 @@
       c.append(el('div', { class: 'sc-band' }, el('small', null, 'LEGEND ART'), el('b', null, mv.name), el('span', null, f.name)));
       void c.offsetWidth; c.classList.add('show'); setTimeout(() => c.classList.remove('show'), 900);
     },
+    /* the Legend Art cinematic: bars in, a flash and the Art's name on the finisher, a tint for the mood */
+    cine(on) { if (!refs) return; root.classList.toggle('cinema', on); refs.cine.classList.toggle('on', on); if (!on) refs.cTitle.classList.remove('go'); },
+    cineFlash() { if (!refs) return; const e = refs.cFlash; e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
+    cineTitle(text, css) { if (!refs) return; const e = refs.cTitle; e.textContent = text; e.style.setProperty('--lc', css || '#fff'); e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
+    cineTint(t) { if (!refs) return; const e = refs.cTint; if (!t) { e.style.opacity = 0; return; } if (e.dataset.bg !== t[0]) { e.dataset.bg = t[0]; e.style.background = t[0]; } e.style.opacity = t[1]; },
     trainingPanel() {
       const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
       const panel = el('div', { class: 'trainpanel' + (U.touch ? ' min' : '') },
@@ -122,7 +129,7 @@
     },
     /* every move of a build, with the keys that do it */
     moveList(build, pi) {
-      const S = KB.stats(build), B = Input.binds[pi || 0], k = a => Input.keyName((B[a] || [])[0]);
+      const S = KB.stats(build), k = a => Input.prompt(pi || 0, a);
       const nm = id => KB.MOVES[id].name;
       const chain = root => { const out = []; let id = root; while (id && out.length < 8) { out.push(id); id = (KB.MOVES[id].nx || {}).l; } return out; };
       const L = chain(S.light), A = chain(S.air), pi2 = L.findIndex(id => (KB.MOVES[id].nx || {}).p);

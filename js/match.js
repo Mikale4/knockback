@@ -19,7 +19,7 @@
     const arena = Arena.build(scene, opts.arena);
     const M = {
       opts, scene, camera, arena, time: 0, phase: 'intro', phaseT: 0, round: 1, wins: [0, 0], clock: opts.time,
-      frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [],
+      frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [], minions: [], cine: null, camShot: null,
       training: opts.mode === 'training' ? { dummy: 'stand', meter: true, godP2: false, reset: 0 } : null,
       attract: opts.mode === 'attract', results: null, camT: new V3(0, 0, 0), camP: new V3(0, 8, 14), camShake: 0,
     };
@@ -41,13 +41,101 @@
     M.event = (type, data) => { if (type === 'wallbreak') HUD.banner('WALL BREAK', 'break', 1.1); };
     M.comboShow = (att, vic) => HUD.combo(att.idx, vic.combo);
 
+    /* ------------------------------------------- the SUMMONER's imps
+       Little helpers: they walk in, bite, pounce on whatever she hits, and
+       pop after a couple of hits (any attack that touches one hurts it). */
+    let shotId = 0;
+    const impCol = () => KB.LINES.summoner.pal.glow;
+    const impR = f => { const it = ['card', 'head', 'armR', 'legs'].map(s => f.build[s]).find(b => b.line === 'summoner'); return it ? it.r || 0 : 0; };
+    function poof(mn, quiet) {
+      const i = M.minions.indexOf(mn); if (i < 0) return; M.minions.splice(i, 1); scene.remove(mn.obj);
+      if (!quiet) { FX.burst(_v.copy(mn.pos).setY(mn.pos.y + 0.3), { n: 14, color: [impCol(), 0xffffff, KB.LINES.summoner.pal.second], glow: true, speed: 3, gravity: -2, size: 0.07, life: 0.5 }); SFX.play('pop'); }
+    }
+    M.summon = (f, n, quiet) => {
+      for (let i = 0; i < n; i++) {
+        const mine = M.minions.filter(mn => mn.owner === f);
+        if (mine.length >= f.st.minions) poof(mine[0]);   // the oldest makes room
+        const F = f.forward, side = (mine.length % 2 ? 1 : -1) * (0.8 + (i >> 1) * 0.5);
+        const pos = new V3(U.clamp(f.pos.x + F.x * 0.7 + F.z * side, -arena.W + 0.4, arena.W - 0.4), 0, U.clamp(f.pos.z + F.z * 0.7 - F.x * side, -arena.D + 0.4, arena.D - 0.4));
+        const obj = Models.imp('summoner', impR(f)); obj.position.copy(pos); obj.rotation.y = f.yaw; scene.add(obj);
+        M.minions.push({ owner: f, obj, pos: obj.position, vel: new V3(0, 3, 0), yaw: f.yaw, hp: f.st.impHp, t: 0, life: 15, cd: U.rnd(0.4, 0.9), atk: 0, hurt: 0, hitBy: null, hitDone: false, air: true, mv: 'impBite' });
+        if (!quiet) { FX.ring(pos.clone().setY(0.05), { r1: 0.9, life: 0.35, color: impCol() }); FX.burst(pos.clone().setY(0.4), { n: 10, color: [impCol(), 0xffffff], glow: true, speed: 2, gravity: -3, size: 0.06, life: 0.5 }); }
+      }
+      if (!quiet) SFX.play('pop');
+    };
+    function lunge(mn, o, dur, mv) {
+      const dx = o.pos.x - mn.pos.x, dz = o.pos.z - mn.pos.z, d = Math.hypot(dx, dz) || 1, T = U.clamp(d / 9, 0.18, dur);
+      mn.atk = T + 0.12; mn.hitDone = false; mn.cd = U.rnd(1.0, 1.5); mn.mv = mv || 'impBite';
+      mn.vel.set(dx / d * Math.max(0, d - 0.45) / T, 4.5, dz / d * Math.max(0, d - 0.45) / T); mn.air = true; mn.yaw = Math.atan2(dx, dz);
+    }
+    /* her imps go for whoever she points at (all: every imp; otherwise only the ones close and ready) */
+    M.minionsPounce = (f, o, all) => {
+      for (const mn of M.minions) {
+        if (mn.owner !== f || mn.hurt > 0) continue;
+        const d = Math.hypot(o.pos.x - mn.pos.x, o.pos.z - mn.pos.z);
+        if (!all && (d > 4.5 || mn.cd > 0.35 || mn.atk > 0)) continue;
+        lunge(mn, o, all ? 0.55 : 0.32, 'impPounce');
+      }
+    };
+    function hurtMinion(mn, att, id) {
+      mn.hitBy = id; mn.hp--; mn.hurt = 0.3; mn.atk = 0;
+      const k = _w.subVectors(mn.pos, att.pos).setY(0); if (k.lengthSq() < 1e-4) k.copy(att.forward); k.normalize();
+      mn.vel.set(k.x * 6, 4, k.z * 6); mn.air = true;
+      SFX.play('hit', { power: 0.6 }); FX.spark(_v.copy(mn.pos).setY(mn.pos.y + 0.35).clone(), { size: 0.7 });
+      att.hype = Math.min(100, att.hype + 2);
+      if (mn.hp <= 0) { M.call(mn.owner, 'IMP POPPED', 'small', mn.pos.clone().setY(mn.pos.y + 1)); poof(mn); }
+    }
+    /* any attack that reaches an imp hurts it (id: one hit per swing) */
+    M.hitMinions = (att, c, r, id) => { for (const mn of M.minions.slice()) { if (mn.owner === att || mn.hitBy === id) continue; if (_v.copy(mn.pos).setY(mn.pos.y + 0.3).distanceTo(c) < r + 0.4) hurtMinion(mn, att, id); } };
+    M.hitMinionsSeg = (att, a, b, r, id) => { for (const mn of M.minions.slice()) { if (mn.owner === att || mn.hitBy === id) continue; const p = Combat.closestOnSeg(a, b, mn.pos); if (Math.hypot(p.x - mn.pos.x, p.z - mn.pos.z) < r + 0.4 && Math.abs(mn.pos.y - a.y) < 1.6) hurtMinion(mn, att, id); } };
+    M.hitMinionsRay = (att, from, dir, range, w, id) => {
+      for (const mn of M.minions.slice()) {
+        if (mn.owner === att) continue;
+        const c = _w.copy(mn.pos).setY(mn.pos.y + 0.3), t = _v.subVectors(c, from).dot(dir);
+        if (t < 0 || t > range) continue;
+        if (from.clone().addScaledVector(dir, t).distanceTo(c) < w + 0.3) hurtMinion(mn, att, id);
+      }
+    };
+    function updMinions(dt) {
+      for (let i = M.minions.length - 1; i >= 0; i--) {
+        const mn = M.minions[i], f = mn.owner, o = M.opp(f);
+        mn.t += dt; mn.cd -= dt; mn.hurt = Math.max(0, mn.hurt - dt);
+        if (mn.t > mn.life || f.state === 'ko' || !o) { poof(mn); continue; }
+        const dx = o.pos.x - mn.pos.x, dz = o.pos.z - mn.pos.z, d = Math.hypot(dx, dz) || 1;
+        if (mn.atk > 0) {
+          mn.atk -= dt;
+          if (!mn.hitDone && !['held', 'out', 'ko'].includes(o.state) && M.phase === 'fight' && Combat.overlap(_v.copy(mn.pos).setY(mn.pos.y + 0.3), 0.4, o)) {
+            mn.hitDone = true; mn.vel.x *= -0.3; mn.vel.z *= -0.3;
+            Combat.hit(f, o, KB.MOVES[mn.mv], { kind: 'minion', remote: true, from: mn.pos.clone(), dir: new V3(dx / d, 0, dz / d), at: _v.copy(mn.pos).setY(mn.pos.y + 0.45).clone() });
+          }
+        } else if (mn.hurt <= 0 && !mn.air && M.phase === 'fight' && !['out', 'ko'].includes(o.state)) {
+          if (d > 0.95) {
+            let vx = dx / d * 4.4, vz = dz / d * 4.4;
+            for (const k of M.minions) if (k !== mn) { const ex = mn.pos.x - k.pos.x, ez = mn.pos.z - k.pos.z, e = Math.hypot(ex, ez); if (e < 0.6 && e > 1e-3) { vx += ex / e * 3; vz += ez / e * 3; } }
+            mn.vel.x = U.smooth(mn.vel.x, vx, 10, dt); mn.vel.z = U.smooth(mn.vel.z, vz, 10, dt); mn.yaw = Math.atan2(dx, dz);
+            if (Math.random() < dt * 2.5) { mn.vel.y = 2.4; mn.air = true; }
+          } else { mn.vel.x *= 0.8; mn.vel.z *= 0.8; mn.yaw = Math.atan2(dx, dz); if (mn.cd <= 0) lunge(mn, o, 0.25); }
+        } else if (!mn.air) { mn.vel.x *= Math.exp(-8 * dt); mn.vel.z *= Math.exp(-8 * dt); }
+        mn.vel.y -= 22 * dt; mn.pos.addScaledVector(mn.vel, dt);
+        if (mn.pos.y <= 0) { mn.pos.y = 0; mn.vel.y = 0; mn.air = false; if (mn.atk <= 0 && mn.hurt <= 0) { mn.vel.x *= 0.7; mn.vel.z *= 0.7; } }
+        mn.pos.x = U.clamp(mn.pos.x, -arena.W + 0.3, arena.W - 0.3); mn.pos.z = U.clamp(mn.pos.z, -arena.D + 0.3, arena.D - 0.3);
+        const ob = mn.obj; ob.rotation.y = U.turn(ob.rotation.y, mn.yaw, 1 - Math.exp(-12 * dt));
+        ob.rotation.x = mn.atk > 0 ? 0.55 : mn.hurt > 0 ? -0.6 : 0; ob.rotation.z = !mn.air && mn.atk <= 0 ? Math.sin(mn.t * 16) * 0.14 : 0;
+        ob.scale.setScalar(mn.hurt > 0 ? 1 + Math.sin(mn.hurt * 40) * 0.18 : 1);
+        ob.visible = mn.life - mn.t > 2 || Math.sin(mn.t * 30) > 0;
+      }
+    }
+
     /* ------------------------------------------------------------ rounds */
     function place() {
+      if (M.cine) Arts.end(M.cine);
+      for (const mn of M.minions.slice()) poof(mn, true);
       arena.reset(); FX.clear();
       for (const p of M.picks) { if (p.grp.parent) p.grp.parent.remove(p.grp); }
-      M.picks = []; M.projs.forEach(p => p.mesh && scene.remove(p.mesh)); M.projs = []; M.clones.forEach(c => c.f.dispose()); M.clones = [];
+      M.picks = []; M.projs.forEach(p => p.mesh && scene.remove(p.mesh)); M.projs = []; M.camShot = null; M.clones.forEach(c => c.f.dispose()); M.clones = [];
       M.fighters[0].resetRound(-3.2, 0.6, Math.PI / 2); M.fighters[1].resetRound(3.2, 0.6, -Math.PI / 2);
       for (const f of M.fighters) { f.pos.y = 7; f.grounded = false; f.setState('intro'); f.dropIn = true; }
+      for (const f of M.fighters) if (f.st.perk === 'familiar') M.summon(f, 1, true);   // FAMILIAR: an imp from the start
       M.phase = 'intro'; M.phaseT = 0; M.clock = opts.time; M.slow = 1; M.slowT = 0;
       if (!M.attract) HUD.banner(M.training ? 'TRAINING' : (M.round === 1 && !opts.final ? 'ROUND 1' : opts.final && M.wins[0] === opts.wins - 1 && M.wins[1] === opts.wins - 1 ? 'FINAL ROUND' : 'ROUND ' + M.round), 'round', 1.2);
     }
@@ -93,20 +181,23 @@
       m.position.copy(a).addScaledVector(d, 0.5); m.lookAt(b); scene.add(m); M.fx.push({ m, t: 0, life: 0.14 });
     };
     /* a ray hit test against the opponent */
-    function rayHit(f, o, from, dir, range) {
+    function rayHit(f, o, from, dir, range, w) {
       const c = _w.copy(o.pos).setY(o.pos.y + 0.9); const t = _v.subVectors(c, from).dot(dir);
       if (t < 0 || t > range) return null;
-      const p = from.clone().addScaledVector(dir, t); return p.distanceTo(c) < 0.75 ? p : null;
+      const p = from.clone().addScaledVector(dir, t); return p.distanceTo(c) < (w || 0.75) ? p : null;
     }
+    const glowMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op == null ? 0.9 : op, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
     M.fire = (f, mv, charge) => {
       const o = M.opp(f), F = f.forward;
       const muzzle = f.fig.detached.armL ? _v.copy(f.pos).setY(1.2).addScaledVector(F, 0.5).clone() : f.fig.socket('wL', [0, 2, 10]);
       if (mv.proj === 'shot' || mv.proj === 'shotDown' || mv.proj === 'superShot') {
-        const dir = mv.proj === 'shotDown' ? new V3(F.x * 0.7, -0.7, F.z * 0.7).normalize() : F.clone();
+        let dir = mv.proj === 'shotDown' ? new V3(F.x * 0.7, -0.7, F.z * 0.7).normalize() : F.clone();
         const range = (mv.range || 6) + (charge || 0) * 3;
+        // the Broadside's signal shot finds them, high or low, if they're in front
+        if (mv.aimAt && o) { const d = _w.copy(o.pos).setY(o.pos.y + 0.9).sub(muzzle); if (d.length() < range + 1 && _v.copy(d).setY(0).normalize().dot(F) > 0.55) dir = d.normalize().clone(); }
         const hit = rayHit(f, o, muzzle, dir, range);
         const end = hit || muzzle.clone().addScaledVector(dir, range);
-        SFX.play('shot'); tracer(muzzle, end, 0xffe6a0, 0.07); FX.addShake(0.15);
+        SFX.play('shot'); tracer(muzzle, end, 0xffe6a0, 0.07); FX.addShake(0.15); M.hitMinionsRay(f, muzzle, dir, muzzle.distanceTo(end), 0.4, 's' + (++shotId));
         FX.burst(muzzle, { n: 8, color: [0xd8d0c0, 0xa8a090], speed: 1.5, size: 0.12, gravity: -1.5, life: 0.6 }); FX.spark(muzzle, { color: 0xffc060, size: 0.7 });
         if (hit && o.inv <= 0) {
           if (mv.proj === 'superShot') { if (!['ko', 'out', 'down'].includes(o.state)) f.superCaught = true; }
@@ -129,6 +220,30 @@
         }
         SFX.play('whoosh');
         if (hitP && o.inv <= 0) Combat.hit(f, o, mv, { kind: f.kind, at: hitP, from: f.pos.clone(), dir: F.clone(), proj: true });
+      } else if (mv.proj === 'bolt' || mv.proj === 'boltDown') {
+        // SUMMONER: a bolt of spirit light from the staff
+        const col = KB.LINES.summoner.pal.glow, from = f.fig.detached.armR ? _v.copy(f.pos).setY(1.2).addScaledVector(F, 0.5).clone() : f.fig.socket('wR', [0, 0, 14]);
+        const dir = mv.proj === 'boltDown' ? new V3(F.x * 0.72, -0.7, F.z * 0.72).normalize() : F.clone();
+        const hit = rayHit(f, o, from, dir, mv.range, 0.85), end = hit || from.clone().addScaledVector(dir, mv.range);
+        tracer(from, end, col, 0.1); SFX.play('whoosh'); FX.burst(end, { n: 8, color: [col, 0xffffff], glow: true, speed: 3, size: 0.07, life: 0.4 });
+        M.hitMinionsRay(f, from, dir, from.distanceTo(end), 0.5, 's' + (++shotId));
+        if (hit && o.inv <= 0) Combat.hit(f, o, mv, { kind: f.kind, charge, at: hit, from: f.pos.clone(), dir: dir.clone().setY(0).normalize(), proj: true });
+      } else if (mv.proj === 'hex') {
+        // a glyph that bursts a few metres out
+        const col = KB.LINES.summoner.pal.glow, range = mv.range + (charge || 0) * 1.5, base = _w.copy(f.pos).setY(f.pos.y + 1).clone();
+        const hit = rayHit(f, o, base, F, range, 1.05), at = hit || base.clone().addScaledVector(F, range);
+        const from = f.fig.detached.armL ? base : f.fig.socket('wL', [0, 0, 6]);
+        tracer(from, at, col, 0.05); FX.ring(at.clone(), { r1: 1.7, life: 0.35, normal: F.clone(), color: col }); FX.ring(at.clone(), { r1: 1.1, life: 0.3, normal: F.clone(), color: 0xffffff });
+        FX.burst(at, { n: 18, color: [col, 0xffffff], glow: true, speed: 5, size: 0.08, life: 0.45, gravity: 0 }); SFX.play('boom');
+        M.hitMinions(f, at, 1.0, 's' + (++shotId));
+        if (hit && o.inv <= 0) Combat.hit(f, o, mv, { kind: f.kind, charge, at: hit, from: f.pos.clone(), dir: F.clone(), proj: true });
+      } else if (mv.proj === 'breath') {
+        M.projs.push({ kind: 'breath', f, mv, k: f.kind, t: 0, n: 0, id: 's' + (++shotId) }); SFX.play('boom');
+      } else if (mv.proj === 'wave') {
+        // BARD: a ring of sound that rolls forward
+        const from = _w.copy(f.pos).setY(f.pos.y + 1).clone(), ring = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.95, 32), glowMat(0xff8ad8));
+        ring.position.copy(from); ring.lookAt(from.clone().add(F)); ring.renderOrder = 14; scene.add(ring);
+        M.projs.push({ kind: 'wave', f, mv, k: f.kind, charge, mesh: ring, pos: from, dir: F.clone(), dist: 0, range: mv.range + (charge || 0) * 2, t: 0, id: 's' + (++shotId), hit: false });
       } else if (mv.proj === 'bomb') {
         const g = new VX.Grid(); g.ell(0, 0, 0, 2, 2, 2, 0x22222a); g.set(0, 3, 0, 0x8a5a2b); g.set(0, 4, 0, VX.glow(0xffa020));
         const mesh = VX.object(g, 0.07); scene.add(mesh);
@@ -144,15 +259,16 @@
       FX.burst(c, { n: 26, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 7, size: 0.12, life: 0.6 });
       FX.burst(c, { n: 10, color: [0x5a5a5a, 0x8a8a8a], speed: 2, size: 0.25, life: 1.0, gravity: -2 });
       FX.spark(c, { color: 0xffb040, size: 2.6, life: 0.2 });
+      M.hitMinions(f, c, p.mv.rad, 's' + (++shotId));
       if (o && o.pos.distanceTo(_v.copy(c).setY(Math.max(0, c.y - 0.9))) < p.mv.rad + 0.5) {
         const d = _v.subVectors(o.pos, c).setY(0); if (d.lengthSq() < 0.01) d.copy(f.forward); d.normalize();
         Combat.hit(f, o, p.mv, { kind: 'special', dir: d.clone(), from: c.clone(), at: o.pos.clone().setY(1), proj: true });
       }
     }
-    M.cannonball = pos => {
+    M.cannonball = (pos, cb) => {
       const g = new VX.Grid(); g.ell(0, 0, 0, 2, 2, 2, 0x1a1a20); const mesh = VX.object(g, 0.09); scene.add(mesh);
       mesh.position.set(pos.x + U.rnd(-0.4, 0.4), 9, pos.z + U.rnd(-0.4, 0.4));
-      M.projs.push({ kind: 'ball', mesh, pos: mesh.position, vel: new V3(0, -30, 0), target: pos.y + 0.8, t: 0 });
+      M.projs.push({ kind: 'ball', mesh, pos: mesh.position, vel: new V3(0, -30, 0), target: pos.y + 0.8, t: 0, cb });
     };
     M.chain = (att, vic) => { const a = _v.copy(att.pos).setY(1.1).clone(); tracer(a, vic.pos.clone().setY(1.1), 0x50525e, 0.05); };
     M.clone = (att, vic, i) => {
@@ -202,6 +318,14 @@
     function updCamera(dt) {
       const [a, b] = M.fighters;
       let target, dist, from;
+      if (M.cine) {
+        const sh = Arts.cam(M.cine), cut = sh.id !== M.camShot; M.camShot = sh.id;
+        if (sh.pos.y < 2.8) { sh.pos.x = U.clamp(sh.pos.x, -arena.W + 0.35, arena.W - 0.35); sh.pos.z = U.clamp(sh.pos.z, -arena.D + 0.35, arena.D - 0.35); }   // never inside a wall
+        if (cut) { M.camT.copy(sh.look); camera.position.copy(sh.pos); }
+        else { const k = 6; M.camT.x = U.smooth(M.camT.x, sh.look.x, k, dt); M.camT.y = U.smooth(M.camT.y, sh.look.y, k, dt); M.camT.z = U.smooth(M.camT.z, sh.look.z, k, dt); camera.position.x = U.smooth(camera.position.x, sh.pos.x, k, dt); camera.position.y = U.smooth(camera.position.y, sh.pos.y, k, dt); camera.position.z = U.smooth(camera.position.z, sh.pos.z, k, dt); }
+        camera.lookAt(M.camT); camera.position.x += FX.shake.x; camera.position.y += FX.shake.y; return;
+      }
+      M.camShot = null;
       if (M.frozen && M.freezer) {
         const f = M.freezer, F = f.forward;
         target = _v.copy(f.pos).setY(f.pos.y + 1.0).clone(); dist = 4.6;
@@ -241,6 +365,7 @@
         if (M.freezeT <= 0) { M.frozen = false; M.freezer = null; }
         updCamera(rawDt); FX.update(rawDt); HUD.update(M); return;
       }
+      if (M.cine) Arts.update(M.cine, rawDt);
       for (let i = 0; i < 2; i++) if (M.ai[i]) M.ai[i].think(dt);
       // phases
       if (M.phase === 'intro') {
@@ -249,7 +374,7 @@
       } else {
         for (const f of M.fighters) f.update(dt);
         separate();
-        if (M.phase === 'fight' && !M.training && !M.attract) {
+        if (M.phase === 'fight' && !M.training && !M.attract && !M.cine) {
           M.clock -= dt;
           if (M.clock <= 0) { M.clock = 0; timeUp(); }
         }
@@ -259,7 +384,7 @@
         }
         if (M.training) trainingTick(dt);
       }
-      updProjs(dt); updPicks(dt); arena.update(dt);
+      updProjs(dt); updPicks(dt); updMinions(dt); arena.update(dt);
       for (let i = M.clones.length - 1; i >= 0; i--) { const c = M.clones[i]; c.t += dt; c.f.root.position.lerpVectors(c.from, c.to, U.clamp(c.t / 0.22, 0, 1)); if (c.t > 0.4) { c.f.root.traverse(o => { if (o.isMesh && o.material.opacity) o.material.opacity *= 0.8; }); } if (c.t > 0.7) { c.f.dispose(); M.clones.splice(i, 1); } }
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
       updCamera(rawDt); FX.update(dt);
@@ -279,8 +404,31 @@
           p.pos.addScaledVector(p.vel, dt);
           if (p.pos.y <= p.target) {
             SFX.play('boom'); FX.burst(p.pos.clone(), { n: 18, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 6, size: 0.1, life: 0.5 });
-            FX.spark(p.pos.clone(), { color: 0xffb040, size: 2 }); FX.addShake(0.3); scene.remove(p.mesh); M.projs.splice(i, 1);
+            FX.spark(p.pos.clone(), { color: 0xffb040, size: 2 }); FX.addShake(0.3); scene.remove(p.mesh); M.projs.splice(i, 1); if (p.cb) p.cb();
           }
+        } else if (p.kind === 'breath') {
+          // DRAGOON: three bursts of fire in a cone; the last one throws them
+          const f = p.f, o = M.opp(f), F = f.forward, from = f.fig.detached.head ? _v.copy(f.pos).setY(1.6).clone() : f.fig.socket('head', [0, 2, 6]);
+          for (let k = 0; k < 3; k++) FX.burst(from, { n: 1, color: [0xffd040, 0xff6a20, 0xff3010], glow: true, speed: p.mv.range * 2.4, size: 0.13, gravity: -2, life: 0.3, up: 0.15, dir: new V3(F.x * 1.6, 0.05, F.z * 1.6), drag: 2 });
+          while (p.n < 3 && p.n <= Math.floor(p.t / 0.12)) {
+            const last = p.n === 2; p.n++;
+            for (const s of [1, 2, 3]) M.hitMinions(f, _w.copy(f.pos).setY(f.pos.y + 1).addScaledVector(F, s).clone(), 0.35 + s * 0.2, p.id + ':' + p.n);
+            const dx = o.pos.x - f.pos.x, dz = o.pos.z - f.pos.z, d = Math.hypot(dx, dz);
+            const ang = d > 0.01 ? Math.acos(U.clamp((dx * F.x + dz * F.z) / d, -1, 1)) : 0;
+            if (d < p.mv.range + 0.4 && ang < 0.6 && Math.abs(o.pos.y - f.pos.y) < 1.8 && o.inv <= 0) {
+              const mv = last ? p.mv : Object.assign({}, p.mv, { kb: [2, 0], launch: 0, stun: 0.4 });
+              Combat.hit(f, o, mv, { kind: p.k, at: _v.copy(o.pos).setY(o.pos.y + 1.1).clone(), from: f.pos.clone(), dir: F.clone(), proj: true, multiHit: !last });
+            }
+          }
+          if (p.t > 0.38) M.projs.splice(i, 1);
+        } else if (p.kind === 'wave') {
+          const step = 16 * dt; p.dist += step; p.pos.addScaledVector(p.dir, step); p.mesh.position.copy(p.pos);
+          const s = 1 + p.dist * 0.35; p.mesh.scale.set(s, s, s); p.mesh.material.opacity = 0.9 * (1 - p.dist / p.range);
+          if (Math.random() < 0.5) FX.burst(p.pos, { n: 1, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 1, size: 0.08, gravity: -1, life: 0.4 });
+          M.hitMinions(p.f, p.pos, 0.6 + s * 0.3, p.id);
+          const o = M.opp(p.f);
+          if (!p.hit && o && o.inv <= 0 && Combat.overlap(p.pos, 0.5 + s * 0.3, o)) { p.hit = true; Combat.hit(p.f, o, p.mv, { kind: p.k, charge: p.charge, at: p.pos.clone(), from: p.f.pos.clone(), dir: p.dir.clone(), proj: true }); }
+          if (p.dist >= p.range) { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); M.projs.splice(i, 1); }
         }
       }
     }
@@ -317,7 +465,7 @@
       if (Input.keyDown('KeyR') || Input.keyDown('Backspace')) { if (!T.resetHeld) { T.resetHeld = true; place(); M.phase = 'fight'; for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); } } } else T.resetHeld = false;
     }
     M.dispose = () => {
-      M.disposed = true;
+      M.disposed = true; if (M.cine) Arts.end(M.cine);
       for (const f of M.fighters) f.dispose();
       for (const p of M.picks) if (p.grp.parent) p.grp.parent.remove(p.grp);
       arena.dispose(); HUD.hide(M); if (!M.attract) Touch.hide();

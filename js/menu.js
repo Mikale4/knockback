@@ -12,6 +12,7 @@
   const logo = cls => el('div', { class: 'logo ' + (cls || '') }, el('span', null, 'KNOCK'), el('i', null, '//'), el('span', null, 'BACK'));
   const btn = (label, onclick, cls, sub) => el('button', { class: 'btn ' + (cls || ''), onclick: e => { SFX.play('ok'); onclick(e); } }, label, sub ? el('small', null, sub) : null);
   const back = to => btn('◂ BACK', () => { SFX.play('back'); to(); }, 'ghost backbtn');
+  const glyph = (type, b) => el('span', { class: 'glyph g-' + type + ' gb' + b }, Input.padLabel(type, b));
   function topbar(title, onBack) {
     return el('div', { class: 'topbar' }, onBack ? back(onBack) : null, el('h1', null, title), el('div', { class: 'grow' }),
       el('div', { class: 'tokens', id: 'tok' }, el('i', { class: 'coin' }), U.fmt(S().tokens)),
@@ -83,7 +84,7 @@
       attract(); Music.play('title');
       const s = el('div', { class: 'screen title' },
         el('div', { class: 'titlewrap' }, logo('l-big'), el('div', { class: 'tag' }, 'ACTION FIGURE ARENA FIGHTER'),
-          el('div', { class: 'press' }, U.touch ? 'TAP TO START' : 'PRESS ANY KEY')),
+          el('div', { class: 'press' }, U.touch ? 'TAP TO START' : 'PRESS ANY KEY OR BUTTON')),
         el('div', { class: 'foot' }, 'Knock them into a wall. They bounce back. Hit them again.'));
       App.screen(s);
       const go = () => { off(); s.removeEventListener('pointerdown', go); SFX.play('ok'); Menu.fullscreen(); if (Auth.resume()) Menu.afterLogin(false); else Menu.login(); };
@@ -290,7 +291,7 @@
           seg('ARENA', cfg.arena, [['random', 'Random'], ...Arena.LIST.map(a => [a, Arena.THEMES[a].name])], v => cfg.arena = v),
           seg('ROUNDS', cfg.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => cfg.wins = +v),
           seg('RARITY BONUS', cfg.bonus, [[true, 'On'], [false, 'Off (fair)']], v => cfg.bonus = v === true || v === 'true'),
-          two ? el('p', { class: 'note' }, 'P1: WASD + J K L I U O, Space, L-Shift · P2: arrows + Numpad 1-6, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Gamepads: P1 first pad, P2 second.') : null,
+          two ? el('p', { class: 'note' }, 'P1: WASD + J K L I U O, Space, L-Shift · P2: arrows + Numpad 1-6, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Controllers: the first pad is P1, the second P2 (swap them, and rebind anything, in OPTIONS).') : null,
           watch ? el('p', { class: 'note' }, 'Sit back and watch two CPUs fight. Random figures are re-rolled every fight. Esc pauses. No tokens for watching.') : null,
           btn(watch ? 'WATCH!' : 'FIGHT!', () => Menu.versusStart(cfg), 'big wide fight'))));
     },
@@ -355,18 +356,49 @@
     options() {
       useRoom(activeBuild());
       const vol = k => el('label', { class: 'vol' }, k.toUpperCase(), el('input', { type: 'range', min: 0, max: 1, step: 0.05, value: SFX.vol[k], oninput: e => SFX.setVol(k, +e.target.value) }));
-      const table = pi => el('div', { class: 'binds' }, el('h3', null, 'PLAYER ' + (pi + 1) + ' KEYS'),
-        ...['up', 'down', 'left', 'right', ...Input.ACTIONS].map(a => el('div', { class: 'brow' }, el('span', null, Input.LABEL[a]),
-          el('button', { class: 'kbtn', onclick: e => { e.target.textContent = 'press a key…'; Input.rebind(pi, a, () => Menu.options()); } }, (Input.binds[pi][a] || []).map(Input.keyName).join(' / ')))));
-      App.screen(el('div', { class: 'screen options' }, topbar('OPTIONS', () => Menu.hub()),
+      // the keyboard: two keys an action, a key can only do one thing
+      const keyBtn = (pi, a, slot) => {
+        const code = (Input.binds[pi][a] || [])[slot];
+        return el('button', { class: 'kbtn' + (code ? '' : ' empty'), onclick: e => { e.currentTarget.textContent = 'press a key…'; e.currentTarget.classList.add('wait'); Input.rebind(pi, a, () => Menu.options(), slot); } }, code ? Input.keyName(code) : '+');
+      };
+      const table = pi => el('div', { class: 'binds' }, el('h3', null, 'PLAYER ' + (pi + 1)),
+        ...['up', 'down', 'left', 'right', ...Input.ACTIONS].map(a => el('div', { class: 'brow' }, el('span', null, Input.LABEL[a]), el('div', { class: 'kslots' }, keyBtn(pi, a, 0), keyBtn(pi, a, 1)))));
+      // controllers
+      const pads = Input.pads(), vsOf = n => (Input.settings.swap ? [1, 0] : [0, 1])[n] ?? -1;
+      const typeOf = pi => { const p = pads.find(q => vsOf(q.n) === pi) || pads[0]; return p ? p.type : 'xbox'; };
+      const padBtn = (pi, a) => { const b = Input.padBinds[pi][a]; return el('button', { class: 'kbtn pbtn', onclick: e => { e.currentTarget.textContent = 'press a button…'; e.currentTarget.classList.add('wait'); Input.rebindPad(pi, a, () => Menu.options()); } }, b == null ? '—' : glyph(typeOf(pi), b)); };
+      const padTable = pi => el('div', { class: 'binds' }, el('h3', null, 'PLAYER ' + (pi + 1) + ' PAD'),
+        ...Input.ACTIONS.map(a => el('div', { class: 'brow' }, el('span', null, Input.LABEL[a]), padBtn(pi, a))));
+      const padList = el('div', { class: 'padlist' });
+      const drawPads = () => {
+        const P = Input.pads(); padList.innerHTML = '';
+        if (!P.length) { padList.append(el('div', { class: 'padcard none' }, el('b', null, 'NO CONTROLLER FOUND'), el('span', null, 'Plug one in (or switch it on) and press any button on it.'))); return; }
+        for (const p of P) padList.append(el('div', { class: 'padcard t-' + p.type },
+          el('b', null, Input.padName(p.type)), el('span', { class: 'pid' }, p.id.replace(/\(.*?\)/g, '').slice(0, 48) + (p.standard ? '' : ' · custom layout')),
+          el('span', { class: 'who' }, vsOf(p.n) >= 0 ? (P.length > 1 ? 'P' + (vsOf(p.n) + 1) + ' IN VERSUS' : 'PLAYER 1') : 'SPARE'),
+          el('div', { class: 'live' }, ...(p.pressed.length ? p.pressed.map(i => glyph(p.type, i)) : [el('small', null, 'press buttons to test')]))));
+      };
+      drawPads();
+      const timer = setInterval(() => { if (!document.body.contains(padList)) { clearInterval(timer); Input.cancelListen(); return; } if (!Input.listeningPad) drawPads(); }, 120);
+      const dz = el('label', { class: 'vol' }, 'STICK DEADZONE', el('input', { type: 'range', min: 0.08, max: 0.5, step: 0.02, value: Input.settings.deadzone, oninput: e => Input.setSetting('deadzone', +e.target.value) }));
+      App.screen(el('div', { class: 'screen options' }, topbar('OPTIONS', () => { Input.cancelListen(); Menu.hub(); }),
         el('div', { class: 'panel optp' },
           el('div', { class: 'vols' }, vol('sfx'), vol('music')),
+          el('h2', { class: 'osec' }, 'KEYBOARD'),
+          el('p', { class: 'note' }, 'Click a slot and press the key you want. Each action takes two keys. A key that was already doing something else swaps over. Esc cancels; Backspace clears an alternate.'),
           el('div', { class: 'bindcols' }, table(0), table(1)),
-          el('p', { class: 'note' }, 'Gamepad: A jump · B dodge · X light · Y heavy · LB special · RB guard · LT super · RT snap · Start pause.'),
+          el('div', { class: 'row' }, btn('RESET KEYS', () => { Input.resetBinds(); Menu.options(); }, 'ghost')),
+          el('h2', { class: 'osec' }, 'CONTROLLERS'),
+          el('p', { class: 'note' }, 'Xbox, PlayStation and Switch controllers are recognised and the game shows their own buttons. Any other PC controller works too: if its buttons land in odd places, rebind them below. In one-player modes every pad controls Player 1; in 2-player versus the first pad is Player 1 and the second is Player 2. In the menus: d-pad or stick to move, the bottom button to choose, the right button to go back.'),
+          padList,
+          el('div', { class: 'vols' }, dz, btn(Input.settings.swap ? 'PADS SWAPPED ⇄' : 'SWAP P1 / P2 PADS', () => { Input.setSetting('swap', !Input.settings.swap); Menu.options(); }, 'ghost')),
+          el('div', { class: 'bindcols' }, padTable(0), padTable(1)),
+          el('div', { class: 'row' }, btn('RESET PAD BUTTONS', () => { Input.resetPads(); Menu.options(); }, 'ghost')),
           U.touch ? el('p', { class: 'note' }, 'On a phone or tablet you get on-screen controls in every fight: the stick appears wherever your left thumb lands, and every button is held while touched (hold GUARD and tap LIGHT to throw). Turn the phone sideways for the best view.') : null,
-          el('div', { class: 'row' }, btn('RESET KEYS', () => { Input.resetBinds(); Menu.options(); }, 'ghost'),
-            btn('DELETE THIS COLLECTOR', () => { if (confirm('Delete ' + Auth.user.user + ' and everything they own? This cannot be undone.')) { Auth.remove(Auth.user.id); Auth.logout(); Menu.login('new'); } }, 'ghost danger')))));
+          el('div', { class: 'row' }, btn('DELETE THIS COLLECTOR', () => { if (confirm('Delete ' + Auth.user.user + ' and everything they own? This cannot be undone.')) { Auth.remove(Auth.user.id); Auth.logout(); Menu.login('new'); } }, 'ghost danger')))));
     },
+    /* a controller came or went */
+    padToast(gp, on) { toast((on ? '🎮 ' + Input.padName(Input.padType(gp)) + ' connected' : 'Controller disconnected'), on ? 'gold' : ''); },
     /* ---------------------------------------------------------- results */
     results(res, opts) {
       Music.play('menu'); const hud = U.$('hud'); if (hud) hud.hidden = true;

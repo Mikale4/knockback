@@ -73,6 +73,8 @@
     ko() { if (!ctx) return; const t = ctx.currentTime; tone(1046, 1046, 1.2, 'triangle', 0.35, t); tone(523, 523, 1.4, 'sine', 0.35, t); noise(1, 0.3, 500, 0.3, 'lowpass', t); },
     bell() { tone(880, 880, 0.6, 'triangle', 0.3); tone(1760, 1760, 0.4, 'sine', 0.12); },
     tick() { tone(1200, 1200, 0.04, 'square', 0.08); },
+    chord() { if (!ctx) return; const t = ctx.currentTime; [0, 4, 7, 12].forEach((s, i) => { tone(262 * Math.pow(2, s / 12), null, 0.5, 'triangle', 0.16, t + i * 0.018); tone(524 * Math.pow(2, s / 12), null, 0.25, 'square', 0.03, t + i * 0.018); }); },
+    lullaby() { if (!ctx) return; const t = ctx.currentTime; [12, 7, 4, 0].forEach((s, i) => tone(660 * Math.pow(2, s / 12), null, 0.4, 'sine', 0.14, t + i * 0.11)); },
     ui() { tone(1100, 1100, 0.04, 'square', 0.07); },
     ok() { tone(700, 1400, 0.08, 'square', 0.1); },
     back() { tone(600, 300, 0.08, 'square', 0.08); },
@@ -102,7 +104,7 @@
     title: { bpm: 132, roots: [50, 46, 53, 48], minor: [1, 0, 0, 0], kick: 'x...x...x...x.x.', snare: '....x.......x...', hat: 'x.x.x.x.x.x.x.x.', arp: 'x..x..x.x..x..x.', bassP: 'x..x..x.x..x..x.', lead: 0.03, wave: 'sawtooth' },
   };
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-  let cur = null, step = 0, nextT = 0, timer = null;
+  let cur = null, step = 0, nextT = 0, timer = null, songT0 = 0;
   function schedule() {
     if (!ctx || !cur) return;
     const sp = 60 / cur.bpm / 4;
@@ -121,11 +123,17 @@
     play(name) {
       init(); if (!ctx) return;
       if (cur === SONGS[name]) return;
-      cur = SONGS[name] || null; step = 0; nextT = ctx.currentTime + 0.08;
+      cur = SONGS[name] || null; step = 0; nextT = ctx.currentTime + 0.08; songT0 = nextT;
       if (!timer) timer = setInterval(schedule, 30);
     },
     stop() { cur = null; },
     get current() { return Object.keys(SONGS).find(k => SONGS[k] === cur) || null; },
+    /* the beat of the music that's playing (falls back to the match clock): n counts beats, near = within 85 ms of one */
+    beat(m) {
+      const per = 60 / ((cur && cur.bpm) || 148), live = ctx && cur && ctx.state === 'running';
+      const x = (live ? ctx.currentTime - songT0 : (m ? m.time : 0)) / per;
+      return { n: Math.floor(x), near: Math.abs(x - Math.round(x)) * per < 0.085, per };
+    },
   };
   window.SFX = SFX; window.Music = Music;
 })();

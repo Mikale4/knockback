@@ -1,12 +1,12 @@
 # KNOCK//BACK
 
 A voxel arena fighter where the fighters are **action figures** of famous warriors — Samurai, Knight, Pirate, Monk,
-Viking, Ninja — and every figure is six snap-on parts you can mix freely.
+Viking, Ninja, Summoner, Paladin, Dragoon, Bard — and every figure is six snap-on parts you can mix freely.
 
 **The gimmick is the name:** launch someone into a wall and they **bounce back off it**, still helpless, so you can keep
 the combo going and knock them back into the wall again. The ways out of that loop are taken from Guilty Gear.
 
-**Play:** https://mikale4.github.io/knockback/ (keyboard or gamepad). Your collector and collection are saved in your browser.
+**Play:** https://mikale4.github.io/knockback/ (keyboard, any controller, or touch). Your collector and collection are saved in your browser.
 
 ## Run it locally
 
@@ -21,20 +21,28 @@ plain JavaScript and Three.js (`lib/three.min.js`).
 
 ## Controls
 
-| Action | Keyboard P1 | Keyboard P2 | Gamepad |
-|---|---|---|---|
-| Move | WASD | Arrows | Left stick / d-pad |
-| Light (R-ARM string) | J | Num 1 or `,` | X |
-| Heavy / KNOCK (L-ARM) | K (hold to charge) | Num 2 or `.` | Y |
-| Guard (+ Light = Throw) | L | Num 3 or `/` | RB |
-| Head Special | I | Num 5 or `;` | LB |
-| Snap Cancel / Spring Burst | U | Num 4 or `'` | RT |
-| Legend Art (super) | O | Num 6 or `]` | LT |
-| Jump | Space | Num 0 or R-Shift | A |
-| Dodge / Tech | L-Shift | Num . or `\` | B |
-| Pause / move list | Esc | | Start |
+| Action | Keyboard P1 | Keyboard P2 | Xbox | PlayStation |
+|---|---|---|---|---|
+| Move | WASD | Arrows | Left stick / d-pad | Left stick / d-pad |
+| Light (R-ARM string) | J | Num 1 or `,` | X | □ |
+| Heavy / KNOCK (L-ARM) | K (hold to charge) | Num 2 or `.` | Y | △ |
+| Guard (+ Light = Throw) | L | Num 3 or `/` | RB | R1 |
+| Head Special | I | Num 5 or `;` | LB | L1 |
+| Snap Cancel / Spring Burst | U | Num 4 or `'` | RT | R2 |
+| Legend Art (super) | O | Num 6 or `]` | LT | L2 |
+| Jump | Space | Num 0 or R-Shift | A | ✕ |
+| Dodge / Tech | L-Shift | Num . or `\` | B | ○ |
+| Pause / move list | Esc | | Menu | Options |
 
-Every key can be rebound in **Options**.
+**Everything can be rebound in Options.** Each action takes two keys per player (a key that already does something
+swaps over). Every controller button can be rebound too: click the slot and press the button.
+
+**Controllers:** Xbox, PlayStation and Switch pads are recognised and every prompt (the move list, Options) shows that
+pad's own buttons. Any other PC controller works as well; its d-pad hat is read even when the browser doesn't map it,
+and if its buttons land in odd places, rebind them. In one-player modes every connected pad controls Player 1; in
+two-player versus the first pad is P1 and the second P2 (**Swap** in Options). There's a stick deadzone setting, a
+live button tester, and the whole menu can be driven with a pad: d-pad or stick to move, the bottom button to choose,
+the right button to go back.
 
 **On a phone or tablet** you get on-screen controls in every fight: a floating stick under your left thumb (it appears
 wherever you touch the left half of the screen) and the eight buttons on the right, each held while touched, so you
@@ -64,6 +72,25 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
     at the last moment: no chip, attacker shoved), **Guard Crush** when the guard gauge empties, **Throw tech**.
 - **Snap Cancel** — Snap during your own move with 50 Hype: cancel its recovery to extend a combo.
 
+## Legend Arts (supers)
+
+100 Hype. The screen freezes for the flash, then the Art tries to **catch** — each in its own way — and if it does,
+it plays a **full cinematic**: black bars, its own camera shots, and the last blow lands with a freeze, a flash and
+its name. The clock and the CPUs wait while it plays.
+
+| Art | Catches by | The cinematic |
+|---|---|---|
+| Thousand Cuts (Samurai) | a dash through them | ten blinks around them, a turn of the back, the blade slides home and every cut lands at once |
+| Holy Lance Charge (Knight) | an armoured charge | carries them into the wall, then a column of light |
+| Broadside (Pirate) | a signal shot that finds them | "FIRE!", a rain of cannonballs, then one the size of a barrel |
+| Hundred Hands (Monk) | a lunge to close the gap | an ever-faster flurry, a breath, the palm |
+| **Ragnarök** (Viking) | **a leap that homes in on them wherever they go**: fate can't be dodged or outrun | the sky goes red, lightning, the leap, the world-ending slam |
+| Shadow Clone Arts (Ninja) | a dash through them | clones cut through, ring them, and strike all at once |
+| Grand Summoning (Summoner) | a circle that opens under them | chains of light, her imps pile on, a giant imp rises and belly-flops them |
+| Judgment of Dawn (Paladin) | a burst of light around her | a beam lifts them, wings of light, the hammer comes down like the dawn |
+| Dragonfall (Dragoon) | a leap out of sight, a reticle that locks on, the dive | skewered, carried up, three dives, and the spirit dragon's own |
+| Grand Finale (Bard) | a ring of sound rolling outward | the lights go down, spotlights, they dance to every beat, then the lute comes down for the encore |
+
 ## Every line fights its own way
 
 Your R-ARM decides your string, its **pause branch** (let a move finish, wait a beat, press Light again), your air
@@ -77,6 +104,15 @@ string and a signature; your stance comes from it too.
 | Monk (Fists) | Jab › Cross › Hundred Fists (mash to extend) › Dragon Palm | Leg Sweep (launcher) | Knee › Spin Kick › Whirlwind Kick | **Flow**: moves speed up as a combo goes on |
 | Viking (Axe) | Hack › Hew › Whirlwind (hits all around) | Skull Splitter (ground bounce) | Chop › Axe Drill (spinning dive) | **Wind-up**: hold Light on any swing for armour, +60% damage, a crumple |
 | Ninja (Tantō) | Flick › Backflick › Vanishing Stab (blinks behind) › Shadow Slash | Kunai Toss | Flick › Backflick › Kunai Rain | **Shadow Dash**: Dodge after an air hit to dash at them |
+| Summoner (Staff) | Staff Jab › Staff Swing › Sic 'Em (every imp attacks) › Conjure Bolt | Call Imp | Swing › Spirit Bolt (spike) | **Pack Tactics**: her imps pounce on anyone she hits |
+| Paladin (Warhammer) | Smite › Hammer Fall › Consecrate (holy shockwave all around) | Hallowed Strike (crumples, heals big) | Smite › Meteor Hammer (dive) | **Lay on Hands**: string hits heal her |
+| Dragoon (Lance) | Thrust › Twin Thrust › Wheel Sweep › Rising Lance | Impaling Lunge | Thrust › Dragon Dive | **Skyborne**: Jump off an air hit for a fresh jump and air string |
+| Bard (Lute) | Strum › Twang › Power Chord › Encore! | Lullaby (puts them to sleep) | Strum › Crescendo | **On the Beat**: start a Light on the music's beat for +30% damage |
+
+**The Summoner's imps** come from her Special (two at a time), the Call Imp pause branch, and the FAMILIAR legs (one
+at the start of every round). They walk in and bite, pounce on whatever she hits, and all go in at once on Sic 'Em.
+Any attack that touches one hurts it: they pop after two hits (three with the LEGION card), and she keeps up to three
+(four with LEGION).
 
 ## Parts (the Medabots-style build system)
 
@@ -108,7 +144,7 @@ Accounts are local (this browser's storage), with salted password hashes. It is 
 
 ## Modes
 
-Arcade (six figures, last one a Chase boss) · Versus (CPU at four levels, two players on one keyboard / two pads, or
+Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CPU at four levels, two players on one keyboard / two pads, or
 **CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that
 ignores rarity bonuses) · Training (dummy settings, full meters, combo readout) ·
 Workshop (three builds) · Shelf (collection and records).
@@ -120,11 +156,13 @@ Workshop (three builds) · Shelf (collection and records).
 | `js/parts.js` | Lines, slots, rarities, every move's frame data, part stats, `KB.stats(build)` |
 | `js/models.js` | The voxel art for every part, the shared peg skeleton, icons, Legend Card art |
 | `js/anim.js` | Stances and per-move poses |
-| `js/fighter.js` | The fighter state machine and `Combat` (hits, guard, wall bounce/tech/break, part breaks) |
-| `js/match.js` | Rounds, camera, projectiles, dropped parts, ring outs, supers, training |
+| `js/fighter.js` | The fighter state machine, Legend Art catches, and `Combat` (hits, guard, wall bounce/tech/break, part breaks) |
+| `js/arts.js` | Each Legend Art's cinematic: its choreography, camera shots, props, lighting |
+| `js/match.js` | Rounds, camera, projectiles, the Summoner's imps, dropped parts, ring outs, training |
 | `js/arena.js` | The three arenas and wall stress/cracks/breaks |
 | `js/ai.js` | The CPU (plays through the same inputs as a human) |
 | `js/gacha.js` | Capsule rates, pity, the 3D machine and reveal |
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
+| `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
 | `tools/harness.js` | Test helpers: step the game at a fixed rate, script inputs, log callouts |

@@ -23,7 +23,7 @@
 (function () {
   'use strict';
   const V3 = THREE.Vector3;
-  const GRAV = 30, BODY = 0.42;
+  const GRAV = 30, BODY = 0.42, LEAPG = 52;
   const _v = new V3(), _w = new V3(), _c = new V3();
   const fwd = (yaw, v) => (v || new V3()).set(Math.sin(yaw), 0, Math.cos(yaw));
 
@@ -62,6 +62,8 @@
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0;
+      this.obj.visible = true; this.cine = null; this.pose2 = null; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
+      if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
       Anim.set(this.fig, this.ready);
     }
     freshCombo() { return { hits: 0, dmg: 0, bounces: 0, t: 0, gb: false, by: null }; }
@@ -85,7 +87,9 @@
       for (const k in this.buffs) { this.buffs[k] -= dt; if (this.buffs[k] <= 0) delete this.buffs[k]; }
       if (this.state !== 'guard' && this.state !== 'guardstun') { this.guardIdle += dt; if (this.guardIdle > 0.8) this.guardHp = Math.min(this.guardMax, this.guardHp + this.guardMax * 0.22 * dt); }
       if (!this.comboing && this.state !== 'ko') this.burst = Math.min(100, this.burst + 2.6 * S.burstRate * dt);
-      if (this.uses < S.uses && !this.broken.head) { this.useRegen += dt; if (this.useRegen > 16) { this.useRegen = 0; this.uses++; } }
+      if (this.uses < S.uses && !this.broken.head) { this.useRegen += dt; if (this.useRegen > S.useRegen) { this.useRegen = 0; this.uses++; } }
+      // BARD signature: the beat pulses under your feet
+      if (S.sig === 'beat' && !this.broken.armR) { const b = Music.beat(this.m); if (b.n !== this.lastBeat) { this.lastBeat = b.n; if (this.state !== 'ko' && !this.m.cine) FX.ring(_c.copy(this.pos).setY(0.06), { r0: 0.3, r1: 1.0, life: 0.22, color: 0xff8ad8 }); } }
       if (this.m.training && this.m.training.meter) { this.hype = 100; this.burst = 100; this.uses = S.uses; }
       if (this.combo.hits && this.inHitstun) this.combo.t += dt;
 
@@ -125,7 +129,7 @@
       const S = this.st, I = this.input, dir = this.stick();
       const legs = this.broken.legs ? 0.68 : 1;
       if (this.tryActions(true)) return;
-      const sp = S.speed * legs * (this.buffs.momentum ? 1.06 : 1);
+      const sp = S.speed * legs * (this.buffs.momentum ? 1.06 : 1) * (this.buffs.valor ? 1.1 : 1);
       if (dir) {
         this.vel.x = U.smooth(this.vel.x, dir.x * sp, 14, dt); this.vel.z = U.smooth(this.vel.z, dir.z * sp, 14, dt);
         this.yaw = U.turn(this.yaw, Math.atan2(dir.x, dir.z), 1 - Math.exp(-16 * dt));
@@ -146,7 +150,7 @@
       if (this.grounded) { this.land(); }
     }
     land() {
-      this.airJumps = this.st.airJumps; this.airDodges = this.st.airDodges; this.airStr = 0; this.airDashes = 0;
+      this.airJumps = this.st.airJumps; this.airDodges = this.st.airDodges; this.airStr = 0; this.airDashes = 0; this.pogos = 0;
       this.setState('idle'); this.groundT = 0;
       if (this.vel.y < -8) { SFX.play('land'); FX.burst(_c.copy(this.pos).setY(0.05), { n: 5, color: this.m.arena.dust, speed: 2, size: 0.07, life: 0.4, up: 0.4 }); }
     }
@@ -201,12 +205,12 @@
       this.dodgeDir = d.clone(); this.setState('dodge'); this.move = null;
       const vanish = this.st.passive === 'vanish';
       this.inv = (this.grounded ? 0.22 : 0.18) * (vanish ? 1.6 : 1);
-      this.dodgeCd = vanish ? 0.33 : 0.55;
+      this.dodgeCd = (vanish ? 0.33 : 0.55) * this.st.dodgeCd;
       this.dodgeAir = !this.grounded; SFX.play('dodge');
       if (vanish) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 8, color: 0x6a4a9a, speed: 2, size: 0.1, gravity: -2, life: 0.4 });
     }
     updDodge(dt) {
-      const T = 0.3, dist = 3.3 * this.st.dodgeDist * (this.dodgeAir ? 0.8 : 1);
+      const T = 0.3, dist = 3.3 * this.st.dodgeDist * (this.dodgeAir ? 0.8 * this.st.airDodgeDist : 1);
       const k = this.stateT < T ? (dist / T) * (1.5 - this.stateT / T) : 0;
       this.vel.x = this.dodgeDir.x * k; this.vel.z = this.dodgeDir.z * k;
       if (this.dodgeAir) this.vel.y = Math.max(this.vel.y, this.stateT < T ? 0.5 : this.vel.y);
@@ -241,7 +245,9 @@
     startMove(id, kind) {
       const mv = KB.MOVES[id]; if (!mv) return;
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
-      this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null;
+      this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1;
+      this.beatOn = !!(mv.beat && this.st.sig === 'beat' && (kind === 'light' || kind === 'air') && Music.beat(this.m).near); this.beatShown = false;
+      if (this.beatOn) FX.ring(_c.copy(this.pos).setY(0.08), { r0: 1.0, r1: 1.7, life: 0.25, color: 0xfff27a });
       if (mv.armorSU) this.armorT = Math.max(this.armorT, mv.su);
       if (kind === 'special') this.uses--;
       this.setState('attack'); this.aim(mv);
@@ -261,7 +267,8 @@
     dmgMult(kind) {
       const S = this.st; let m = { light: S.dmgR, air: S.dmgR, heavy: S.dmgL, launch: S.dmgL, airHeavy: S.dmgL, gun: S.dmgL, special: S.dmgH, dash: S.dmgG, super: S.dmgK, throw: 1 }[kind] || 1;
       m *= S.setDmg;
-      if (this.buffs.momentum) m *= 1.1; if (this.buffs.fury) m *= 1.15;
+      if (this.buffs.momentum) m *= 1.1; if (this.buffs.fury) m *= 1.15; if (this.buffs.valor) m *= 1.12;
+      if (S.passive === 'wyrmblood' && !this.grounded) m *= 1.12;
       if (S.passive === 'bushido' && this.hp < this.maxHp * 0.35) m *= 1.15;
       if (S.passive === 'fury') m *= 1 + Math.min(0.18, (1 - this.hp / this.maxHp) * 0.24);
       return m;
@@ -335,6 +342,12 @@
         FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 10, color: 0x30243f, speed: 2.5, size: 0.1, gravity: -1, life: 0.35 }); SFX.play('dodge');
         return true;
       }
+      // DRAGOON signature: Jump off an air hit, a fresh jump and a fresh air string (twice a jump)
+      if (k === 'air' && hit && this.st.sig === 'pogo' && this.pogos < 2 && t >= su + ac * 0.3 && I.take('jump', 0.2)) {
+        this.pogos++; this.move = null; this.airStr = 0; this.vel.y = this.st.jump * 0.9; this.vel.x *= 0.3; this.vel.z *= 0.3; this.grounded = false; this.setState('air');
+        FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 1.2, life: 0.25, color: 0xffc890 }); SFX.play('tech'); this.m.call(this, 'VAULT', 'small');
+        return true;
+      }
       if (k === 'air' && hit && t >= su + ac * 0.3 && I.take('heavy', 0.2)) { this.startMove(this.broken.armL ? 'bodyDrop' : this.st.airHeavy, 'airHeavy'); return true; }
       if (k === 'launch' && hit && t >= su + ac * 0.5 && I.take('jump', 0.3)) {
         this.move = null; const o = this.opp; this.vel.y = this.st.jump * 1.12; this.grounded = false; this.setState('air'); this.airStr = 0;
@@ -355,9 +368,13 @@
       if (mv.type === 'proj') this.m.fire(this, mv, this.charge);
       else if (mv.type === 'radial') {
         FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.1, life: 0.35, color: 0xffe0a0 });
+        this.m.hitMinions(this, _c.copy(this.pos).setY(this.pos.y + 0.5), mv.rad, this.moveSerial * 10);
         if (o && U.dist(this.pos, o.pos) < mv.rad + BODY && Math.abs(o.pos.y - this.pos.y) < 2) Combat.hit(this, o, mv, { kind: this.kind, dir: _v.subVectors(o.pos, this.pos).setY(0).normalize().clone() });
+        if (mv.holy) FX.burst(_c.copy(this.pos).setY(1), { n: 24, color: [0xfff07a, 0xffffff], glow: true, speed: 5, gravity: -2, size: 0.08, life: 0.6 });
         if (mv.buff) this.addBuff(mv.buff);
       } else if (mv.type === 'buff') this.addBuff(mv.buff);
+      else if (mv.type === 'summon') this.m.summon(this, mv.summon);
+      if (mv.command && o) this.m.minionsPounce(this, o, true);
       else if (mv.type === 'teleport') {
         if (o && U.dist(this.pos, o.pos) < mv.range && o.state !== 'out') {
           FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 12, color: 0x30243f, speed: 3, size: 0.12, gravity: -1, life: 0.45 });
@@ -392,6 +409,7 @@
       if (this.hitSet.has(o)) return;
       if (mv.type === 'melee' || mv.type === 'teleport' || mv.type === 'grab') {
         const F = this.forward, c = mv.around ? _c.set(this.pos.x, this.pos.y + 1, this.pos.z) : _c.set(this.pos.x + F.x * mv.reach, this.pos.y + mv.h, this.pos.z + F.z * mv.reach);
+        this.m.hitMinions(this, c, mv.rad, this.moveSerial * 10 + Math.max(0, this.lastSub));
         if (Combat.overlap(c, mv.rad, o)) {
           this.hitSet.add(o);
           if (mv.type === 'grab') return this.tryGrab(o);
@@ -401,6 +419,7 @@
       } else if (mv.type === 'dash') {
         // anything along the dash path
         const a = this.dashFrom || this.pos, b = this.pos;
+        this.m.hitMinionsSeg(this, a, b, mv.rad, this.moveSerial * 10);
         const p = Combat.closestOnSeg(a, b, _w.copy(o.pos).setY(o.pos.y + 0.9));
         if (p.distanceTo(_v.copy(o.pos).setY(o.pos.y + 0.9)) < mv.rad + BODY) { this.hitSet.add(o); Combat.hit(this, o, mv, { kind: this.kind, at: p.clone() }); }
       }
@@ -411,6 +430,8 @@
     addBuff(b) {
       if (b.id === 'bulwark') { this.armorT = b.t; this.buffs.bulwark = b.t; this.m.call(this, 'BULWARK', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.6, normal: new V3(0, 1, 0), color: 0x66aaff }); }
       if (b.id === 'fury') { this.buffs.fury = b.t; this.m.call(this, 'FURY', 'buff'); }
+      if (b.id === 'nova') { const heal = Math.round(this.maxHp * b.heal * this.st.healMult); this.hp = Math.min(this.maxHp, this.hp + heal); this.m.call(this, '+' + heal + ' HP', 'heal'); }
+      if (b.id === 'valor') { this.buffs.valor = b.t; this.m.call(this, 'SONG OF VALOR', 'buff'); for (let i = 0; i < 3; i++) FX.ring(_c.copy(this.pos).setY(0.3 + i * 0.5), { r1: 1.4 + i * 0.3, life: 0.4 + i * 0.1, color: 0xff8ad8 }); }
       if (b.id === 'mantra') {
         const heal = Math.round(this.maxHp * b.heal); this.hp = Math.min(this.maxHp, this.hp + heal);
         for (const k in this.armor) if (!this.broken[k]) this.armor[k] = Math.min(this.armorMax[k], this.armor[k] + this.armorMax[k] * b.repair);
@@ -431,102 +452,170 @@
       SFX.play('guard');
     }
 
-    /* the Legend Art */
+    /* the Legend Art: a flash, a catch, and if it catches, a cinematic (arts.js) */
     startSuper() {
       const mv = KB.MOVES[this.st.super];
       this.hype -= 100; this.move = mv; this.kind = 'super'; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.superPhase = 'start';
-      this.setState('attack'); this.aim(Object.assign({}, mv, { range: 8 })); this.inv = 0.9; this.vel.set(0, 0, 0);
+      this.moveSerial = (this.moveSerial || 0) + 1;
+      this.setState('attack'); this.aim(Object.assign({}, mv, { range: 12 })); this.inv = 0.9; this.vel.set(0, 0, 0);
       this.m.superFreeze(this, mv);
     }
+    /* can a Legend Art take them? A fated one (Ragnarök) ignores dodges and knockdowns */
+    catchable(o, fated) {
+      if (!o || ['ko', 'out', 'held'].includes(o.state) || o.respawnInv || this.m.phase !== 'fight') return false;
+      return !!fated || (o.inv <= 0 && o.state !== 'down' && o.state !== 'getup');
+    }
     updSuper(dt) {
-      const mv = this.move, F = this.forward, o = this.opp;
-      this.moveT += dt; const t = this.moveT;
-      if (this.superPhase === 'start') {
-        this.physics(dt, 14);
-        if (t >= mv.su) {
-          this.superPhase = 'catch'; this.catchT = 0; this.dashFrom = this.pos.clone();
-          if (mv.catchType === 'proj') { this.m.fire(this, Object.assign({}, mv, { proj: 'superShot' }), 0); }
-          if (mv.catchType === 'radial' && mv.leap && o) { const d = _v.subVectors(o.pos, this.pos).setY(0); const l = Math.min(6, d.length()); d.normalize(); this.vel.set(d.x * l / 0.45, 11, d.z * l / 0.45); this.grounded = false; }
-          SFX.play('whoosh');
-        }
-        return;
-      }
+      const mv = this.move, o = this.opp;
+      this.moveT += dt;
+      if (this.superPhase === 'start') { this.physics(dt, 14); if (this.moveT >= mv.su) this.beginCatch(mv, o); return; }
       if (this.superPhase === 'catch') {
         this.catchT += dt;
-        let caught = false;
-        if (mv.catchType === 'dash') {
-          const sp = mv.dist / 0.2; if (this.catchT < 0.2) { this.vel.x = F.x * sp; this.vel.z = F.z * sp; } else { this.vel.x *= 0.5; this.vel.z *= 0.5; }
-          this.physics(dt, 0);
-          if (o && o.inv <= 0 && !['ko', 'out', 'down'].includes(o.state)) { const p = Combat.closestOnSeg(this.dashFrom, this.pos, _w.copy(o.pos).setY(o.pos.y + 0.9)); if (p.distanceTo(_v.copy(o.pos).setY(o.pos.y + 0.9)) < mv.rad + BODY) caught = true; }
-          if (this.catchT < 0.2) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 2, color: 0xffffff, speed: 1, size: 0.08, life: 0.25 });
-        } else if (mv.catchType === 'melee') {
-          if (this.catchT < 0.18) { this.vel.x = F.x * mv.lunge; this.vel.z = F.z * mv.lunge; } this.physics(dt, 8);
-          if (o && o.inv <= 0 && !['ko', 'out', 'down'].includes(o.state) && Combat.overlap(_c.set(this.pos.x + F.x * mv.reach, this.pos.y + 1, this.pos.z + F.z * mv.reach), mv.rad, o)) caught = true;
-        } else if (mv.catchType === 'radial') {
-          this.physics(dt, 0);
-          if (this.grounded && this.catchT > 0.1) {
-            FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.2, life: 0.45, color: 0xffd080 }); FX.addShake(0.8); SFX.play('boom');
-            FX.burst(_c.copy(this.pos).setY(0.1), { n: 30, color: this.m.arena.dust, speed: 7, size: 0.14, life: 0.8 });
-            if (o && o.inv <= 0 && U.dist(this.pos, o.pos) < mv.rad + BODY && o.pos.y < 1.5 && !['ko', 'out', 'down'].includes(o.state)) caught = true;
-            if (!caught) { this.superPhase = 'miss'; this.missT = 0; return; }
-          }
-        } else if (mv.catchType === 'proj') { this.physics(dt, 14); if (this.superCaught) caught = true; }
-        if (caught && o.state !== 'held') { this.beginSeq(o); return; }
-        if (this.catchT > 0.55 && !caught) { this.superPhase = 'miss'; this.missT = 0; }
+        const r = this.updCatch(mv, o, dt);
+        if (r === true) this.beginSeq(o);
+        else if (r === 'miss' || this.catchT > 2.2) this.superMiss();
         return;
       }
       if (this.superPhase === 'seq') return this.updSeq(dt);
-      if (this.superPhase === 'miss') { this.missT += dt; this.physics(dt, 12); if (this.missT > 0.5) { this.move = null; this.setState(this.grounded ? 'idle' : 'air'); } }
+      if (this.superPhase === 'miss') { this.missT += dt; this.physics(dt, 12); if (this.missT > 0.45 && this.grounded) { this.move = null; this.setState('idle'); } else if (this.missT > 1.6) { this.move = null; this.setState('air'); } }
+    }
+    superMiss() {
+      this.superPhase = 'miss'; this.missT = 0; this.obj.visible = true; this.inv = 0;
+      if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
+      this.m.call(this, 'MISSED', 'small');
+    }
+    beginCatch(mv, o) {
+      this.superPhase = 'catch'; this.catchT = 0; this.dashFrom = this.pos.clone(); this.superCaught = false; this.waveR = 0; this.caughtDone = false;
+      if (o && U.dist(this.pos, o.pos) < 14) this.faceOpp();   // look again: they may have moved during the flash
+      const d = o ? U.dist(this.pos, o.pos) : 99, ct = mv.catchType;
+      SFX.play('whoosh');
+      if (ct === 'dash') this.dashLen = U.clamp(d + 1.2, mv.dist * 0.6, mv.dist * 1.35);
+      else if (ct === 'melee') this.dashLen = U.clamp(d - 0.95, 0, mv.close || 2);
+      else if (ct === 'proj') this.m.fire(this, Object.assign({}, mv, { proj: 'superShot', aimAt: o }), 0);
+      else if (ct === 'leap') { this.vel.set(0, 0.5 * LEAPG * mv.flight, 0); this.grounded = false; this.inv = mv.flight + 0.4; SFX.play('jump'); }
+      else if (ct === 'jump') { this.vel.set(0, 30, 0); this.grounded = false; this.inv = 2.2; this.markAt = o ? o.pos.clone().setY(0) : this.pos.clone(); SFX.play('jump'); }
+      else if (ct === 'mark') {
+        this.markAt = o ? o.pos.clone().setY(0) : this.pos.clone();
+        this.markProp = Arts.Prop.glyph(KB.LINES.summoner.pal.glow, mv.rad); this.m.scene.add(this.markProp);
+      }
+    }
+    /* each Art's way of catching: true when it has them, 'miss' when it hasn't */
+    updCatch(mv, o, dt) {
+      const F = this.forward, ct = mv.catchType, t = this.catchT, can = this.catchable(o, mv.fated);
+      if (ct === 'dash') {
+        const T = 0.2, sp = this.dashLen / T;
+        if (t < T) { this.vel.x = F.x * sp; this.vel.z = F.z * sp; } else { this.vel.x *= 0.5; this.vel.z *= 0.5; }
+        this.physics(dt, 0);
+        if (t < T) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 2, color: 0xffffff, speed: 1, size: 0.08, life: 0.25 });
+        // along the dash while it travels; once it stops, only where the attacker stands (so a well-timed dodge still gets out)
+        if (can) { const c = _w.copy(o.pos).setY(o.pos.y + 0.9), p = t < T ? Combat.closestOnSeg(this.dashFrom, this.pos, c) : _c.copy(this.pos).setY(this.pos.y + 0.9); if (Math.hypot(p.x - c.x, p.z - c.z) < mv.rad + BODY && Math.abs(c.y - (this.pos.y + 0.9)) < 2.2) return true; }
+        return t > T + 0.15 ? 'miss' : false;
+      }
+      if (ct === 'melee') {
+        const T = 0.16, sp = this.dashLen / T;
+        if (t < T) { this.vel.x = F.x * sp; this.vel.z = F.z * sp; } else { this.vel.x *= 0.4; this.vel.z *= 0.4; }
+        this.physics(dt, 0);
+        if (can && Combat.overlap(_c.set(this.pos.x + F.x * mv.reach, this.pos.y + 1, this.pos.z + F.z * mv.reach), mv.rad + 0.3, o)) return true;
+        return t > T + 0.14 ? 'miss' : false;
+      }
+      if (ct === 'proj') { this.physics(dt, 14); if (this.superCaught && can) return true; return t > 0.35 ? 'miss' : false; }
+      if (ct === 'leap') {
+        // RAGNARÖK: fate tracks them; the axe comes down wherever they stand
+        const left = mv.flight - t, A = this.m.arena;
+        if (o && left > 0.02) {
+          const tx = U.clamp(o.pos.x, -A.W + 0.5, A.W - 0.5), tz = U.clamp(o.pos.z, -A.D + 0.5, A.D - 0.5);
+          this.vel.x = U.clamp((tx - this.pos.x) / left, -30, 30); this.vel.z = U.clamp((tz - this.pos.z) / left, -30, 30); this.yaw = U.ang(this.pos, o.pos);
+        }
+        this.physics(dt, 0, 0, LEAPG);
+        if (Math.random() < 0.7) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.8), { n: 1, color: [0xffd080, 0xff6020], glow: true, speed: 0.6, size: 0.08, gravity: -2, life: 0.35 });
+        if (t > 0.1 && this.grounded) {
+          this.vel.set(0, 0, 0);
+          FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.2, life: 0.45, color: 0xffd080 }); FX.addShake(0.9); SFX.play('boom');
+          FX.burst(_c.copy(this.pos).setY(0.1), { n: 30, color: this.m.arena.dust, speed: 7, size: 0.14, life: 0.8 });
+          if (can && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < mv.rad + BODY) return true;
+          return 'miss';
+        }
+        return false;
+      }
+      if (ct === 'jump') {
+        // DRAGONFALL: up out of sight, a reticle hunts them, sets, and the lance comes down
+        const col = KB.LINES.dragoon.pal.glow;
+        if (t < 0.3) { this.physics(dt, 0, 0, 20); return false; }
+        if (t < 0.95) {
+          this.obj.visible = false; this.vel.set(0, 0, 0);
+          if (t < 0.72 && o && o.state !== 'out') this.markAt.set(U.clamp(o.pos.x, -this.m.arena.W + 0.5, this.m.arena.W - 0.5), 0, U.clamp(o.pos.z, -this.m.arena.D + 0.5, this.m.arena.D - 0.5));
+          if (Math.floor(t / 0.07) !== Math.floor((t - dt) / 0.07)) FX.ring(_c.copy(this.markAt).setY(0.06), { r0: mv.rad * 1.6, r1: mv.rad, life: 0.12, color: t < 0.72 ? col : 0xffffff });
+          if (t >= 0.72 && t - dt < 0.72) SFX.play('tick');
+          return false;
+        }
+        if (!this.obj.visible) { this.obj.visible = true; this.pos.set(this.markAt.x, 10, this.markAt.z); this.vel.set(0, -46, 0); if (o) this.yaw = U.ang(this.pos, o.pos); SFX.play('whoosh'); }
+        this.physics(dt, 0, 0, 0.01);
+        FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 2, color: [col, 0xffd080], glow: true, speed: 1, size: 0.09, gravity: 0, life: 0.3 });
+        if (this.grounded) {
+          FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 2.2, life: 0.4, color: col }); FX.addShake(0.8); SFX.play('heavy');
+          FX.burst(_c.copy(this.pos).setY(0.2), { n: 24, color: [col, 0xffd080, this.m.arena.dust], glow: true, speed: 6, size: 0.1, life: 0.6 });
+          if (can && Math.hypot(o.pos.x - this.markAt.x, o.pos.z - this.markAt.z) < mv.rad + BODY && o.pos.y < 2.6) return true;
+          return 'miss';
+        }
+        return false;
+      }
+      if (ct === 'mark') {
+        // GRAND SUMMONING: a circle opens under them, tracks a moment, then erupts
+        this.physics(dt, 14);
+        if (t < 0.18 && o && o.state !== 'out') this.markAt.set(o.pos.x, 0, o.pos.z);
+        if (this.markProp) { this.markProp.position.copy(this.markAt).setY(0.05); this.markProp.rotation.y += dt * 5; this.markProp.scale.setScalar(0.4 + Math.min(1, t / 0.2) * 0.6); }
+        if (t >= 0.42) {
+          if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
+          const col = KB.LINES.summoner.pal.glow;
+          FX.burst(_c.copy(this.markAt).setY(0.2), { n: 30, color: [col, 0xffffff], glow: true, speed: 6, gravity: -6, size: 0.09, life: 0.6, up: 2 }); SFX.play('boom');
+          if (can && Math.hypot(o.pos.x - this.markAt.x, o.pos.z - this.markAt.z) < mv.rad + BODY && o.pos.y < 2.6) return true;
+          return 'miss';
+        }
+        return false;
+      }
+      if (ct === 'radial') {
+        // JUDGMENT OF DAWN: a burst of light all around her
+        this.physics(dt, 14);
+        if (t >= 0.06) {
+          FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.15, life: 0.4, color: 0xfff07a }); FX.ring(_c.copy(this.pos).setY(1), { r1: mv.rad, life: 0.35, normal: this.m.camDir(), color: 0xffffff });
+          FX.burst(_c.copy(this.pos).setY(1), { n: 30, color: [0xfff07a, 0xffffff], glow: true, speed: 7, size: 0.08, gravity: 0, life: 0.5 }); SFX.play('jguard'); FX.addShake(0.4);
+          if (can && U.dist(this.pos, o.pos) < mv.rad + BODY && Math.abs(o.pos.y - this.pos.y) < 3.2) return true;
+          return 'miss';
+        }
+        return false;
+      }
+      if (ct === 'wave') {
+        // GRAND FINALE: a ring of sound rolls out; anyone it passes is in the show
+        this.physics(dt, 14);
+        const T = 0.4, r0 = this.waveR, r = mv.rad * U.easeOut(Math.min(1, t / T)); this.waveR = r;
+        if (t - dt <= 0) { FX.ring(_c.copy(this.pos).setY(0.4), { r0: 0.2, r1: mv.rad, life: T, color: 0xff8ad8 }); FX.ring(_c.copy(this.pos).setY(1.2), { r0: 0.2, r1: mv.rad, life: T, color: 0xfff27a }); SFX.play('chord'); }
+        if (can) { const d = U.dist(this.pos, o.pos); if (d >= r0 - 0.7 && d <= r + 0.7 && o.pos.y < 3.2) return true; }
+        return t > T ? 'miss' : false;
+      }
+      return 'miss';
     }
     beginSeq(o) {
       // guarding doesn't stop a Legend Art that has caught you
-      o.move = null; o.setState('held'); o.held = { by: this, kind: 'super' }; o.heldBySuper = true; o.vel.set(0, 0, 0);
+      o.move = null; o.setState('held'); o.held = { by: this, kind: 'super' }; o.heldBySuper = true; o.vel.set(0, 0, 0); o.dizzy = o.crumpled = o.asleep = false;
       if (!o.comboing) o.combo = o.freshCombo();
-      this.superPhase = 'seq'; this.seqT = 0; this.seqHits = 0; this.seqVictim = o; this.seqDir = this.forward.clone(); this.seqStart = this.pos.clone();
-      this.inv = 9; SFX.play('hit', { power: 2 }); FX.addShake(0.5);
-      this.m.call(o, KB.MOVES[this.st.super].name.toUpperCase(), 'super');
+      this.superPhase = 'seq'; this.seqVictim = o; this.inv = 9; this.obj.visible = true; this.vel.set(0, 0, 0);
+      if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
+      SFX.play('hit', { power: 2 }); FX.addShake(0.5);
+      this.m.call(o, 'CAUGHT!', 'super');
+      this.cine = Arts.begin(this, o, this.move);
     }
     updSeq(dt) {
-      const o = this.seqVictim, mv = this.move, D = this.seqDir; this.seqT += dt; const t = this.seqT;
-      const tick = (n, dur) => { const k = Math.floor(t / (dur / n)); if (k > this.seqHits && k <= n) { this.seqHits = k; return true; } return false; };
-      const small = (pos) => { const dmg = mv.dmg * 0.06; Combat.seqTick(this, o, dmg, pos); };
-      let done = false;
-      const seq = mv.seq;
-      if (seq === 'cuts') {
-        o.pos.y = U.lerp(o.pos.y, 0.6, 0.1);
-        if (tick(8, 1.0)) { const a = this.seqHits * 2.4; this.pos.set(o.pos.x + Math.sin(a) * 1.3, 0, o.pos.z + Math.cos(a) * 1.3); this.yaw = U.ang(this.pos, o.pos); this.pose2 = this.seqHits % 2 ? 'slashA' : 'slashB'; small(); this.trailR.push(this.fig.socket('wR', [0, 0, 3]), this.fig.socket('wR', [0, 0, 14])); SFX.play('slash'); }
-        if (t > 1.05) { this.pos.set(o.pos.x - D.x * 1.2, 0, o.pos.z - D.z * 1.2); this.yaw = Math.atan2(D.x, D.z); done = true; }
-      } else if (seq === 'charge') {
-        const sp = 13; this.vel.set(D.x * sp, 0, D.z * sp); this.physics(dt, 0);
-        o.pos.set(this.pos.x + D.x * 1.3, 0.4, this.pos.z + D.z * 1.3);
-        if (tick(5, 0.8)) small();
-        const nearWall = this.m.arena.walls.some(w => !w.broken && w.sign * o.pos[w.axis] > w.lim - 1.0);
-        if (t > 0.85 || nearWall) done = true;
-      } else if (seq === 'cannon') {
-        o.pos.y = U.lerp(o.pos.y, 0.2, 0.1);
-        if (tick(5, 1.1)) { this.m.cannonball(o.pos.clone()); small(); }
-        if (t > 1.2) done = true;
-      } else if (seq === 'hundred') {
-        o.pos.set(this.pos.x + D.x * 1.05, Math.max(0, o.pos.y), this.pos.z + D.z * 1.05);
-        if (tick(12, 1.0)) { this.pose2 = this.seqHits % 2 ? 'jabL' : 'jabR'; this.poseT = 0; small(_c.set(o.pos.x - D.x * 0.3 + U.rnd(-0.3, 0.3), 1 + U.rnd(-0.4, 0.4), o.pos.z - D.z * 0.3 + U.rnd(-0.3, 0.3)).clone()); }
-        if (t > 1.05) { this.pose2 = 'palm'; done = true; }
-      } else if (seq === 'quake') {
-        o.pos.y = U.lerp(o.pos.y, 1.1, 0.08);
-        if (tick(3, 0.6)) { FX.ring(_c.copy(this.pos).setY(0.1), { r1: 3, life: 0.3, color: 0xffd080 }); FX.addShake(0.5); SFX.play('heavy'); small(); }
-        if (t > 0.7) done = true;
-      } else if (seq === 'clones') {
-        o.pos.y = U.lerp(o.pos.y, 0.5, 0.1);
-        if (tick(4, 1.0)) { this.m.clone(this, o, this.seqHits); small(); }
-        if (t > 1.05) { this.pos.set(o.pos.x - D.x * 1.1, 0, o.pos.z - D.z * 1.1); this.yaw = Math.atan2(D.x, D.z); done = true; }
-      }
-      if (done) {
-        o.held = null; o.heldBySuper = false;
-        const fin = Object.assign({}, mv, { dmg: mv.dmg * 0.52, type: 'melee' });
-        Combat.hit(this, o, fin, { kind: 'super', dir: D.clone(), force: true, at: _c.copy(o.pos).setY(o.pos.y + 1).clone() });
-        this.inv = 0.25; this.pose2 = null;
-        this.superPhase = 'end'; this.move = Object.assign({}, mv, { type: 'melee', su: 0, ac: 0, rc: 0.4 }); this.kind = 'super-end'; this.moveT = 0;
-        this.setState('attack');
-      }
+      const o = this.seqVictim, mv = this.move, c = this.cine;
+      if (!c) { this.superMiss(); return; }
+      if (!Arts.step(c, dt)) return;
+      // the finisher
+      o.held = null; o.heldBySuper = false; this.pose2 = null; this.obj.visible = true;
+      const fin = Object.assign({}, mv, { dmg: mv.dmg * 0.52, type: 'melee' });
+      Combat.hit(this, o, fin, { kind: 'super', dir: c.D.clone(), force: true, at: _c.copy(o.pos).setY(o.pos.y + 1).clone() });
+      Arts.finish(c);
+      if (this.st.passive === 'encore') { this.hype = Math.min(100, this.hype + 35); this.m.call(this, 'ENCORE!', 'buff'); }
+      this.inv = 0.25; this.superPhase = 'end'; this.move = Object.assign({}, mv, { type: 'melee', su: 0, ac: 0, rc: 0.4 }); this.kind = 'super-end'; this.moveT = 0;
+      this.setState('attack');
     }
 
     /* while held (thrown, or in a Legend Art) */
@@ -655,7 +744,8 @@
         const mv = Object.assign({}, this.move, { ac: this.move.ac + (this.acExt || 0) }), t = this.moveT;
         let P = Anim.P[this.pose2 || mv.pose] || Anim.P.slashA;
         if (P.alt && t >= mv.su && t < mv.su + mv.ac) P = Anim.P[P.alt[Math.floor((t - mv.su) / 0.06) % P.alt.length]];
-        if (this.kind === 'super' && this.superPhase === 'seq' && this.pose2) { pose = Anim.blend(R, Anim.P[this.pose2].strike, 1, R); rate = 40; }
+        if (this.kind === 'super' && this.superPhase === 'seq' && this.pose2) { pose = Anim.blend(R, Anim.P[this.pose2][this.pose2ph || 'strike'], 1, R); rate = 40; }
+        else if (this.kind === 'super' && this.superPhase === 'catch' && (mv.catchType === 'leap' || mv.catchType === 'jump')) { pose = Anim.blend(R, mv.catchType === 'jump' && this.catchT > 0.9 ? Anim.P.plunge.strike : P.wind, 1, R); rate = 20; }
         else if (t < mv.su || (this.kind === 'super' && this.superPhase === 'start')) { pose = Anim.blend(R, P.wind, 1, R); rate = 14 + 6 / Math.max(0.05, mv.su); }
         else if (t < mv.su + mv.ac + mv.rc * 0.35) { const alt = this.kind === 'air' && this.altPose && mv.pose === 'slashA' ? Anim.P.slashB : P; pose = Anim.blend(R, alt.strike, 1, R); rate = 46; }
         else { const k = U.clamp((t - mv.su - mv.ac) / Math.max(0.01, mv.rc), 0, 1); pose = Anim.blend((P.strike), R, U.ease(k), R); rate = 20; }
@@ -670,6 +760,7 @@
         else if (st === 'gbreak') { pose = Anim.fill(Anim.STATE.stunned); pose.head[1] = Math.sin(this.stateT * 9) * 0.4; }
         else if (st === 'dodge') pose = Anim.fill(Anim.STATE.dodge);
         else if (st === 'hit' && this.crumpled) { pose = Anim.fill(Anim.STATE.crumple); rate = 9; }
+        else if (st === 'hit' && this.asleep) { pose = Anim.fill(Anim.STATE.stunned); pose.head = [0.75, 0, 0.35]; pose.torso = [0.3, 0, 0.15]; rate = 6; if (Math.random() < 0.04) FX.burst(this.fig.socket('head', [0, 9, 0]), { n: 1, color: 0xffffff, glow: true, speed: 0.4, size: 0.08, gravity: -1.5, life: 0.8 }); }
         else if (st === 'hit' && this.dizzy) { pose = Anim.fill(Anim.STATE.stunned); pose.head[1] = Math.sin(this.stateT * 8) * 0.5; pose.armL = [-2.2, 0, -0.6]; rate = 10; }
         else if (st === 'hit' || st === 'held') { pose = Anim.fill(Anim.STATE.flinch); rate = 30; }
         else if (st === 'tumble' || st === 'out') { pose = Anim.fill(Anim.STATE.tumble); rate = 24; }
@@ -771,14 +862,19 @@
       const counter = vic.state === 'attack' && vic.move && vic.moveT < vic.move.su && !o.noCombo;
       if (!vic.comboing || vic.combo.by !== att) { if (!o.noCombo) vic.combo = vic.freshCombo(); }
       const pr = o.kind === 'super' ? Math.max(0.55, Combat.prorate(vic)) : Combat.prorate(vic);
-      let dmg = mv.dmg * (o.charge ? 1 + o.charge * (mv.chargeL ? 1.2 : 0.6) : 1) * att.dmgMult(o.kind) * (1 - vic.st.def) * pr * (counter ? 1.2 : 1);
+      const onBeat = att.beatOn && (o.kind === 'light' || o.kind === 'air');
+      let dmg = mv.dmg * (o.charge ? 1 + o.charge * (mv.chargeL ? 1.2 : 0.6) : 1) * att.dmgMult(o.kind) * (1 - vic.st.def) * pr * (counter ? 1.2 : 1) * (onBeat ? 1.3 : 1);
       if (vic.buffs.bulwark) dmg *= 0.75;
+      if (vic.st.perk === 'resolve' && vic.hp < vic.maxHp * 0.3) dmg *= 0.85;
       dmg = Math.round(dmg);
       if (m.training && m.training.godP2 && vic.idx === 1) dmg = 0;
       vic.hp -= dmg; att.records.dmg += dmg;
       if (!o.noCombo) { vic.combo.hits++; vic.combo.dmg += dmg; vic.combo.by = att; }
-      att.moveHit = true;
-      att.hype = Math.min(100, att.hype + dmg * 0.11 * att.st.hypeGain * (att.buffs.momentum ? 1.5 : 1) * (mv.hype == null ? 1 : mv.hype));
+      if (!o.remote) att.moveHit = true;
+      att.hype = Math.min(100, att.hype + dmg * 0.11 * att.st.hypeGain * (att.buffs.momentum ? 1.5 : 1) * (mv.hype == null ? 1 : mv.hype) * (onBeat ? 1.5 : 1));
+      if (onBeat && !att.beatShown) { att.beatShown = true; m.call(att, '♪ ON THE BEAT', 'buff'); }
+      // PALADIN: the warhammer heals her
+      if (mv.heal && dmg > 0 && att.hp > 0) { const h = Math.max(1, Math.round(dmg * mv.heal * att.st.healMult)); att.hp = Math.min(att.maxHp, att.hp + h); if (h >= 8) m.call(att, '+' + h, 'heal'); FX.burst(_c.copy(att.pos).setY(1.2), { n: 4, color: [0xfff07a, 0x9dff9a], glow: true, speed: 1.2, gravity: -3, size: 0.06, life: 0.5 }); }
       vic.hype = Math.min(100, vic.hype + dmg * 0.05);
       vic.burst = Math.min(100, vic.burst + dmg * 0.055 * vic.st.burstRate);
       // part armour
@@ -788,7 +884,9 @@
       // ---- the reaction
       const armored = vic.armorT > 0 && o.kind !== 'super' && o.kind !== 'throw' && mv.type !== 'grab' && vic.state !== 'held';
       const hs = o.multiHit ? 0.018 : 0.045 + Math.min(0.12, dmg * 0.0009) + (counter ? 0.05 : 0);
-      att.hitstop = hs; vic.hitstop = hs;
+      if (!o.remote) att.hitstop = hs; vic.hitstop = o.remote ? Math.min(hs, 0.05) : hs;
+      if (mv.holy) { FX.ring(atPos.clone(), { r1: 1.6, life: 0.3, normal: m.camDir(), color: 0xfff07a }); FX.burst(atPos, { n: 10, color: [0xfff07a, 0xffffff], glow: true, speed: 4, size: 0.07, gravity: -2, life: 0.5 }); }
+      if (mv.notes) FX.burst(atPos, { n: 8, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 3, size: 0.09, gravity: -2.5, life: 0.6 });
       vic.flash = 0.7; vic.flashCol = counter ? 0xff5050 : 0xffffff;
       const power = U.clamp(mv.kb[0] / 10 + dmg / 80, 0.5, 2.5);
       SFX.play('hit', { power }); if (mv.launch && mv.kb[0] > 12) SFX.play('heavy');
@@ -799,7 +897,7 @@
       if (vic.hp <= 0) { vic.hp = 0; m.ko(vic, att, dir, mv); return 'ko'; }
       if (armored) { m.call(vic, 'ARMOR', 'small'); vic.flashCol = 0xffa040; return 'armor'; }
 
-      vic.move = null; vic.pauseWin = null; vic.crumpled = vic.dizzy = false; vic.held = vic.state === 'held' && vic.held && vic.held.kind === 'super' && o.kind !== 'super' ? vic.held : null;
+      vic.move = null; vic.pauseWin = null; vic.crumpled = vic.dizzy = vic.asleep = false; vic.held = vic.state === 'held' && vic.held && vic.held.kind === 'super' && o.kind !== 'super' ? vic.held : null;
       const kbk = vic.st.kbTaken * (o.charge ? 1 + o.charge * 0.75 : 1) * (1 + vic.combo.hits * 0.008);
       const decay = Combat.decay(vic);
       if (mv.pull) {
@@ -822,8 +920,11 @@
         const crumple = mv.crumple || (mv.chargeL && (o.charge || 0) >= 0.45 ? 0.9 : 0);
         if (crumple) { vic.hitstun = crumple * Math.max(0.7, decay); vic.crumpled = true; vic.vel.x *= 0.3; vic.vel.z *= 0.3; m.call(vic, 'CRUMPLE', 'counter'); }
         if (mv.dizzy) { vic.hitstun = mv.dizzy * Math.max(0.6, decay); vic.dizzy = true; vic.vel.set(0, 0, 0); m.call(vic, 'DIZZY', 'counter'); }
+        if (mv.sleep) { vic.hitstun = mv.sleep * Math.max(0.6, decay); vic.dizzy = true; vic.asleep = true; vic.vel.set(0, 0, 0); m.call(vic, 'ASLEEP  z z z', 'counter'); }
       }
       if (vic.combo.hits >= 2) m.comboShow(att, vic);
+      // SUMMONER signature: her imps pounce on whatever she hits
+      if (att.st.sig === 'pack' && !o.remote && !o.noCombo && o.kind !== 'super') m.minionsPounce(att, vic, false);
       return 'hit';
     },
     /* a small hit inside a Legend Art */

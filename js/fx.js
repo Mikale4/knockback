@@ -27,7 +27,8 @@
       const box = new THREE.BoxGeometry(1, 1, 1);
       litIM = new THREE.InstancedMesh(box, new THREE.MeshLambertMaterial({ color: 0xffffff }), MAX);
       glowIM = new THREE.InstancedMesh(box, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), MAX);
-      for (const im of [litIM, glowIM]) { im.count = 0; im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.setColorAt(0, _c.set(1, 1, 1)); scene.add(im); }
+      // the colour buffer first: three r128 sizes it from the current count, so it must exist before count drops to 0
+      for (const im of [litIM, glowIM]) { im.setColorAt(0, _c.set(1, 1, 1)); im.instanceColor.setUsage(THREE.DynamicDrawUsage); im.count = 0; im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(im); }
       litIM.castShadow = true;
       if (!starTex) starTex = starTexture();
     },

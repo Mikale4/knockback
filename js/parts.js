@@ -23,7 +23,7 @@
     { id: 2, name: 'LIMITED', short: 'LTD', stars: 3, mult: 1.08, css: '#ffc94a' },
     { id: 3, name: 'CHASE', short: 'CHASE', stars: 4, mult: 1.12, css: '#ff4fd8' },
   ];
-  const LINE_ORDER = ['samurai', 'knight', 'pirate', 'monk', 'viking', 'ninja'];
+  const LINE_ORDER = ['samurai', 'knight', 'pirate', 'monk', 'viking', 'ninja', 'summoner', 'paladin', 'dragoon', 'bard'];
   const LINES = {
     samurai: { name: 'SAMURAI', css: '#e0343f', figure: 'Kaze, the Wandering Blade', blurb: 'Fast, precise strings and a lunge that cuts through a crowd.',
       pal: { main: 0xb3202a, second: 0x1d1b22, accent: 0xd9a441, dark: 0x0f0e12, metal: 0xd4dbe3, skin: 0xf0c8a0, cloth: 0x2b3a67, glow: 0xff3344 } },
@@ -37,6 +37,14 @@
       pal: { main: 0x6b4a2f, second: 0x2e6b5e, accent: 0xc8ccd2, dark: 0x3b2a1e, metal: 0x9aa3ad, skin: 0xf0c4a2, cloth: 0xc0532b, glow: 0x55ddff } },
     ninja: { name: 'NINJA', css: '#b06bff', figure: 'Kage of the Ninth Night', blurb: 'The fastest feet, wall jumps, a chain that drags you in, and vanishing tricks.',
       pal: { main: 0x262838, second: 0xb5212e, accent: 0x8a8fa0, dark: 0x14141c, metal: 0xd8dde6, skin: 0xe9c19c, cloth: 0x3a3d55, glow: 0xb06bff } },
+    summoner: { name: 'SUMMONER', css: '#5fe08a', figure: 'Mirelle of the Ninefold Circle', blurb: 'Calls little imps that fight beside her. They pop after a couple of hits, so keep calling.',
+      pal: { main: 0x4b2a7a, second: 0x1f7a6a, accent: 0xd9b84a, dark: 0x1a1226, metal: 0xc8c0d8, skin: 0xe8c4a8, cloth: 0x2a1a40, glow: 0x6dffa0 } },
+    paladin: { name: 'PALADIN', css: '#ffe066', figure: 'Dame Aurelia Dawnward', blurb: 'A warhammer, a tower shield, and every hit she lands patches her up.',
+      pal: { main: 0xefe8d4, second: 0x9c1f2e, accent: 0xe9b93c, dark: 0x5a4632, metal: 0xfff2c8, skin: 0xe8bfa0, cloth: 0x9c1f2e, glow: 0xfff07a } },
+    dragoon: { name: 'DRAGOON', css: '#36b6ff', figure: 'Varek Wyrmspear', blurb: 'The longest reach and the highest jump. Vault off them and keep the fight in the sky.',
+      pal: { main: 0x283c78, second: 0x8a1c2a, accent: 0xc9ced8, dark: 0x141a2e, metal: 0xdfe6ee, skin: 0xe6bc98, cloth: 0x3a2a5a, glow: 0xff7a30 } },
+    bard: { name: 'BARD', css: '#ff6fa8', figure: 'Pip Lightfinger, the Wandering Lute', blurb: 'Hits harder on the beat, sings them to sleep, and ends every fight with a show.',
+      pal: { main: 0xb83a5e, second: 0xf2d27a, accent: 0xe8b84a, dark: 0x3a2230, metal: 0xd8d0c0, skin: 0xf0c8a0, cloth: 0x2c5a8a, glow: 0xff8ad8 } },
   };
 
   /* ------------------------------------------------------------------ moves
@@ -54,7 +62,7 @@
   mv('kabutowari', { name: 'Kabuto-wari', pose: 'twoHandOver', twoHand: 1, su: 0.12, ac: 0.1, rc: 0.25, dmg: 58, kb: [2.5, -14], launch: 1, spike: 1, air: 1, zone: 'high', h: 0.6, sfx: 'heavy' });
   mv('iai', { name: 'Iai Flash', type: 'dash', pose: 'iai', su: 0.14, ac: 0.12, rc: 0.32, dmg: 70, kb: [12, 6.5], launch: 1, dist: 5.6, rad: 0.95, inv: 1, sfx: 'slash', zone: 'mid' });
   mv('ashibarai', { name: 'Ashi-barai', pose: 'sweep', su: 0.1, ac: 0.1, rc: 0.28, dmg: 38, kb: [4, 7.5], launch: 1, lunge: 7, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
-  mv('thousandCuts', { name: 'Thousand Cuts', type: 'super', pose: 'iai', su: 0.28, catchType: 'dash', dist: 6.5, rad: 1.1, seq: 'cuts', dmg: 300, kb: [20, 8], zone: 'mid' });
+  mv('thousandCuts', { name: 'Thousand Cuts', type: 'super', pose: 'iai', su: 0.14, catchType: 'dash', dist: 7, rad: 1.25, seq: 'cuts', dmg: 300, kb: [20, 8], zone: 'mid' });
 
   // KNIGHT
   mv('shieldBash', { name: 'Shield Bash', pose: 'bash', su: 0.17, ac: 0.08, rc: 0.3, dmg: 80, reach: 1.1, rad: 0.95, kb: [18.5, 4], launch: 1, lunge: 6, armor: 1, charge: 1, trail: 0, sfx: 'heavy' });
@@ -62,7 +70,7 @@
   mv('shieldDrop', { name: 'Shield Drop', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 55, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
   mv('bulwark', { name: 'Bulwark', type: 'buff', pose: 'salute', su: 0.22, rc: 0.25, buff: { id: 'bulwark', t: 3.2 }, trail: 0, sfx: 'jguard' });
   mv('stomp', { name: 'Sabaton Stomp', pose: 'stomp', su: 0.12, ac: 0.08, rc: 0.3, dmg: 45, kb: [3, 9], launch: 1, lunge: 6, zone: 'low', h: 0.3, trail: 0, sfx: 'heavy' });
-  mv('lanceCharge', { name: 'Holy Lance Charge', type: 'super', pose: 'lance', su: 0.32, catchType: 'dash', dist: 10, rad: 1.1, seq: 'charge', armor: 1, dmg: 280, kb: [27, 3], zone: 'mid' });
+  mv('lanceCharge', { name: 'Holy Lance Charge', type: 'super', pose: 'lance', su: 0.16, catchType: 'dash', dist: 10, rad: 1.25, seq: 'charge', armor: 1, dmg: 280, kb: [27, 3], zone: 'mid' });
 
   // PIRATE
   mv('pointBlank', { name: 'Point Blank', type: 'proj', proj: 'shot', pose: 'shoot', su: 0.2, rc: 0.32, dmg: 74, kb: [15, 5], launch: 1, range: 6.5, charge: 1, trail: 0, sfx: 'shot' });
@@ -70,7 +78,7 @@
   mv('airShot', { name: 'Plunging Shot', type: 'proj', proj: 'shotDown', pose: 'shootDown', su: 0.14, rc: 0.28, dmg: 50, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'shot' });
   mv('powderKeg', { name: 'Powder Keg', type: 'proj', proj: 'bomb', pose: 'toss', su: 0.18, rc: 0.3, dmg: 88, kb: [13, 9], launch: 1, rad: 2.2, trail: 0, sfx: 'whoosh' });
   mv('pegSweep', { name: 'Peg Sweep', pose: 'sweep', su: 0.1, ac: 0.1, rc: 0.28, dmg: 36, kb: [3, 8], launch: 1, lunge: 7, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
-  mv('broadside', { name: 'Broadside', type: 'super', pose: 'shoot', su: 0.3, catchType: 'proj', range: 10, seq: 'cannon', dmg: 290, kb: [14, 16], zone: 'high' });
+  mv('broadside', { name: 'Broadside', type: 'super', pose: 'shoot', su: 0.14, catchType: 'proj', range: 11, seq: 'cannon', dmg: 290, kb: [14, 16], zone: 'high' });
 
   // MONK
   mv('thunderPalm', { name: 'Thunder Palm', pose: 'palm', su: 0.2, ac: 0.07, rc: 0.3, dmg: 92, reach: 1.15, kb: [21, 4], launch: 1, lunge: 5, charge: 1, trail: 0, sfx: 'heavy' });
@@ -78,7 +86,7 @@
   mv('axeKick', { name: 'Axe Kick', pose: 'axeKick', su: 0.12, ac: 0.1, rc: 0.24, dmg: 54, kb: [2, -14], launch: 1, spike: 1, air: 1, zone: 'high', h: 0.6, trail: 0, sfx: 'heavy' });
   mv('mantra', { name: 'Mantra', type: 'buff', pose: 'meditate', su: 0.42, rc: 0.2, buff: { id: 'mantra', heal: 0.07, repair: 0.25 }, trail: 0, sfx: 'jguard' });
   mv('flyingKnee', { name: 'Flying Knee', pose: 'knee', su: 0.1, ac: 0.1, rc: 0.27, dmg: 42, kb: [5, 11], launch: 1, lunge: 7, trail: 0, sfx: 'whoosh' });
-  mv('hundredPalm', { name: 'Hundred Hands', type: 'super', pose: 'punch', su: 0.26, catchType: 'melee', lunge: 9, reach: 1.2, rad: 1.0, seq: 'hundred', dmg: 300, kb: [24, 6], zone: 'mid' });
+  mv('hundredPalm', { name: 'Hundred Hands', type: 'super', pose: 'punch', su: 0.12, catchType: 'melee', lunge: 9, reach: 1.2, rad: 1.1, close: 5.5, seq: 'hundred', dmg: 300, kb: [24, 6], zone: 'mid' });
 
   // VIKING
   mv('shieldRam', { name: 'Shield Ram', pose: 'bash', su: 0.18, ac: 0.1, rc: 0.3, dmg: 80, reach: 1.1, rad: 0.95, kb: [17, 6], launch: 1, lunge: 9, armor: 1, charge: 1, trail: 0, sfx: 'heavy' });
@@ -86,7 +94,7 @@
   mv('skullDrop', { name: 'Skull Drop', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 58, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
   mv('warHorn', { name: 'War Horn', type: 'radial', pose: 'roar', su: 0.2, ac: 0.1, rc: 0.35, dmg: 30, kb: [10, 5], launch: 1, rad: 2.7, buff: { id: 'fury', t: 5 }, trail: 0, sfx: 'boom', zone: 'high' });
   mv('bullRush', { name: 'Bull Rush', pose: 'bash', su: 0.12, ac: 0.12, rc: 0.3, dmg: 48, kb: [12, 5], launch: 1, lunge: 9, armor: 1, trail: 0, sfx: 'heavy' });
-  mv('ragnarok', { name: 'Ragnarök', type: 'super', pose: 'slam', su: 0.5, catchType: 'radial', rad: 3.6, leap: 1, seq: 'quake', dmg: 270, kb: [8, 16], zone: 'high' });
+  mv('ragnarok', { name: 'Ragnarök', type: 'super', pose: 'slam', su: 0.12, catchType: 'leap', flight: 0.55, rad: 4, fated: 1, seq: 'quake', dmg: 270, kb: [8, 16], zone: 'high' });
 
   // NINJA
   mv('chainHook', { name: 'Chain Hook', type: 'proj', proj: 'chain', pose: 'shoot', su: 0.17, rc: 0.3, dmg: 48, kb: [0, 3], pull: 1, stun: 0.6, range: 5, charge: 1, trail: 0, sfx: 'whoosh' });
@@ -94,7 +102,7 @@
   mv('chainDrop', { name: 'Chain Drop', pose: 'overhead', su: 0.12, ac: 0.1, rc: 0.24, dmg: 50, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.6 });
   mv('shadowStep', { name: 'Shadow Step', type: 'teleport', pose: 'backstab', su: 0.1, ac: 0.08, rc: 0.24, dmg: 46, kb: [9.5, 6.5], launch: 1, range: 9, inv: 1, reach: 1.1, sfx: 'slash', zone: 'mid' });
   mv('shadowKick', { name: 'Shadow Kick', pose: 'knee', su: 0.07, ac: 0.1, rc: 0.24, dmg: 34, kb: [9, 5], launch: 1, lunge: 9, trail: 0, sfx: 'whoosh' });
-  mv('cloneBarrage', { name: 'Shadow Clone Arts', type: 'super', pose: 'backstab', su: 0.26, catchType: 'dash', dist: 7.5, rad: 1.1, seq: 'clones', dmg: 290, kb: [16, 11], zone: 'mid' });
+  mv('cloneBarrage', { name: 'Shadow Clone Arts', type: 'super', pose: 'backstab', su: 0.12, catchType: 'dash', dist: 7.5, rad: 1.25, seq: 'clones', dmg: 290, kb: [16, 11], zone: 'mid' });
 
 
   /* ---- the R-ARM strings: each line its own tree.
@@ -154,6 +162,64 @@
   mv('taAirA', { name: 'Air Flick', pose: 'flickA', su: 0.045, dmg: 20, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'taAirB' } });
   mv('taAirB', { name: 'Air Backflick', pose: 'flickB', su: 0.045, dmg: 20, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'taAirC' } });
   mv('taAirC', { name: 'Kunai Rain', type: 'proj', proj: 'kunaiDown', pose: 'kunaiToss', su: 0.07, rc: 0.22, dmg: 36, kb: [2, -11], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'whoosh' });
+
+  // SUMMONER · Summoning Staff: her imps join every string; the pause branch calls another
+  mv('smA', { name: 'Staff Jab', pose: 'thrust', su: 0.07, dmg: 24, reach: 1.35, kb: [2.5, 0], lunge: 3, nx: { l: 'smB' } });
+  mv('smB', { name: 'Staff Swing', pose: 'slashA', su: 0.08, dmg: 26, reach: 1.3, stun: 0.5, lunge: 3, nx: { l: 'smC', p: 'smP' } });
+  mv('smC', { name: "Sic 'Em!", pose: 'point', su: 0.08, ac: 0.08, rc: 0.18, dmg: 14, reach: 1.25, kb: [2, 0], stun: 0.55, command: 1, trail: 0, sfx: 'whoosh', nx: { l: 'smD' } });
+  mv('smD', { name: 'Conjure Bolt', type: 'proj', proj: 'bolt', pose: 'cast', su: 0.1, rc: 0.26, dmg: 42, kb: [12, 5], launch: 1, range: 6.5, finisher: 1, trail: 0, sfx: 'whoosh' });
+  mv('smP', { name: 'Call Imp', type: 'summon', summon: 1, pose: 'summon', su: 0.12, rc: 0.26, trail: 0, sfx: 'jguard' });
+  mv('smAirA', { name: 'Air Swing', pose: 'slashA', su: 0.07, dmg: 24, kb: [3, 4.5], air: 1, h: 1, reach: 1.25, nx: { l: 'smAirB' } });
+  mv('smAirB', { name: 'Spirit Bolt', type: 'proj', proj: 'boltDown', pose: 'cast', su: 0.09, rc: 0.24, dmg: 34, kb: [3, -11], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'whoosh' });
+  mv('impBite', { name: 'Imp', dmg: 14, kb: [2, 0], stun: 0.42, zone: 'mid', hype: 0.6, trail: 0 });
+  mv('impPounce', { name: 'Imp Pounce', dmg: 18, kb: [2.5, 0], stun: 0.5, zone: 'mid', hype: 0.6, trail: 0 });
+  mv('hexBlast', { name: 'Hex Blast', type: 'proj', proj: 'hex', pose: 'cast', su: 0.2, rc: 0.32, dmg: 76, kb: [15.5, 5], launch: 1, range: 4.2, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('risingGlyph', { name: 'Rising Glyph', pose: 'palmUp', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1, 13], launch: 1, launcher: 1, trail: 0, sfx: 'jguard' });
+  mv('fallingTome', { name: 'Falling Tome', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 52, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
+  mv('summonPair', { name: 'Summon Imps', type: 'summon', summon: 2, pose: 'summon', su: 0.2, rc: 0.3, trail: 0, sfx: 'jguard' });
+  mv('staffSweep', { name: 'Staff Sweep', pose: 'sweep', su: 0.1, ac: 0.1, rc: 0.28, dmg: 36, kb: [3.5, 8], launch: 1, lunge: 7, zone: 'low', h: 0.35, sfx: 'whoosh' });
+  mv('grandSummon', { name: 'Grand Summoning', type: 'super', pose: 'summon', su: 0.12, catchType: 'mark', rad: 1.8, seq: 'golem', dmg: 290, kb: [16, 12], zone: 'mid' });
+  // PALADIN · Warhammer: three heavy blows ending in a holy shockwave; every string hit heals her
+  mv('paA', { name: 'Smite', pose: 'hack', su: 0.1, ac: 0.08, rc: 0.2, dmg: 40, reach: 1.3, kb: [3, 0], lunge: 3, heal: 0.15, sfx: 'heavy', nx: { l: 'paB' } });
+  mv('paB', { name: 'Hammer Fall', pose: 'backswing', su: 0.11, ac: 0.08, rc: 0.2, dmg: 44, reach: 1.3, kb: [3, 0], stun: 0.55, lunge: 3, heal: 0.15, sfx: 'heavy', nx: { l: 'paC', p: 'paP' } });
+  mv('paC', { name: 'Consecrate', pose: 'slam', su: 0.16, ac: 0.1, rc: 0.32, dmg: 58, around: 1, rad: 1.9, kb: [9, 10], launch: 1, finisher: 1, heal: 0.3, holy: 1, sfx: 'heavy', zone: 'low' });
+  mv('paP', { name: 'Hallowed Strike', pose: 'overhead', su: 0.13, ac: 0.08, rc: 0.3, dmg: 52, reach: 1.25, crumple: 1.0, heal: 0.5, holy: 1, lunge: 3, finisher: 1, zone: 'high', sfx: 'heavy' });
+  mv('paAirA', { name: 'Air Smite', pose: 'hack', su: 0.09, dmg: 38, kb: [3, 4], air: 1, reach: 1.25, h: 0.9, heal: 0.15, sfx: 'heavy', nx: { l: 'paAirB' } });
+  mv('paAirB', { name: 'Meteor Hammer', pose: 'skullSplit', su: 0.12, ac: 0.3, rc: 0.25, dmg: 48, kb: [2, -13], launch: 1, spike: 1, dive: 1, air: 1, reach: 1.1, h: 0.5, heal: 0.15, sfx: 'heavy' });
+  mv('radiantBash', { name: 'Radiant Bash', pose: 'bash', su: 0.19, ac: 0.08, rc: 0.3, dmg: 82, reach: 1.15, rad: 1.0, kb: [18, 4.5], launch: 1, lunge: 6, armor: 1, charge: 1, holy: 1, trail: 0, sfx: 'heavy' });
+  mv('shieldLift', { name: 'Shield Lift', pose: 'bashUp', su: 0.11, ac: 0.08, rc: 0.28, dmg: 40, kb: [1, 12.5], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
+  mv('shieldSlam', { name: 'Shield Slam', pose: 'bashDown', su: 0.14, ac: 0.1, rc: 0.25, dmg: 56, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
+  mv('holyNova', { name: 'Holy Nova', type: 'radial', pose: 'salute', su: 0.2, ac: 0.1, rc: 0.32, dmg: 34, kb: [10, 6], launch: 1, rad: 2.5, buff: { id: 'nova', heal: 0.06 }, holy: 1, trail: 0, sfx: 'jguard', zone: 'high' });
+  mv('shieldRush', { name: 'Shield Rush', pose: 'bash', su: 0.12, ac: 0.12, rc: 0.3, dmg: 46, kb: [12, 5], launch: 1, lunge: 9, armor: 1, trail: 0, sfx: 'heavy' });
+  mv('dawnJudgment', { name: 'Judgment of Dawn', type: 'super', pose: 'salute', su: 0.12, catchType: 'radial', rad: 3.4, seq: 'dawn', dmg: 280, kb: [12, 14], zone: 'high' });
+  // DRAGOON · Dragon Lance: the longest reach; land an air hit and Jump to vault off them
+  mv('drA', { name: 'Thrust', pose: 'tsuki', su: 0.08, dmg: 26, reach: 1.75, kb: [3, 0], lunge: 3, nx: { l: 'drB' } });
+  mv('drB', { name: 'Twin Thrust', pose: 'twinThrust', su: 0.07, ac: 0.14, rc: 0.15, dmg: 15, multi: 2, reach: 1.8, kb: [3, 0], stun: 0.5, nx: { l: 'drC', p: 'drP' } });
+  mv('drC', { name: 'Wheel Sweep', pose: 'lanceWheel', su: 0.09, ac: 0.16, rc: 0.18, dmg: 32, around: 1, rad: 1.85, kb: [3, 0], stun: 0.45, zone: 'low', nx: { l: 'drD' } });
+  mv('drD', { name: 'Rising Lance', pose: 'twoHandUp', su: 0.1, ac: 0.08, rc: 0.25, dmg: 44, reach: 1.5, kb: [2, 13], launch: 1, launcher: 1, finisher: 1 });
+  mv('drP', { name: 'Impaling Lunge', type: 'dash', pose: 'tsuki', su: 0.14, ac: 0.12, rc: 0.3, dmg: 58, dist: 4, rad: 0.9, crumple: 1.0, finisher: 1, sfx: 'heavy' });
+  mv('drAirA', { name: 'Air Thrust', pose: 'tsuki', su: 0.07, dmg: 26, reach: 1.6, kb: [3, 4.5], air: 1, h: 0.9, nx: { l: 'drAirB' } });
+  mv('drAirB', { name: 'Dragon Dive', pose: 'plunge', su: 0.1, ac: 0.35, rc: 0.24, dmg: 46, kb: [3, -13], launch: 1, spike: 1, dive: 1, air: 1, reach: 1.3, h: 0.4, sfx: 'heavy' });
+  mv('wyvernStrike', { name: 'Wyvern Strike', pose: 'tsuki', twoHand: 1, su: 0.2, ac: 0.08, rc: 0.3, dmg: 80, reach: 1.95, kb: [17, 4.5], launch: 1, lunge: 5, charge: 1, sfx: 'heavy' });
+  mv('lanceVault', { name: 'Lance Vault', pose: 'twoHandUp', twoHand: 1, su: 0.1, ac: 0.08, rc: 0.28, dmg: 38, kb: [1.4, 13.5], launch: 1, launcher: 1 });
+  mv('talonDrop', { name: 'Talon Drop', pose: 'twoHandOver', twoHand: 1, su: 0.12, ac: 0.1, rc: 0.25, dmg: 56, kb: [2.5, -14], launch: 1, spike: 1, air: 1, zone: 'high', h: 0.6, sfx: 'heavy' });
+  mv('dragonBreath', { name: 'Dragon Breath', type: 'proj', proj: 'breath', pose: 'breath', su: 0.16, rc: 0.42, dmg: 18, kb: [10, 6], launch: 1, range: 3.4, trail: 0, sfx: 'whoosh', zone: 'high' });
+  mv('lanceDash', { name: 'Lance Dash', type: 'dash', pose: 'tsuki', su: 0.1, ac: 0.12, rc: 0.3, dmg: 44, dist: 4.2, rad: 0.9, kb: [9, 6], launch: 1, sfx: 'slash' });
+  mv('dragonfall', { name: 'Dragonfall', type: 'super', pose: 'twoHandUp', su: 0.1, catchType: 'jump', rad: 1.6, seq: 'skewer', dmg: 300, kb: [10, 15], zone: 'high' });
+  // BARD · Lute: start a Light on the beat for a stronger hit; the pause branch sings them to sleep
+  mv('baA', { name: 'Strum', pose: 'cutA', su: 0.06, rc: 0.13, dmg: 22, reach: 1.25, lunge: 3, beat: 1, nx: { l: 'baB' } });
+  mv('baB', { name: 'Twang', pose: 'cutB', su: 0.06, rc: 0.13, dmg: 24, reach: 1.25, lunge: 3, stun: 0.5, beat: 1, nx: { l: 'baC', p: 'baP' } });
+  mv('baC', { name: 'Power Chord', pose: 'strum', su: 0.09, ac: 0.08, rc: 0.18, dmg: 30, reach: 1.3, rad: 1.15, kb: [5, 0], stun: 0.45, beat: 1, notes: 1, trail: 0, sfx: 'chord', nx: { l: 'baD' } });
+  mv('baD', { name: 'Encore!', pose: 'overhead', su: 0.12, ac: 0.08, rc: 0.26, dmg: 50, reach: 1.3, kb: [13, 6], launch: 1, finisher: 1, beat: 1, sfx: 'heavy' });
+  mv('baP', { name: 'Lullaby', pose: 'strum', su: 0.1, ac: 0.12, rc: 0.3, dmg: 6, reach: 1.5, rad: 1.15, sleep: 1.4, notes: 1, trail: 0, sfx: 'lullaby', zone: 'high' });
+  mv('baAirA', { name: 'Air Strum', pose: 'cutA', su: 0.06, dmg: 22, kb: [3, 4.5], air: 1, h: 1, beat: 1, nx: { l: 'baAirB' } });
+  mv('baAirB', { name: 'Crescendo', pose: 'spin', su: 0.08, ac: 0.24, rc: 0.2, dmg: 12, multi: 3, around: 1, rad: 1.35, kb: [6, 5], launch: 1, air: 1, notes: 1, beat: 1, sfx: 'chord' });
+  mv('sonicBoom', { name: 'Sonic Boom', type: 'proj', proj: 'wave', pose: 'shoot', su: 0.2, rc: 0.32, dmg: 70, kb: [15, 5], launch: 1, range: 5.5, charge: 1, trail: 0, sfx: 'chord' });
+  mv('risingNote', { name: 'Rising Note', pose: 'palmUp', su: 0.1, ac: 0.08, rc: 0.27, dmg: 36, kb: [1, 13], launch: 1, launcher: 1, notes: 1, trail: 0, sfx: 'chord' });
+  mv('bassDrop', { name: 'Bass Drop', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 52, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
+  mv('valorSong', { name: 'Song of Valor', type: 'buff', pose: 'strum', su: 0.24, rc: 0.24, buff: { id: 'valor', t: 6 }, trail: 0, sfx: 'chord' });
+  mv('twirlKick', { name: 'Twirl Kick', pose: 'spinKick', su: 0.09, ac: 0.12, rc: 0.27, dmg: 38, kb: [5, 9], launch: 1, lunge: 7, trail: 0, sfx: 'whoosh' });
+  mv('grandFinale', { name: 'Grand Finale', type: 'super', pose: 'strum', su: 0.1, catchType: 'wave', rad: 6.5, seq: 'concert', dmg: 285, kb: [15, 13], zone: 'mid' });
 
   // GENERIC (broken arms fall back on these) and the universal throw
   mv('stump1', { name: 'Stump Jab', pose: 'jabL', su: 0.07, dmg: 12, reach: 0.9, kb: [1.5, 0], trail: 0, sfx: 'whoosh', nx: { l: 'stump1b' } });
@@ -215,11 +281,44 @@
       legs: { name: 'Tabi Boots', armor: 145, weight: 0.8, speed: 7.4, jump: 12, airJumps: 2, dashAtk: 'shadowKick', perk: 'walljump', desc: 'The fastest legs, a triple jump, and WALL JUMPS. DASH ATTACK: Shadow Kick.' },
       card: { name: 'Shadow Clone Arts', super: 'cloneBarrage', passive: 'vanish', desc: 'LEGEND ART: four clones strike at once. PASSIVE (Vanish): longer dodge, shorter cooldown.' },
     },
+    summoner: {
+      head: { name: "Conjurer's Cowl", armor: 100, weight: 0.9, special: 'summonPair', uses: 3, hype: 1.05, desc: 'SPECIAL: Summon Imps. Two imps pop out of a circle and go for them. Each one takes two hits.' },
+      core: { name: "Conjurer's Robe", hp: 900, def: 0.03, weight: 0.9, guard: -5, desc: 'Loose robes. Light, and a little fragile.' },
+      armR: { name: 'Summoning Staff', armor: 115, weight: 0.9, light: 'smA', air: 'smAirA', sig: 'pack', sigName: 'Pack Tactics', sigDesc: "Your imps pounce on anyone you hit. Sic 'Em sends them all in at once.", trail: 0x9dffc0, desc: "Staff Jab › Staff Swing › Sic 'Em (every imp attacks) › Conjure Bolt. Pause after Staff Swing: Call Imp. Air ends in a Spirit Bolt spike. SIGNATURE: imps join your hits." },
+      armL: { name: 'Grimoire', armor: 110, weight: 0.85, heavy: 'hexBlast', launch: 'risingGlyph', airHeavy: 'fallingTome', guard: 65, chip: 1.15, trail: 0x9dffc0, desc: 'HEAVY: Hex Blast, a glyph that bursts 4 m out. Guard: weak.' },
+      legs: { name: 'Ritual Sandals', armor: 150, weight: 0.9, speed: 6.0, jump: 11, airJumps: 1, dashAtk: 'staffSweep', perk: 'familiar', desc: 'Familiar: start every round with an imp at your side. DASH ATTACK: Staff Sweep.' },
+      card: { name: 'Ninefold Circle', super: 'grandSummon', passive: 'legion', desc: 'LEGEND ART: Grand Summoning, a spirit giant. PASSIVE (Legion): up to 4 imps, and they take 3 hits.' },
+    },
+    paladin: {
+      head: { name: 'Sun Helm', armor: 150, weight: 1.1, special: 'holyNova', uses: 3, hype: 0.95, desc: 'SPECIAL: Holy Nova. A burst of light that blows them back and heals you 6%.' },
+      core: { name: 'Gilded Plate', hp: 1080, def: 0.1, weight: 1.2, guard: 25, desc: 'Gold-trimmed plate. Lots of HP and defence.' },
+      armR: { name: 'Warhammer', armor: 145, weight: 1.15, light: 'paA', air: 'paAirA', sig: 'heal', sigName: 'Lay on Hands', sigDesc: 'Every string hit heals you for 15% of its damage (the finishers for more).', trail: 0xfff3b0, desc: 'Smite › Hammer Fall › Consecrate (a holy shockwave all around). Pause after Hammer Fall: Hallowed Strike crumples and heals big. Air ends in a Meteor Hammer dive. SIGNATURE: hits heal you.' },
+      armL: { name: 'Tower Shield', armor: 190, weight: 1.3, heavy: 'radiantBash', launch: 'shieldLift', airHeavy: 'shieldSlam', guard: 180, chip: 0.4, trail: 0xfff3b0, desc: 'HEAVY: Radiant Bash, armoured. Guard: the biggest, almost no chip.' },
+      legs: { name: 'Greaves of Dawn', armor: 210, weight: 1.25, speed: 5.3, jump: 10, airJumps: 1, dashAtk: 'shieldRush', perk: 'resolve', desc: 'Resolve: under 30% HP you take 15% less damage. DASH ATTACK: Shield Rush.' },
+      card: { name: 'Oath of Dawn', super: 'dawnJudgment', passive: 'devotion', desc: 'LEGEND ART: Judgment of Dawn. PASSIVE (Devotion): healing +40%, Specials come back faster.' },
+    },
+    dragoon: {
+      head: { name: 'Wyrm Helm', armor: 125, weight: 1.0, special: 'dragonBreath', uses: 3, hype: 1.0, desc: 'SPECIAL: Dragon Breath. Three bursts of fire in a cone; the last one blows them away.' },
+      core: { name: 'Scale Mail', hp: 980, def: 0.07, weight: 1.0, guard: 10, desc: 'Overlapping dragon scales. Even all round.' },
+      armR: { name: 'Dragon Lance', armor: 130, weight: 1.05, light: 'drA', air: 'drAirA', sig: 'pogo', sigName: 'Skyborne', sigDesc: 'Land an air hit and press Jump: vault off them with a fresh jump and a fresh air string (twice a jump).', trail: 0xffc890, desc: 'Thrust › Twin Thrust › Wheel Sweep › Rising Lance. Pause after Twin Thrust: Impaling Lunge. Air: Thrust › Dragon Dive. SIGNATURE: vault off an air hit.' },
+      armL: { name: 'Scale Gauntlet', armor: 125, weight: 0.95, heavy: 'wyvernStrike', launch: 'lanceVault', airHeavy: 'talonDrop', guard: 85, chip: 1, trail: 0xffc890, desc: 'A clawed gauntlet, hand free for a two-handed grip. HEAVY: Wyvern Strike, the longest KNOCK. Guard: medium.' },
+      legs: { name: 'Wyrm Greaves', armor: 175, weight: 1.0, speed: 6.0, jump: 14, airJumps: 1, dashAtk: 'lanceDash', perk: 'skyward', desc: 'Skyward: the highest jump, and air dodges go 35% further. DASH ATTACK: Lance Dash.' },
+      card: { name: 'Dragonsoul', super: 'dragonfall', passive: 'wyrmblood', desc: 'LEGEND ART: Dragonfall, a dive from the sky. PASSIVE (Wyrmblood): +12% damage in the air.' },
+    },
+    bard: {
+      head: { name: 'Feathered Cap', armor: 100, weight: 0.85, special: 'valorSong', uses: 3, hype: 1.1, desc: 'SPECIAL: Song of Valor. +12% damage and +10% speed for 6 s.' },
+      core: { name: "Minstrel's Doublet", hp: 920, def: 0.03, weight: 0.9, guard: 0, hypeBonus: 0.15, desc: 'A puffed doublet. Builds Hype fast.' },
+      armR: { name: 'Lute', armor: 115, weight: 0.9, light: 'baA', air: 'baAirA', sig: 'beat', sigName: 'On the Beat', sigDesc: 'A beat pulses under your feet in time with the music. Start a Light on the beat: +30% damage and +50% Hype.', trail: 0xffb0e0, desc: 'Strum › Twang › Power Chord › Encore! Pause after Twang: Lullaby puts them to sleep. Air: Strum › Crescendo. SIGNATURE: hit on the beat.' },
+      armL: { name: 'Tambourine', armor: 110, weight: 0.85, heavy: 'sonicBoom', launch: 'risingNote', airHeavy: 'bassDrop', guard: 60, chip: 1.2, trail: 0xffb0e0, desc: 'HEAVY: Sonic Boom, a sound wave that reaches 5.5 m. Guard: weak.' },
+      legs: { name: 'Dancing Shoes', armor: 150, weight: 0.85, speed: 6.8, jump: 11.5, airJumps: 1, dashAtk: 'twirlKick', perk: 'dancer', desc: 'Dancer: dodges cool down twice as fast. DASH ATTACK: Twirl Kick.' },
+      card: { name: 'Grand Finale', super: 'grandFinale', passive: 'encore', desc: "LEGEND ART: Grand Finale, a show they can't walk out of. PASSIVE (Encore): 35 Hype back after your Legend Art lands." },
+    },
   };
 
   const PASSIVE = {
     bushido: 'Bushido: +15% damage under 35% HP', plateFaith: 'Plate Faith: guard +40%, chip -30%', plunder: 'Plunder: +35% Hype gain',
     innerPeace: 'Inner Peace: Burst fills 45% faster', fury: 'Fury: up to +18% damage as HP falls', vanish: 'Vanish: longer dodge, shorter cooldown',
+    legion: 'Legion: up to 4 imps, 3 hits each', devotion: 'Devotion: healing +40%, Specials back faster', wyrmblood: 'Wyrmblood: +12% damage in the air', encore: 'Encore: 35 Hype back after a Legend Art',
   };
 
   /* --------------------------------------------------------------- builds */
@@ -241,7 +340,8 @@
       kbTaken: (1 / Math.sqrt(weight)) * (G.perk === 'anchor' ? 0.85 : 1),
       speed: G.speed * (1.08 - 0.08 * weight), jump: G.jump, airJumps: G.airJumps, perk: G.perk,
       airDodges: G.perk === 'cloudstep' ? 2 : 1,
-      dodgeDist: G.perk === 'sealegs' ? 1.3 : 1,
+      dodgeDist: G.perk === 'sealegs' ? 1.3 : 1, dodgeCd: G.perk === 'dancer' ? 0.5 : 1, airDodgeDist: G.perk === 'skyward' ? 1.35 : 1,
+      minions: K.passive === 'legion' ? 4 : 3, impHp: K.passive === 'legion' ? 3 : 2, healMult: K.passive === 'devotion' ? 1.4 : 1, useRegen: K.passive === 'devotion' ? 11 : 16,
       guard: Math.round((100 + L.guard + C.guard) * (K.passive === 'plateFaith' ? 1.4 : 1)),
       chip: L.chip * (K.passive === 'plateFaith' ? 0.7 : 1),
       hypeGain: H.hype * (1 + (C.hypeBonus || 0)) * (K.passive === 'plunder' ? 1.35 : 1),
