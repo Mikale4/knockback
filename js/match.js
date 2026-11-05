@@ -25,7 +25,9 @@
     };
     // the players
     const human = [opts.cpu ? opts.cpu[0] == null : true, opts.cpu ? opts.cpu[1] == null : false];
-    Input.mode = human[0] && human[1] ? 'versus' : 'solo';
+    // two people on this machine only in a 2-player Versus: training, the tutorial, the trials (the dummy is a CPU) and
+    // online fights (the other player is over the internet) have one player here, who reads every controller
+    Input.mode = human[0] && human[1] && opts.mode !== 'training' && !opts.online ? 'versus' : 'solo';
     for (let i = 0; i < 2; i++) Input.players[i].cpu = null;
     M.fighters = [0, 1].map(i => new Fighter(M, i, opts.builds[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus }));
     M.ai = [null, null];
