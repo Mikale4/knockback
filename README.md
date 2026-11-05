@@ -19,6 +19,10 @@ python tools/serve.py 8766
 then visit http://localhost:8766. (The server sends no-cache headers so edits show up on reload.) No build step;
 plain JavaScript and Three.js (`lib/three.min.js`).
 
+**Publishing:** pushing to `main` updates the GitHub Pages site. Run `python tools/bump.py` first: it stamps the
+game's scripts and stylesheet in `index.html` with a new `?v=`, because GitHub Pages lets browsers keep a file for
+10 minutes (phones sometimes longer) and a player could otherwise get the new page with old scripts.
+
 ## Controls
 
 | Action | Keyboard P1 | Keyboard P2 | Xbox | PlayStation |
