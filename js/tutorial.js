@@ -20,7 +20,7 @@
   let S = null;   // the tutorial running: { m, i, got, note, ok, card, off, onboard, ... }
 
   /* ---------------------------------------------------- the keys it names */
-  const TOUCH = { light: 'LIGHT', heavy: 'HEAVY', guard: 'GUARD', special: 'SPECIAL', snap: 'SNAP', super: 'SUPER', jump: 'JUMP', dodge: 'DODGE' };
+  const TOUCH = { light: 'LIGHT', heavy: 'HEAVY', guard: 'GUARD', special: 'SPECIAL', snap: 'SNAP', super: 'SUPER', toss: 'TOSS', jump: 'JUMP', dodge: 'DODGE' };
   const touching = () => U.touch && !Input.usingPad(0);
   const K = a => el('kbd', null, touching() ? TOUCH[a] || a : Input.prompt(0, a) || '?');
   const moveKeys = () => {
@@ -146,7 +146,7 @@
     },
     {
       id: 'toss', title: 'PART TOSS', need: 1,
-      text: () => ['Mid-combo, hold ', K('guard'), ' and press ', K('special'), ': you pull off one of your OWN parts and throw it. If it hits, the combo is EXTENDED and you can keep going (twice a combo). Go pick the part back up after!'],
+      text: () => ['Mid-combo, press ', K('toss'), ': you pull off one of your OWN parts and throw it. If it hits, the combo is EXTENDED and you can keep going (twice a combo). Go pick the part back up after!'],
       setup() { place(-1.4, 0); },
       on(k, d) { if (k === 'extend' && d.att === me()) return true; },
     },
@@ -181,7 +181,7 @@
       el('div', { class: 'n' }, el('span', null, (S.onboard ? 'NEW COLLECTOR · ' : '') + 'TUTORIAL · LESSON ' + (S.i + 1) + ' / ' + LESSONS.length), el('i', null, touching() ? '' : 'Esc: pause')),
       el('h3', null, S.ok ? '✓ ' + L.title : L.title),
       el('p', null, ...(S.ok ? [S.ok] : L.text.call(L))),
-      L.need > 1 ? el('div', { class: 'pips' }, ...Array.from({ length: L.need }, (_, k) => el('i', { class: k < S.got ? 'on' : '' }))) : null,
+      L.need > 1 ? el('div', { class: 'tpips' }, ...Array.from({ length: L.need }, (_, k) => el('i', { class: k < S.got ? 'on' : '' }))) : null,
       S.note && !S.ok ? el('div', { class: 'try' }, S.note) : null,
       el('div', { class: 'row' },
         el('button', { onclick: () => { SFX.play('ui'); next(); } }, S.i + 1 < LESSONS.length ? 'SKIP LESSON ▸' : 'SKIP'),

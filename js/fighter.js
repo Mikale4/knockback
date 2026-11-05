@@ -88,7 +88,7 @@
       this.broken[part] = false; this.armor[part] = Math.round(this.armorMax[part] * 0.55);
       return swapped;
     }
-    /* PART TOSS (Guard + Special): pull off a part of your own and throw it -- the head first, then the L-arm, then the R-arm.
+    /* PART TOSS (its own button, F by default): pull off a part of your own and throw it -- the head first, then the L-arm, then the R-arm.
        A hit extends the combo (twice a combo at most) */
     /* a Special is ready: uses left, a head to use it with, and (Shadow Step) its cooldown over */
     canSpecial() { return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0); }
@@ -188,7 +188,7 @@
       const I = this.input, S = this.st;
       if (this.m.frozen || this.m.phase !== 'fight') return false;
       if (I.take('super') && this.hype >= 100 && ground) { this.startSuper(); return true; }
-      if ((I.held.guard || I.guardAt.special) && I.peek('special') && this.canToss()) { I.take('special'); this.startMove('partToss', 'toss'); return true; }
+      if (I.take('toss') && this.canToss()) { this.startMove('partToss', 'toss'); return true; }
       if (I.take('special')) { if (this.canSpecial() && (ground || this.moveOk(S.special, 'air'))) { this.startMove(S.special, 'special'); return true; } else if (this.broken.head) this.m.call(this, 'NO HEAD!', 'bad'); }
       if (ground) {
         if (I.held.guard && I.take('light')) { this.startMove('throw', 'throw'); return true; }
@@ -257,7 +257,7 @@
       this.faceOpp(1 - Math.exp(-10 * dt));
       this.physics(dt, 0);
       if (I.take('light')) { this.startMove('throw', 'throw'); return; }
-      if (I.peek('special') && this.canToss()) { I.take('special'); this.startMove('partToss', 'toss'); return; }
+      if (I.take('toss') && this.canToss()) { this.startMove('partToss', 'toss'); return; }
       if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return; }
       if (I.take('jump')) { this.jump(1); return; }
       if (!I.held.guard) this.setState('idle');
@@ -386,7 +386,7 @@
         SFX.play('jump'); this.m.event('jump', { f: this, follow: true }); return true;
       }
       if (hit && after && ['light', 'heavy', 'launch', 'air', 'dash', 'gun'].includes(k)) {
-        if ((I.held.guard || I.guardAt.special) && I.peek('special', 0.2) && this.canToss()) { I.take('special'); this.startMove('partToss', 'toss'); return true; }
+        if (I.peek('toss', 0.2) && this.canToss()) { I.take('toss'); this.startMove('partToss', 'toss'); return true; }
         if (I.peek('special', 0.2) && this.canSpecial() && (this.grounded || this.moveOk(this.st.special, 'air'))) { I.take('special'); this.startMove(this.st.special, 'special'); return true; }
         if (I.peek('super', 0.2) && this.hype >= 100 && this.grounded) { I.take('super'); this.startSuper(); return true; }
       }

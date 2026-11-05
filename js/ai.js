@@ -139,7 +139,7 @@
       const ender = () => {
         if (canSuper && r() < L.ender[lv]) return { btn: 'super' };
         // throw a part (never the sword arm) to extend it, twice a combo
-        if (lv >= 2 && f.canToss() && f.tossable() !== 'armR' && o.combo.ext < 2 && r() < 0.5) return { btn: 'special', guard: true };
+        if (lv >= 2 && f.canToss() && f.tossable() !== 'armR' && o.combo.ext < 2 && r() < 0.5) return { btn: 'toss' };
         if (aim && f.hype >= 50 && lv >= 2 && r() < 0.35) return { btn: 'snap' };   // cancel the finisher's recovery and chase the rebound
         return {};
       };

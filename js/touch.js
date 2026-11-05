@@ -12,7 +12,7 @@
   const state = { move: { x: 0, y: 0 }, held: {}, active: false };
   const BTNS = [
     ['light', 'LIGHT'], ['heavy', 'HEAVY'], ['jump', 'JUMP'], ['dodge', 'DODGE'],
-    ['guard', 'GUARD'], ['special', 'SPECIAL'], ['snap', 'SNAP'], ['super', 'SUPER'],
+    ['guard', 'GUARD'], ['special', 'SPECIAL'], ['snap', 'SNAP'], ['super', 'SUPER'], ['toss', 'TOSS'],
   ];
   const R = 52; // how far the stick travels, px
   let root = null, zone, stick, knob, pid = null, sx = 0, sy = 0, btns = {};

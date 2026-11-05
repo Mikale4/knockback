@@ -372,6 +372,7 @@ label.check { display: flex; align-items: center; gap: 8px; letter-spacing: 0; f
 .b-dodge { width: 56px; height: 56px; right: 92px; bottom: 80px; background: #c9b8ff; }
 .b-guard { width: 56px; height: 56px; right: 176px; bottom: 12px; background: #9aa4ff; }
 .b-special { width: 50px; height: 50px; right: 162px; bottom: 84px; background: #4cd964; }
+.b-toss { width: 46px; height: 46px; right: 160px; bottom: 148px; background: #ff9f68; font-size: 10px; }
 .b-snap { width: 50px; height: 50px; right: 96px; bottom: 148px; background: #f4f1ea; }
 .b-super { width: 50px; height: 50px; right: 24px; bottom: 178px; background: var(--pink); color: #fff; }
 .b-super.ready { animation: pulse .35s infinite alternate; box-shadow: 0 0 18px var(--pink), 0 4px 0 #000; }
@@ -486,7 +487,7 @@ body.touch .trainpanel { top: 96px; right: auto; left: 50%; transform: translate
 .tut h3 { margin: 3px 0 4px; font: 26px/1 var(--head); letter-spacing: 2px; color: #fff; }
 .tut p { margin: 0; font-size: 14px; line-height: 1.5; color: #e4e4ec; }
 .tut kbd { font: 900 12px var(--body); background: #2a2a34; padding: 1px 7px; border-radius: 4px; color: var(--yel); border: 1px solid #55555f; white-space: nowrap; }
-.tut .pips { display: flex; gap: 4px; margin-top: 8px; } .tut .pips i { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); transition: background .2s; } .tut .pips i.on { background: var(--yel); }
+.tut .tpips { display: flex; gap: 4px; margin-top: 8px; } .tut .tpips i { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); transition: background .2s; } .tut .tpips i.on { background: var(--yel); }
 .tut .try { color: #ffb0b0; font-size: 13px; margin-top: 6px; }
 .tut .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
 .tut .row button { font: 900 11px var(--body); letter-spacing: .5px; background: transparent; border: 1px solid #55555f; color: var(--dim); padding: 4px 10px; border-radius: 6px; cursor: pointer; }

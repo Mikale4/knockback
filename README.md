@@ -26,10 +26,11 @@ plain JavaScript and Three.js (`lib/three.min.js`).
 | Move | Arrow keys | I J K L | Left stick / d-pad | Left stick / d-pad |
 | Light (R-ARM string) | Z | Num 1 or `,` | X | □ |
 | Heavy / KNOCK (L-ARM) | X (hold to charge) | Num 2 or `.` | Y | △ |
-| Guard (+ Light = Grab, + Special = Part Toss) | C | Num 3 or `/` | RB | R1 |
+| Guard (+ Light = Grab) | C | Num 3 or `/` | RB | R1 |
 | Head Special | A | Num 5 or `;` | LB | L1 |
 | Snap Cancel / Spring Burst | D | Num 4 or `'` | RT | R2 |
 | Legend Art (super) | S | Num 6 or `]` | LT | L2 |
+| Part Toss | F | Num 7 or `[` | RS (click) | R3 |
 | Jump | Space | Num 0 or R-Shift | A | ✕ |
 | Dodge / Tech | L-Shift | Num . or `\` | B | ○ |
 | Pause / move list | Esc | | Menu | Options |
@@ -79,7 +80,7 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
 - **OTG (off the ground)** — once a combo, a hit can pick a knocked-down opponent back up off the floor ("OTG!"): a
   Heavy, a dash attack, a dive (air Heavy), a sweep or a downward shot. They're scooped into the air and the combo
   carries on. Quick Rise (Dodge as you land) gets out of it.
-- **Part Toss** (Guard + Special) — pull a part off your own figure and throw it: the head first, then the L-arm, then
+- **Part Toss** (its own button: F, or click the right stick) — pull a part off your own figure and throw it: the head first, then the L-arm, then
   the R-arm. It works as a cancel off any hit. A toss that lands **extends the combo** ("EXTEND 1/2"): its clock and
   decay start over, and you get a fresh OTG and ground bounce. Twice a combo at most: combo, toss, combo, toss, final
   combo. The part lands on the floor; go and snap it back on (before they take it, see Parts).
