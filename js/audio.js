@@ -89,7 +89,7 @@
   };
 
   const SFX = {
-    play(name, o) { if (!ctx || !S[name] || vol.sfx <= 0) return; try { S[name](o); } catch (e) { /* ignore */ } },
+    play(name, o) { if (U.quiet || !ctx || !S[name] || vol.sfx <= 0) return; try { S[name](o); } catch (e) { /* ignore */ } },
     setVol(k, v) { vol[k] = v; U.write('kb.volume', vol); if (sfxBus) { sfxBus.gain.value = vol.sfx; musBus.gain.value = vol.music; } },
     get vol() { return vol; }, init, get ctx() { return ctx; },
   };

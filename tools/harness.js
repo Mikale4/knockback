@@ -188,3 +188,94 @@ window.__detRun = (seed, frames, l1, l2) => {
   App.setView(null);
   return log;
 };
+/* rollback check: a seeded fight of random buttons where every `every` frames the fight goes back `depth` frames and
+   replays them quietly; the whole saved fight must come out exactly the same (and so must the log, vs __detRun) */
+window.__rbRun = (seed, frames, l1, l2, every, depth, pre) => {
+  const T = Online._t, { rng, withRng } = T, PC = Input.players[0].constructor, net = [new PC(0), new PC(1)];
+  net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 } }; });
+  const opts = { mode: 'online', online: true, local: 0, builds: [KB.mintBuild(l1, 0), KB.mintBuild(l2, 0)], cpu: [null, null], arena: 'shelf', wins: 9, time: 99, bonus: false, inputs: net, onEnd: () => {} };
+  const m = Match.create(opts); App.setView(m); const R = rng(seed); withRng(R, () => m.restart());
+  T.prepSnap(m, net);
+  const IN = rng(seed ^ 0x5bd1e995), A = Input.ACTIONS, log = [], ins = [], saves = {};
+  const step = f => {
+    for (let i = 0; i < 2; i++) { const p = net[i], x = ins[f][i]; p.cpu.held = {}; A.forEach((a, k) => { p.cpu.held[a] = x.h[k]; }); p.cpu.move.x = x.x; p.cpu.move.y = x.y; p.poll(f / 60, [], false); }
+    if (pre) pre(m, f);
+    const n0 = Input.now; Input.now = f / 60; withRng(R, () => m.update(1 / 60)); Input.now = n0;
+  };
+  let rbs = 0, ms = 0, snapMs = 0, nsnap = 0; const bad = [];
+  for (let f = 0; f < frames; f++) {
+    ins[f] = [0, 1].map(() => { const h = A.map(a => IN() < (a === 'light' ? 0.25 : a === 'guard' ? 0.05 : 0.04)); return { h, x: Math.round((IN() * 2 - 1) * 100) / 100, y: Math.round((IN() * 2 - 1) * 100) / 100 }; });
+    const t1 = performance.now(); saves[f] = { R: R.get(), s: T.snapshot() }; snapMs += performance.now() - t1; nsnap++;
+    step(f);
+    if (every && f % every === every - 1 && f >= depth) {
+      const s0 = T.snapshot(), h0 = T.hashSnap(s0), r0 = R.get(), t0 = performance.now();
+      const S = saves[f + 1 - depth]; T.restoreSnap(S.s); R.set(S.R);
+      U.quiet = true; try { for (let g = f + 1 - depth; g <= f; g++) step(g); } finally { U.quiet = false; }
+      ms = Math.max(ms, performance.now() - t0);
+      const s1 = T.snapshot(), h1 = T.hashSnap(s1);
+      rbs++; if (h0 !== h1 || r0 !== R.get()) { bad.push(f); if (!window.__rbFirst) window.__rbFirst = { f, diff: __snapDiff(s0, s1) }; }
+    }
+    delete saves[f - 20];
+    if (f % 60 === 59) log.push(m.fighters.map(x => x.state[0] + x.pos.x.toFixed(3) + ',' + x.pos.z.toFixed(3) + ':' + Math.round(x.hp)).join('|') + ' r' + R.get());
+  }
+  const size = T.snapshot().length / 3;
+  App.setView(null);
+  return { log, rbs, nbad: bad.length, bad: bad.slice(0, 8), replayMs: Math.round(ms * 10) / 10, snapMs: Math.round(snapMs / nsnap * 100) / 100, entries: size };
+};
+/* the first values that differ between two saves of a fight */
+window.__snapDiff = (a, b) => {
+  const out = [], name = o => (o && o.constructor && o.constructor.name) + (o && o.name ? ':' + o.name : '') + (o && o.kind ? ':' + o.kind : '');
+  if (a.length !== b.length) out.push({ len: [a.length, b.length] });
+  for (let i = 0; i < Math.min(a.length, b.length) && out.length < 6; i += 3) {
+    const k = a[i], ra = a[i + 2], rb = b[i + 2];
+    if (k !== b[i]) { out.push({ i, kinds: [k, b[i]], a: name(a[i + 1]), b: name(b[i + 1]) }); break; }
+    const pa = [], pb = [];
+    const prim = (r, p) => { for (let j = 0; j < r.length; j++) { const v = r[j]; if (v === undefined) { if (k === 0 && j % 2 === 1) p.pop(); continue; } p.push(v === null || typeof v !== 'object' ? (typeof v === 'function' ? 'fn' : v) : (Array.isArray(v) ? 'a' + v.length : 'o')); } };
+    prim(ra, pa); prim(rb, pb);
+    if (pa.join('§') !== pb.join('§')) { let j = 0; while (j < pa.length && pa[j] === pb[j]) j++; out.push({ i, kind: k, obj: name(a[i + 1]), at: j, near: pa.slice(Math.max(0, j - 3), j + 3), vs: pb.slice(Math.max(0, j - 3), j + 3) }); }
+  }
+  return out;
+};
+/* two games on one page, joined by a fake connection with lag (in ticks) and jitter: __duoSetup() then __duoRun(ticks) */
+window.__duoSetup = async (lag, jitter, picks, seed, debug) => {
+  document.querySelectorAll('iframe.duo').forEach(f => f.remove());
+  const mk = () => new Promise(r => { const f = document.createElement('iframe'); f.className = 'duo'; f.style.cssText = 'position:fixed;left:0;top:0;width:480px;height:270px;z-index:99;opacity:0.02;pointer-events:none'; f.src = '/?duo=' + Date.now() + Math.random(); f.onload = () => r(f); document.body.append(f); });
+  const fr = [await mk(), await mk()];
+  for (let k = 0; k < 80 && !fr.every(f => f.contentWindow.__ready); k++) await new Promise(r => setTimeout(r, 100));
+  const W = fr.map(f => f.contentWindow);
+  W.forEach(w => { w.requestAnimationFrame = () => 0; w.performance.now = () => (window.__duo ? window.__duo.tick : 0) * 1000 / 60; });
+  for (let i = 0; i < 2; i++) { await W[i].Auth.register('Duo' + i + Math.floor(Math.random() * 1e6), 'test1234', false); W[i].Auth.starter(['samurai', 'knight'][i]); }
+  const D = window.__duo = { W, tick: 0, lag: lag || 0, jitter: jitter || 0, rnd: Online._t.rng(99), sent: 0, slow: [0, 0], stalls: [0, 0] };
+  const conns = [0, 1].map(i => ({ open: true, h: {}, inbox: [], last: 0, on(e, fn) { this.h[e] = fn; }, close() { this.open = false; },
+    send(o) { const p = conns[1 - i], at = Math.max(p.last, D.tick + D.lag + Math.floor(D.rnd() * (D.jitter + 1))); p.last = at; p.inbox.push({ at, d: JSON.parse(JSON.stringify(o)) }); D.sent++; } }));
+  D.conns = conns;
+  W[0].Online._t.fake(conns[0], true); W[1].Online._t.fake(conns[1], false);
+  if (picks) { W[0].Online._t.pick(picks[0]); W[1].Online._t.pick(picks[1]); }
+  conns.forEach(c => c.h.open());
+  D.pump = () => { for (let i = 0; i < 2; i++) { const c = conns[i]; while (c.inbox.length && c.inbox[0].at <= D.tick) c.h.data(c.inbox.shift().d); } };
+  for (let k = 0; k < 40 + 4 * (D.lag + D.jitter); k++) { D.tick++; if (k % 20 === 0) W.forEach(w => w.Online._t.ping()); D.pump(); }
+  W.forEach(w => { w.Online._t.debug = debug || 0; });
+  W[0].Online._t.fight(seed);
+  return W.map(w => w.Online._t.info());
+};
+window.__duoRun = ticks => {
+  const D = window.__duo, IN = Online._t.rng(D.tick + 7), A = Input.ACTIONS;
+  for (let t = 0; t < ticks; t++) {
+    D.tick++; if (D.tick % 60 === 0) D.W.forEach(w => w.Online._t.ping()); D.pump();
+    for (let wi = 0; wi < 2; wi++) {
+      const w = D.W[wi];
+      if (D.slow[wi] && D.tick % D.slow[wi] === 0) continue;   // this game's clock runs a little slow
+      const P0 = w.Input.players[0];
+      D.cur = D.cur || [null, null];
+      if (!D.cur[wi] || !D.hold || IN() < 1 / D.hold) {       // D.hold: a player keeps the same buttons for ~hold frames (people don't change every frame)
+        const c = { held: {}, move: { x: Math.round((IN() * 2 - 1) * 100) / 100, y: Math.round((IN() * 2 - 1) * 100) / 100 } };
+        for (const a of A) c.held[a] = IN() < (a === 'light' ? 0.3 : a === 'guard' ? 0.05 : 0.05);
+        D.cur[wi] = c;
+      }
+      P0.cpu = D.cur[wi];
+      w.Input.update(D.tick / 60);
+      if (w.App.view && w.App.view.fighters) { const g = w.Online._t.info(), f0 = g.f; w.App.view.update(1 / 60); if (w.Online._t.info().f === f0) D.stalls[wi]++; }
+    }
+  }
+  return D.W.map(w => w.Online._t.info());
+};

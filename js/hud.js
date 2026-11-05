@@ -79,28 +79,28 @@
       if (M.training && refs.tr) { const v = M.fighters[1].combo, p = M.fighters[0].combo; const c2 = v.hits ? v : refs.lastC || v; if (v.hits) refs.lastC = { hits: v.hits, dmg: v.dmg, bounces: v.bounces }; refs.tr.textContent = 'LAST COMBO  ' + (c2.hits || 0) + ' hits · ' + Math.round(c2.dmg || 0) + ' dmg · ' + (c2.bounces || 0) + ' bounces'; }
     },
     combo(attIdx, c) {
-      if (!refs) return; const R = refs[attIdx];
+      if (!refs || U.quiet) return; const R = refs[attIdx];
       R.cn.textContent = c.hits; R.cl.textContent = c.hits === 1 ? 'HIT' : 'HITS';
       R.cb.textContent = c.bounces ? 'KNOCK//BACK ×' + c.bounces : ''; R.cd.textContent = Math.round(c.dmg) + ' DMG  ·  ' + Math.round(Combat.prorate({ combo: c }) * 100) + '% VALUE';
       R.combo.classList.remove('pop'); void R.combo.offsetWidth; R.combo.classList.add('pop');
       comboT[attIdx] = 1.6;
     },
     banner(text, cls, dur) {
-      if (!refs) return; const b = refs.banner; b.className = 'banner ' + (cls || ''); b.innerHTML = '';
+      if (!refs || U.quiet) return; const b = refs.banner; b.className = 'banner ' + (cls || ''); b.innerHTML = '';
       if (text.includes('//')) { const [x, y] = text.split('//'); b.append(el('span', null, x), el('i', null, '//'), el('span', null, y)); } else b.textContent = text;
       void b.offsetWidth; b.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove('show'), (dur || 1) * 1000);
     },
     superCut(f, mv) {
-      if (!refs) return; const c = refs.cut; const K = KB.LINES[f.build.card.line];
+      if (!refs || U.quiet) return; const c = refs.cut; const K = KB.LINES[f.build.card.line];
       c.innerHTML = ''; c.style.setProperty('--lc', K.css); c.className = 'supercut p' + (f.idx + 1);
       c.append(el('div', { class: 'sc-band' }, el('small', null, 'LEGEND ART'), el('b', null, mv.name), el('span', null, f.name)));
       void c.offsetWidth; c.classList.add('show'); setTimeout(() => c.classList.remove('show'), 900);
     },
     /* the Legend Art cinematic: bars in, a flash and the Art's name on the finisher, a tint for the mood */
-    cine(on) { if (!refs) return; root.classList.toggle('cinema', on); refs.cine.classList.toggle('on', on); if (!on) refs.cTitle.classList.remove('go'); },
-    cineFlash() { if (!refs) return; const e = refs.cFlash; e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
-    cineTitle(text, css) { if (!refs) return; const e = refs.cTitle; e.textContent = text; e.style.setProperty('--lc', css || '#fff'); e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
-    cineTint(t) { if (!refs) return; const e = refs.cTint; if (!t) { e.style.opacity = 0; return; } if (e.dataset.bg !== t[0]) { e.dataset.bg = t[0]; e.style.background = t[0]; } e.style.opacity = t[1]; },
+    cine(on) { if (!refs || U.quiet) return; root.classList.toggle('cinema', on); refs.cine.classList.toggle('on', on); if (!on) refs.cTitle.classList.remove('go'); },
+    cineFlash() { if (!refs || U.quiet) return; const e = refs.cFlash; e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
+    cineTitle(text, css) { if (!refs || U.quiet) return; const e = refs.cTitle; e.textContent = text; e.style.setProperty('--lc', css || '#fff'); e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
+    cineTint(t) { if (!refs || U.quiet) return; const e = refs.cTint; if (!t) { e.style.opacity = 0; return; } if (e.dataset.bg !== t[0]) { e.dataset.bg = t[0]; e.style.background = t[0]; } e.style.opacity = t[1]; },
     trainingPanel() {
       const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
       const panel = el('div', { class: 'trainpanel' + (U.touch ? ' min' : '') },

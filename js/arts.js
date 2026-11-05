@@ -115,7 +115,7 @@
         if (once(c, 'turn', 1.04)) { f.pos.copy(P(c, 2.3, 0, 0)); f.yaw = Math.atan2(c.D.x, c.D.z); pose(c, 'iai'); SFX.play('whoosh'); FX.burst(chest(f), { n: 10, color: 0xffffff, speed: 2, size: 0.08, life: 0.3 }); }
         if (t > 1.3) pose(c, 'sheathe', t < 1.55 ? 'wind' : 'strike');
         if (once(c, 'glint', 1.4)) FX.spark(f.fig.socket('wR', [0, 0, 12]), { size: 1.6, life: 0.3 });
-        if (once(c, 'click', 1.92)) { SFX.play('snap'); for (let i = 0; i < 10; i++) FX.spark(chest(o).add(new V3(U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6))), { size: 1.2, life: 0.25 }); }
+        if (once(c, 'click', 1.92)) { SFX.play('snap'); for (let i = 0; i < 10; i++) FX.spark(chest(o).add(new V3(U.vrnd(-0.6, 0.6), U.vrnd(-0.6, 0.6), U.vrnd(-0.6, 0.6))), { size: 1.2, life: 0.25 }); }
         return t >= this.fin;
       },
       cam(c, t) {
@@ -197,7 +197,7 @@
         }
         if (t > 1.22) {
           pose(c, 'dragonPalm', 'wind');
-          if (U.vrand() < 0.7) { const h = f.fig.socket('armR', [0, -9, 0]); FX.burst(h.add(new V3(U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6))), { n: 1, color: KB.LINES.monk.pal.glow, glow: true, speed: 0.4, size: 0.06, gravity: 0, life: 0.25 }); }
+          if (U.vrand() < 0.7) { const h = f.fig.socket('armR', [0, -9, 0]); FX.burst(h.add(new V3(U.vrnd(-0.6, 0.6), U.vrnd(-0.6, 0.6), U.vrnd(-0.6, 0.6))), { n: 1, color: KB.LINES.monk.pal.glow, glow: true, speed: 0.4, size: 0.06, gravity: 0, life: 0.25 }); }
         }
         if (t >= this.fin) { pose(c, 'dragonPalm'); FX.ring(chest(o), { r1: 3.4, life: 0.4, normal: D.clone(), color: 0x9ff7ff }); FX.ring(chest(o), { r1: 2.2, life: 0.3, normal: D.clone(), color: 0xffffff }); SFX.play('heavy'); return true; }
         return false;
@@ -276,7 +276,7 @@
         }
         if (t >= this.fin) {
           if (s.g) s.g.forEach(g => { FX.burst(_v.copy(g.obj.root.position).setY(0.9), { n: 12, color: 0x30243f, speed: 3, size: 0.12, gravity: -1, life: 0.5 }); drop(c, g); });
-          for (let i = 0; i < 5; i++) FX.spark(chest(o).add(new V3(U.rnd(-0.5, 0.5), U.rnd(-0.5, 0.5), U.rnd(-0.5, 0.5))), { size: 1.4, color: 0xd9b8ff, life: 0.25 });
+          for (let i = 0; i < 5; i++) FX.spark(chest(o).add(new V3(U.vrnd(-0.5, 0.5), U.vrnd(-0.5, 0.5), U.vrnd(-0.5, 0.5))), { size: 1.4, color: 0xd9b8ff, life: 0.25 });
           f.pos.copy(P(c, 1.4, 0, 0)); f.yaw = Math.atan2(c.D.x, c.D.z); return true;
         }
         return false;
@@ -450,7 +450,7 @@
         }
         if (t >= this.fin) {
           lit(c, 1); c.tint = null; drop(c, s.spotO); drop(c, s.spotF); f.pos.y = 0;
-          for (let i = 0; i < 4; i++) FX.burst(chest(o).add(new V3(U.rnd(-1, 1), U.rnd(0, 1.5), U.rnd(-1, 1))), { n: 18, color: [[0xff6fa8, 0xfff27a], [0x7cf9ff, 0xffffff], [0x9dff7a, 0xffd040], [0xd9b8ff, 0xff8ad8]][i], glow: true, speed: 7, size: 0.08, gravity: 4, life: 0.9 });
+          for (let i = 0; i < 4; i++) FX.burst(chest(o).add(new V3(U.vrnd(-1, 1), U.vrnd(0, 1.5), U.vrnd(-1, 1))), { n: 18, color: [[0xff6fa8, 0xfff27a], [0x7cf9ff, 0xffffff], [0x9dff7a, 0xffd040], [0xd9b8ff, 0xff8ad8]][i], glow: true, speed: 7, size: 0.08, gravity: 4, life: 0.9 });
           FX.ring(chest(o), { r1: 4.5, life: 0.5, normal: c.D.clone(), color: col }); SFX.play('wallbreak'); return true;
         }
         return false;
@@ -472,7 +472,7 @@
       const m = f.m, art = ART[mv.seq] || ART.cuts;
       const D = new V3(o.pos.x - f.pos.x, 0, o.pos.z - f.pos.z); if (D.lengthSq() < 0.01) D.copy(f.forward); D.normalize();
       const S = new V3().crossVectors(UP, D).normalize();
-      if (S.dot(_v.subVectors(m.camera.position, o.pos).setY(0)) < 0) S.multiplyScalar(-1);
+      if (S.z < 0 || (S.z === 0 && S.x < 0)) S.multiplyScalar(-1);   // the side toward where the camera normally sits (+Z); never the camera itself, which differs per screen (online, both must agree)
       const O = o.pos.clone(); O.y = 0;
       // side shots stand 4-8 m off to the side: take the side with room for them
       const room = k => { const A = m.arena, x = O.x + S.x * k, z = O.z + S.z * k; return Math.max(Math.abs(x) - A.W, Math.abs(z) - A.D); };

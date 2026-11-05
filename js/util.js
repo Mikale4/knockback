@@ -6,6 +6,8 @@
   U.lerp = (a, b, t) => a + (b - a) * t;
   /* visual randomness (particles, sounds, cracks, fidgets) has its own source, so an online fight's seeded one
      (online.js swaps Math.random) is spent the same way on every device */
+  /* U.quiet: online, a rollback replays fight frames you've already seen; while it does, no sounds, effects or banners */
+  U.quiet = false;
   const R0 = Math.random.bind(Math);
   U.vrand = () => R0(); U.vrnd = (a, b) => a + R0() * (b - a);
   /* the gameplay source: Math.random, unless an online fight seeds it (U.setRand). three.js stamps every new object

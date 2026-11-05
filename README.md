@@ -192,19 +192,37 @@ Accounts are local (this browser's storage), with salted password hashes. It is 
 ## Online
 
 **ONLINE** in the hub (`js/online.js`): fight a friend over the internet. One of you **HOSTS** a room and gets a
-five-letter code; the other types it in and **JOINS**. In the room you both pick your figure, the host picks the arena,
-the rounds and whether rarity bonuses count, and presses FIGHT. After a fight: REMATCH (both of you), back to the room,
-or leave.
+five-letter code; the other types it in and **JOINS**. In the room, on the **CHARACTER SELECT**, you each pick a figure:
+any of your own, or any of the ten base characters (their Standard set). The host picks the arena, the rounds and
+whether rarity bonuses count, and presses FIGHT. After a fight: REMATCH (both of you), **CHARACTER SELECT** (takes you
+both back to pick again), or LEAVE.
 
 - **How you connect:** your browsers connect to each other directly (WebRTC). The free [PeerJS](https://peerjs.com)
   service only introduces you, so there's no game server. Like any peer-to-peer game, your friend's browser can see
   your IP address. Some school, work or mobile networks block this kind of connection.
-- **Netcode:** delay-based lockstep, the classic fighting-game kind. Both games run the same fight, 60 frames a second,
-  and only the buttons travel. Your presses play a few frames later (2 to 8, from your ping) on both screens. The fight is
-  deterministic online: fixed steps, a seeded random source for gameplay (`U.rand`; looks use `U.vrand`), timers and the
-  Bard's beat on the fight's clock. Every half second the two games compare a fingerprint of the fight, and if they
-  ever differ the host's fight is copied over at an agreed frame. An online fight can't be paused (Esc opens a menu to
-  leave it). Both of you need the same version of the game: reload if it says otherwise.
+- **Netcode: rollback** (the GGPO kind). Both games run the same fight, 60 frames a second, and only the buttons
+  travel. Your presses play after a small input delay (1 or 2 frames; more only on a very long ping) on both screens.
+  Your friend's presses take a moment to arrive, so the game doesn't wait: it guesses they're still doing what they
+  did last and plays on, saving the fight on each guessed frame. When their real buttons arrive and the guess was
+  wrong, it puts the fight back to that frame and replays the frames since with the right buttons, instantly and
+  silently (no sound, effect or banner plays twice). It never guesses more than 8 frames ahead; past that it waits
+  ("waiting for your friend"). The two games also keep in step (GGPO's time sync): whichever runs ahead holds back a
+  frame now and then.
+  - **The save:** `online.js` walks the whole fight from the match object down (fighters, figure poses, buffered
+    presses, projectiles, imps, dropped parts, timers, the Legend Art on screen) and saves every object it reaches by
+    value, then puts those values back into the same objects. Looks stay out (trails, wall cracks, the camera,
+    particles). Saving takes about 0.2 ms; replaying 8 frames takes a few ms.
+  - **Determinism:** fixed steps; a seeded random source for gameplay (`U.rand`); looks use `U.vrand` and must never
+    decide whether gameplay randomness is drawn; timers and the Bard's beat on the fight's clock; nothing in the fight
+    reads the camera (it differs per screen). Events (for rewards) and the end of a match only count once their frame
+    is settled. Every half second the two compare a fingerprint of a settled frame; if they ever differ, the host's
+    fight is copied over at an agreed frame (a safety net).
+  - **Tests** (`tools/harness.js`): `__rbRun(seed, frames, l1, l2, every, depth)` rewinds and replays a fight
+    constantly and checks the whole save comes out identical; `__duoSetup(lag, jitter, picks)` + `__duoRun(ticks)` run
+    two games on one page over a fake connection with lag and check they stay in sync.
+
+  An online fight can't be paused (Esc opens a menu to leave it). Both of you need the same version of the game: reload
+  if it says otherwise.
 
 ## Tutorial
 
@@ -277,7 +295,7 @@ shake** setting (Full, Reduced, Off).
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
-| `js/online.js` | ONLINE: rooms by code over PeerJS, the lockstep netcode, fingerprints and resync, the lobby |
+| `js/online.js` | ONLINE: rooms by code over PeerJS, character select, rollback netcode (the fight's save/restore, time sync), fingerprints and resync, the lobby |
 | `js/trials.js` | COMBO TRIALS: the seventy trials, the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |

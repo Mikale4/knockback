@@ -41,16 +41,17 @@
     /* things that happen in the fight (the tutorial listens): M.on(fn) -> off() */
     const subs = [];
     M.on = fn => { subs.push(fn); return () => { const i = subs.indexOf(fn); if (i >= 0) subs.splice(i, 1); }; };
+    M.dispatch = (type, d) => { for (const fn of subs.slice()) { try { fn(type, d); } catch (e) { console.error(e); } } };
     M.event = (type, data) => {
       if (type === 'wallbreak') HUD.banner('WALL BREAK', 'break', 1.1);
-      for (const fn of subs.slice()) { try { fn(type, data || {}); } catch (e) { console.error(e); } }
+      if (M.evHook) M.evHook(type, data || {}); else M.dispatch(type, data || {});
     };
     M.comboShow = (att, vic) => HUD.combo(att.idx, vic.combo);
 
     /* ------------------------------------------- the SUMMONER's imps
        Little helpers: they walk in, bite, pounce on whatever she hits, and
        pop after a couple of hits (any attack that touches one hurts it). */
-    let shotId = 0;
+    M.shotId = 0;
     const impCol = () => KB.LINES.summoner.pal.glow;
     const impR = f => { const it = ['card', 'head', 'armR', 'legs'].map(s => f.build[s]).find(b => b.line === 'summoner'); return it ? it.r || 0 : 0; };
     function poof(mn, quiet) {
@@ -279,7 +280,7 @@
       const trail = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(look === 'bolt' ? opt.col : L.tcol, look === 'kunai' ? 0.45 : 0.8));
       trail.scale.set(L.tw, L.tw, 0.001); trail.visible = false; scene.add(trail);
       M.projs.push({ kind: 'dart', look, f, mv, k: f.kind, charge: opt.charge || 0, pos: from.clone(), from: from.clone(), back: f.pos.clone().setY(f.pos.y + 1.15), dir: dir.clone().normalize(), speed: L.speed, range, dist: 0, w: L.w,
-        mesh, trail, own, grp: opt.grp || { done: false }, id: 's' + (++shotId), visual: !!opt.visual, col: opt.col, t: 0, stuck: null });
+        mesh, trail, own, grp: opt.grp || { done: false }, id: 's' + (++M.shotId), visual: !!opt.visual, col: opt.col, t: 0, stuck: null });
     }
     /* where a moving point (a to b) meets their body: standing (shins to head) or, for an OTG, lying on the floor */
     function bodyHit(f, o, a, b, w, mv, kind) {
@@ -345,7 +346,7 @@
         const weight = chainWeight(); weight.position.copy(hand); scene.add(weight);
         const links = new THREE.InstancedMesh(new THREE.BoxGeometry(0.075, 0.028, 1), new THREE.MeshLambertMaterial({ color: 0x9aa0ad }), CHAIN_N);
         links.count = 0; links.frustumCulled = false; links.castShadow = true; scene.add(links);
-        M.projs.push({ kind: 'chain', f, mv, k: f.kind, charge, ph: 'out', pos: hand.clone(), dir, range, dist: 0, T: 0, t: 0, weight, links, id: 's' + (++shotId), vic: null });
+        M.projs.push({ kind: 'chain', f, mv, k: f.kind, charge, ph: 'out', pos: hand.clone(), dir, range, dist: 0, T: 0, t: 0, weight, links, id: 's' + (++M.shotId), vic: null });
         SFX.play('whoosh');
       } else if (mv.proj === 'part') {
         // PART TOSS: pull off a part of your own figure and throw it at them
@@ -379,10 +380,10 @@
         const from = f.fig.detached.armL ? _w.copy(f.pos).setY(f.pos.y + 1).addScaledVector(F, 0.4).clone() : f.fig.socket('wL', [0, 0, 6]).clone();
         const dir = aimDir(f, o, from, F.clone(), range, 0.35, false, 22);
         const mesh = hexGlyph(col); mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
-        M.projs.push({ kind: 'hex', f, mv, k: f.kind, charge, mesh, col, pos: from.clone(), dir, range, dist: 0, t: 0, id: 's' + (++shotId) });
+        M.projs.push({ kind: 'hex', f, mv, k: f.kind, charge, mesh, col, pos: from.clone(), dir, range, dist: 0, t: 0, id: 's' + (++M.shotId) });
         SFX.play('whoosh'); FX.burst(from, { n: 8, color: [col, 0xffffff], glow: true, speed: 2, size: 0.06, life: 0.3, gravity: 0 });
       } else if (mv.proj === 'breath') {
-        M.projs.push({ kind: 'breath', f, mv, k: f.kind, t: 0, n: 0, id: 's' + (++shotId) }); SFX.play('boom');
+        M.projs.push({ kind: 'breath', f, mv, k: f.kind, t: 0, n: 0, id: 's' + (++M.shotId) }); SFX.play('boom');
       } else if (mv.proj === 'wave') {
         // BARD: a ring of sound that rolls forward
         const from = _w.copy(f.pos).setY(f.pos.y + 1).clone(), ring = new THREE.Group();
@@ -392,7 +393,7 @@
         });
         ring.position.copy(from); ring.lookAt(from.clone().add(F)); scene.add(ring);
         const notes = [0, 1, 2, 3].map(i => { const n = noteMesh(i); scene.add(n); return n; });
-        M.projs.push({ kind: 'wave', f, mv, k: f.kind, charge, mesh: ring, notes, pos: from, dir: F.clone(), dist: 0, range: mv.range + (charge || 0) * 2, t: 0, id: 's' + (++shotId), hit: false });
+        M.projs.push({ kind: 'wave', f, mv, k: f.kind, charge, mesh: ring, notes, pos: from, dir: F.clone(), dist: 0, range: mv.range + (charge || 0) * 2, t: 0, id: 's' + (++M.shotId), hit: false });
       } else if (mv.proj === 'bomb') {
         const g = new VX.Grid(); g.ell(0, 0, 0, 2, 2, 2, 0x22222a); g.set(0, 3, 0, 0x8a5a2b); g.set(0, 4, 0, VX.glow(0xffa020));
         const mesh = VX.object(g, 0.07); scene.add(mesh);
@@ -408,7 +409,7 @@
       FX.burst(c, { n: 26, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 7, size: 0.12, life: 0.6 });
       FX.burst(c, { n: 10, color: [0x5a5a5a, 0x8a8a8a], speed: 2, size: 0.25, life: 1.0, gravity: -2 });
       FX.spark(c, { color: 0xffb040, size: 2.6, life: 0.2 });
-      M.hitMinions(f, c, p.mv.rad, 's' + (++shotId));
+      M.hitMinions(f, c, p.mv.rad, 's' + (++M.shotId));
       if (o && o.pos.distanceTo(_v.copy(c).setY(Math.max(0, c.y - 0.9))) < p.mv.rad + 0.5) {
         const d = _v.subVectors(o.pos, c).setY(0); if (d.lengthSq() < 0.01) d.copy(f.forward); d.normalize();
         Combat.hit(f, o, p.mv, { kind: 'special', dir: d.clone(), from: c.clone(), at: o.pos.clone().setY(1), proj: true });
@@ -519,7 +520,8 @@
         M.freezeT -= rawDt;
         const f = M.freezer; f.animate(rawDt);
         if (M.freezeT <= 0) { M.frozen = false; M.freezer = null; }
-        updCamera(rawDt); FX.update(rawDt); HUD.update(M); return;
+        if (!U.quiet) { updCamera(rawDt); FX.update(rawDt); HUD.update(M); }
+        return;
       }
       if (M.cine) Arts.update(M.cine, rawDt);
       for (let i = 0; i < 2; i++) if (M.ai[i]) M.ai[i].think(dt);
@@ -543,6 +545,7 @@
       }
       updProjs(dt); updPicks(dt); updMinions(dt); arena.update(dt);
       for (let i = M.clones.length - 1; i >= 0; i--) { const c = M.clones[i]; c.t += dt; c.f.root.position.lerpVectors(c.from, c.to, U.clamp(c.t / 0.22, 0, 1)); if (c.t > 0.4) { c.f.root.traverse(o => { if (o.isMesh && o.material.opacity) o.material.opacity *= 0.8; }); } if (c.t > 0.7) { c.f.dispose(); M.clones.splice(i, 1); } }
+      if (U.quiet) return;
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
       updCamera(rawDt); FX.update(dt);
       if (!M.attract) HUD.update(M);

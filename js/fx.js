@@ -34,6 +34,7 @@
     },
     /* a spray of voxel cubes */
     burst(pos, o) {
+      if (U.quiet) return;
       o = o || {}; const n = o.n || 10;
       for (let i = 0; i < n && P.length < MAX * 2; i++) {
         const sp = (o.speed || 5) * U.vrnd(0.4, 1.1), a = U.vrand() * Math.PI * 2, up = o.up != null ? o.up : 0.6;
@@ -48,6 +49,7 @@
     },
     /* a white-hot star at an impact */
     spark(pos, o) {
+      if (U.quiet) return;
       o = o || {};
       const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, color: o.color || 0xffffff, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, toneMapped: false, transparent: true }));
       m.position.copy(pos); const s = o.size || 1.2; m.scale.set(s, s, 1); m.material.rotation = U.vrand() * 6; m.renderOrder = 20;
@@ -55,6 +57,7 @@
     },
     /* an expanding ring on the floor or facing a direction */
     ring(pos, o) {
+      if (U.quiet) return;
       o = o || {};
       const g = new THREE.RingGeometry(0.8, 1, 40);
       const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: o.color || 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
@@ -71,20 +74,20 @@
       const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
       mesh.frustumCulled = false; mesh.renderOrder = 15; scene.add(mesh);
       const T = { mesh, pts: [], color: new THREE.Color(color || 0xffffff), N, on: false,
-        push(a, b) { T.pts.unshift({ a: a.clone(), b: b.clone(), t: 0 }); if (T.pts.length > N) T.pts.length = N; },
+        push(a, b) { if (U.quiet) return; T.pts.unshift({ a: a.clone(), b: b.clone(), t: 0 }); if (T.pts.length > N) T.pts.length = N; },
         dispose() { scene && scene.remove(mesh); geo.dispose(); mesh.material.dispose(); const i = trails.indexOf(T); if (i >= 0) trails.splice(i, 1); } };
       trails.push(T); return T;
     },
     /* a DOM callout over a world point: FX.call(pos, 'WALL BOUNCE', 'bounce') */
     call(pos, text, cls, camera) {
-      const layer = U.$('callouts'); if (!layer || !camera) return;
+      const layer = U.$('callouts'); if (U.quiet || !layer || !camera) return;
       const v = pos.clone().project(camera);
       const e = U.el('div', { class: 'callout ' + (cls || '') }, text);
       e.style.left = ((v.x + 1) / 2 * 100) + '%'; e.style.top = ((1 - v.y) / 2 * 100) + '%';
       layer.append(e); setTimeout(() => e.remove(), 1100);
     },
     shakeK: (() => { try { const v = JSON.parse(localStorage.getItem('kb.shake')); return v == null ? 1 : v; } catch (e) { return 1; } })(),
-    addShake(a) { shake.amt = Math.min(1.2, shake.amt + a * FX.shakeK); },
+    addShake(a) { if (U.quiet) return; shake.amt = Math.min(1.2, shake.amt + a * FX.shakeK); },
     update(dt) {
       // shake decays; its offset is applied by whoever owns the camera
       shake.amt = Math.max(0, shake.amt - dt * 2.8);
@@ -136,7 +139,7 @@
         pos.needsUpdate = col.needsUpdate = true;
       }
     },
-    clear() { P.length = 0; for (const s of sparks) scene.remove(s.m); for (const r of rings) scene.remove(r.m); sparks = []; rings = []; },
+    clear() { if (U.quiet) return; P.length = 0; for (const s of sparks) scene.remove(s.m); for (const r of rings) scene.remove(r.m); sparks = []; rings = []; },
   };
   window.FX = FX;
 })();

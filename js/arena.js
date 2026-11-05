@@ -93,6 +93,7 @@
       /* a bounce adds stress and spreads a crack from where it hit */
       stress(w, add, at) {
         const before = w.stress; w.stress = Math.min(99, w.stress + add);
+        if (U.quiet) return;
         const branches = 2 + Math.floor(add / 14);
         for (let b = 0; b < branches; b++) {
           let px = at.x, py = U.clamp(at.y, 0.2, w.h * AS - 0.15), pz = at.z, a = U.vrand() * Math.PI * 2;
