@@ -353,7 +353,7 @@
     },
     ladder() {
       if (!Menu._ladder) {
-        const lines = U.shuffle(KB.LINE_ORDER.slice());
+        const lines = U.shuffle(KB.LINE_ORDER.slice()).slice(0, 6);
         Menu._ladder = lines.map((line, i) => { const r = [0, 0, 1, 1, 2, 3][i]; const b = KB.mintBuild(line, r); if (i === 5) b.name = 'CHASE ' + KB.LINES[line].figure; return { line, r, lvl: [0, 1, 1, 2, 2, 3][i], build: b, reward: 60 + i * 40, arena: Arena.LIST[i % 3] }; });
       }
       return Menu._ladder;

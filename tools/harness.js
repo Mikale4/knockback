@@ -279,3 +279,54 @@ window.__duoRun = ticks => {
   }
   return D.W.map(w => w.Online._t.info());
 };
+/* touch screens: anything on the current screen that's off the screen and can't be scrolled to */
+window.__scrollAudit = () => {
+  const W = innerWidth, H = innerHeight, bad = [], scrollers = new Set();
+  const canScroll = e => { const c = getComputedStyle(e); return /(auto|scroll)/.test(c.overflowY) && e.scrollHeight > e.clientHeight + 1; };
+  const canScrollX = e => { const c = getComputedStyle(e); return /(auto|scroll)/.test(c.overflowX) && e.scrollWidth > e.clientWidth + 1; };
+  const root = document.querySelector('#screens'), extra = [...document.querySelectorAll('body > .overlay')];
+  const els = [...root.querySelectorAll('button, input, select, a, h1, h2, h3, p, img, b, small, .olpick, .slotrow, .rwrow, .trow')].concat(...extra.map(o => [...o.querySelectorAll('button, input, h2, p, b')]));
+  for (const e of els) {
+    const r = e.getBoundingClientRect(); if (!r.width || !r.height) continue;
+    const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    const outY = r.bottom > H + 1 || r.top < -1, outX = r.right > W + 1 || r.left < -1;
+    if (!outY && !outX) continue;
+    // reachable if some ancestor scrolls that way and that ancestor is itself on screen
+    let a = e.parentElement, ok = false;
+    while (a && a !== document.body) {
+      if ((outY && canScroll(a)) || (outX && canScrollX(a))) { const ar = a.getBoundingClientRect(); ok = ar.top >= -1 && ar.bottom <= H + 1 && ar.left >= -1 && ar.right <= W + 1; scrollers.add(a.className + (ok ? '' : ' (cut off)')); break; }
+      a = a.parentElement;
+    }
+    if (!ok) bad.push((e.tagName + '.' + (e.className || '')).slice(0, 30) + ' "' + (e.textContent || e.alt || '').trim().slice(0, 24) + '" y' + Math.round(r.top) + '-' + Math.round(r.bottom) + ' x' + Math.round(r.left) + '-' + Math.round(r.right));
+  }
+  const s = root.lastElementChild;
+  return { screen: s ? s.className : '', vw: W + 'x' + H, bad: bad.length, sample: bad.slice(0, 4), scrollers: [...scrollers].slice(0, 3) };
+};
+/* every menu screen, audited at the current size */
+window.__auditAll = async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms)), out = [];
+  const go = async (name, fn) => { try { await fn(); await wait(350); const r = __scrollAudit(); if (r.bad) out.push(name + ': ' + r.bad + ' cut off ' + JSON.stringify(r.sample)); else out.push(name + ': ok'); } catch (e) { out.push(name + ': ERR ' + e.message); } document.querySelectorAll('body > .overlay').forEach(o => o.remove()); };
+  await go('title', () => Menu.title());
+  await go('login', () => Menu.login());
+  await go('starter', () => Menu.starter());
+  await go('tutoffer', () => Menu.offerTutorial());
+  await go('hub', () => Menu.hub());
+  await go('workshop', () => Menu.workshop());
+  await go('workshop-open', () => Menu.workshop('head'));
+  await go('capsules', () => Menu.capsules(0));
+  await go('shelf', () => Menu.shelf());
+  await go('versus', () => Menu.versus());
+  await go('versus-watch', () => Menu.versus(Object.assign({}, Menu._vs, { mode: 'watch' })));
+  await go('arcade', () => Menu.arcade());
+  await go('howto', () => Menu.howto());
+  await go('options', () => Menu.options());
+  await go('rewards', () => Rewards.screen());
+  for (const t of ['weekly', 'fighters', 'milestones', 'awards']) await go('rewards-' + t, () => Rewards.screen(t));
+  Rewards._tab = 'daily';
+  await go('trials', () => Trials.open());
+  await go('online', () => { Online.open(); });
+  await go('results', () => Menu.results({ winner: 0, wins: [2, 1], mode: 'cpu', records: [{ maxCombo: 12, maxBounces: 3, breaks: 1, dmg: 900 }, { maxCombo: 4, maxBounces: 0, breaks: 0, dmg: 400 }], builds: [Auth.S.builds[0], KB.mintBuild('knight', 0)] }, { mode: 'cpu', builds: [Auth.S.builds[0], KB.mintBuild('knight', 0)], cpu: [null, 1] }));
+  if (window.Online) Online.leave(true);
+  Menu.hub();
+  return out;
+};
