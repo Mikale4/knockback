@@ -190,11 +190,23 @@
     /* ---- what flies: aim, the muzzle flash, darts (a bullet, a kunai, a bolt) and the chain */
     const UP = new V3(0, 1, 0), CHAIN_N = 64, _q = new V3(), _o3 = new THREE.Object3D();
     /* point a shot at them if they're inside the cone in front (down: only if they're below) */
-    function aimDir(f, o, from, dir, range, cone, down) {
+    /* where they'll be in t seconds: their velocity, gravity if they're in the air, and the walls they can't pass */
+    function predict(o, t, out) {
+      out.copy(o.pos).addScaledVector(o.vel, t);
+      if (!o.grounded && o.state !== 'down') out.y -= 0.5 * 30 * t * t;
+      out.y = Math.max(0, out.y) + (o.state === 'down' ? 0.3 : 0.95);
+      out.x = U.clamp(out.x, -arena.W + 0.45, arena.W - 0.45); out.z = U.clamp(out.z, -arena.D + 0.45, arena.D - 0.45);
+      return out;
+    }
+    /* aim a shot of the given speed at them: lead them, and turn to face it. Outside the cone (or out of range) it goes straight */
+    function aimDir(f, o, from, dir, range, cone, down, speed) {
       if (!o || ['out', 'ko', 'getup'].includes(o.state) || (o.state === 'down' && !Combat.otgOk(f, o, f.move || {}, f.kind))) return dir;
-      const tgt = _w.copy(o.pos).setY(o.pos.y + (o.state === 'down' ? 0.3 : 0.95)), d = tgt.clone().sub(from), flat = _v.copy(d).setY(0), fl = flat.length();
-      if (fl < 0.05 || d.length() > range + 1 || (down && d.y > -0.2)) return dir;
+      const tgt = predict(o, 0, new V3());
+      for (let k = 0; k < 3 && speed; k++) predict(o, tgt.distanceTo(from) / speed, tgt);
+      const d = tgt.sub(from), flat = _v.copy(d).setY(0), fl = flat.length();
+      if (fl < 0.05 || d.length() > range + 1.5 || (down && d.y > -0.2)) return dir;
       if (flat.multiplyScalar(1 / fl).dot(_q.copy(f.forward)) < cone) return dir;
+      f.yaw = Math.atan2(d.x, d.z);
       return d.normalize();
     }
     function muzzleFlash(at, dir) {
@@ -308,8 +320,7 @@
       if (mv.proj === 'shot' || mv.proj === 'shotDown' || mv.proj === 'superShot') {
         const down = mv.proj === 'shotDown', range = (mv.range || 6) + (charge || 0) * 3;
         // a pistol is aimed: if they're in front and in range, the shot goes at them, high or low (or on the floor)
-        const dir = aimDir(f, o, muzzle, down ? new V3(F.x * 0.7, -0.7, F.z * 0.7).normalize() : F.clone(), range, mv.aimAt ? 0.55 : 0.78, down);
-        if (Math.abs(dir.x) + Math.abs(dir.z) > 0.05) f.yaw = Math.atan2(dir.x, dir.z);
+        const dir = aimDir(f, o, muzzle, down ? new V3(F.x * 0.7, -0.7, F.z * 0.7).normalize() : F.clone(), range, 0.35, down, mv.proj === 'superShot' ? 0 : LOOK.bullet.speed);
         SFX.play('shot'); FX.addShake(0.15); muzzleFlash(muzzle, dir); f.kickT = 0.14;
         if (mv.proj === 'superShot') {
           // the Broadside's signal shot: decided on the spot (the Art waits on it), the ball still flies
@@ -321,7 +332,7 @@
       } else if (mv.proj === 'chain') {
         // NINJA: the kusarigama's weighted chain. It flies out, wraps them up, and drags them in (see updProjs)
         const range = mv.range + (charge || 0) * 2.5, hand = chainHand(f);
-        const dir = aimDir(f, o, hand, F.clone(), range, 0.8, false);
+        const dir = aimDir(f, o, hand, F.clone(), range, 0.35, false, 42);
         const weight = chainWeight(); weight.position.copy(hand); scene.add(weight);
         const links = new THREE.InstancedMesh(new THREE.BoxGeometry(0.075, 0.028, 1), new THREE.MeshLambertMaterial({ color: 0x9aa0ad }), CHAIN_N);
         links.count = 0; links.frustumCulled = false; links.castShadow = true; scene.add(links);
@@ -333,31 +344,31 @@
         const grp = f.fig.detach(part, scene); if (!grp) return;
         f.broken[part] = true; f.armor[part] = 0; if (part === 'armR') f.trailR.pts.length = 0; if (part === 'armL') f.trailL.pts.length = 0;
         M.call(f, part === 'head' ? 'HEAD TOSS!' : 'ARM TOSS!', 'part');
-        const from = grp.position.clone(), G = 18;
-        let vel = new V3(F.x * 15, 3, F.z * 15);
-        if (o && !['out', 'ko', 'getup'].includes(o.state)) {
-          const tgt = _w.copy(o.pos).setY(o.pos.y + (o.state === 'down' ? 0.3 : 1.0)), d = tgt.clone().sub(from), fl = Math.hypot(d.x, d.z);
-          if (fl > 0.05 && fl < mv.range + 1 && (d.x * F.x + d.z * F.z) / fl > 0.5) { const T = U.clamp(fl / 16, 0.1, 0.45); vel = new V3(d.x / T, d.y / T + 0.5 * G * T, d.z / T); }
+        const from = grp.position.clone(), SPD = 20;
+        let vel = new V3(F.x * SPD, 1, F.z * SPD), homing = false;
+        if (o && !['out', 'ko', 'getup'].includes(o.state) && U.dist(f.pos, o.pos) < mv.range + 2) {
+          const tgt = predict(o, 0, new V3()); for (let k = 0; k < 3; k++) predict(o, tgt.distanceTo(from) / SPD, tgt);
+          vel = tgt.sub(from).normalize().multiplyScalar(SPD); homing = true; f.yaw = Math.atan2(vel.x, vel.z);
         }
-        M.projs.push({ kind: 'part', f, mv, k: f.kind, grp, part, item: f.build[part], pos: grp.position, vel, spin: new V3(U.rnd(10, 16), U.rnd(-6, 6), 0), t: 0, done: false });
+        M.projs.push({ kind: 'part', f, mv, k: f.kind, grp, part, item: f.build[part], pos: grp.position, vel, homing, spin: new V3(U.rnd(10, 16), U.rnd(-6, 6), 0), t: 0, done: false });
         SFX.play('whoosh'); FX.burst(from, { n: 8, color: [0xffffff, 0x9a9aa2], speed: 3, size: 0.06 });
       } else if (mv.proj === 'kunai' || mv.proj === 'kunaiDown') {
         const from = f.fig.detached.armR ? _v.copy(f.pos).setY(1.2).addScaledVector(F, 0.4).clone() : f.fig.socket('armR', [0, -9, 1]).clone();
-        const down = mv.proj === 'kunaiDown', base = aimDir(f, o, from, down ? new V3(F.x * 0.72, -0.7, F.z * 0.72).normalize() : F.clone(), mv.range, 0.85, down);
+        const down = mv.proj === 'kunaiDown', base = aimDir(f, o, from, down ? new V3(F.x * 0.72, -0.7, F.z * 0.72).normalize() : F.clone(), mv.range, 0.35, down, LOOK.kunai.speed);
         const grp = { done: false };   // three blades, one hit between them
         for (const a of [-0.16, 0, 0.16]) dart(f, mv, 'kunai', from, base.clone().applyAxisAngle(UP, a), mv.range, { grp });
         SFX.play('whoosh');
       } else if (mv.proj === 'bolt' || mv.proj === 'boltDown') {
         // SUMMONER: a bolt of spirit light from the staff
         const col = KB.LINES.summoner.pal.glow, from = f.fig.detached.armR ? _v.copy(f.pos).setY(1.2).addScaledVector(F, 0.5).clone() : f.fig.socket('wR', [0, 0, 14]).clone();
-        const down = mv.proj === 'boltDown', dir = aimDir(f, o, from, down ? new V3(F.x * 0.72, -0.7, F.z * 0.72).normalize() : F.clone(), mv.range, 0.85, down);
+        const down = mv.proj === 'boltDown', dir = aimDir(f, o, from, down ? new V3(F.x * 0.72, -0.7, F.z * 0.72).normalize() : F.clone(), mv.range, 0.35, down, LOOK.bolt.speed);
         dart(f, mv, 'bolt', from, dir, mv.range, { col, charge }); SFX.play('whoosh');
         FX.burst(from, { n: 6, color: [col, 0xffffff], glow: true, speed: 2, size: 0.06, life: 0.3, gravity: 0 });
       } else if (mv.proj === 'hex') {
         // SUMMONER: a hex glyph spins out of the grimoire and bursts a few metres out, or on them
         const col = KB.LINES.summoner.pal.glow, range = mv.range + (charge || 0) * 1.5;
         const from = f.fig.detached.armL ? _w.copy(f.pos).setY(f.pos.y + 1).addScaledVector(F, 0.4).clone() : f.fig.socket('wL', [0, 0, 6]).clone();
-        const dir = aimDir(f, o, from, F.clone(), range, 0.85, false);
+        const dir = aimDir(f, o, from, F.clone(), range, 0.35, false, 22);
         const mesh = hexGlyph(col); mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
         M.projs.push({ kind: 'hex', f, mv, k: f.kind, charge, mesh, col, pos: from.clone(), dir, range, dist: 0, t: 0, id: 's' + (++shotId) });
         SFX.play('whoosh'); FX.burst(from, { n: 8, color: [col, 0xffffff], glow: true, speed: 2, size: 0.06, life: 0.3, gravity: 0 });
@@ -604,10 +615,16 @@
         } else if (p.kind === 'part') {
           // a tossed part in flight; when it lands (or bounces off them) it's a part on the floor like any other
           const f = p.f, o = M.opp(f), a = _q.copy(p.pos).clone();
-          p.vel.y -= 18 * dt; p.pos.addScaledVector(p.vel, dt); p.grp.rotation.x += p.spin.x * dt; p.grp.rotation.y += p.spin.y * dt;
+          if (p.homing && o && !p.done && p.t < 1.1) {
+            // it steers onto them (where they're going) until it passes them
+            const tgt = predict(o, Math.min(0.3, o.pos.distanceTo(p.pos) / 20), new V3()), want = tgt.sub(p.pos);
+            if (want.dot(p.vel) <= 0 || ['out', 'ko', 'getup'].includes(o.state)) p.homing = false;
+            else { const sp = p.vel.length(), cur = p.vel.clone().normalize(), w = want.normalize(), ang = cur.angleTo(w), k = ang > 1e-4 ? Math.min(1, 9 * dt / ang) : 1; p.vel.copy(cur.lerp(w, k).normalize().multiplyScalar(sp)); }
+          } else p.vel.y -= 18 * dt;
+          p.pos.addScaledVector(p.vel, dt); p.grp.rotation.x += p.spin.x * dt; p.grp.rotation.y += p.spin.y * dt;
           if (Math.random() < 0.5) FX.burst(p.pos.clone(), { n: 1, color: 0xffffff, speed: 0.4, size: 0.05, life: 0.25, gravity: 0 });
-          let land = p.t > 1.4 || p.pos.y <= 0.15;
-          const q = o && !p.done ? bodyHit(f, o, a, p.pos, 0.6, p.mv, p.k) : null;
+          let land = p.t > 1.6 || (p.pos.y <= 0.15 && !(p.homing && o && o.state === 'down'));
+          const q = o && !p.done ? bodyHit(f, o, a, p.pos, 0.75, p.mv, p.k) : null;
           if (q) {
             p.done = true; land = true;
             Combat.hit(f, o, p.mv, { kind: p.k, at: q.clone(), from: f.pos.clone(), dir: _v.copy(p.vel).setY(0).normalize().clone(), proj: true, ext: true, otg: o.state === 'down' });

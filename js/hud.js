@@ -148,7 +148,7 @@
         row(k('dodge') + ' › ' + k('light'), nm(S.dashAtk), 'dash attack (LEGS)'),
         row(k('special'), nm(S.special), S.uses + ' uses a round (HEAD)'),
         row(k('super'), nm(S.super), '100 Hype (LEGEND CARD)'),
-        row(k('guard') + ' + ' + k('light'), 'Throw', 'beats guard'),
+        row(k('guard') + ' + ' + k('light'), 'Grab', 'beats guard. Then ' + k('light') + ' pummel, tilt or ' + k('heavy') + ' throw that way (' + k('heavy') + ' alone slams), ' + k('jump') + ' throws up'),
         row(k('guard') + ' + ' + k('special'), 'Part Toss', 'throw a part: extends a combo, twice'),
         el('h4', null, 'GETTING OUT'),
         row(k('snap') + ' in hitstun', 'Spring Burst', 'full Burst gauge'),

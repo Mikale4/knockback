@@ -81,6 +81,7 @@
       this.wait -= dt; this.flipT -= dt; this.planT -= dt;
       const d = U.dist(f.pos, o.pos);
       if (this.underFire(dt)) return;
+      if (f.state === 'grab') return this.grabThink(dt);
       if (f.state === 'attack') return this.ownMove(dt, d);
       if (f.state === 'air') return this.inAir(dt, d);
       this.neutral(dt, d);
@@ -92,6 +93,7 @@
       if ((f.state === 'guard' || f.state === 'guardstun') && f.riposteT > m.time && r() < L.skill[lv]) { this.guardT = 0; this.press('light'); return true; }
       if (f.state === 'tumble' || f.state === 'hit' || f.state === 'held') {
         this.stop();
+        if (f.state === 'held' && f.held && f.held.kind === 'grab' && r() < 0.05 + lv * 0.045) this.press(['light', 'heavy', 'jump'][U.rndi(0, 2)]);   // mash out
         if (f.burst >= 100 && f.combo.hits >= this.burstAt && r() < L.burst[lv] * dt * 6 && !f.heldBySuper) { this.press('snap'); this.burstAt = U.rndi(3, 8); return true; }
         if (f.state === 'tumble') {
           // a wall tech, timed as the wall comes up
@@ -255,7 +257,7 @@
       // ---- neutral
       if (f.hype >= 100 && d < Math.min(6, this.superReach(KB.MOVES[f.st.super])) && r() < 0.015 * (lv + 1)) { this.press('super'); return; }
       const sp = KB.MOVES[f.st.special];
-      if (f.uses > 0 && !f.broken.head && r() < 0.006 * (lv + 1)) {
+      if (f.canSpecial() && r() < 0.006 * (lv + 1)) {
         const imps = m.minions.filter(mn => mn.owner === f).length;
         const ok = sp.type === 'proj' ? d > (sp.proj === 'breath' ? 0 : 3) && d < (sp.proj === 'breath' ? 3.2 : 8) : sp.type === 'teleport' ? d > 3 : sp.type === 'dash' ? d > 2 && d < 5.5 : sp.type === 'radial' ? d < 2.5 : sp.type === 'buff' ? d > 4 : sp.type === 'summon' ? imps < f.st.minions - 1 && d > 2.2 : false;
         if (ok) { this.press('special'); this.wait = 0.4; return; }
@@ -317,6 +319,24 @@
         this.press(knock ? 'heavy' : 'light'); this.wait = L.react[lv] * 0.5;
       } else if (d < 2.5 && o.pos.y > 1.4 && r() < 0.05 * lv) this.press('jump');
       return true;
+    }
+    /* holding them: a few pummels, then a throw -- into a wall if there's one close, else up into a juggle, or the slam */
+    grabThink(dt) {
+      const f = this.f, o = f.opp, lv = this.lv, r = Math.random, A = this.m.arena;
+      this.stop();
+      if (!this.gp || this.gp.held !== o.held) {
+        let wall = null, wd = 1e9;
+        for (const w of A.walls) { const dist = w.lim - w.sign * f.pos[w.axis]; if (dist < wd) { wd = dist; wall = w; } }
+        const kind = wall && wd < 5.5 && r() < 0.75 ? 'wall' : lv >= 2 && r() < 0.6 ? 'up' : 'slam';
+        this.gp = { held: o.held, pummels: U.rndi(lv >= 2 ? 1 : 0, 1 + lv), t: 0, kind, x: wall ? -wall.n.x : 0, z: wall ? -wall.n.z : 0 };
+      }
+      const P = this.gp; P.t += dt;
+      if (f.throwT >= 0) return;
+      if (f.pummelT > 0 && !this.pumOn) { this.pumOn = true; P.pummels--; } else if (f.pummelT <= 0) this.pumOn = false;
+      if (P.pummels > 0 || f.pummelT > 0) { if (f.pummelT <= 0 && P.t > 0.08) this.press('light'); return; }
+      if (P.kind === 'wall') { this.stickTo(P.x, P.z, 1, true); this.press('heavy'); }
+      else if (P.kind === 'up') this.press('jump');
+      else this.press('heavy');
     }
     /* OTG: they're down in our combo -- pick them back up off the floor (once a combo) */
     otg(dt, d, R) {

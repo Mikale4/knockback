@@ -230,7 +230,12 @@
   mv('tackle', { name: 'Tackle', pose: 'bash', su: 0.18, dmg: 40, reach: 1.0, kb: [11, 4], launch: 1, lunge: 7, charge: 1, trail: 0, sfx: 'heavy' });
   mv('headbutt', { name: 'Headbutt', pose: 'bashUp', su: 0.11, dmg: 25, kb: [1, 10.5], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
   mv('bodyDrop', { name: 'Body Drop', pose: 'bashDown', su: 0.13, dmg: 30, kb: [2, -12], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
-  mv('throw', { name: 'Throw', type: 'grab', pose: 'grab', su: 0.09, ac: 0.07, rc: 0.38, dmg: 70, reach: 0.95, rad: 0.75, kb: [17, 6], launch: 1, trail: 0, sfx: 'whoosh', zone: 'mid' });
+  mv('pummel', { name: 'Pummel', type: 'grab', dmg: 8, kb: [0, 0], stun: 0.3, zone: 'high', hype: 1.2 });
+  mv('throwF', { name: 'Forward Throw', type: 'grab', dmg: 44, kb: [16, 5.5], launch: 1, zone: 'mid' });
+  mv('throwB', { name: 'Back Throw', type: 'grab', dmg: 52, kb: [18, 6.5], launch: 1, zone: 'mid' });
+  mv('throwU', { name: 'Up Throw', type: 'grab', dmg: 36, kb: [0.6, 15.5], launch: 1, zone: 'mid' });
+  mv('throwD', { name: 'Slam', type: 'grab', dmg: 42, kb: [1.2, -12], launch: 1, spike: 1, zone: 'mid' });
+  mv('throw', { name: 'Grab', type: 'grab', pose: 'grab', su: 0.09, ac: 0.07, rc: 0.38, dmg: 70, reach: 0.95, rad: 0.75, kb: [17, 6], launch: 1, trail: 0, sfx: 'whoosh', zone: 'mid' });
 
   /* ------------------------------------------------------------------ parts */
   const P = {
@@ -275,7 +280,7 @@
       card: { name: 'Ragnarök', super: 'ragnarok', passive: 'fury', desc: 'LEGEND ART: Ragnarök, a leaping quake. PASSIVE (Fury): up to +18% damage as HP falls.' },
     },
     ninja: {
-      head: { name: 'Shinobi Hood', armor: 95, weight: 0.85, special: 'shadowStep', uses: 3, hype: 1.05, desc: 'SPECIAL: Shadow Step. Vanish behind them and stab.' },
+      head: { name: 'Shinobi Hood', armor: 95, weight: 0.85, special: 'shadowStep', uses: 2, noRegen: 1, spCd: 3, hype: 1.05, desc: 'SPECIAL: Shadow Step. Vanish behind them and stab. Twice a round, 3 s apart.' },
       core: { name: 'Shinobi Shōzoku', hp: 880, def: 0.02, weight: 0.8, guard: -10, desc: 'Barely there. The lightest core: fast, but you fly far.' },
       armR: { name: 'Tantō', armor: 110, weight: 0.8, light: 'taA', air: 'taAirA', sig: 'airdash', sigName: 'Shadow Dash', sigDesc: 'Dodge after an air hit: dash at them through the air and keep the combo going (twice a jump).', trail: 0xd9b8ff, desc: 'Flick › Backflick › Vanishing Stab (blinks behind them) › Shadow Slash. Pause after Backflick: Kunai Toss. Air ends in Kunai Rain. SIGNATURE: air-dash after an air hit.' },
       armL: { name: 'Kusarigama', armor: 110, weight: 0.85, heavy: 'chainHook', launch: 'sickleRise', airHeavy: 'chainDrop', guard: 70, chip: 1.1, trail: 0xd9b8ff, desc: 'HEAVY: Chain Hook, drag them in from 5 m. Guard: weak.' },
@@ -342,7 +347,7 @@
       speed: G.speed * (1.08 - 0.08 * weight), jump: G.jump, airJumps: G.airJumps, perk: G.perk,
       airDodges: G.perk === 'cloudstep' ? 2 : 1,
       dodgeDist: G.perk === 'sealegs' ? 1.3 : 1, dodgeCd: G.perk === 'dancer' ? 0.5 : 1, airDodgeDist: G.perk === 'skyward' ? 1.35 : 1,
-      minions: 2, impHp: 2, impLife: 5, impDmg: K.passive === 'legion' ? 1.3 : 1, healMult: K.passive === 'devotion' ? 1.4 : 1, useRegen: K.passive === 'devotion' ? 11 : 16,
+      minions: 2, impHp: 2, impLife: 5, impDmg: K.passive === 'legion' ? 1.3 : 1, healMult: K.passive === 'devotion' ? 1.4 : 1, useRegen: H.noRegen ? 1e9 : K.passive === 'devotion' ? 11 : 16, spCd: H.spCd || 0,
       guard: Math.round((100 + L.guard + C.guard) * (K.passive === 'plateFaith' ? 1.4 : 1)),
       chip: L.chip * (K.passive === 'plateFaith' ? 0.7 : 1),
       hypeGain: H.hype * (1 + (C.hypeBonus || 0)) * (K.passive === 'plunder' ? 1.35 : 1),

@@ -26,7 +26,7 @@ plain JavaScript and Three.js (`lib/three.min.js`).
 | Move | WASD | Arrows | Left stick / d-pad | Left stick / d-pad |
 | Light (R-ARM string) | J | Num 1 or `,` | X | □ |
 | Heavy / KNOCK (L-ARM) | K (hold to charge) | Num 2 or `.` | Y | △ |
-| Guard (+ Light = Throw, + Special = Part Toss) | L | Num 3 or `/` | RB | R1 |
+| Guard (+ Light = Grab, + Special = Part Toss) | L | Num 3 or `/` | RB | R1 |
 | Head Special | I | Num 5 or `;` | LB | L1 |
 | Snap Cancel / Spring Burst | U | Num 4 or `'` | RT | R2 |
 | Legend Art (super) | O | Num 6 or `]` | LT | L2 |
@@ -71,6 +71,11 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
   - **Recover** (any button once hitstun ends in the air), **Quick Rise** (Dodge as you land), **Just Guard** (guard
     at the last moment: no chip, attacker shoved), **Guard Crush** when the guard gauge empties, **Throw tech**.
 - **Snap Cancel** — Snap during your own move with 50 Hype: cancel its recovery to extend a combo.
+- **Grabs** (Guard + Light, beats guard) — you hold them. **Light** pummels (each one counts in the combo), and then
+  you throw: **tilt the stick** (or Heavy + a direction) to throw them that way (behind you is the strongest, a spin
+  throw), **Jump** throws them straight up for a juggle, **Heavy** alone **slams** them into the floor for a ground
+  bounce. Throw them at a wall and they bounce off it like any KNOCK. The one being held can **mash** to break free
+  (GRAB BREAK); the more hurt they are, the longer you can hold them.
 - **OTG (off the ground)** — once a combo, a hit can pick a knocked-down opponent back up off the floor ("OTG!"): a
   Heavy, a dash attack, a dive (air Heavy), a sweep or a downward shot. They're scooped into the air and the combo
   carries on. Quick Rise (Dodge as you land) gets out of it.
@@ -110,7 +115,7 @@ string and a signature; your stance comes from it too.
 | Pirate (Cutlass) | Cut › Backcut › Flourish (spin) › Boot to the Face | Sand in the Eyes (dizzy) | Cut › Backcut › Cannonball (dive) | **Dirty Fighting**; with the Flintlock, Heavy mid-string is a **Quick Shot** gun cancel |
 | Monk (Fists) | Jab › Cross › Hundred Fists (mash to extend) › Dragon Palm | Leg Sweep (launcher) | Knee › Spin Kick › Whirlwind Kick | **Flow**: moves speed up as a combo goes on |
 | Viking (Axe) | Hack › Hew › Whirlwind (hits all around) | Skull Splitter (ground bounce) | Chop › Axe Drill (spinning dive) | **Wind-up**: hold Light on any swing for armour, +60% damage, a crumple |
-| Ninja (Tantō) | Flick › Backflick › Vanishing Stab (blinks behind) › Shadow Slash | Kunai Toss | Flick › Backflick › Kunai Rain | **Shadow Dash**: Dodge after an air hit to dash at them |
+| Ninja (Tantō) | Flick › Backflick › Vanishing Stab (blinks behind, once a combo) › Shadow Slash | Kunai Toss | Flick › Backflick › Kunai Rain | **Shadow Dash**: Dodge after an air hit to dash at them |
 | Summoner (Staff) | Staff Jab › Staff Swing › Sic 'Em (every imp attacks) › Conjure Bolt | Call Imp | Swing › Spirit Bolt (spike) | **Pack Tactics**: her imps pounce on anyone she hits |
 | Paladin (Warhammer) | Smite › Hammer Fall › Consecrate (holy shockwave all around) | Hallowed Strike (crumples, heals big) | Smite › Meteor Hammer (dive) | **Lay on Hands**: string hits heal her |
 | Dragoon (Lance) | Thrust › Twin Thrust › Wheel Sweep › Rising Lance | Impaling Lunge | Thrust › Dragon Dive | **Skyborne**: Jump off an air hit for a fresh jump and air string |
@@ -122,10 +127,11 @@ She keeps **two at most** (a new one replaces the oldest). Any attack that touch
 and otherwise each one **leaves after 5 seconds** (it blinks in its last second). The LEGION card makes them bite 30%
 harder.
 
-**Projectiles** fly as real things you can see: the Pirate's pistol ball (with a muzzle flash and a kick up the arm;
-a pistol is aimed, so it finds them high, low, or on the floor), the Ninja's kunai (they stick in walls), the
-Summoner's spirit bolts and her Hex glyph, the Bard's sound waves with notes riding on them, and the Ninja's
-**Chain Hook**: the weighted chain flies out, whips round them, and the Ninja yanks them in along the floor.
+**Projectiles** fly as real things you can see: the Pirate's pistol ball (with a muzzle flash and a kick up the arm),
+the Ninja's kunai (they stick in walls), the Summoner's spirit bolts and her Hex glyph, the Bard's sound waves with
+notes riding on them, and the Ninja's **Chain Hook** (the weighted chain flies out, whips round them, and the Ninja
+yanks them in along the floor). Every one is aimed: it leads a moving target, finds them high, low or on the floor,
+and the Part Toss homes in. The Ninja's **Shadow Step** works twice a round, 3 seconds apart.
 
 ## Parts (the Medabots-style build system)
 
