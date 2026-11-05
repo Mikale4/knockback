@@ -88,8 +88,9 @@ Accounts are local (this browser's storage), with salted password hashes. It is 
 
 ## Modes
 
-Arcade (six figures, last one a Chase boss) · Versus (CPU at four levels, or two players on one keyboard / two pads,
-with an optional fair mode that ignores rarity bonuses) · Training (dummy settings, full meters, combo readout) ·
+Arcade (six figures, last one a Chase boss) · Versus (CPU at four levels, two players on one keyboard / two pads, or
+**CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that
+ignores rarity bonuses) · Training (dummy settings, full meters, combo readout) ·
 Workshop (three builds) · Shelf (collection and records).
 
 ## Files

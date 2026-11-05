@@ -14,7 +14,7 @@
       R.ph = el('i', { class: 'pd-head' }), R.pr = el('i', { class: 'pd-armR' }), R.pc = el('i', { class: 'pd-core' }), R.pl = el('i', { class: 'pd-armL' }), R.pg = el('i', { class: 'pd-legs' }));
     const box = el('div', { class: 'pside p' + (i + 1), style: { '--lc': f.color } },
       el('div', { class: 'prow' },
-        el('div', { class: 'pname' }, el('b', null, i ? (M.ai[1] && !M.training ? 'CPU' : 'P2') : 'P1'), ' ', f.name),
+        el('div', { class: 'pname' }, el('b', null, M.ai[i] && !M.training ? (M.ai[1 - i] ? 'CPU ' + (i + 1) : 'CPU') : 'P' + (i + 1)), ' ', f.name),
         R.pips = el('div', { class: 'pips' })),
       el('div', { class: 'hpwrap' }, R.trail = el('div', { class: 'hptrail' }), R.hp = el('div', { class: 'hp' }), R.hpn = el('span', { class: 'hpn' })),
       el('div', { class: 'prow2' }, parts,

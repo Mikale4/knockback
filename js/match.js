@@ -222,7 +222,9 @@
       const dt = Math.min(rawDt, 1 / 30) * M.slow;
       M.time += dt; M.phaseT += dt;
       // pause
-      for (const p of Input.players) if (!p.cpu && p.pressed('pause') && !M.attract) HUD.pause(M);
+      const esc = Input.keyDown('Escape');
+      if (!M.attract && ((esc && !M.escHeld) || Input.players.some(p => !p.cpu && p.pressed('pause')))) HUD.pause(M);
+      M.escHeld = esc;
       if (M.frozen) {
         M.freezeT -= rawDt;
         const f = M.freezer; f.animate(rawDt);

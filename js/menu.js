@@ -146,7 +146,7 @@
           el('div', { class: 'who' }, Auth.user.user), btn('LOG OUT', () => { Auth.logout(); Menu.login('in'); }, 'ghost small')),
         el('div', { class: 'hubmenu' },
           item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
-          item('VERSUS', 'Against the CPU, or a friend on one keyboard / two pads.', () => Menu.versus()),
+          item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
           item('TRAINING', 'A dummy, full meters, every system to practise.', () => Menu.training()),
           item('WORKSHOP', 'Snap parts together. Three builds.', () => Menu.workshop()),
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),
@@ -256,33 +256,50 @@
           el('div', { class: 'recs' }, ...[['WINS', R.wins], ['LOSSES', R.losses], ['ARCADE CLEARS', R.arcadeClears], ['BEST COMBO', R.bestCombo], ['MOST BOUNCES', R.maxBounces], ['WALL BREAKS', R.wallBreaks], ['COLLECTION', Inv.count() + '/' + Inv.total()]].map(([k, v]) => el('div', null, el('small', null, k), el('b', null, v)))),
           grid)));
     },
-    /* ----------------------------------------------------------- versus */
+    /* ----------------------------------------------------------- versus
+       Three ways to fight: you against the CPU, two players, or CPU vs CPU (watch). */
     versus(cfg) {
       Music.play('menu');
-      cfg = cfg || Menu._vs || { two: false, p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, arena: 'random', wins: 2, bonus: true };
+      cfg = cfg || Menu._vs || { mode: 'cpu', p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, w1: 'random', w2: 'random', l1: 2, l2: 2, arena: 'random', wins: 2, bonus: true };
       Menu._vs = cfg;
-      const mine = S().builds;
+      const mine = S().builds, watch = cfg.mode === 'watch', two = cfg.mode === 'two';
       const opp = [['random', 'Random figure'], ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].figure])];
-      useRoom(Inv.levelled(mine[cfg.p1]));
+      const anyFig = [['random', 'Random'], ...mine.map((b, i) => ['mine:' + i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].name])];
+      const lvls = AI.LEVELS.map((n, i) => [i, n]);
+      useRoom(watch ? (String(cfg.w1).startsWith('mine:') ? Inv.levelled(mine[+cfg.w1.slice(5)]) : cfg.w1 !== 'random' ? KB.mintBuild(cfg.w1, 0) : activeBuild()) : Inv.levelled(mine[cfg.p1]));
       const seg = (label, val, opts, set) => el('div', { class: 'seg' }, el('span', null, label), el('div', null, ...opts.map(([v, t]) => el('button', { class: String(val) === String(v) ? 'on' : '', onclick: () => { set(v); Menu.versus(cfg); } }, t))));
       App.screen(el('div', { class: 'screen versus' }, topbar('VERSUS', () => Menu.hub()),
         el('div', { class: 'panel vspanel' },
-          seg('MODE', cfg.two, [[false, 'VS CPU'], [true, '2 PLAYERS']], v => { cfg.two = v === true || v === 'true'; if (cfg.two) cfg.bonus = false; }),
-          seg('P1 FIGURE', cfg.p1, mine.map((b, i) => [i, b.name]), v => cfg.p1 = +v),
-          cfg.two ? seg('P2 FIGURE', cfg.p2b, [...mine.map((b, i) => [i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => ['mint:' + l, KB.LINES[l].name])], v => cfg.p2b = v)
-            : seg('OPPONENT', cfg.p2, opp, v => cfg.p2 = v),
-          cfg.two ? null : seg('CPU LEVEL', cfg.lvl, AI.LEVELS.map((n, i) => [i, n]), v => cfg.lvl = +v),
+          seg('MODE', cfg.mode, [['cpu', 'VS CPU'], ['two', '2 PLAYERS'], ['watch', 'CPU VS CPU']], v => { cfg.mode = v; if (v === 'two') cfg.bonus = false; }),
+          watch ? [
+            seg('CPU 1 FIGURE', cfg.w1, anyFig, v => cfg.w1 = v), seg('CPU 1 LEVEL', cfg.l1, lvls, v => cfg.l1 = +v),
+            seg('CPU 2 FIGURE', cfg.w2, anyFig, v => cfg.w2 = v), seg('CPU 2 LEVEL', cfg.l2, lvls, v => cfg.l2 = +v),
+          ] : [
+            seg('P1 FIGURE', cfg.p1, mine.map((b, i) => [i, b.name]), v => cfg.p1 = +v),
+            two ? seg('P2 FIGURE', cfg.p2b, [...mine.map((b, i) => [i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => ['mint:' + l, KB.LINES[l].name])], v => cfg.p2b = v)
+              : seg('OPPONENT', cfg.p2, opp, v => cfg.p2 = v),
+            two ? null : seg('CPU LEVEL', cfg.lvl, lvls, v => cfg.lvl = +v),
+          ],
           seg('ARENA', cfg.arena, [['random', 'Random'], ...Arena.LIST.map(a => [a, Arena.THEMES[a].name])], v => cfg.arena = v),
           seg('ROUNDS', cfg.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => cfg.wins = +v),
           seg('RARITY BONUS', cfg.bonus, [[true, 'On'], [false, 'Off (fair)']], v => cfg.bonus = v === true || v === 'true'),
-          cfg.two ? el('p', { class: 'note' }, 'P1: WASD + J K L I U O, Space, L-Shift · P2: arrows + Numpad 1-6, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Gamepads: P1 first pad, P2 second.') : null,
-          btn('FIGHT!', () => {
-            const b1 = Inv.levelled(mine[cfg.p1]);
-            let b2;
-            if (cfg.two) b2 = String(cfg.p2b).startsWith('mint:') ? KB.mintBuild(cfg.p2b.slice(5), 0) : Inv.levelled(mine[+cfg.p2b]);
-            else { const line = cfg.p2 === 'random' ? U.pick(KB.LINE_ORDER) : cfg.p2; b2 = cfg.p2 === 'random' ? KB.randomBuild(Math.min(3, cfg.lvl)) : KB.mintBuild(line, Math.min(3, cfg.lvl)); }
-            App.startMatch({ mode: cfg.two ? 'versus' : 'cpu', builds: [b1, b2], cpu: [null, cfg.two ? null : cfg.lvl], arena: cfg.arena === 'random' ? U.pick(Arena.LIST) : cfg.arena, wins: cfg.wins, bonus: cfg.bonus, lvl: cfg.lvl });
-          }, 'big wide fight'))));
+          two ? el('p', { class: 'note' }, 'P1: WASD + J K L I U O, Space, L-Shift · P2: arrows + Numpad 1-6, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Gamepads: P1 first pad, P2 second.') : null,
+          watch ? el('p', { class: 'note' }, 'Sit back and watch two CPUs fight. Random figures are re-rolled every fight. Esc pauses. No tokens for watching.') : null,
+          btn(watch ? 'WATCH!' : 'FIGHT!', () => Menu.versusStart(cfg), 'big wide fight'))));
+    },
+    versusStart(cfg) {
+      const mine = S().builds;
+      const pick = (v, lvl) => v === 'random' ? KB.randomBuild(Math.min(3, lvl)) : String(v).startsWith('mine:') ? Inv.levelled(mine[+v.slice(5)]) : KB.mintBuild(v, Math.min(3, lvl));
+      const arena = cfg.arena === 'random' ? U.pick(Arena.LIST) : cfg.arena;
+      if (cfg.mode === 'watch') {
+        App.startMatch({ mode: 'watch', builds: [pick(cfg.w1, cfg.l1), pick(cfg.w2, cfg.l2)], cpu: [cfg.l1, cfg.l2], arena, wins: cfg.wins, bonus: cfg.bonus, cfg });
+        return;
+      }
+      const b1 = Inv.levelled(mine[cfg.p1]);
+      let b2;
+      if (cfg.mode === 'two') b2 = String(cfg.p2b).startsWith('mint:') ? KB.mintBuild(cfg.p2b.slice(5), 0) : Inv.levelled(mine[+cfg.p2b]);
+      else b2 = cfg.p2 === 'random' ? KB.randomBuild(Math.min(3, cfg.lvl)) : KB.mintBuild(cfg.p2, Math.min(3, cfg.lvl));
+      App.startMatch({ mode: cfg.mode === 'two' ? 'versus' : 'cpu', builds: [b1, b2], cpu: [null, cfg.mode === 'two' ? null : cfg.lvl], arena, wins: cfg.wins, bonus: cfg.bonus, lvl: cfg.lvl });
     },
     /* ----------------------------------------------------------- arcade */
     arcade() {
@@ -345,7 +362,8 @@
     /* ---------------------------------------------------------- results */
     results(res, opts) {
       Music.play('menu'); const hud = U.$('hud'); if (hud) hud.hidden = true;
-      const win = res.winner === 0, me = res.records[0];
+      const watch = opts.mode === 'watch';
+      const win = res.winner === 0, me = res.records[watch ? res.winner : 0];
       let reward = 0, extra = null;
       if (opts.mode === 'cpu') reward = win ? 80 + 40 * (opts.lvl || 0) : 30;
       if (opts.mode === 'versus') reward = 40;
@@ -354,18 +372,20 @@
         if (win) { reward = L.reward; Menu._arc.stage++; if (Menu._arc.stage >= 6) { reward += 600; extra = 'ARCADE CLEAR!  +600'; S().records.arcadeClears++; Menu._arc = null; Menu._ladder = null; } }
         else reward = 20;
       }
-      Auth.record(res, opts.mode, reward);
+      if (!watch) Auth.record(res, opts.mode, reward);
       const stat = (k, v) => el('div', null, el('small', null, k), el('b', null, v));
       const next = opts.mode === 'arcade' && win && Menu._arc ? btn('NEXT STAGE ▸', () => Menu.arcadeFight(), 'big fight') : null;
       App.screen(el('div', { class: 'screen results' },
-        el('div', { class: 'panel resp ' + (win ? 'win' : 'lose') },
-          el('h1', null, opts.mode === 'versus' ? 'PLAYER ' + (res.winner + 1) + ' WINS' : win ? 'YOU WIN' : 'YOU LOSE'),
+        el('div', { class: 'panel resp ' + (win || watch ? 'win' : 'lose') },
+          el('h1', null, watch ? 'CPU ' + (res.winner + 1) + ' WINS' : opts.mode === 'versus' ? 'PLAYER ' + (res.winner + 1) + ' WINS' : win ? 'YOU WIN' : 'YOU LOSE'),
+          watch ? el('div', { class: 'note' }, res.builds[res.winner].name) : null,
           el('div', { class: 'score' }, res.wins[0] + ' — ' + res.wins[1]),
           el('div', { class: 'recs' }, stat('BEST COMBO', me.maxCombo), stat('MOST BOUNCES', me.maxBounces), stat('WALL BREAKS', me.breaks), stat('DAMAGE', Math.round(me.dmg))),
           reward ? el('div', { class: 'reward' }, el('i', { class: 'coin' }), '+' + reward + ' TOKENS') : null,
           extra ? el('div', { class: 'reward gold' }, extra) : null,
           el('div', { class: 'row' }, next,
-            opts.mode !== 'arcade' ? btn('REMATCH', () => App.startMatch(opts), 'big') : (!win ? btn('RETRY', () => Menu.arcadeFight(), 'big') : null),
+            watch ? btn('NEXT FIGHT', () => Menu.versusStart(opts.cfg), 'big fight') : null,
+            opts.mode !== 'arcade' ? btn('REMATCH', () => App.startMatch(opts), watch ? 'ghost' : 'big') : (!win ? btn('RETRY', () => Menu.arcadeFight(), 'big') : null),
             btn('MENU', () => { App.setView(null); Menu.hub(); }, 'ghost')))));
     },
   };
