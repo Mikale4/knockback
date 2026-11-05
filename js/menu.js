@@ -71,15 +71,22 @@
   }
 
   const Menu = {
+    /* phones: fill the screen and hold landscape, where the browser allows it (Android; iPhone Safari can't) */
+    fullscreen() {
+      if (!U.touch || document.fullscreenElement) return;
+      const d = document.documentElement, req = d.requestFullscreen || d.webkitRequestFullscreen;
+      if (!req) return;
+      try { const p = req.call(d, { navigationUI: 'hide' }); if (p && p.then) p.then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }).catch(() => {}); } catch (e) { /* not allowed: fine */ }
+    },
     /* ----------------------------------------------------------- title */
     title() {
       attract(); Music.play('title');
       const s = el('div', { class: 'screen title' },
         el('div', { class: 'titlewrap' }, logo('l-big'), el('div', { class: 'tag' }, 'ACTION FIGURE ARENA FIGHTER'),
-          el('div', { class: 'press' }, 'PRESS ANY KEY')),
+          el('div', { class: 'press' }, U.touch ? 'TAP TO START' : 'PRESS ANY KEY')),
         el('div', { class: 'foot' }, 'Knock them into a wall. They bounce back. Hit them again.'));
       App.screen(s);
-      const go = () => { off(); s.removeEventListener('pointerdown', go); SFX.play('ok'); if (Auth.resume()) Menu.afterLogin(false); else Menu.login(); };
+      const go = () => { off(); s.removeEventListener('pointerdown', go); SFX.play('ok'); Menu.fullscreen(); if (Auth.resume()) Menu.afterLogin(false); else Menu.login(); };
       const off = Input.onAny(go); s.addEventListener('pointerdown', go);
     },
     /* ----------------------------------------------------------- log in */
@@ -356,6 +363,7 @@
           el('div', { class: 'vols' }, vol('sfx'), vol('music')),
           el('div', { class: 'bindcols' }, table(0), table(1)),
           el('p', { class: 'note' }, 'Gamepad: A jump · B dodge · X light · Y heavy · LB special · RB guard · LT super · RT snap · Start pause.'),
+          U.touch ? el('p', { class: 'note' }, 'On a phone or tablet you get on-screen controls in every fight: the stick appears wherever your left thumb lands, and every button is held while touched (hold GUARD and tap LIGHT to throw). Turn the phone sideways for the best view.') : null,
           el('div', { class: 'row' }, btn('RESET KEYS', () => { Input.resetBinds(); Menu.options(); }, 'ghost'),
             btn('DELETE THIS COLLECTOR', () => { if (confirm('Delete ' + Auth.user.user + ' and everything they own? This cannot be undone.')) { Auth.remove(Auth.user.id); Auth.logout(); Menu.login('new'); } }, 'ghost danger')))));
     },

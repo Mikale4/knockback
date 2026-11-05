@@ -3,12 +3,13 @@
   'use strict';
   const canvas = U.$('view');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = U.touch ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+  if (U.touch) document.body.classList.add('touch');
   renderer.setClearColor(0x0c0a12);
   let W = 1, H = 1;
   function resize() {
     W = window.innerWidth; H = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75)); renderer.setSize(W, H, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, U.touch ? 1.5 : 1.75)); renderer.setSize(W, H, false);
     if (App.view && App.view.resize) App.view.resize(W, H);
   }
   const App = {
@@ -27,7 +28,7 @@
     quitMatch() { App.setView(null); Menu.hub(); },
   };
   window.App = App;
-  window.addEventListener('resize', resize); resize();
+  window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 200)); resize();
 
   let last = performance.now(), errs = 0;
   function frame(t) {

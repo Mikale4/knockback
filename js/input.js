@@ -47,6 +47,8 @@
           for (const a of ACTIONS) H[a] = k(a);
           mx = (k('right') ? 1 : 0) - (k('left') ? 1 : 0); my = (k('up') ? 1 : 0) - (k('down') ? 1 : 0);
         }
+        const T = this.i === 0 && window.Touch && Touch.state.active ? Touch.state : null;
+        if (T) { for (const a of ACTIONS) H[a] = H[a] || !!T.held[a]; if (Math.hypot(T.move.x, T.move.y) > 0.15) { mx = T.move.x; my = T.move.y; } }
         const gp = padIndex != null && navigator.getGamepads ? navigator.getGamepads()[padIndex] : null;
         this.pad = gp || null;
         if (gp) {

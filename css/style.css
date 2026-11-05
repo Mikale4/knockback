@@ -6,7 +6,8 @@
   --head: 'Bebas Neue', Impact, sans-serif; --body: 'Rubik', system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--body); -webkit-user-select: none; user-select: none; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--body); -webkit-user-select: none; user-select: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+#view { touch-action: none; }
 #view { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
 #boot { position: fixed; inset: 0; display: grid; place-items: center; font: 64px var(--head); letter-spacing: 4px; color: var(--dim); }
 #screens { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
@@ -328,5 +329,112 @@ label.check { display: flex; align-items: center; gap: 8px; letter-spacing: 0; f
   .pausep .cols { grid-template-columns: 1fr; } .bindcols { grid-template-columns: 1fr; }
   .r10grid { grid-template-columns: repeat(3, 1fr); } .ladder { grid-template-columns: repeat(2, 1fr); }
   .hubmenu { width: 100%; } .hubbtn b { font-size: 24px; }
-  .gauges { display: none; } .combo b { font-size: 56px; } .wallmap { display: none; }
+  .combo b { font-size: 56px; }
+}
+
+/* ============================================================ phones === */
+@media (hover: none) { .btn:hover, .hubbtn:hover, .blister:hover, .pullbtn:hover { transform: none; filter: none; } }
+
+/* the touch controls */
+#touch { position: fixed; inset: 0; z-index: 6; pointer-events: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#touch[hidden] { display: none; }
+.t-zone { position: absolute; left: 0; bottom: 0; top: 28%; width: 46%; pointer-events: auto; touch-action: none; }
+.t-stick { position: fixed; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25); background: radial-gradient(circle, rgba(255,255,255,.05), rgba(255,255,255,.14)); opacity: .5; transition: opacity .15s; pointer-events: none; }
+.t-stick.on { opacity: 1; }
+.t-knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%; background: rgba(255,255,255,.88); border: 3px solid #000; box-shadow: 0 3px 0 #000; }
+.t-pad { position: absolute; right: calc(8px + env(safe-area-inset-right)); bottom: calc(8px + env(safe-area-inset-bottom)); width: 270px; height: 250px; transform-origin: right bottom; }
+.t-btn { position: absolute; pointer-events: auto; touch-action: none; border-radius: 50%; border: 3px solid #000; box-shadow: 0 4px 0 #000; color: #15111f; font: 900 11px var(--body); letter-spacing: .5px; display: grid; place-items: center; padding: 0; opacity: .93; -webkit-tap-highlight-color: transparent; }
+.t-btn.down { transform: translateY(3px) scale(.94); box-shadow: 0 1px 0 #000; filter: brightness(1.25); }
+.t-btn em { position: absolute; top: -5px; right: -3px; font: 900 11px var(--body); font-style: normal; background: #000; color: var(--cyan); border-radius: 8px; padding: 1px 5px; }
+.t-btn em:empty { display: none; }
+.t-btn.off { opacity: .38; }
+.b-light { width: 86px; height: 86px; right: 4px; bottom: 4px; background: var(--yel); font-size: 14px; }
+.b-heavy { width: 66px; height: 66px; right: 100px; bottom: 0; background: #ff8a2a; }
+.b-jump { width: 62px; height: 62px; right: 16px; bottom: 102px; background: var(--cyan); }
+.b-dodge { width: 56px; height: 56px; right: 92px; bottom: 80px; background: #c9b8ff; }
+.b-guard { width: 56px; height: 56px; right: 176px; bottom: 12px; background: #9aa4ff; }
+.b-special { width: 50px; height: 50px; right: 162px; bottom: 84px; background: #4cd964; }
+.b-snap { width: 50px; height: 50px; right: 96px; bottom: 148px; background: #f4f1ea; }
+.b-super { width: 50px; height: 50px; right: 24px; bottom: 178px; background: var(--pink); color: #fff; }
+.b-super.ready { animation: pulse .35s infinite alternate; box-shadow: 0 0 18px var(--pink), 0 4px 0 #000; }
+.b-snap.ready { background: var(--cyan); box-shadow: 0 0 14px var(--cyan), 0 4px 0 #000; }
+.t-pause { position: absolute; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: 46px; height: 36px; border-radius: 10px; pointer-events: auto; touch-action: none; background: rgba(21,17,31,.88); color: #fff; border: 2px solid #000; font: 900 13px var(--body); }
+#touch.watch .t-zone, #touch.watch .t-pad { display: none; }
+.t-rotate { display: none; position: absolute; top: 42%; left: 50%; transform: translateX(-50%); background: var(--panel); border: 3px solid #000; border-radius: 12px; padding: 10px 16px; font: 900 15px var(--body); text-align: center; white-space: nowrap; }
+.t-rotate small { display: block; font-weight: 500; font-size: 11px; color: var(--dim); }
+@media (orientation: portrait) { .t-rotate { display: block; animation: fadeaway .5s 4s forwards; } }
+@keyframes fadeaway { to { opacity: 0; visibility: hidden; } }
+
+/* the HUD with touch controls: Hype moves up under the HP (the buttons own the bottom corners) */
+body.touch .plow { bottom: auto; top: 104px; width: min(300px, 32vw); }
+body.touch .plow.p1 { left: 10px; } body.touch .plow.p2 { right: 10px; }
+body.touch .uses { display: none; }
+body.touch .combo { bottom: auto; top: 34px; }
+body.touch .trainpanel { top: 96px; right: auto; left: 50%; transform: translateX(-50%); width: 210px; }
+.trainpanel > b { cursor: pointer; display: block; }
+.trainpanel > b i { font-style: normal; font-size: 14px; }
+.trainpanel.min > :not(b):not(.trread) { display: none; }
+.trainpanel .btn.small { margin: 4px 0; }
+
+/* landscape phones: short screens */
+@media (max-height: 520px) {
+  .topbar { padding: 6px 12px; gap: 8px; } .topbar h1 { font-size: 26px; } .logo.l-small { font-size: 26px; }
+  .tokens { padding: 3px 10px; font-size: 13px; } .who { font-size: 12px; } .btn { padding: 7px 12px; font-size: 13px; } .btn.big { font-size: 15px; padding: 8px 16px; }
+  .btn.fight { font-size: 22px; }
+  .panel { padding: 10px; border-radius: 12px; }
+  .hubmenu { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px 12px; width: min(540px, 62vw); }
+  .hubbtn { padding: 6px 10px; border-left-width: 6px; } .hubbtn b { font-size: 20px; } .hubbtn small { display: none; }
+  .plate { right: 12px; bottom: 10px; padding: 6px 10px; } .plate b { font-size: 20px; }
+  .wsbody { padding: 0 10px 10px; gap: 10px; } .wspanel { width: min(420px, 56vw); } .bf-name { font-size: 26px; bottom: 8px; } .bf-top { padding: 6px 10px; }
+  .slotrow { padding: 2px 8px 2px 2px; } .slotrow img { width: 38px; height: 38px; } .sr-t b { font-size: 13px; }
+  .stat { grid-template-columns: 62px 1fr 34px; font-size: 10px; }
+  .capbody { padding: 0 10px 10px; } .banners { width: 230px; gap: 6px; } .banner-tab { padding: 6px 10px; } .banner-tab b { font-size: 18px; } .banner-tab small { display: none; }
+  .cappanel { width: 290px; } .pullbtn { padding: 6px; } .pullbtn b { font-size: 22px; }
+  .rc-name { font-size: 36px; } .revealcap { bottom: 6%; }
+  .results10 .panel { padding: 10px; } .results10 h2 { font-size: 28px; margin-bottom: 6px; } .r10 img { width: 46px; height: 46px; } .r10 b { font-size: 10px; }
+  .login { padding: 10px 16px; overflow: auto; flex-wrap: nowrap; justify-content: space-between; } .logo.l-mid { font-size: 52px; } .tag { font-size: 10px; letter-spacing: 3px; }
+  .loginp { padding: 12px; } label { margin: 5px 0; } label input[type=text], label input[type=password] { padding: 7px 10px; font-size: 15px; } .tabs { margin-bottom: 6px; } .fine { display: none; }
+  .starter { padding: 10px; } .starter h1 { font-size: 30px; } .sub { margin: 2px 0 8px; font-size: 12px; }
+  .packs { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; } .blister { padding: 4px 6px 8px; } .bl-blurb { display: none; } .bl-name { font-size: 15px; } .bl-top { margin-top: 12px; font-size: 9px; } .bl-top .logo { display: none; }
+  .vspanel, .arcp, .howp, .optp { margin: 0 10px 10px auto; width: min(600px, 72vw); }
+  .seg { grid-template-columns: 92px 1fr; margin-bottom: 6px; gap: 6px; } .seg button { padding: 4px 8px; font-size: 11px; }
+  .ladder { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; } .rung img { max-width: 64px; } .rung b { font-size: 10px; } .rung small { font-size: 9px; }
+  .resp h1 { font-size: 46px; } .score { font-size: 26px; margin-bottom: 4px; } .recs b { font-size: 20px; } .recs > div { padding: 4px 10px; }
+  .shelfp { margin: 0 10px 10px; } .sh-cell { min-height: 86px; } .sh-cell img { width: 46px; height: 46px; }
+  .modal { max-height: 92vh; } .pausep { max-height: 94vh; } .pausep h2 { font-size: 34px; margin-bottom: 6px; } .pausep .cols { grid-template-columns: 150px 1fr; gap: 12px; }
+  .howsec h3 { font-size: 22px; } .howsec p { font-size: 12px; }
+  #hud .top { padding: 6px 10px; gap: 8px; }
+  .pname { font-size: 12px; } .hpwrap { height: 16px; margin: 3px 0; border-width: 2px; } .hpn { font-size: 11px; line-height: 12px; }
+  .pdiag { grid-template-columns: 7px 9px 7px; grid-template-rows: 7px 11px 9px; }
+  .gauges { grid-template-columns: 38px 1fr; max-width: 170px; gap: 2px 4px; } .bar { height: 6px; } .glabel { font-size: 8px; } .tags { font-size: 9px; min-height: 10px; }
+  .mid { width: 64px; gap: 4px; } .timer { font-size: 32px; width: 54px; } .wallmap { width: 54px; height: 40px; }
+  body.touch .plow { top: 92px; } .hlabel { font-size: 18px; } .bar.hype { height: 11px; } .hypen { font-size: 12px; }
+  .combo b { font-size: 50px; } .combo span { font-size: 18px; } .combo em { font-size: 12px; } .combo small { font-size: 10px; }
+  .banner { font-size: 64px; } .banner.break { font-size: 46px; } .supercut { height: 96px; } .sc-band b { font-size: 42px; } .sc-band small { font-size: 10px; }
+  .callout { font-size: 14px; } .callout.bounce { font-size: 30px; } .callout.break { font-size: 36px; } .callout.burst, .callout.counter, .callout.snap { font-size: 26px; }
+  body.touch .trainpanel { top: 64px; font-size: 10px; width: 190px; padding: 6px 8px; } .trainpanel > b { font-size: 16px; }
+}
+@media (max-height: 400px) { .t-pad { transform: scale(.84); } .t-stick { transform: scale(.85); } }
+
+/* portrait phones: narrow screens */
+@media (max-width: 560px) {
+  .topbar h1 { font-size: 26px; } .topbar { padding: 8px 10px; gap: 8px; } .who { display: none; }
+  .hub { background: linear-gradient(rgba(12,10,18,.82), rgba(12,10,18,.5)); }
+  .hubmenu { padding: 6px 10px; gap: 6px; } .hubbtn { padding: 7px 12px; } .hubbtn b { font-size: 22px; } .hubbtn small { font-size: 11px; }
+  .plate { display: none; }
+  .login { flex-direction: column; justify-content: center; overflow: auto; } .logo.l-mid { font-size: 56px; }
+  .packs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .capbody { flex-direction: column; align-items: stretch; justify-content: flex-end; } .banners { width: 100%; flex-direction: row; } .banner-tab { flex: 1; } .banner-tab small { display: none; } .banner-tab b { font-size: 18px; }
+  .cappanel { width: 100%; }
+  .versus, .arcade, .howto, .options { background: rgba(12,10,18,.82); }
+  .vspanel, .arcp, .howp, .optp { margin: 0 10px 10px; width: auto; }
+  .seg { grid-template-columns: 1fr; gap: 4px; }
+  .r10grid { grid-template-columns: repeat(2, 1fr); }
+  .pside { min-width: 0; } .pname { font-size: 11px; } .hpwrap { height: 14px; } .gl-guard, .bar.guard { display: none; }
+  .gauges { grid-template-columns: 34px 1fr; } .tags { display: none; }
+  .mid { width: 56px; } .timer { font-size: 30px; width: 50px; } .wallmap { width: 46px; height: 34px; }
+  body.touch .plow { top: 84px; width: 40vw; } .hlabel { font-size: 16px; }
+  .t-pause { bottom: auto; top: calc(110px + env(safe-area-inset-top)); }
+  body.touch .trainpanel { top: 154px; }
+  .combo b { font-size: 44px; }
 }

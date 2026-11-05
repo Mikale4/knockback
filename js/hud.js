@@ -20,7 +20,7 @@
       el('div', { class: 'prow2' }, parts,
         el('div', { class: 'gauges' },
           el('div', { class: 'glabel' }, 'BURST'), el('div', { class: 'bar burst' }, R.burst = el('i')),
-          el('div', { class: 'glabel' }, 'GUARD'), el('div', { class: 'bar guard' }, R.guard = el('i')))),
+          el('div', { class: 'glabel gl-guard' }, 'GUARD'), el('div', { class: 'bar guard' }, R.guard = el('i')))),
       R.tags = el('div', { class: 'tags' }));
     const low = el('div', { class: 'plow p' + (i + 1) },
       el('div', { class: 'hypebox' }, el('span', { class: 'hlabel' }, 'HYPE'), el('div', { class: 'bar hype' }, R.hype = el('i'), el('em')), R.hypen = el('b', { class: 'hypen' }, '0')),
@@ -46,6 +46,7 @@
     update(match) {
       if (!refs || match !== M) return;
       const dt = 1 / 60;
+      if (!M.ai[0]) Touch.sync(M.fighters[0]);
       for (let i = 0; i < 2; i++) {
         const R = refs[i], f = R.f;
         const hp = Math.max(0, f.hp / f.maxHp);
@@ -62,7 +63,7 @@
         const pd = (el, k) => { const v = f.broken[k] ? 0 : f.armor[k] / f.armorMax[k]; el.className = el.className.split(' ')[0] + (f.broken[k] ? ' off' : v < 0.35 ? ' red' : v < 0.65 ? ' yel' : ''); };
         pd(R.ph, 'head'); pd(R.pr, 'armR'); pd(R.pl, 'armL'); pd(R.pg, 'legs');
         R.pc.className = 'pd-core' + (hp < 0.3 ? ' red' : hp < 0.6 ? ' yel' : '');
-        R.pips.innerHTML = ''; for (let k = 0; k < M.opts.wins; k++) R.pips.append(el('i', { class: M.wins[i] > k ? 'on' : '' }));
+        R.pips.innerHTML = ''; if (!M.training) for (let k = 0; k < Math.min(5, M.opts.wins); k++) R.pips.append(el('i', { class: M.wins[i] > k ? 'on' : '' }));
         const tags = []; if (f.buffs.momentum) tags.push('MOMENTUM'); if (f.buffs.bulwark) tags.push('BULWARK'); if (f.buffs.fury) tags.push('FURY');
         if (f.st.set === 2) tags.push('MINT SET'); else if (f.st.set === 1) tags.push('PARTIAL SET');
         const t = tags.join(' · '); if (R.tags.textContent !== t) R.tags.textContent = t;
@@ -93,12 +94,14 @@
     },
     trainingPanel() {
       const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
-      return el('div', { class: 'trainpanel' },
-        el('b', null, 'TRAINING'),
+      const panel = el('div', { class: 'trainpanel' + (U.touch ? ' min' : '') },
+        el('b', { onclick: () => panel.classList.toggle('min') }, 'TRAINING ', el('i', null, '▾')),
         sel('Dummy', 'dummy', [['stand', 'Stand'], ['guard', 'Guard'], ['jump', 'Jump'], ['tech', 'Tech + Burst'], ['cpu', 'CPU']]),
         sel('Meters', 'meter', [['true', 'Always full'], ['false', 'Normal']]),
-        el('span', { class: 'hint' }, 'R: reset positions · Esc: pause / move list'),
+        el('span', { class: 'hint' }, U.touch ? 'Pause button: move list' : 'R: reset positions · Esc: pause / move list'),
+        U.touch ? el('button', { class: 'btn small', onclick: () => M.restart() }, 'RESET') : null,
         refs.tr = el('div', { class: 'trread' }, 'LAST COMBO'));
+      return panel;
     },
     pause(match) {
       if ($('pause') || match.phase === 'end') return;

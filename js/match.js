@@ -202,7 +202,7 @@
         target = new V3((pa.x + pb.x) / 2, Math.min(3, (pa.y + pb.y) / 2) * 0.5 + 0.6, (pa.z + pb.z) / 2);
         target.x = U.clamp(target.x, -arena.W + 2, arena.W - 2); target.z = U.clamp(target.z, -arena.D + 1, arena.D - 1);
         const sep = Math.hypot(pa.x - pb.x, (pa.z - pb.z) * 1.4);
-        dist = U.clamp(8.5 + sep * 0.62, 10, 17);
+        dist = U.clamp(8.5 + sep * 0.62, 10, 17) * U.clamp(1.45 / Math.max(0.4, camera.aspect), 1, 2.1);
         from = new V3(0, 0.62, 0.79);
         if (M.attract) { const t = M.time * 0.08; from.set(Math.sin(t) * 0.5, 0.55, Math.cos(t) * 0.8).normalize(); }
         if (M.phase === 'ko' && M.phaseT < 1.6) { const v = M.fighters[1 - M.winner]; target.lerp(_w.copy(v.pos).setY(1), 0.5); dist *= 0.75; }
@@ -295,7 +295,7 @@
       if (M.wins[0] >= need || M.wins[1] >= need) {
         M.phase = 'end';
         const res = { winner: M.wins[0] >= need ? 0 : 1, wins: M.wins.slice(), mode: opts.mode, records: M.fighters.map(f => f.records), builds: opts.builds };
-        M.results = res; opts.onEnd && opts.onEnd(res);
+        M.results = res; Touch.hide(); opts.onEnd && opts.onEnd(res);
         return;
       }
       M.round++; opts.final = true; place();
@@ -310,11 +310,11 @@
       M.disposed = true;
       for (const f of M.fighters) f.dispose();
       for (const p of M.picks) if (p.grp.parent) p.grp.parent.remove(p.grp);
-      arena.dispose(); HUD.hide(M);
+      arena.dispose(); HUD.hide(M); if (!M.attract) Touch.hide();
       for (const p of Input.players) if (p.cpu && M.ai.includes(p.cpu)) p.cpu = null;
     };
     M.resize = (w, h) => { camera.aspect = w / h; camera.updateProjectionMatrix(); };
-    if (!M.attract) HUD.build(M);
+    if (!M.attract) { HUD.build(M); Touch.show(opts.mode === 'watch'); }
     camera.position.set(0, 9, 14); camera.lookAt(0, 0.6, 0);
     return M;
   }

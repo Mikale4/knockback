@@ -42,7 +42,7 @@
     VX.sky(scene, T.sky[0], T.sky[1], T.sky[2]);
     const hemi = new THREE.HemisphereLight(T.hemi[0], T.hemi[1], T.hemi[2]); group.add(hemi);
     const sun = new THREE.DirectionalLight(T.sun[0], T.sun[1]); sun.position.set(6, 14, 9); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 40 }); sun.shadow.bias = -0.0008;
+    sun.shadow.mapSize.set(U.touch ? 1024 : 2048, U.touch ? 1024 : 2048); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 40 }); sun.shadow.bias = U.touch ? -0.0015 : -0.0008; sun.shadow.normalBias = 0.02;
     group.add(sun); group.add(sun.target);
 
     // the floor
@@ -154,11 +154,11 @@
     } else if (id === 'desk') {
       const g = new VX.Grid(); g.cyl('y', 0, 0, 5, 0, 16, (x, y, z) => y > 14 ? 0xd8d8d8 : 0x3a4a6a); // a pencil cup with pencils
       for (const [px, pz, c] of [[-2, 1, 0xf2c230], [1, -2, 0xe0343f], [2, 2, 0x3fbf6a]]) g.box(px, 17, pz, px, 26, pz, c);
-      add(g, 0.7, -17, T.outY + 9, -14);
+      add(g, 0.7, -17, -1.2, -14);
       const lamp = new VX.Grid(); lamp.box(-1, 0, -1, 1, 30, 1, 0x2a2a30); lamp.box(-6, 30, -3, 6, 34, 3, 0x2a2a30); lamp.box(-5, 29, -2, 5, 29, 2, VX.glow(0xfff2c0));
-      add(lamp, 0.6, 15, T.outY + 9, -17);
+      add(lamp, 0.6, 15, -1.2, -17);
       const glow = new THREE.PointLight(0xffe2a0, 0.8, 40); glow.position.set(15, 9, -17); group.add(glow);
-      const top = new THREE.Mesh(new THREE.BoxGeometry(70, 1, 50), new THREE.MeshLambertMaterial({ color: 0x6a4a30 })); top.position.set(0, T.outY + 8.5, -10); group.add(top);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(70, 1, 50), new THREE.MeshLambertMaterial({ color: 0x6a4a30 })); top.position.set(0, -1.7, -10); // the desk under the arena: kept well below the floor so the two never z-fight group.add(top);
     } else {
       const g = new VX.Grid(); // a giant teddy-like lump and a toy drum
       g.cyl('y', 0, 0, 6, 0, 8, (x, y, z) => y === 0 || y === 8 ? 0xf2e6c8 : (Math.floor(Math.atan2(z, x) * 3) % 2 ? 0xe0343f : 0xf2c230));

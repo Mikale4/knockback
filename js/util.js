@@ -40,5 +40,12 @@
   U.read = (k, def) => { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } };
   U.write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* keep going */ } };
 
+  /* a phone or tablet: show touch controls and go easier on the GPU */
+  U.touch = (() => {
+    const q = new URLSearchParams(location.search).get('touch');
+    if (q === '1') return true; if (q === '0') return false;
+    try { return matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && matchMedia('(hover: none)').matches); } catch (e) { return false; }
+  })();
+
   window.U = U;
 })();

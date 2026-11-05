@@ -36,6 +36,12 @@ plain JavaScript and Three.js (`lib/three.min.js`).
 
 Every key can be rebound in **Options**.
 
+**On a phone or tablet** you get on-screen controls in every fight: a floating stick under your left thumb (it appears
+wherever you touch the left half of the screen) and the eight buttons on the right, each held while touched, so you
+can charge a Heavy or hold GUARD and tap LIGHT to throw. SUPER glows at 100 Hype; SNAP turns into BURST when you can
+burst; SPECIAL shows its uses left. The pause button is at the bottom (at the top in portrait). Landscape gives the best
+view; on Android the game goes fullscreen and holds landscape when you tap the title. Menus fit portrait and landscape.
+
 ## The fighting system
 
 - **Combos:** Light string → Heavy = **Launcher** (Jump to follow, air Lights, air Heavy spikes for a ground bounce).
