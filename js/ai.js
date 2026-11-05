@@ -26,7 +26,7 @@
       this.moveSer = -1; this.next = null; this.cmb = null; this.wantPause = null; this.oppSer = -1; this.punished = null;
     }
     /* a press is a fresh edge: a button already down this frame is let go first, so mashing taps instead of holding */
-    press(a) { if (!this.held[a]) this.pulse.add(a); }
+    press(a) { if (a === 'heavy' && !this.f.broken.armL && !this.f.canUse(this.f.st.heavy)) return; if (!this.held[a]) this.pulse.add(a); }
     /* aim the stick; unless raw, it steers along walls instead of into them, and away from a broken one */
     stickTo(dx, dz, k, raw) {
       const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
@@ -204,6 +204,8 @@
       if (this.pogoNext && !f.airStr && d < 2.4) { this.pogoNext = false; toward(0.6); this.press('light'); return; }
       if (o.state === 'tumble' && d < 2 && Math.abs(o.pos.y - f.pos.y) < 1.4 && !f.airStr) { toward(0.6); this.press('light'); return; }
       if (o.state === 'tumble' && f.airJumps > 0 && o.pos.y > f.pos.y + 1 && r() < 0.05 + this.lv * 0.05) { this.press('jump'); return; }
+      // DOWN DASH: nothing to do up here and they're on the ground: get back down fast
+      if (this.lv >= 1 && f.airDodges > 0 && o.grounded && o.state !== 'tumble' && f.pos.y > 1.3 && f.vel.y < 2 && r() < 0.015 + this.lv * 0.015) { toward(1); this.press('guard'); this.press('dodge'); return; }
       toward(0.5);
     }
 
@@ -338,10 +340,10 @@
       else if (P.kind === 'up') this.press('jump');
       else this.press('heavy');
     }
-    /* OTG: they're down in our combo -- pick them back up off the floor (once a combo) */
+    /* OTG: they're down in our combo -- pick them back up off the floor (twice a combo) */
     otg(dt, d, R) {
       const f = this.f, o = f.opp, lv = this.lv;
-      if (lv < 1 || o.combo.otg || !o.combo.hits) return false;
+      if (lv < 1 || (o.combo.otg || 0) >= 2 || !o.combo.hits) return false;
       if ((o.hardKD ? 0.85 : 0.6) - o.stateT < 0.12) return false;
       const toward = (k, raw) => this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, k, raw);
       const H = KB.MOVES[f.st.heavy], armL = !f.broken.armL;

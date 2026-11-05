@@ -98,7 +98,7 @@
 
   // NINJA
   mv('partToss', { name: 'Part Toss', type: 'proj', proj: 'part', pose: 'toss', su: 0.12, rc: 0.24, dmg: 24, kb: [2, 8], launch: 1, range: 7.5, lunge: 0, hype: 0.6, trail: 0, sfx: 'whoosh' });
-  mv('chainHook', { name: 'Chain Hook', type: 'proj', proj: 'chain', pose: 'chainThrow', su: 0.17, rc: 0.3, dmg: 48, kb: [0, 3], pull: 1, stun: 0.6, range: 5, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('chainHook', { name: 'Chain Hook', type: 'proj', proj: 'chain', pose: 'chainThrow', su: 0.17, rc: 0.3, dmg: 48, kb: [0, 3], pull: 1, stun: 0.6, range: 5, charge: 1, trail: 0, sfx: 'whoosh', limit: { n: 2, t: 5 } });   // twice in any 5 s
   mv('sickleRise', { name: 'Sickle Rise', pose: 'upslash', su: 0.09, ac: 0.08, rc: 0.26, dmg: 36, kb: [1.4, 13], launch: 1, launcher: 1 });
   mv('chainDrop', { name: 'Chain Drop', pose: 'overhead', su: 0.12, ac: 0.1, rc: 0.24, dmg: 50, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.6 });
   mv('shadowStep', { name: 'Shadow Step', type: 'teleport', pose: 'backstab', su: 0.1, ac: 0.08, rc: 0.24, dmg: 46, kb: [9.5, 6.5], launch: 1, range: 9, inv: 1, reach: 1.1, sfx: 'slash', zone: 'mid' });
@@ -283,7 +283,7 @@
       head: { name: 'Shinobi Hood', armor: 95, weight: 0.85, special: 'shadowStep', uses: 2, noRegen: 1, spCd: 3, hype: 1.05, desc: 'SPECIAL: Shadow Step. Vanish behind them and stab. Twice a round, 3 s apart.' },
       core: { name: 'Shinobi Shōzoku', hp: 880, def: 0.02, weight: 0.8, guard: -10, desc: 'Barely there. The lightest core: fast, but you fly far.' },
       armR: { name: 'Tantō', armor: 110, weight: 0.8, light: 'taA', air: 'taAirA', sig: 'airdash', sigName: 'Shadow Dash', sigDesc: 'Dodge after an air hit: dash at them through the air and keep the combo going (twice a jump).', trail: 0xd9b8ff, desc: 'Flick › Backflick › Vanishing Stab (blinks behind them) › Shadow Slash. Pause after Backflick: Kunai Toss. Air ends in Kunai Rain. SIGNATURE: air-dash after an air hit.' },
-      armL: { name: 'Kusarigama', armor: 110, weight: 0.85, heavy: 'chainHook', launch: 'sickleRise', airHeavy: 'chainDrop', guard: 70, chip: 1.1, trail: 0xd9b8ff, desc: 'HEAVY: Chain Hook, drag them in from 5 m. Guard: weak.' },
+      armL: { name: 'Kusarigama', armor: 110, weight: 0.85, heavy: 'chainHook', launch: 'sickleRise', airHeavy: 'chainDrop', guard: 70, chip: 1.1, trail: 0xd9b8ff, desc: 'HEAVY: Chain Hook, drag them in from 5 m (twice in any 5 s). Guard: weak.' },
       legs: { name: 'Tabi Boots', armor: 145, weight: 0.8, speed: 7.4, jump: 12, airJumps: 2, dashAtk: 'shadowKick', perk: 'walljump', desc: 'The fastest legs, a triple jump, and WALL JUMPS. DASH ATTACK: Shadow Kick.' },
       card: { name: 'Shadow Clone Arts', super: 'cloneBarrage', passive: 'vanish', desc: 'LEGEND ART: four clones strike at once. PASSIVE (Vanish): longer dodge, shorter cooldown.' },
     },

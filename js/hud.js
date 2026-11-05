@@ -101,15 +101,17 @@
     cineFlash() { if (!refs || U.quiet) return; const e = refs.cFlash; e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
     cineTitle(text, css) { if (!refs || U.quiet) return; const e = refs.cTitle; e.textContent = text; e.style.setProperty('--lc', css || '#fff'); e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); },
     cineTint(t) { if (!refs || U.quiet) return; const e = refs.cTint; if (!t) { e.style.opacity = 0; return; } if (e.dataset.bg !== t[0]) { e.dataset.bg = t[0]; e.style.background = t[0]; } e.style.opacity = t[1]; },
+    /* the Start choice follows a SAVE POSITION */
+    trainingSpot() { const s = refs && refs.spot && refs.spot.querySelector('select'); if (s && M && M.training) s.value = M.training.spot; },
     trainingPanel() {
       const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
       const panel = el('div', { class: 'trainpanel' + (U.touch ? ' min' : '') },
         el('b', { onclick: () => panel.classList.toggle('min') }, 'TRAINING ', el('i', null, '▾')),
         sel('Dummy', 'dummy', [['stand', 'Stand'], ['guard', 'Guard'], ['jump', 'Jump'], ['tech', 'Tech + Burst'], ['cpu', 'CPU']]),
         sel('Meters', 'meter', [['true', 'Always full'], ['false', 'Normal']]),
-        sel('Start', 'spot', [['centre', 'Centre'], ['wall', 'By a wall']]),
-        el('span', { class: 'hint' }, U.touch ? 'Pause button: move list' : 'R: reset positions · Esc: pause / move list'),
-        U.touch ? el('button', { class: 'btn small', onclick: () => M.trainReset() }, 'RESET') : null,
+        refs.spot = sel('Start', 'spot', [['centre', 'Centre'], ['wall', 'By a wall'], ['saved', 'Saved position']]),
+        el('div', { class: 'trbtns' }, el('button', { class: 'btn small', onclick: e => { e.currentTarget.blur(); M.trainSave(); } }, 'SAVE POSITION'), el('button', { class: 'btn small ghost', onclick: e => { e.currentTarget.blur(); M.trainReset(); } }, 'RESET')),
+        el('span', { class: 'hint' }, U.touch ? 'Pause button: move list' : 'R: reset · T: save the position · pad: tap Back to reset, hold it to save · Esc: pause'),
         refs.tr = el('div', { class: 'trread' }, 'LAST COMBO'));
       return panel;
     },
@@ -125,6 +127,7 @@
             el('div', { class: 'col' },
               el('button', { class: 'btn big', onclick: close }, 'RESUME'),
               el('button', { class: 'btn', onclick: () => { close(); match.restart(); } }, 'RESTART'),
+              match.training && !match.opts.tutorial && !match.opts.trials ? el('button', { class: 'btn', onclick: () => { close(); App.setView(null); Menu.training(); } }, 'CHARACTER SELECT') : null,
               el('button', { class: 'btn ghost', onclick: () => { close(); App.quitMatch(); } }, 'QUIT TO MENU'),
               ...['sfx', 'music'].map(k => el('label', { class: 'vol pvol' }, k.toUpperCase(), el('input', { type: 'range', min: 0, max: 1, step: 0.05, value: SFX.vol[k], oninput: e => SFX.setVol(k, +e.target.value) })))),
             el('div', { class: 'col wide' }, HUD.moveList(match.fighters[0].build, 0)))));
@@ -155,6 +158,7 @@
         row(k('super'), nm(S.super), '100 Hype (LEGEND CARD)'),
         row(k('guard') + ' + ' + k('light'), 'Grab', 'beats guard. Then ' + k('light') + ' pummel, tilt or ' + k('heavy') + ' throw that way (' + k('heavy') + ' alone slams), ' + k('jump') + ' throws up'),
         row(k('toss'), 'Part Toss', 'throw one of your parts: in a combo it EXTENDS it (twice a combo)'),
+        row(k('guard') + ' + ' + k('dodge') + ' in the air', 'Down Dash', 'dive straight to the floor (uses your air dodge)'),
         el('h4', null, 'GETTING OUT'),
         row(k('snap') + ' in hitstun', 'Spring Burst', 'full Burst gauge'),
         row(k('dodge') + ' at a wall', 'Wall Tech', 'from the 2nd bounce of a combo'),

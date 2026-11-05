@@ -62,7 +62,7 @@
       this.setLegMat(false);
       this.uses = S.uses; this.useRegen = 0;
       this.guardMax = S.guard; this.guardHp = S.guard; this.guardIdle = 0;
-      this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0; this.armorHits = 0; this.armorCd = 0;
+      this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0; this.armorHits = 0; this.armorCd = 0; this.limits = {};
       this.buffs = {}; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false;
@@ -79,7 +79,18 @@
       if (this.armorT <= 0) this.armorHits = 1;                       // a fresh window: one hit (an unlimited one already up stays unlimited)
       this.armorT = Math.max(this.armorT, t);
     }
-    freshCombo() { return { hits: 0, dmg: 0, bounces: 0, t: 0, gb: false, by: null, otg: false, ext: 0, dh: 0 }; }
+    /* moves with a use limit (the Ninja's Chain Hook: twice in any 5 s): canUse asks, useLimited spends one (or says how long to wait) */
+    canUse(id) { const mv = KB.MOVES[id]; if (!mv || !mv.limit) return true; const now = this.m.time, log = (this.limits && this.limits[id]) || []; return log.filter(t => now - t < mv.limit.t).length < mv.limit.n; }
+    useLimited(id, mv) {
+      const now = this.m.time, L = this.limits = this.limits || {}, log = (L[id] || []).filter(t => now - t < mv.limit.t);
+      if (log.length >= mv.limit.n) {
+        L[id] = log;
+        if (now - (this.limitCall || -9) > 0.6) { this.limitCall = now; this.m.call(this, mv.name.toUpperCase() + ': ' + (mv.limit.t - (now - log[0])).toFixed(1) + ' s', 'bad'); }
+        return false;
+      }
+      log.push(now); L[id] = log; return true;
+    }
+    freshCombo() { return { hits: 0, dmg: 0, bounces: 0, t: 0, gb: false, by: null, otg: 0, ext: 0, dh: 0 }; }
     newTrails() { if (this.trailR) { this.trailR.dispose(); this.trailL.dispose(); } this.trailR = FX.trail(this.st.trailR); this.trailL = FX.trail(this.st.trailL); }
     /* snap a part on off the floor: your own, or the same part off the other figure if yours is missing (its moves come with it) */
     wearPart(p) {
@@ -142,6 +153,7 @@
         case 'guardstun': this.physics(dt, 14); if (this.riposte()) break; if (this.stateT > this.hitstun) this.setState(this.input.held.guard ? 'guard' : 'idle'); break;
         case 'gbreak': this.physics(dt, 10); if (this.stateT > 1.1) this.setState('idle'); break;
         case 'dodge': this.updDodge(dt); break;
+        case 'ddash': this.updDownDash(dt); break;
         case 'hit': this.physics(dt, 9); if (this.stateT > this.hitstun) { if (this.crumpled && this.grounded) { this.crumpled = false; this.hardKD = false; this.setState('down'); } else { this.endCombo(); this.crumpled = this.dizzy = false; this.setState(this.grounded ? 'idle' : 'air'); } } break;
         case 'tumble': this.updTumble(dt); break;
         case 'down': this.physics(dt, 12); if (this.stateT > (this.hardKD ? 0.85 : 0.6)) { this.setState('getup'); this.inv = 0.45; this.endCombo(); } break;
@@ -216,6 +228,8 @@
           if (this.wallTouch && S.perk === 'walljump') { this.wallJump(); return true; }
           if (this.airJumps > 0 && !this.broken.legs) { this.airJumps--; this.jump(0.85); return true; }
         }
+        // DOWN DASH: Guard + Dodge in the air -- a fast dive to the floor (it spends your air dodge; no invincibility)
+        if (I.peek('dodge') && (I.held.guard || I.guardAt.dodge) && this.airDodges > 0) { I.take('dodge'); this.airDodges--; this.startDownDash(); return true; }
         if (I.take('dodge') && this.airDodges > 0 && this.dodgeCd <= 0) { this.airDodges--; this.startDodge(); return true; }
         if (I.take('light') && !this.airStr) { this.airStr = 1; this.startMove(this.airRoot(), 'air'); return true; }
         if (I.take('heavy')) { this.startMove(this.broken.armL ? 'bodyDrop' : S.airHeavy, 'airHeavy'); return true; }
@@ -256,6 +270,27 @@
       if (this.stateT > 0.12 && this.grounded && this.input.take('light')) { this.startMove(this.st.dashAtk, 'dash'); }
     }
 
+    /* DOWN DASH (Guard + Dodge in the air): straight down at speed, steered with the stick; you can act the moment you land.
+       If you're high up, control comes back after half a second. */
+    startDownDash() {
+      const d = this.stick(), sp = this.st.speed * 0.9;
+      this.setState('ddash'); this.move = null; this.vel.y = -26;
+      if (d) { this.vel.x = d.x * sp; this.vel.z = d.z * sp; this.yaw = Math.atan2(d.x, d.z); } else { this.vel.x *= 0.35; this.vel.z *= 0.35; }
+      SFX.play('whoosh'); FX.burst(_c.copy(this.pos).setY(this.pos.y + 1.1), { n: 6, color: 0xffffff, glow: true, speed: 2, size: 0.07, gravity: -4, life: 0.25 });
+      this.m.event('ddash', { f: this });
+    }
+    updDownDash(dt) {
+      this.vel.y = Math.min(this.vel.y, -26);
+      if (this.stateT < 0.35 && U.vrand() < 0.7) FX.burst(_c.copy(this.pos).setY(this.pos.y + 1.2), { n: 1, color: 0xdfe8ff, glow: true, speed: 0.3, size: 0.1, gravity: -14, life: 0.16 });   // the streak
+      this.physics(dt, 0);
+      if (this.grounded) {
+        this.land(); SFX.play('land'); FX.ring(_c.copy(this.pos).setY(0.06), { r0: 0.3, r1: 1.4, life: 0.25 });
+        FX.burst(_c.copy(this.pos).setY(0.05), { n: 10, color: this.m.arena.dust, speed: 3, size: 0.08, life: 0.4, up: 0.4 });
+        return;
+      }
+      if (this.stateT > 0.5) this.setState('air');
+    }
+
     /* ---------------------------------------------------------------- guard */
     updGuard(dt) {
       const I = this.input;
@@ -282,6 +317,7 @@
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
       const mv = KB.MOVES[id]; if (!mv) return;
+      if (mv.limit && !this.useLimited(id, mv)) return;   // (a move with a limit: n uses in any t seconds)
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
       this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1;
       this.beatOn = !!(mv.beat && this.st.sig === 'beat' && (kind === 'light' || kind === 'air') && Music.beat(this.m).near); this.beatShown = false;
@@ -861,6 +897,7 @@
         if (st === 'run') { this.phase += dt * (6 + this.st.speed); pose = Anim.run(R, this.phase, Math.hypot(this.vel.x, this.vel.z), this.build.armR.line); }
         else if (st === 'idle') { pose = Anim.idle(R, this.m.time + this.idx * 1.7, this.build, this); rate = 10; }
         else if (st === 'air') pose = Anim.blend(R, this.vel.y > 0 ? Anim.STATE.air : Anim.STATE.fall, 1, R);
+        else if (st === 'ddash') { pose = Anim.blend(R, Anim.P.plunge.strike, 1, R); rate = 34; }
         else if (st === 'guard' || st === 'guardstun') pose = Anim.fill(Anim.STATE.guard);
         else if (st === 'gbreak') { pose = Anim.fill(Anim.STATE.stunned); pose.head[1] = Math.sin(this.stateT * 9) * 0.4; }
         else if (st === 'dodge') pose = Anim.fill(Anim.STATE.dodge);
@@ -917,7 +954,7 @@
     /* OTG (off the ground): a Heavy, a dash attack, a dive, a sweep or a downward shot may hit a downed opponent,
        once a combo, and scoops them back up into the air */
     otgOk(att, vic, mv, kind) {
-      if (vic.state !== 'down' || vic.combo.by !== att || vic.combo.otg || !vic.combo.hits || vic.inv > 0) return false;
+      if (vic.state !== 'down' || vic.combo.by !== att || (vic.combo.otg || 0) >= 2 || !vic.combo.hits || vic.inv > 0) return false;   // (twice a combo)
       if (kind === 'super' || kind === 'throw' || kind === 'minion' || (mv && mv.type === 'grab')) return false;
       return !!(mv && (mv.otg || mv.spike || mv.dive || mv.zone === 'low') || kind === 'heavy' || kind === 'airHeavy' || kind === 'dash' || kind === 'toss');
     },
@@ -997,7 +1034,7 @@
       vic.hp -= dmg; att.records.dmg += dmg;
       if (!o.noCombo) { vic.combo.hits++; vic.combo.dmg += dmg; vic.combo.by = att; }
       // PART TOSS: the combo is extended -- its clock starts over, with a fresh OTG and ground bounce (twice a combo)
-      if (o.ext && !o.noCombo && vic.combo.ext < 2) { const n = ++vic.combo.ext; vic.combo.t = 0; vic.combo.dh = vic.combo.hits; vic.combo.otg = false; vic.combo.gb = false; m.call(att, 'EXTEND ' + n + '/2', 'buff'); m.event('extend', { att, vic, n }); }
+      if (o.ext && !o.noCombo && vic.combo.ext < 2) { const n = ++vic.combo.ext; vic.combo.t = 0; vic.combo.dh = vic.combo.hits; vic.combo.otg = 0; vic.combo.gb = false; m.call(att, 'EXTEND ' + n + '/2', 'buff'); m.event('extend', { att, vic, n }); }
       if (!o.remote) att.moveHit = true;
       att.hype = Math.min(100, att.hype + dmg * 0.11 * att.st.hypeGain * (att.buffs.momentum ? 1.5 : 1) * (mv.hype == null ? 1 : mv.hype) * (onBeat ? 1.5 : 1));
       if (onBeat && !att.beatShown) { att.beatShown = true; m.call(att, '♪ ON THE BEAT', 'buff'); }
@@ -1040,11 +1077,13 @@
       const kbk = vic.st.kbTaken * (o.charge ? 1 + o.charge * 0.75 : 1) * (1 + vic.combo.hits * 0.008);
       const decay = Combat.decay(vic);
       if (otg) {
-        // OFF THE GROUND: scooped back up off the floor, once a combo, and the combo carries on
-        vic.combo.otg = true; vic.hardKD = false; vic.spiked = false; vic.chained = null;
-        vic.vel.set(dir.x * 2.5, 8, dir.z * 2.5); vic.pos.y = Math.max(vic.pos.y, 0.05); vic.grounded = false;
-        vic.setState('tumble'); vic.hitstun = 0.55 * Math.max(0.6, decay); vic.yaw = Math.atan2(-dir.x, -dir.z); vic.spin.position.y = 0.95;
-        m.call(vic, 'OTG!', 'bounce'); m.event('otg', { att, vic }); FX.ring(_c.copy(vic.pos).setY(0.06), { r1: 1.5, life: 0.3 }); FX.burst(_c.copy(vic.pos).setY(0.1), { n: 12, color: m.arena.dust, speed: 3.5, size: 0.09 });
+        // OFF THE GROUND: scooped back up off the floor, twice a combo, and the combo carries on; the second pop is a
+        // little lower and shorter, so it buys a hit or two, not a whole new combo
+        const n = vic.combo.otg = (vic.combo.otg || 0) + 1, again = n > 1;
+        vic.hardKD = false; vic.spiked = false; vic.chained = null;
+        vic.vel.set(dir.x * (again ? 2 : 2.5), again ? 6.2 : 8, dir.z * (again ? 2 : 2.5)); vic.pos.y = Math.max(vic.pos.y, 0.05); vic.grounded = false;
+        vic.setState('tumble'); vic.hitstun = (again ? 0.42 : 0.55) * Math.max(0.6, decay); vic.yaw = Math.atan2(-dir.x, -dir.z); vic.spin.position.y = 0.95;
+        m.call(vic, again ? 'OTG 2!' : 'OTG!', 'bounce'); m.event('otg', { att, vic, n }); FX.ring(_c.copy(vic.pos).setY(0.06), { r1: 1.5, life: 0.3 }); FX.burst(_c.copy(vic.pos).setY(0.1), { n: 12, color: m.arena.dust, speed: 3.5, size: 0.09 });
         if (vic.combo.hits >= 2) m.comboShow(att, vic);
         return 'hit';
       }

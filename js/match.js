@@ -620,7 +620,7 @@
           const sc = 1.3 + p.dist * 0.1; p.mesh.scale.setScalar(sc);
           if (U.rand() < 0.7) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.5, size: 0.06, life: 0.3, gravity: 0 });
           const q = o ? bodyHit(f, o, a, p.pos, 0.9, p.mv, p.k) : null;
-          let wall = false; for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.15) { p.pos[w.axis] = w.sign * (w.lim - 0.15); wall = true; }
+          let wall = false; for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.55) { p.pos[w.axis] = w.sign * (w.lim - 0.55); wall = true; }
           if (q || wall || p.dist >= p.range) {
             const at = q || p.pos.clone(), col = p.col, n = p.dir;
             FX.ring(at.clone(), { r1: 1.7, life: 0.35, normal: n.clone(), color: col }); FX.ring(at.clone(), { r1: 1.1, life: 0.3, normal: n.clone(), color: 0xffffff });
@@ -667,7 +667,7 @@
               if (res === 'hit') { p.ph = 'wrap'; p.T = 0; p.vic = o; o.chained = p; FX.spark(q, { color: 0xd8dde6, size: 0.9 }); SFX.play('guard'); }
               else { stop = true; FX.spark(q, { color: 0x9fd0ff, size: 0.7 }); }   // guarded, or armour: it clanks off
             }
-            for (const w of arena.walls) if (!stop && !w.broken && w.sign * p.pos[w.axis] > w.lim - 0.1) { p.pos[w.axis] = w.sign * (w.lim - 0.1); stop = true; FX.spark(p.pos.clone(), { color: 0xd8dde6, size: 0.6 }); FX.burst(p.pos.clone(), { n: 5, color: arena.dust, speed: 2, size: 0.06, life: 0.35 }); }
+            for (const w of arena.walls) if (!stop && !w.broken && w.sign * p.pos[w.axis] > w.lim - 0.3) { p.pos[w.axis] = w.sign * (w.lim - 0.3); stop = true; FX.spark(p.pos.clone(), { color: 0xd8dde6, size: 0.6 }); FX.burst(p.pos.clone(), { n: 5, color: arena.dust, speed: 2, size: 0.06, life: 0.35 }); }
             if (stop && p.ph === 'out') { p.ph = 'back'; p.T = 0; p.backFrom = p.pos.clone(); }
           }
           if (p.ph === 'wrap' || p.ph === 'pull') {
@@ -676,6 +676,7 @@
             else {
               const ang = p.t * 34, chest = _w.copy(v.pos).setY(v.pos.y + 1.0);
               p.pos.set(chest.x + Math.cos(ang) * 0.4, chest.y + Math.sin(ang * 0.5) * 0.12, chest.z + Math.sin(ang) * 0.4);
+              for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.3) p.pos[w.axis] = w.sign * (w.lim - 0.3);
               f.yankT = 0.14;
               if (p.ph === 'wrap' && p.T > 0.07) {
                 p.ph = 'pull'; p.T = 0; p.vicFrom = v.pos.clone(); SFX.play('whoosh');
@@ -705,7 +706,9 @@
           M.hitMinions(p.f, p.pos, 0.6 + s * 0.3, p.id);
           const o = M.opp(p.f);
           if (!p.hit && o && o.inv <= 0 && Combat.overlap(p.pos, 0.5 + s * 0.3, o)) { p.hit = true; Combat.hit(p.f, o, p.mv, { kind: p.k, charge: p.charge, at: p.pos.clone(), from: p.f.pos.clone(), dir: p.dir.clone(), proj: true }); M.noteFX(p.pos.clone(), 4); }
-          if (p.dist >= p.range) { disposeGroup(p.mesh); p.notes.forEach(n => scene.remove(n)); M.noteFX(p.pos.clone(), 2); M.projs.splice(i, 1); }
+          let wall = false; for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.4) { p.pos[w.axis] = w.sign * (w.lim - 0.4); wall = true; }
+          if (wall) { FX.ring(p.pos.clone(), { r1: 1.2, life: 0.3, normal: p.dir.clone(), color: 0xff8ad8 }); FX.burst(p.pos.clone(), { n: 10, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 3, size: 0.08, gravity: 0, life: 0.4 }); }
+          if (wall || p.dist >= p.range) { disposeGroup(p.mesh); p.notes.forEach(n => scene.remove(n)); M.noteFX(p.pos.clone(), 2); M.projs.splice(i, 1); }
         }
       }
     }
@@ -738,14 +741,36 @@
     /* training: back to the start (the centre, or with the dummy against a wall to practise wall combos) */
     M.trainReset = () => {
       const T = M.training; place(); M.phase = 'fight';
-      for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); f.trailR.pts.length = 0; f.trailL.pts.length = 0; }
+      for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); f.trailR.pts.length = 0; f.trailL.pts.length = 0; f.trainCombo = false; }
       if (T.spot === 'wall') { const [a, b] = M.fighters, W = arena.W; a.pos.set(W - 3.4, 0, 0.6); b.pos.set(W - 2.0, 0, 0.6); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2; }
+      else if (T.spot === 'saved' && T.saved) M.fighters.forEach((f, i) => { const s = T.saved[i]; f.pos.set(s.x, 0, s.z); f.yaw = s.yaw; f.obj.rotation.y = s.yaw; });
+    };
+    /* SAVE POSITION: where both stand now becomes the start a RESET goes back to */
+    M.trainSave = () => {
+      const T = M.training; if (!T) return;
+      T.saved = M.fighters.map(f => ({ x: f.pos.x, z: f.pos.z, yaw: f.yaw })); T.spot = 'saved'; T.lastSpot = 'saved';
+      if (HUD.trainingSpot) HUD.trainingSpot();
+      M.call(M.fighters[0], 'POSITION SAVED', 'buff'); SFX.play('ok');
     };
     function trainingTick(dt) {
       const T = M.training, d = M.fighters[1], p = M.fighters[0];
       M.ai[1].dummy = T.dummy;
-      for (const f of M.fighters) if (!f.comboing && f.state !== 'ko') { f.idleT = (f.idleT || 0) + dt; if (f.idleT > 1.2) { f.hp = U.smooth(f.hp, f.maxHp, 6, dt); for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; } } else f.idleT = 0;
+      const plain = !opts.tutorial && !opts.trials;
+      for (const f of M.fighters) {
+        if (f.comboing) { f.trainCombo = true; f.idleT = 0; continue; }
+        if (f.state === 'ko') continue;
+        // a combo on them just ended: plain training puts their health (and unbroken parts) back at once; the tutorial
+        // and the trials keep the slow refill (some lessons start the dummy low)
+        if (f.trainCombo && plain) { f.hp = f.maxHp; for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; }
+        f.trainCombo = false;
+        f.idleT = (f.idleT || 0) + dt; if (f.idleT > 1.2) { f.hp = U.smooth(f.hp, f.maxHp, 6, dt); for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; }
+      }
+      // R / Backspace resets; T saves the position. A pad's Back (View / Share / Create) button: tap to reset, hold to save
       if (Input.keyDown('KeyR') || Input.keyDown('Backspace')) { if (!T.resetHeld) { T.resetHeld = true; M.trainReset(); } } else T.resetHeld = false;
+      if (Input.keyDown('KeyT')) { if (!T.saveHeld) { T.saveHeld = true; M.trainSave(); } } else T.saveHeld = false;
+      const back = Input.pads().some(p => p.pressed.includes(8));
+      if (back) { T.backT = (T.backT || 0) + dt; if (T.backT > 0.8 && !T.backSaved) { T.backSaved = true; M.trainSave(); } }
+      else { if (T.backT > 0 && !T.backSaved) M.trainReset(); T.backT = 0; T.backSaved = false; }
       if (T.spot !== T.lastSpot) { T.lastSpot = T.spot; if (M.phase === 'fight' && T.spot) M.trainReset(); }
     }
     M.dispose = () => {

@@ -51,6 +51,7 @@ or lock in the middle of a fight.
 | Part Toss | F | Num 7 or `[` | RS (click) | R3 |
 | Jump | Space | Num 0 or R-Shift | A | ✕ |
 | Dodge / Tech | L-Shift | Num . or `\` | B | ○ |
+| Down Dash (in the air) | Guard + Dodge | Guard + Dodge | RB + B | R1 + ○ |
 | Pause / move list | Esc | | Menu | Options |
 
 **Everything can be rebound in Options.** Each action takes two keys per player (a key that already does something
@@ -95,9 +96,12 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
   throw), **Jump** throws them straight up for a juggle, **Heavy** alone **slams** them into the floor for a ground
   bounce. Throw them at a wall and they bounce off it like any KNOCK. The one being held can **mash** to break free
   (GRAB BREAK); the more hurt they are, the longer you can hold them.
-- **OTG (off the ground)** — once a combo, a hit can pick a knocked-down opponent back up off the floor ("OTG!"): a
+- **OTG (off the ground)** — twice a combo, a hit can pick a knocked-down opponent back up off the floor ("OTG!", then
+  "OTG 2!", which pops them a little lower and for less time): a
   Heavy, a dash attack, a dive (air Heavy), a sweep or a downward shot. They're scooped into the air and the combo
   carries on. Quick Rise (Dodge as you land) gets out of it.
+- **Down Dash** — in the air, hold Guard and press Dodge: a dive straight to the floor, steered with the stick. It uses
+  your air dodge and has no invincibility (it's for getting down fast); you can act the moment you land.
 - **Part Toss** (its own button: F, or click the right stick) — pull a part off your own figure and throw it: the head first, then the L-arm, then
   the R-arm. It works as a cancel off any hit. A toss that lands **extends the combo** ("EXTEND 1/2"): its clock and
   decay start over, and you get a fresh OTG and ground bounce. Twice a combo at most: combo, toss, combo, toss, final
@@ -149,7 +153,8 @@ harder.
 **Projectiles** fly as real things you can see: the Pirate's pistol ball (with a muzzle flash and a kick up the arm),
 the Ninja's kunai (they stick in walls), the Summoner's spirit bolts and her Hex glyph, the Bard's sound waves with
 notes riding on them, and the Ninja's **Chain Hook** (the weighted chain flies out, whips round them, and the Ninja
-yanks them in along the floor). Every one is aimed: it leads a moving target, finds them high, low or on the floor,
+yanks them in along the floor; twice in any 5 s, and a third try says how long to wait). Projectiles stop short of
+the walls (the chain's weight, the hex glyph and the Bard's sonic boom burst or clank before them). Every one is aimed: it leads a moving target, finds them high, low or on the floor,
 and the Part Toss homes in. The Ninja's **Shadow Step** works twice a round, 3 seconds apart.
 
 ## Mixed strings (every pair of arms has its own)
@@ -316,8 +321,9 @@ parts. After a fight, the results list the awards it unlocked and a button to th
 
 Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CPU at four levels, two players on one keyboard / two pads, or
 **CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that
-ignores rarity bonuses; it remembers your setup) · Training (dummy settings, full meters, combo readout, and a start
-by a wall to practise wall combos; R resets) ·
+ignores rarity bonuses; it remembers your setup) · Training (pick yourself from your figures or any base fighter, the dummy and the arena; dummy settings, full meters, a
+combo readout, health back the moment a combo ends, a start by a wall or a SAVED POSITION; R resets and T saves, or tap /
+hold a pad's Back button) ·
 Workshop (your custom slots: Custom A and B free, Custom C to F unlocked with tokens for 1,000 / 2,000 / 3,000 /
 5,000; your starter figure stays its Standard set; the hub's ACTIVE FIGURE plate picks which one you fight with) ·
 Shelf (collection and records).

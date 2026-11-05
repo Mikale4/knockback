@@ -700,3 +700,7 @@ button.plate { cursor: pointer; color: var(--ink); font-family: var(--body); } b
 .olsay:disabled { opacity: .6; }
 .olchatlog .typed { -webkit-user-select: text; user-select: text; }
 .olchatprefs { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+
+/* training: save / reset, the random dummy tile */
+.trbtns { display: flex; gap: 6px; margin: 4px 0; } .trbtns .btn { flex: 1; font-size: 11px; padding: 5px 6px; }
+.olq { width: 56px; height: 56px; display: grid; place-items: center; font: 40px var(--head); color: var(--dim); }

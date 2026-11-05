@@ -401,9 +401,38 @@
       App.startMatch({ mode: 'arcade', builds: [activeBuild(), L.build], cpu: [null, L.lvl], arena: L.arena, wins: 2, bonus: true, lvl: L.lvl, stage: Menu._arc.stage });
     },
     /* --------------------------------------------------------- training */
-    training() {
-      const dummy = U.pick(KB.LINE_ORDER);
-      App.startMatch({ mode: 'training', builds: [activeBuild(), KB.mintBuild(dummy, 0)], cpu: [null, null], arena: 'shelf', wins: 99, time: 999, bonus: true });
+    /* TRAINING: pick yourself (your figures, or any base fighter), the dummy and the arena (it remembers them) */
+    training(cfg) {
+      Music.play('menu');
+      const Sv = S(), mine = Sv.builds;
+      cfg = cfg || Menu._tr || (Sv.train ? Object.assign({}, Sv.train) : null) || { p: 'mine:' + (Sv.active || 0), d: 'random', arena: 'shelf' };
+      if (String(cfg.p).startsWith('mine:') && !mine[+cfg.p.slice(5)]) cfg.p = 'mine:0';
+      if (!Arena.LIST.includes(cfg.arena)) cfg.arena = 'shelf';
+      Menu._tr = cfg;
+      const buildFor = k => String(k).startsWith('mint:') ? KB.mintBuild(k.slice(5), 0) : Inv.levelled(mine[+String(k).slice(5)] || mine[0]);
+      useRoom(buildFor(cfg.p));
+      const tile = (on, b, top, sub, pick) => el('button', { class: 'olpick' + (on ? ' on' : ''), style: { '--lc': b ? KB.LINES[b.core.line].css : '#9aa4b2' }, onclick: () => { SFX.play('ok'); pick(); Menu.training(cfg); } },
+        b ? el('img', { src: Models.figIcon(b), alt: '' }) : el('div', { class: 'olq' }, '?'), el('b', null, top), el('small', null, sub));
+      const seg = (label, val, opts, set) => el('div', { class: 'seg' }, el('span', null, label), el('div', null, ...opts.map(([v, t]) => el('button', { class: String(val) === String(v) ? 'on' : '', onclick: () => { set(v); Menu.training(cfg); } }, t))));
+      App.screen(el('div', { class: 'screen training' }, topbar('TRAINING', () => Menu.hub()),
+        el('div', { class: 'panel vspanel' },
+          el('div', { class: 'olselect' }, el('h3', null, 'YOU'),
+            el('small', { class: 'olsub' }, 'YOUR FIGURES'),
+            el('div', { class: 'olgrid' }, ...mine.map((b, i) => { const lb = Inv.levelled(b); return tile(cfg.p === 'mine:' + i, lb, lb.name, i === 0 ? 'Your starter' : 'Custom · ' + KB.LINES[lb.core.line].name, () => { cfg.p = 'mine:' + i; }); })),
+            el('small', { class: 'olsub' }, 'BASE FIGHTERS'),
+            el('div', { class: 'olgrid' }, ...KB.LINE_ORDER.map(l => tile(cfg.p === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.p = 'mint:' + l; })))),
+          el('div', { class: 'olselect' }, el('h3', null, 'THE DUMMY'),
+            el('div', { class: 'olgrid' }, tile(cfg.d === 'random', null, 'RANDOM', 'a new one each time', () => { cfg.d = 'random'; }),
+              ...KB.LINE_ORDER.map(l => tile(cfg.d === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.d = 'mint:' + l; })))),
+          seg('ARENA', cfg.arena, Arena.LIST.map(a => [a, Arena.THEMES[a].name]), v => { cfg.arena = v; }),
+          el('p', { class: 'note' }, 'In training: health comes back the moment a combo ends; R resets, T saves the position you\'re in (or the buttons in the TRAINING panel; on a pad, tap Back to reset and hold it to save). CHARACTER SELECT in the pause menu brings you back here.'),
+          btn('START TRAINING', () => Menu.trainingStart(cfg), 'big wide fight'))));
+    },
+    trainingStart(cfg) {
+      cfg = cfg || Menu._tr; const Sv = S(); Sv.train = Object.assign({}, cfg); Auth.save();
+      const mine = Sv.builds, me = String(cfg.p).startsWith('mint:') ? KB.mintBuild(cfg.p.slice(5), 0) : Inv.levelled(mine[+String(cfg.p).slice(5)] || mine[0]);
+      const dummy = cfg.d === 'random' || !String(cfg.d).startsWith('mint:') ? U.pick(KB.LINE_ORDER) : cfg.d.slice(5);
+      App.startMatch({ mode: 'training', builds: [me, KB.mintBuild(dummy, 0)], cpu: [null, null], arena: cfg.arena || 'shelf', wins: 99, time: 999, bonus: true });
     },
     /* ---------------------------------------------------------- how to */
     howto() {
@@ -414,6 +443,7 @@
           el('div', { class: 'row' }, btn(Tutorial.done() ? 'PLAY THE TUTORIAL AGAIN' : 'PLAY THE TUTORIAL', () => Tutorial.start(), 'big')),
           sec('THE GIMMICK: KNOCK//BACK', 'Launch someone into a wall fast enough and they BOUNCE back off it, still helpless. Keep hitting them. Every bounce in a combo hits harder. Hold a direction as a launcher lands to aim it at a wall.'),
           sec('THE WALL CAN BREAK', 'Each bounce cracks the wall (watch the cracks, and the wall map under the timer). When it gives out, or on a 4th bounce in one combo, it is a WALL BREAK: big damage, they fly out of the arena (RING OUT), and you get MOMENTUM (+10% damage, faster Hype). The wall snaps back after a few seconds.'),
+          sec('MOVING', 'DOWN DASH: hold Guard and press Dodge in the air to dive straight to the floor, steering with the stick. It uses your air dodge and gives no invincibility: it is for getting back down fast (to carry on a combo, or to get out of a juggle you saw coming).'),
           sec('GETTING OUT OF IT', 'SPRING BURST: press Snap while being hit with a full Burst gauge to blow them away. If they are guarding, it is blocked: they can bait it.', 'WALL TECH: from the second bounce of a combo, press Dodge just before you hit the wall to kick off it. Mashing locks you out for a moment.', 'Combos DECAY: each hit is worth less, hitstun shortens and gravity grows the longer a combo runs. QUICK RISE: Dodge as you land. RECOVER: any button once hitstun ends in the air.'),
           sec('YOUR PARTS', 'Your figure is six parts. HEAD gives the Special (3 uses a round, one comes back every 16 s). R-ARM is your Light string. L-ARM is the Heavy KNOCK, the Launcher and your guard. LEGS: speed, jumps, the dash attack. CORE: HP. LEGEND CARD: the super (Legend Art, 100 Hype).', 'Limbs have armour: break it and the part POPS OFF the figure. Walk over it to SNAP it back on. Broken arms fall back on weak stump attacks; no head, no Special; cracked legs slow you down.'),
           sec('OFFENCE', 'Light string, then Heavy to launch, then Jump to follow and air Lights; air Heavy spikes for a ground bounce. Hold Heavy to charge a KNOCK. Guard + Light is a throw. Snap Cancel (Snap, 50 Hype) cancels any move\'s recovery to keep a combo going. Hitting someone as they start a move is a COUNTER.'),
