@@ -97,7 +97,8 @@
   mv('ragnarok', { name: 'Ragnarök', type: 'super', pose: 'slam', su: 0.12, catchType: 'leap', flight: 0.55, rad: 4, fated: 1, seq: 'quake', dmg: 270, kb: [8, 16], zone: 'high' });
 
   // NINJA
-  mv('chainHook', { name: 'Chain Hook', type: 'proj', proj: 'chain', pose: 'shoot', su: 0.17, rc: 0.3, dmg: 48, kb: [0, 3], pull: 1, stun: 0.6, range: 5, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('partToss', { name: 'Part Toss', type: 'proj', proj: 'part', pose: 'toss', su: 0.12, rc: 0.24, dmg: 24, kb: [2, 8], launch: 1, range: 7.5, lunge: 0, hype: 0.6, trail: 0, sfx: 'whoosh' });
+  mv('chainHook', { name: 'Chain Hook', type: 'proj', proj: 'chain', pose: 'chainThrow', su: 0.17, rc: 0.3, dmg: 48, kb: [0, 3], pull: 1, stun: 0.6, range: 5, charge: 1, trail: 0, sfx: 'whoosh' });
   mv('sickleRise', { name: 'Sickle Rise', pose: 'upslash', su: 0.09, ac: 0.08, rc: 0.26, dmg: 36, kb: [1.4, 13], launch: 1, launcher: 1 });
   mv('chainDrop', { name: 'Chain Drop', pose: 'overhead', su: 0.12, ac: 0.1, rc: 0.24, dmg: 50, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.6 });
   mv('shadowStep', { name: 'Shadow Step', type: 'teleport', pose: 'backstab', su: 0.1, ac: 0.08, rc: 0.24, dmg: 46, kb: [9.5, 6.5], launch: 1, range: 9, inv: 1, reach: 1.1, sfx: 'slash', zone: 'mid' });
@@ -287,7 +288,7 @@
       armR: { name: 'Summoning Staff', armor: 115, weight: 0.9, light: 'smA', air: 'smAirA', sig: 'pack', sigName: 'Pack Tactics', sigDesc: "Your imps pounce on anyone you hit. Sic 'Em sends them all in at once.", trail: 0x9dffc0, desc: "Staff Jab › Staff Swing › Sic 'Em (every imp attacks) › Conjure Bolt. Pause after Staff Swing: Call Imp. Air ends in a Spirit Bolt spike. SIGNATURE: imps join your hits." },
       armL: { name: 'Grimoire', armor: 110, weight: 0.85, heavy: 'hexBlast', launch: 'risingGlyph', airHeavy: 'fallingTome', guard: 65, chip: 1.15, trail: 0x9dffc0, desc: 'HEAVY: Hex Blast, a glyph that bursts 4 m out. Guard: weak.' },
       legs: { name: 'Ritual Sandals', armor: 150, weight: 0.9, speed: 6.0, jump: 11, airJumps: 1, dashAtk: 'staffSweep', perk: 'familiar', desc: 'Familiar: start every round with an imp at your side. DASH ATTACK: Staff Sweep.' },
-      card: { name: 'Ninefold Circle', super: 'grandSummon', passive: 'legion', desc: 'LEGEND ART: Grand Summoning, a spirit giant. PASSIVE (Legion): up to 4 imps, and they take 3 hits.' },
+      card: { name: 'Ninefold Circle', super: 'grandSummon', passive: 'legion', desc: 'LEGEND ART: Grand Summoning, a spirit giant. PASSIVE (Legion): her imps bite 30% harder.' },
     },
     paladin: {
       head: { name: 'Sun Helm', armor: 150, weight: 1.1, special: 'holyNova', uses: 3, hype: 0.95, desc: 'SPECIAL: Holy Nova. A burst of light that blows them back and heals you 6%.' },
@@ -318,7 +319,7 @@
   const PASSIVE = {
     bushido: 'Bushido: +15% damage under 35% HP', plateFaith: 'Plate Faith: guard +40%, chip -30%', plunder: 'Plunder: +35% Hype gain',
     innerPeace: 'Inner Peace: Burst fills 45% faster', fury: 'Fury: up to +18% damage as HP falls', vanish: 'Vanish: longer dodge, shorter cooldown',
-    legion: 'Legion: up to 4 imps, 3 hits each', devotion: 'Devotion: healing +40%, Specials back faster', wyrmblood: 'Wyrmblood: +12% damage in the air', encore: 'Encore: 35 Hype back after a Legend Art',
+    legion: 'Legion: imps bite 30% harder', devotion: 'Devotion: healing +40%, Specials back faster', wyrmblood: 'Wyrmblood: +12% damage in the air', encore: 'Encore: 35 Hype back after a Legend Art',
   };
 
   /* --------------------------------------------------------------- builds */
@@ -341,7 +342,7 @@
       speed: G.speed * (1.08 - 0.08 * weight), jump: G.jump, airJumps: G.airJumps, perk: G.perk,
       airDodges: G.perk === 'cloudstep' ? 2 : 1,
       dodgeDist: G.perk === 'sealegs' ? 1.3 : 1, dodgeCd: G.perk === 'dancer' ? 0.5 : 1, airDodgeDist: G.perk === 'skyward' ? 1.35 : 1,
-      minions: K.passive === 'legion' ? 4 : 3, impHp: K.passive === 'legion' ? 3 : 2, healMult: K.passive === 'devotion' ? 1.4 : 1, useRegen: K.passive === 'devotion' ? 11 : 16,
+      minions: 2, impHp: 2, impLife: 5, impDmg: K.passive === 'legion' ? 1.3 : 1, healMult: K.passive === 'devotion' ? 1.4 : 1, useRegen: K.passive === 'devotion' ? 11 : 16,
       guard: Math.round((100 + L.guard + C.guard) * (K.passive === 'plateFaith' ? 1.4 : 1)),
       chip: L.chip * (K.passive === 'plateFaith' ? 0.7 : 1),
       hypeGain: H.hype * (1 + (C.hypeBonus || 0)) * (K.passive === 'plunder' ? 1.35 : 1),

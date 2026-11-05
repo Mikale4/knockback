@@ -149,6 +149,7 @@
         row(k('special'), nm(S.special), S.uses + ' uses a round (HEAD)'),
         row(k('super'), nm(S.super), '100 Hype (LEGEND CARD)'),
         row(k('guard') + ' + ' + k('light'), 'Throw', 'beats guard'),
+        row(k('guard') + ' + ' + k('special'), 'Part Toss', 'throw a part: extends a combo, twice'),
         el('h4', null, 'GETTING OUT'),
         row(k('snap') + ' in hitstun', 'Spring Burst', 'full Burst gauge'),
         row(k('dodge') + ' at a wall', 'Wall Tech', 'from the 2nd bounce of a combo'),

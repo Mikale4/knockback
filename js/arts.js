@@ -315,7 +315,7 @@
         }
         if (once(c, 'rise', 0.62)) {
           s.giant = prop(c, Prop.giant(line, f.build.card.r), p => {
-            const g = p.obj; g.scale.setScalar(7);
+            const g = p.obj; g.scale.setScalar(4.7);
             if (c.t < 1.45) { const k = span(c.t, 0.62, 1.35); g.position.set(s.home.x, U.lerp(-3.4, 0, U.easeOut(k)), s.home.z); g.rotation.y = Math.atan2(c.D.x, c.D.z); }
             else { const k = span(c.t, 1.5, 2.2); const from = s.home, to = o.pos; g.position.set(U.lerp(from.x, to.x, k), Math.max(o.pos.y - 0.4, Math.sin(k * Math.PI) * 4.5 + U.lerp(0, o.pos.y - 0.4, k)), U.lerp(from.z, to.z, k)); g.rotation.x = k * 0.9; }
           });

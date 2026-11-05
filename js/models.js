@@ -531,7 +531,7 @@
       g.boxM(1, 0, 0, 1, 1, 1, dark); g.boxM(3, 3, 1, 3, 4, 1, dark); g.setM(3, 2, 2, dark);              // feet and little arms
       g.boxM(3, 5, -2, 4, 6, -2, p.main); g.setM(5, 7, -2, p.main);                                       // wings
       g.set(0, 2, -3, dark); g.set(0, 2, -4, dark); g.set(0, 3, -5, G(p.glow));                            // a tail with a spark on the end
-      IMPS.set(k, VX.object(g, 0.052));
+      IMPS.set(k, VX.object(g, 0.078));
     }
     return IMPS.get(k).clone();
   }
@@ -607,6 +607,23 @@
       if (grp.parent) grp.parent.remove(grp);
       grp.position.copy(rest[name]); grp.quaternion.identity();
       parts[LAYOUT[name].parent].add(grp); F.detached[name] = false;
+    };
+    /* wear a part that came off another figure: it takes this figure's plastic, so it flashes with it */
+    F.own = Object.assign({}, parts);
+    const SUBP = { armL: 'wL', armR: 'wR' }, paint = (grp, m) => grp.traverse(o => { if (o.isMesh && o.material !== VX.glowMat()) o.material = m; });
+    F.adopt = (name, grp) => {
+      if (grp.parent) grp.parent.remove(grp);
+      parts[name] = grp; if (SUBP[name]) parts[SUBP[name]] = grp.getObjectByName(SUBP[name]) || parts[SUBP[name]];
+      grp.position.copy(rest[name]); grp.quaternion.identity(); grp.scale.setScalar(1); paint(grp, mat);
+      parts[LAYOUT[name].parent].add(grp); F.detached[name] = false;
+    };
+    /* a new round: every figure takes its own parts back (reattach then puts them on) */
+    F.restore = () => {
+      for (const name of ['head', 'armL', 'armR']) {
+        const own = F.own[name], cur = parts[name];
+        if (cur !== own) { if (cur.parent === parts[LAYOUT[name].parent]) cur.parent.remove(cur); parts[name] = own; if (SUBP[name]) parts[SUBP[name]] = F.own[SUBP[name]]; F.detached[name] = true; }
+        paint(own, mat);
+      }
     };
     F.dispose = () => { mat.dispose(); if (root.parent) root.parent.remove(root); for (const n in F.detached) if (F.detached[n] && parts[n].parent) parts[n].parent.remove(parts[n]); };
     return F;

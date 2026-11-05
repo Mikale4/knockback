@@ -26,7 +26,7 @@ plain JavaScript and Three.js (`lib/three.min.js`).
 | Move | WASD | Arrows | Left stick / d-pad | Left stick / d-pad |
 | Light (R-ARM string) | J | Num 1 or `,` | X | □ |
 | Heavy / KNOCK (L-ARM) | K (hold to charge) | Num 2 or `.` | Y | △ |
-| Guard (+ Light = Throw) | L | Num 3 or `/` | RB | R1 |
+| Guard (+ Light = Throw, + Special = Part Toss) | L | Num 3 or `/` | RB | R1 |
 | Head Special | I | Num 5 or `;` | LB | L1 |
 | Snap Cancel / Spring Burst | U | Num 4 or `'` | RT | R2 |
 | Legend Art (super) | O | Num 6 or `]` | LT | L2 |
@@ -71,6 +71,13 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
   - **Recover** (any button once hitstun ends in the air), **Quick Rise** (Dodge as you land), **Just Guard** (guard
     at the last moment: no chip, attacker shoved), **Guard Crush** when the guard gauge empties, **Throw tech**.
 - **Snap Cancel** — Snap during your own move with 50 Hype: cancel its recovery to extend a combo.
+- **OTG (off the ground)** — once a combo, a hit can pick a knocked-down opponent back up off the floor ("OTG!"): a
+  Heavy, a dash attack, a dive (air Heavy), a sweep or a downward shot. They're scooped into the air and the combo
+  carries on. Quick Rise (Dodge as you land) gets out of it.
+- **Part Toss** (Guard + Special) — pull a part off your own figure and throw it: the head first, then the L-arm, then
+  the R-arm. It works as a cancel off any hit. A toss that lands **extends the combo** ("EXTEND 1/2"): its clock and
+  decay start over, and you get a fresh OTG and ground bounce. Twice a combo at most: combo, toss, combo, toss, final
+  combo. The part lands on the floor; go and snap it back on (before they take it, see Parts).
 
 ## Legend Arts (supers)
 
@@ -111,8 +118,14 @@ string and a signature; your stance comes from it too.
 
 **The Summoner's imps** come from her Special (two at a time), the Call Imp pause branch, and the FAMILIAR legs (one
 at the start of every round). They walk in and bite, pounce on whatever she hits, and all go in at once on Sic 'Em.
-Any attack that touches one hurts it: they pop after two hits (three with the LEGION card), and she keeps up to three
-(four with LEGION).
+She keeps **two at most** (a new one replaces the oldest). Any attack that touches one hurts it: **two hits** pop it,
+and otherwise each one **leaves after 5 seconds** (it blinks in its last second). The LEGION card makes them bite 30%
+harder.
+
+**Projectiles** fly as real things you can see: the Pirate's pistol ball (with a muzzle flash and a kick up the arm;
+a pistol is aimed, so it finds them high, low, or on the floor), the Ninja's kunai (they stick in walls), the
+Summoner's spirit bolts and her Hex glyph, the Bard's sound waves with notes riding on them, and the Ninja's
+**Chain Hook**: the weighted chain flies out, whips round them, and the Ninja yanks them in along the floor.
 
 ## Parts (the Medabots-style build system)
 
@@ -126,7 +139,9 @@ Any attack that touches one hurts it: they pop after two hits (three with the LE
 | LEGEND CARD | The Legend Art (super, 100 Hype) and a passive |
 
 Limbs have their own armour: break one and it **pops off the figure** — walk over it to **snap it back on**. A broken
-arm falls back on weak stump attacks, no head means no Special, cracked legs slow you down. Match 3+ parts to your
+arm falls back on weak stump attacks, no head means no Special, cracked legs slow you down. **Take theirs:** if you're
+missing a head or an arm and theirs is lying on the floor, walk over it and it snaps onto you, moves and all (a Pirate
+wearing a Knight's head has the Knight's Special). Stolen parts last the round. Match 3+ parts to your
 Legend Card's line for a set bonus (all six: **MINT SET**).
 
 ## Capsules (the gacha)
@@ -160,7 +175,7 @@ Workshop (three builds) · Shelf (collection and records).
 | `js/arts.js` | Each Legend Art's cinematic: its choreography, camera shots, props, lighting |
 | `js/match.js` | Rounds, camera, projectiles, the Summoner's imps, dropped parts, ring outs, training |
 | `js/arena.js` | The three arenas and wall stress/cracks/breaks |
-| `js/ai.js` | The CPU (plays through the same inputs as a human) |
+| `js/ai.js` | The CPU (plays through the same inputs as a human; picks a combo route and plays it out, takes OTGs and rebounds, steers along walls) |
 | `js/gacha.js` | Capsule rates, pity, the 3D machine and reveal |
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
