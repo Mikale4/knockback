@@ -637,6 +637,7 @@
       // guarding doesn't stop a Legend Art that has caught you
       o.move = null; o.setState('held'); o.held = { by: this, kind: 'super' }; o.heldBySuper = true; o.vel.set(0, 0, 0); o.dizzy = o.crumpled = o.asleep = false;
       if (!o.comboing) o.combo = o.freshCombo();
+      this.m.event('art', { f: this, vic: o });
       this.superPhase = 'seq'; this.seqVictim = o; this.inv = 9; this.obj.visible = true; this.vel.set(0, 0, 0);
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
       SFX.play('hit', { power: 2 }); FX.addShake(0.5);
@@ -850,7 +851,7 @@
       } else {
         this.spin.rotation.y = U.smooth(this.spin.rotation.y, 0, 20, dt);
         if (st === 'run') { this.phase += dt * (6 + this.st.speed); pose = Anim.run(R, this.phase, Math.hypot(this.vel.x, this.vel.z), this.build.armR.line); }
-        else if (st === 'idle') { pose = Anim.fill(R); const b = Math.sin(this.m.time * 2.4 + this.idx) * 0.25; pose.hy += b; pose.torso[0] += b * 0.04; }
+        else if (st === 'idle') { pose = Anim.idle(R, this.m.time + this.idx * 1.7, this.build, this); rate = 10; }
         else if (st === 'air') pose = Anim.blend(R, this.vel.y > 0 ? Anim.STATE.air : Anim.STATE.fall, 1, R);
         else if (st === 'guard' || st === 'guardstun') pose = Anim.fill(Anim.STATE.guard);
         else if (st === 'gbreak') { pose = Anim.fill(Anim.STATE.stunned); pose.head[1] = Math.sin(this.stateT * 9) * 0.4; }
@@ -998,7 +999,7 @@
       vic.burst = Math.min(100, vic.burst + dmg * 0.055 * vic.st.burstRate);
       // part armour
       const part = mv.zone ? Combat.zonePart(att, vic, mv.zone) : null;
-      if (part && !vic.broken[part]) { vic.armor[part] -= dmg * (mv.launch ? 0.55 : 0.35); if (vic.armor[part] <= 0) Combat.breakPart(vic, part, dir); }
+      if (part && !vic.broken[part]) { vic.armor[part] -= dmg * (mv.launch ? 0.55 : 0.35); if (vic.armor[part] <= 0) { Combat.breakPart(vic, part, dir); m.event('partbreak', { att, vic, part }); } }
 
       // ---- the reaction
       const armored = vic.armorT > 0 && o.kind !== 'super' && o.kind !== 'throw' && mv.type !== 'grab' && vic.state !== 'held';

@@ -51,7 +51,7 @@
       },
       update(dt) {
         t += dt; spin.rotation.y += dt * 0.5;
-        if (F) { const p = Anim.fill(Anim.readyFor(build)); p.hy += Math.sin(t * 2.2) * 0.25; Anim.drive(F, p, dt, 8); }
+        if (F) { const p = Anim.idle(Anim.readyFor(build), t, build, V); Anim.drive(F, p, dt, 8); }
         const o = V.wide ? V.offset * V.side : 0;
         camera.position.set(o, 1.5, 6.8); camera.lookAt(o, 1.0, 0);
         FX.update(dt);
@@ -72,6 +72,8 @@
   }
 
   const Menu = {
+    toast: (t, c) => toast(t, c),
+    ui: { btn: (...a) => btn(...a), topbar: (...a) => topbar(...a) },
     /* phones: fill the screen and hold landscape, where the browser allows it (Android; iPhone Safari can't) */
     fullscreen() {
       if (!U.touch || document.fullscreenElement) return;
@@ -151,7 +153,7 @@
         el('div', { class: 'panel tutofferp' },
           el('small', null, 'NEW COLLECTOR'),
           el('h2', null, 'LEARN TO FIGHT?'),
-          el('p', null, 'A quick tutorial, played for real with ', el('b', null, activeBuild().name), ' against a training dummy: moving, your string, the wall bounce, guarding, grabs, and everything else, one lesson at a time. About five minutes. Finish it for ', el('b', null, '+300 TOKENS'), '.'),
+          el('p', null, 'A quick tutorial, played for real with ', el('b', null, activeBuild().name), ' against a training dummy: moving, your string, the wall bounce, guarding, grabs, and everything else, one lesson at a time. About five minutes. Finish it for ', el('b', null, '+900 TOKENS'), '.'),
           el('div', { class: 'row' }, btn('START THE TUTORIAL', () => Tutorial.start({ onboard: true }), 'big'), btn('SKIP FOR NOW', () => Menu.afterTutorial(false), 'ghost')),
           el('p', { class: 'fine' }, 'It is always in the hub (TUTORIAL) if you skip it.'))));
     },
@@ -172,9 +174,10 @@
         el('div', { class: 'hubmenu' },
           item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
           item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
-          item('TUTORIAL', Tutorial.done() ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +300 tokens.', () => Tutorial.start(), Tutorial.done() ? '' : 'hot'),
+          item('TUTORIAL', Tutorial.done() ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +900 tokens.', () => Tutorial.start(), Tutorial.done() ? '' : 'hot'),
           item('TRAINING', 'A dummy, full meters, every system to practise.', () => Menu.training()),
           item('WORKSHOP', 'Snap parts together. Three builds.', () => Menu.workshop()),
+          (() => { const n = Rewards.ready(); const b = item('REWARDS', n ? n + ' ready to claim · daily and weekly jobs, fighter mastery, milestones, awards' : 'Daily and weekly jobs, fighter mastery, milestones and awards.', () => Rewards.screen(), n ? 'gold' : ''); if (n) b.append(el('em', { class: 'badge' }, n)); return b; })(),
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),
           item('SHELF', 'Your collection and records.', () => Menu.shelf()),
           item('HOW TO PLAY', 'The wall bounce, and how to get out of it.', () => Menu.howto()),
@@ -226,10 +229,15 @@
       if (App.view !== V) App.setView(V);
       const B = Gacha.banners(), bi = bannerIdx || 0, ban = B[bi], P = S().pity;
       const canPay = n => S().tokens >= Gacha.COST[n];
+      const ticket = () => {
+        if (!(S().tickets > 0) || V.busy()) { SFX.play('back'); return; }
+        S().tickets--; Auth.save(); SFX.play('coin');
+        const res = Gacha.roll(ban, 1); Rewards.record({ capsules: 1, chases: res.filter(o => o.r === 3).length }); Menu.reveal(V, res, () => Menu.capsules(bi));
+      };
       const pull = n => {
         if (!canPay(n) || V.busy()) { SFX.play('back'); toast('Not enough tokens. Win fights to earn more.', 'bad'); return; }
         S().tokens -= Gacha.COST[n]; Auth.save(); SFX.play('coin');
-        const res = Gacha.roll(ban, n); Menu.reveal(V, res, () => Menu.capsules(bi));
+        const res = Gacha.roll(ban, n); Rewards.record({ capsules: n, chases: res.filter(o => o.r === 3).length }); Menu.reveal(V, res, () => Menu.capsules(bi));
       };
       const rates = () => modal(el('div', { class: 'rates' }, el('h2', null, 'CAPSULE RATES'),
         ...KB.RARITY.map((R, i) => el('div', { class: 'rrow ' + rcls(i) }, el('b', null, stars(i) + ' ' + R.name), el('span', null, (Gacha.RATES[i] * 100).toFixed(1) + '%'), el('small', null, ['base colours', 'chrome trim, +4% stats', 'gold edition, +8% stats', 'dark body, glowing trim, +12% stats'][i]))),
@@ -240,7 +248,8 @@
           el('div', { class: 'panel cappanel' },
             el('div', { class: 'pullrow' },
               el('button', { class: 'pullbtn' + (canPay(1) ? '' : ' off'), onclick: () => pull(1) }, el('b', null, 'PULL ×1'), el('span', null, el('i', { class: 'coin' }), Gacha.COST[1])),
-              el('button', { class: 'pullbtn ten' + (canPay(10) ? '' : ' off'), onclick: () => pull(10) }, el('b', null, 'PULL ×10'), el('span', null, el('i', { class: 'coin' }), Gacha.COST[10]), el('small', null, 'LIMITED+ guaranteed'))),
+              el('button', { class: 'pullbtn ten' + (canPay(10) ? '' : ' off'), onclick: () => pull(10) }, el('b', null, 'PULL ×10'), el('span', null, el('i', { class: 'coin' }), Gacha.COST[10]), el('small', null, 'LIMITED+ guaranteed')),
+              S().tickets > 0 ? el('button', { class: 'pullbtn tix', onclick: () => ticket() }, el('b', null, 'TICKET ×1'), el('span', null, '🎟 ' + S().tickets + ' left'), el('small', null, 'a free capsule')) : null),
             el('div', { class: 'pity' }, 'CHASE pity ', el('b', null, P.sinceChase + ' / ' + Gacha.PITY), ' · total pulls ' + P.total, ' · ', el('a', { href: '#', onclick: e => { e.preventDefault(); rates(); } }, 'rates')),
             el('div', { class: 'collected' }, 'Collection ' + Inv.count() + ' / ' + Inv.total())))));
     },
@@ -436,6 +445,7 @@
         else reward = 20;
       }
       if (!watch) Auth.record(res, opts.mode, reward);
+      const awards = watch ? [] : Rewards.fightDone(res, opts), ready = watch ? 0 : Rewards.ready();
       const stat = (k, v) => el('div', null, el('small', null, k), el('b', null, v));
       const next = opts.mode === 'arcade' && win && Menu._arc ? btn('NEXT STAGE ▸', () => Menu.arcadeFight(), 'big fight') : null;
       App.screen(el('div', { class: 'screen results' },
@@ -446,6 +456,8 @@
           el('div', { class: 'recs' }, stat('BEST COMBO', me.maxCombo), stat('MOST BOUNCES', me.maxBounces), stat('WALL BREAKS', me.breaks), stat('DAMAGE', Math.round(me.dmg))),
           reward ? el('div', { class: 'reward' }, el('i', { class: 'coin' }), '+' + reward + ' TOKENS') : null,
           extra ? el('div', { class: 'reward gold' }, extra) : null,
+          ...awards.map(a => el('div', { class: 'reward gold' }, '★ AWARD: ' + a.name + (a.pay ? '  +' + a.pay : ''))),
+          ready ? el('button', { class: 'rwready', onclick: () => { App.setView(null); Rewards.screen(); } }, '🎁 ' + ready + ' REWARD' + (ready > 1 ? 'S' : '') + ' READY TO CLAIM ▸') : null,
           el('div', { class: 'row' }, next,
             watch ? btn('NEXT FIGHT', () => Menu.versusStart(opts.cfg), 'big fight') : null,
             opts.mode !== 'arcade' ? btn('REMATCH', () => App.startMatch(opts), watch ? 'ghost' : 'big') : (!win ? btn('RETRY', () => Menu.arcadeFight(), 'big') : null),

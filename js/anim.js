@@ -185,6 +185,56 @@
     return o;
   }
 
+
+  /* ---------------------------------------------------------------- idle
+     Standing still is never quite still: breathing (chest and shoulders rise and fall,
+     the head counters), a slow shift of weight from foot to foot, the arms and the
+     weapon swaying a little out of step, the head glancing about -- and every few
+     seconds a fidget that fits the figure: a samurai resettles its grip, a knight
+     raises its shield, a pirate twirls the cutlass, a ninja bounces on its toes, a
+     bard strums. `o` keeps the fidget between frames (a fighter, or the showroom). */
+  const FIDGETS = {
+    samurai: ['grip', 'look', 'shrug'], knight: ['heft', 'look', 'shrug'], pirate: ['twirl', 'shrug', 'look'], monk: ['bounce', 'shrug', 'look'],
+    viking: ['heft', 'roll', 'look'], ninja: ['bounce', 'twirl', 'look'], summoner: ['heft', 'look', 'shrug'], paladin: ['heft', 'look', 'roll'],
+    dragoon: ['twirl', 'heft', 'look'], bard: ['strum', 'bounce', 'look'],
+  };
+  const SHIELDS = ['knight', 'viking', 'paladin'];
+  const add3 = (a, x, y, z) => [a[0] + (x || 0), a[1] + (y || 0), a[2] + (z || 0)];
+  const FID = {
+    grip: (p, k, t) => { p.armR = add3(p.armR, -0.28 * k); p.armL = add3(p.armL, -0.28 * k); p.wR = add3(p.wR, 0, 0, Math.sin(t * 9) * 0.35 * k); p.hy -= 0.4 * k; },
+    heft: (p, k) => { p.armR = add3(p.armR, -0.55 * k, 0, 0.1 * k); p.wR = add3(p.wR, 0.35 * k); p.torso = add3(p.torso, -0.06 * k, -0.18 * k); },
+    shield: (p, k) => { p.armL = add3(p.armL, -0.45 * k, 0, -0.1 * k); p.wL = add3(p.wL, 0.3 * k); p.torso = add3(p.torso, 0.05 * k, 0.15 * k); },
+    shrug: (p, k) => { p.armR = add3(p.armR, 0, 0, -0.22 * k); p.armL = add3(p.armL, 0, 0, 0.22 * k); p.head = add3(p.head, 0.1 * k, 0, 0.18 * k); p.hy += 0.5 * k; },
+    look: (p, k, t, f) => { p.head = add3(p.head, -0.05 * k, f.dir * 0.65 * k); p.torso = add3(p.torso, 0, f.dir * 0.12 * k); },
+    bounce: (p, k, t) => { p.hy += Math.abs(Math.sin(t * 9)) * 1.3 * k - 0.4 * k; p.armR = add3(p.armR, Math.sin(t * 9) * 0.08 * k); p.armL = add3(p.armL, -Math.sin(t * 9) * 0.08 * k); },
+    twirl: (p, k, t, f) => { p.wR = add3(p.wR, 0, Math.sin(Math.PI * 2 * f.q) * 1.7); p.armR = add3(p.armR, -0.35 * k, 0, 0.15 * k); },   // a flourish there and back (never a full turn the smoothing would unwind)
+    roll: (p, k, t) => { p.torso = add3(p.torso, 0, 0, Math.sin(t * 6) * 0.14 * k); p.armR = add3(p.armR, 0, 0, -Math.max(0, Math.sin(t * 6)) * 0.25 * k); p.armL = add3(p.armL, 0, 0, Math.max(0, -Math.sin(t * 6)) * 0.25 * k); p.head = add3(p.head, 0, 0, -Math.sin(t * 6) * 0.1 * k); },
+    strum: (p, k, t) => { p.armR = add3(p.armR, (0.5 + 0.5 * Math.sin(t * 15)) * -0.25 * k, 0, 0.1 * k); p.head = add3(p.head, Math.sin(t * 7.5) * 0.08 * k); p.hy += Math.abs(Math.sin(t * 7.5)) * 0.3 * k; },
+  };
+  function idle(R, t, build, o) {
+    const p = fill(R), br = Math.sin(t * 2.2), sw = Math.sin(t * 1.15 + 0.6);
+    // breathing and the weight shift
+    p.hy += br * 0.22 - Math.abs(sw) * 0.18;
+    p.torso = add3(p.torso, br * 0.035, sw * 0.06, sw * 0.03);
+    p.head = add3(p.head, -br * 0.03, Math.sin(t * 0.37) * 0.16, -sw * 0.035);
+    p.armR = add3(p.armR, Math.sin(t * 2.2 + 0.5) * 0.05, 0, -br * 0.035);
+    p.armL = add3(p.armL, Math.sin(t * 2.2 + 1.1) * 0.05, 0, br * 0.035);
+    p.legL = add3(p.legL, Math.max(0, sw) * -0.1, 0, Math.max(0, sw) * 0.04);
+    p.legR = add3(p.legR, Math.max(0, -sw) * -0.1, 0, -Math.max(0, -sw) * 0.04);
+    p.wR = add3(p.wR, Math.sin(t * 1.6) * 0.05); p.wL = add3(p.wL, Math.sin(t * 1.3 + 2) * 0.04);
+    // a fidget now and then
+    if (o) {
+      let f = o.fidget;
+      if (!f || t > f.end + f.gap || t < f.start) {
+        const line = build && build.armR ? build.armR.line : 'samurai', list = (FIDGETS[line] || ['look', 'shrug']).slice();
+        if (build && build.armL && SHIELDS.includes(build.armL.line)) list.push('shield');
+        f = o.fidget = { kind: list[Math.floor(Math.random() * list.length)], start: t + (f ? 0 : 1 + Math.random() * 2), gap: 2.5 + Math.random() * 3.5, dir: Math.random() < 0.5 ? -1 : 1 };
+        f.end = f.start + (f.kind === 'twirl' ? 0.8 : f.kind === 'look' ? 1.6 : 1.0);
+      }
+      if (t >= f.start && t < f.end) { f.q = (t - f.start) / (f.end - f.start); FID[f.kind](p, Math.sin(Math.PI * f.q), t, f); }
+    }
+    return p;
+  }
   /* a hybrid pose 'hy|R|L' (a mixed finisher): the body and right arm of R, the left arm of L -- it swings both */
   function compose(name) {
     if (!name || name.slice(0, 3) !== 'hy|') return null;
@@ -192,5 +242,5 @@
     const mix = (a, b) => Object.assign({}, a, { armL: b.armL || a.armL, wL: b.wL || a.wL });
     return (P[name] = { wind: mix(A.wind, B.wind), strike: mix(A.strike, B.strike), spin: A.spin });
   }
-  window.Anim = { READY, P, STATE, PARTS, readyFor, blend, fill, drive, set, run, compose };
+  window.Anim = { READY, P, STATE, PARTS, readyFor, blend, fill, drive, set, run, compose, idle };
 })();

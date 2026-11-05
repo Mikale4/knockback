@@ -158,11 +158,12 @@
       M.slowmo(0.28, 1.3); SFX.play('ko'); FX.addShake(0.9);
       if (!M.attract) HUD.banner('KNOCK//OUT', 'ko', 1.8);
       M.wins[M.winner]++;
+      M.event('ko', { vic, att, mv });
     };
     M.ringOut = f => {
       if (M.phase === 'ko') { f.vel.set(0, 0, 0); f.pos.y = arena.outY + 0.4; return; }
       const dmg = Math.round(f.maxHp * 0.08);
-      f.hp -= M.training ? 0 : dmg;
+      f.hp -= M.training ? 0 : dmg; M.event('ringout', { vic: f, by: M.opp(f) });
       M.call(f, 'RING OUT  -' + dmg, 'break', new V3(f.pos.x * 0.8, 1.5, f.pos.z * 0.8));
       if (f.hp <= 0) { f.hp = 0; M.phase = 'fight'; M.ko(f, M.opp(f), new V3(0, 0, 0), null, true); f.vel.set(0, 0, 0); return; }
       setTimeout(() => { if (M.disposed) return;
@@ -453,7 +454,7 @@
           if (d > 0.85) continue;
           if (f.broken[p.part]) {
             // missing that part? snap it on: your own, or theirs (and its moves come with it)
-            const swapped = f.wearPart(p);
+            const swapped = f.wearPart(p); if (swapped) M.event('steal', { f, part: p.part });
             SFX.play('snapon'); M.call(f, swapped ? KB.LINES[p.item.line].name + ' ' + ({ head: 'HEAD', armL: 'L-ARM', armR: 'R-ARM' }[p.part]) + '!' : 'SNAP ON!', 'heal');
             FX.burst(g.position.clone(), { n: 12, color: [0xffffff, 0x9dff9a], glow: true, speed: 3, size: 0.06, life: 0.4 });
             M.picks.splice(i, 1); break;

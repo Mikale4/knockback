@@ -24,6 +24,7 @@
       const o = Object.assign({}, opts);
       const m = Match.create(Object.assign({}, o, { onEnd: res => setTimeout(() => { if (App.view === m) Menu.results(res, opts); }, 900) }));
       App.setView(m);
+      if (window.Rewards) Rewards.watch(m, opts);
     },
     quitMatch() { if (window.Tutorial && Tutorial.running()) return Tutorial.quit(); App.setView(null); Menu.hub(); },
   };

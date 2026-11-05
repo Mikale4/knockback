@@ -266,7 +266,7 @@
     const st = S.stats, onboard = S.onboard, first = !Tutorial.done();
     stop(); App.setView(null); HUD.hide(); Touch.hide();
     let bonus = 0;
-    if (Auth.S) { if (first) { bonus = 300; Auth.S.tokens += bonus; } Auth.S.tutorial = { done: true, at: Date.now() }; Auth.save(); }
+    if (Auth.S) { if (first) { bonus = 900; Auth.S.tokens += bonus; } Auth.S.tutorial = { done: true, at: Date.now() }; Auth.save(); if (window.Rewards) Rewards.record({ tutorials: 1 }); }
     SFX.play('win'); Music.play('menu');
     const row = (k, v) => [el('span', null, k), el('b', null, v)];
     const box = el('div', { class: 'panel tutdone' },

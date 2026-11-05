@@ -196,7 +196,24 @@ until you do it: a card over the fight gives one lesson at a time, in your own k
 the touch buttons), and the next opens once you've done it (or SKIP). Fourteen lessons: move, jump, your string, the
 Launcher into an air combo, the KNOCK//BACK and catching the rebound, guard, dodge, grab-pummel-throw, your Special,
 an OTG, a Part Toss, a Spring Burst, your Legend Art, and a last round where the dummy fights back. The dummy only
-swings when a lesson wants it to and nobody can lose. Finishing it the first time is worth **300 Tokens**.
+swings when a lesson wants it to and nobody can lose. Finishing it the first time is worth **900 Tokens**.
+
+## Rewards
+
+**REWARDS** in the hub (`js/rewards.js`, after the design of Post Parade's quests): everything you do is counted three
+ways at once (ever, today, this week), and five boards read those counts. The hub button shows how many are waiting.
+
+| Board | What's on it |
+|---|---|
+| **Daily** | Eleven small jobs from a normal day's play (fights, wins, wall bounces, a 12-hit combo, a Legend Art, throws, OTGs, parts broken, a capsule), one rotating **featured figure** (win wearing any of today's line's parts), and *Busy day* for claiming six of the others. New jobs at midnight. |
+| **Weekly** | Twelve bigger goals (15 wins, 3 Champion wins, an Arcade clear, wins with 5 different Legend Cards, wall breaks, ring outs, a 25-hit combo, mixed-arm wins, stolen parts, 25 dailies claimed). New goals every Monday. |
+| **Fighters** | A mastery track for each of the ten lines: win with its Legend Card (1, 5, 15, 40, 100 wins). Tier III pays one of that line's DELUXE parts, tier V a LIMITED one. |
+| **Milestones** | First steps for a new collector, then nineteen tiered chains (I to V) in Fighting, The wall, Technique, Collection and Dedication; each tier pays more, and the top ones pay Capsule Tickets. |
+| **Awards** | Seventeen one-off medals (win a round untouched, three bounces in one combo, a comeback under 10% HP, every Legend Card, a CHASE pull...) that pay the moment you earn them. |
+
+Quests and tiers are **claimed** (one at a time or CLAIM ALL); awards pay at once. Rewards are Tokens, **Capsule
+Tickets** (a free ×1 capsule: the CAPSULES screen shows a TICKET button when you have one) and, on the fighter tracks,
+parts. After a fight, the results list the awards it unlocked and a button to the rewards waiting.
 
 ## Modes
 
@@ -205,6 +222,10 @@ Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CP
 ignores rarity bonuses; it remembers your setup) · Training (dummy settings, full meters, combo readout, and a start
 by a wall to practise wall combos; R resets) ·
 Workshop (three builds) · Shelf (collection and records).
+
+**Figures are never quite still:** standing, they breathe, shift their weight and glance about, and every few seconds
+fidget in their own way (a samurai resettles its grip, a pirate flourishes the cutlass, a ninja bounces on its toes, a
+bard strums, a shield arm comes up).
 
 **Small comforts:** a fight pauses itself if you switch tab or window; Esc goes back (or closes a pop-up) on every
 menu screen; the pause menu has the volume; a **LEGEND ART READY** prompt (with your key) appears under a full Hype bar;
@@ -227,5 +248,6 @@ shake** setting (Full, Reduced, Off).
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
+| `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |
 | `tools/harness.js` | Test helpers: step the game at a fixed rate, script inputs, log callouts |
