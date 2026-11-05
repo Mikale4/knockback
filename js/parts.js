@@ -89,11 +89,11 @@
   mv('hundredPalm', { name: 'Hundred Hands', type: 'super', pose: 'punch', su: 0.12, catchType: 'melee', lunge: 9, reach: 1.2, rad: 1.1, close: 5.5, seq: 'hundred', dmg: 300, kb: [24, 6], zone: 'mid' });
 
   // VIKING
-  mv('shieldRam', { name: 'Shield Ram', pose: 'bash', su: 0.18, ac: 0.1, rc: 0.3, dmg: 80, reach: 1.1, rad: 0.95, kb: [17, 6], launch: 1, lunge: 9, armor: 1, charge: 1, trail: 0, sfx: 'heavy' });
+  mv('shieldRam', { name: 'Shield Ram', pose: 'bash', su: 0.18, ac: 0.1, rc: 0.3, dmg: 80, reach: 1.1, rad: 0.95, kb: [17, 6], launch: 1, lunge: 9, armor: 1, oneArmor: 1, charge: 1, trail: 0, sfx: 'heavy' });
   mv('upperHaft', { name: 'Haft Upper', pose: 'bashUp', su: 0.11, ac: 0.08, rc: 0.28, dmg: 42, kb: [1, 12], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
   mv('skullDrop', { name: 'Skull Drop', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 58, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
   mv('warHorn', { name: 'War Horn', type: 'radial', pose: 'roar', su: 0.2, ac: 0.1, rc: 0.35, dmg: 30, kb: [10, 5], launch: 1, rad: 2.7, buff: { id: 'fury', t: 5 }, trail: 0, sfx: 'boom', zone: 'high' });
-  mv('bullRush', { name: 'Bull Rush', pose: 'bash', su: 0.12, ac: 0.12, rc: 0.3, dmg: 48, kb: [12, 5], launch: 1, lunge: 9, armor: 1, trail: 0, sfx: 'heavy' });
+  mv('bullRush', { name: 'Bull Rush', pose: 'bash', su: 0.12, ac: 0.12, rc: 0.3, dmg: 48, kb: [12, 5], launch: 1, lunge: 9, armor: 1, oneArmor: 1, trail: 0, sfx: 'heavy' });
   mv('ragnarok', { name: 'Ragnarök', type: 'super', pose: 'slam', su: 0.12, catchType: 'leap', flight: 0.55, rad: 4, fated: 1, seq: 'quake', dmg: 270, kb: [8, 16], zone: 'high' });
 
   // NINJA
@@ -148,12 +148,12 @@
   mv('fiAirB', { name: 'Spin Kick', pose: 'spinKick', su: 0.06, dmg: 22, kb: [2.5, 5], air: 1, reach: 1.05, h: 0.9, trail: 0, sfx: 'whoosh', nx: { l: 'fiAirC' } });
   mv('fiAirC', { name: 'Whirlwind Kick', pose: 'whirlKick', su: 0.07, ac: 0.24, rc: 0.2, dmg: 10, multi: 3, kb: [3, 5.5], air: 1, rad: 1.1, reach: 0.5, h: 0.9, trail: 0, sfx: 'whoosh' });
   // VIKING · Bearded Axe: hold Light to wind up any swing; the string ends in a 360° whirlwind
-  mv('axA', { name: 'Hack', pose: 'hack', su: 0.13, ac: 0.08, rc: 0.21, dmg: 48, reach: 1.3, kb: [3.2, 0], stun: 0.38, lunge: 3, chargeL: 1, armorSU: 1, sfx: 'heavy', nx: { l: 'axB' } });
-  mv('axB', { name: 'Hew', pose: 'hew', su: 0.13, ac: 0.08, rc: 0.21, dmg: 52, reach: 1.3, kb: [3.2, 0], stun: 0.75, lunge: 3, chargeL: 1, armorSU: 1, sfx: 'heavy', nx: { l: 'axC', p: 'axP' } });
-  mv('axC', { name: 'Whirlwind', pose: 'whirlwind', su: 0.14, ac: 0.24, rc: 0.3, dmg: 30, multi: 3, around: 1, rad: 1.6, kb: [11, 6], launch: 1, finisher: 1, chargeL: 1, sfx: 'heavy' });
-  mv('axP', { name: 'Skull Splitter', pose: 'skullSplit', su: 0.22, ac: 0.08, rc: 0.34, dmg: 78, reach: 1.35, kb: [2, -11], launch: 1, spike: 1, chargeL: 1, armorSU: 1, finisher: 1, zone: 'high', sfx: 'heavy' });
-  mv('axAirA', { name: 'Air Chop', pose: 'hack', su: 0.1, dmg: 44, kb: [3, 3.5], air: 1, reach: 1.25, h: 0.9, sfx: 'heavy', nx: { l: 'axAirB' } });
-  mv('axAirB', { name: 'Axe Drill', pose: 'drill', su: 0.1, ac: 0.3, rc: 0.25, dmg: 16, multi: 3, kb: [2, -12], launch: 1, spike: 1, dive: 1, air: 1, rad: 1.0, reach: 0.6, h: 0.5, sfx: 'heavy' });
+  mv('axA', { name: 'Hack', pose: 'hack', su: 0.13, ac: 0.08, rc: 0.21, dmg: 41, reach: 1.3, kb: [3.2, 0], stun: 0.38, lunge: 3, chargeL: 1, oneArmor: 1, sfx: 'heavy', nx: { l: 'axB' } });
+  mv('axB', { name: 'Hew', pose: 'hew', su: 0.13, ac: 0.08, rc: 0.21, dmg: 44, reach: 1.3, kb: [3.2, 0], stun: 0.75, lunge: 3, chargeL: 1, oneArmor: 1, sfx: 'heavy', nx: { l: 'axC', p: 'axP' } });
+  mv('axC', { name: 'Whirlwind', pose: 'whirlwind', su: 0.14, ac: 0.24, rc: 0.3, dmg: 26, multi: 3, around: 1, rad: 1.6, kb: [11, 6], launch: 1, finisher: 1, chargeL: 1, sfx: 'heavy' });
+  mv('axP', { name: 'Skull Splitter', pose: 'skullSplit', su: 0.22, ac: 0.08, rc: 0.34, dmg: 66, reach: 1.35, kb: [2, -11], launch: 1, spike: 1, chargeL: 1, armorSU: 1, oneArmor: 1, finisher: 1, zone: 'high', sfx: 'heavy' });
+  mv('axAirA', { name: 'Air Chop', pose: 'hack', su: 0.1, dmg: 38, kb: [3, 3.5], air: 1, reach: 1.25, h: 0.9, sfx: 'heavy', nx: { l: 'axAirB' } });
+  mv('axAirB', { name: 'Axe Drill', pose: 'drill', su: 0.1, ac: 0.3, rc: 0.25, dmg: 14, multi: 3, kb: [2, -12], launch: 1, spike: 1, dive: 1, air: 1, rad: 1.0, reach: 0.6, h: 0.5, sfx: 'heavy' });
   // NINJA · Tantō: reverse-grip flicks, a blink behind them, then a shadow spin; the pause branch throws kunai
   mv('taA', { name: 'Flick', pose: 'flickA', su: 0.045, ac: 0.05, rc: 0.1, dmg: 20, reach: 1.05, kb: [2, 0], stun: 0.28, lunge: 4, nx: { l: 'taB' } });
   mv('taB', { name: 'Backflick', pose: 'flickB', su: 0.045, ac: 0.05, rc: 0.1, dmg: 20, reach: 1.05, kb: [2, 0], stun: 0.45, lunge: 4, nx: { l: 'taC', p: 'taP' } });
@@ -274,10 +274,10 @@
     viking: {
       head: { name: 'Horned Helm', armor: 145, weight: 1.15, special: 'warHorn', uses: 3, hype: 0.95, desc: 'SPECIAL: War Horn. A roar that blows them back; +15% damage for 5 s.' },
       core: { name: 'Fur & Mail', hp: 1100, def: 0.08, weight: 1.25, guard: 15, desc: 'Thick fur over mail. Lots of HP.' },
-      armR: { name: 'Bearded Axe', armor: 150, weight: 1.2, light: 'axA', air: 'axAirA', sig: 'windup', sigName: 'Wind-up', sigDesc: 'Hold Light to wind up any axe swing: armour while you hold, +60% damage, and a full charge crumples.', trail: 0xd8e8ff, desc: 'Hack › Hew › Whirlwind (hits all around). Pause after Hew: Skull Splitter. Air: Chop › Axe Drill. SIGNATURE: hold Light to wind up any swing.' },
+      armR: { name: 'Bearded Axe', armor: 150, weight: 1.2, light: 'axA', air: 'axAirA', sig: 'windup', sigName: 'Wind-up', sigDesc: 'Hold Light to wind up any axe swing: armour against one hit while you hold, +45% damage, and a full charge crumples.', trail: 0xd8e8ff, desc: 'Hack › Hew › Whirlwind (hits all around). Pause after Hew: Skull Splitter. Air: Chop › Axe Drill. SIGNATURE: hold Light to wind up any swing.' },
       armL: { name: 'Round Shield', armor: 170, weight: 1.2, heavy: 'shieldRam', launch: 'upperHaft', airHeavy: 'skullDrop', guard: 140, chip: 0.7, trail: 0xd8e8ff, desc: 'HEAVY: Shield Ram, armoured and long. Guard: strong.' },
-      legs: { name: 'Fur Boots', armor: 200, weight: 1.25, speed: 5.5, jump: 10, airJumps: 1, dashAtk: 'bullRush', perk: 'unstoppable', desc: 'Dash attacks carry super armour. DASH ATTACK: Bull Rush.' },
-      card: { name: 'Ragnarök', super: 'ragnarok', passive: 'fury', desc: 'LEGEND ART: Ragnarök, a leaping quake. PASSIVE (Fury): up to +18% damage as HP falls.' },
+      legs: { name: 'Fur Boots', armor: 200, weight: 1.25, speed: 5.5, jump: 10, airJumps: 1, dashAtk: 'bullRush', perk: 'unstoppable', desc: 'Dash attacks carry armour against one hit. DASH ATTACK: Bull Rush.' },
+      card: { name: 'Ragnarök', super: 'ragnarok', passive: 'fury', desc: 'LEGEND ART: Ragnarök, a leaping quake. PASSIVE (Fury): up to +12% damage as HP falls.' },
     },
     ninja: {
       head: { name: 'Shinobi Hood', armor: 95, weight: 0.85, special: 'shadowStep', uses: 2, noRegen: 1, spCd: 3, hype: 1.05, desc: 'SPECIAL: Shadow Step. Vanish behind them and stab. Twice a round, 3 s apart.' },
@@ -323,7 +323,7 @@
 
   const PASSIVE = {
     bushido: 'Bushido: +15% damage under 35% HP', plateFaith: 'Plate Faith: guard +40%, chip -30%', plunder: 'Plunder: +35% Hype gain',
-    innerPeace: 'Inner Peace: Burst fills 45% faster', fury: 'Fury: up to +18% damage as HP falls', vanish: 'Vanish: longer dodge, shorter cooldown',
+    innerPeace: 'Inner Peace: Burst fills 45% faster', fury: 'Fury: up to +12% damage as HP falls', vanish: 'Vanish: longer dodge, shorter cooldown',
     legion: 'Legion: imps bite 30% harder', devotion: 'Devotion: healing +40%, Specials back faster', wyrmblood: 'Wyrmblood: +12% damage in the air', encore: 'Encore: 35 Hype back after a Legend Art',
   };
 
@@ -389,7 +389,7 @@
     knight: { name: 'Shield Check', pose: 'bash', armorSU: 1, stun: 0.48 },
     pirate: { name: 'Pistol Pop', pose: 'shoot', type: 'proj', proj: 'shot', range: 3.4, dmg: 18, kb: [1.5, 0], stun: 0.5, sfx: 'shot', trail: 0 },
     monk: { name: 'Thunder Jab', pose: 'palm', multi: 2, dmg: 13 },
-    viking: { name: 'Boss Smash', pose: 'bash', armorSU: 1, kb: [3.5, 0] },
+    viking: { name: 'Boss Smash', pose: 'bash', armorSU: 1, oneArmor: 1, kb: [3.5, 0] },
     ninja: { name: 'Chain Lash', pose: 'chainThrow', pull: 1, reach: 1.9, stun: 0.5 },
     summoner: { name: 'Hex Spark', pose: 'cast', hexfx: 1, command: 1 },
     paladin: { name: 'Holy Bash', pose: 'bash', heal: 0.3, holy: 1 },
@@ -409,7 +409,7 @@
     dragoon: { n: 'Updraft', a: 'Skyrend', g: { launch: 1, kb: [1.5, 14.5] }, air: { launch: 1, kb: [2, 12] } },
     bard: { n: 'Refrain', a: 'Fortissimo', g: { dizzy: 0.9, notes: 1, kb: [2, 0] }, air: { launch: 1, multi: 3, notes: 1, kb: [6, 5] } },
   };
-  const KEEP = ['beat', 'heal', 'chargeL', 'armorSU'];   // the R-arm's signature rides along on its finisher
+  const KEEP = ['beat', 'heal', 'chargeL', 'armorSU', 'oneArmor'];   // the R-arm's signature rides along on its finisher
   const chainOf = root => { const out = []; let id = root; while (id && out.length < 8) { out.push(id); id = (M[id].nx || {}).l; } return out; };
   function hybridFinisher(base, first, A, B, air) {
     const proj = base.type === 'proj', mv = {

@@ -133,7 +133,7 @@ string and a signature; your stance comes from it too.
 | Knight (Longsword) | Cleave › Backswing › Judgment (ground-bounce slam) | Pommel Strike (crumple) | Cleave › Plunging Thrust (dive) | **Steadfast**: armour in the startup of every swing after the first |
 | Pirate (Cutlass) | Cut › Backcut › Flourish (spin) › Boot to the Face | Sand in the Eyes (dizzy) | Cut › Backcut › Cannonball (dive) | **Dirty Fighting**; with the Flintlock, Heavy mid-string is a **Quick Shot** gun cancel |
 | Monk (Fists) | Jab › Cross › Hundred Fists (mash to extend) › Dragon Palm | Leg Sweep (launcher) | Knee › Spin Kick › Whirlwind Kick | **Flow**: moves speed up as a combo goes on |
-| Viking (Axe) | Hack › Hew › Whirlwind (hits all around) | Skull Splitter (ground bounce) | Chop › Axe Drill (spinning dive) | **Wind-up**: hold Light on any swing for armour, +60% damage, a crumple |
+| Viking (Axe) | Hack › Hew › Whirlwind (hits all around) | Skull Splitter (ground bounce) | Chop › Axe Drill (spinning dive) | **Wind-up**: hold Light on any swing for armour against one hit, +45% damage, a crumple |
 | Ninja (Tantō) | Flick › Backflick › Vanishing Stab (blinks behind, once a combo) › Shadow Slash | Kunai Toss | Flick › Backflick › Kunai Rain | **Shadow Dash**: Dodge after an air hit to dash at them |
 | Summoner (Staff) | Staff Jab › Staff Swing › Sic 'Em (every imp attacks) › Conjure Bolt | Call Imp | Swing › Spirit Bolt (spike) | **Pack Tactics**: her imps pounce on anyone she hits |
 | Paladin (Warhammer) | Smite › Hammer Fall › Consecrate (holy shockwave all around) | Hallowed Strike (crumples, heals big) | Smite › Meteor Hammer (dive) | **Lay on Hands**: string hits heal her |

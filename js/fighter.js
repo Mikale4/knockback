@@ -62,7 +62,7 @@
       this.setLegMat(false);
       this.uses = S.uses; this.useRegen = 0;
       this.guardMax = S.guard; this.guardHp = S.guard; this.guardIdle = 0;
-      this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0;
+      this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0; this.armorHits = 0; this.armorCd = 0;
       this.buffs = {}; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false;
@@ -70,6 +70,14 @@
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
       Anim.set(this.fig, this.ready);
+    }
+    /* super armour for t seconds. Most takes any number of hits (armorHits 99); the Viking's (one) takes one hit, then
+       breaks, and can't come back for 1.2 s -- so it wins a trade, not every trade */
+    giveArmor(t, one) {
+      if (!one) { this.armorT = Math.max(this.armorT, t); this.armorHits = 99; return; }
+      if (this.armorCd > 0) return;                                   // broke a moment ago
+      if (this.armorT <= 0) this.armorHits = 1;                       // a fresh window: one hit (an unlimited one already up stays unlimited)
+      this.armorT = Math.max(this.armorT, t);
     }
     freshCombo() { return { hits: 0, dmg: 0, bounces: 0, t: 0, gb: false, by: null, otg: false, ext: 0, dh: 0 }; }
     newTrails() { if (this.trailR) { this.trailR.dispose(); this.trailL.dispose(); } this.trailR = FX.trail(this.st.trailR); this.trailL = FX.trail(this.st.trailL); }
@@ -109,7 +117,7 @@
       this.stateT += dt;
       const S = this.st, I = this.input;
       // timers
-      this.inv = Math.max(0, this.inv - dt); this.armorT = Math.max(0, this.armorT - dt); this.dodgeCd = Math.max(0, this.dodgeCd - dt);
+      this.inv = Math.max(0, this.inv - dt); this.armorT = Math.max(0, this.armorT - dt); this.armorCd = Math.max(0, this.armorCd - dt); this.dodgeCd = Math.max(0, this.dodgeCd - dt);
       this.techLock = Math.max(0, this.techLock - dt);
       for (const k in this.buffs) { this.buffs[k] -= dt; if (this.buffs[k] <= 0) delete this.buffs[k]; }
       if (this.state !== 'guard' && this.state !== 'guardstun') { this.guardIdle += dt; if (this.guardIdle > 0.8) this.guardHp = Math.min(this.guardMax, this.guardHp + this.guardMax * 0.22 * dt); }
@@ -278,11 +286,11 @@
       this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1;
       this.beatOn = !!(mv.beat && this.st.sig === 'beat' && (kind === 'light' || kind === 'air') && Music.beat(this.m).near); this.beatShown = false;
       if (this.beatOn) FX.ring(_c.copy(this.pos).setY(0.08), { r0: 1.0, r1: 1.7, life: 0.25, color: 0xfff27a });
-      if (mv.armorSU) this.armorT = Math.max(this.armorT, mv.su);
+      if (mv.armorSU) this.giveArmor(mv.su, mv.oneArmor);
       if (kind === 'special') { this.uses--; this.spReady = this.m.time + (this.st.spCd || 0); }
       this.setState('attack'); this.aim(mv); this.m.event('move', { f: this, id, kind });
       if (kind === 'air' || kind === 'airHeavy') { this.vel.y = Math.max(this.vel.y, kind === 'air' ? 2.2 : 3); }
-      if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.armorT = mv.su + mv.ac;
+      if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.giveArmor(mv.su + mv.ac, mv.oneArmor || this.st.perk === 'unstoppable');
       if (mv.inv) this.inv = Math.max(this.inv, mv.su + mv.ac + 0.04);
     }
     /* turn toward the stick, then snap onto the opponent if they are in front and close */
@@ -301,7 +309,7 @@
       if (S.passive === 'wyrmblood' && !this.grounded) m *= 1.12;
       if (kind === 'minion') m *= S.impDmg || 1;
       if (S.passive === 'bushido' && this.hp < this.maxHp * 0.35) m *= 1.15;
-      if (S.passive === 'fury') m *= 1 + Math.min(0.18, (1 - this.hp / this.maxHp) * 0.24);
+      if (S.passive === 'fury') m *= 1 + Math.min(0.12, (1 - this.hp / this.maxHp) * 0.16);
       return m;
     }
     updAttack(dt) {
@@ -312,7 +320,7 @@
       const lightCharge = mv.chargeL && this.kind === 'light' && I.held.light && this.charge < 0.5 && this.moveT > 0.03;
       if ((heavyCharge || lightCharge) && this.moveT >= mv.su * 0.6) {
         this.charge += dt; this.flash = 0.3; this.flashCol = lightCharge && this.charge >= 0.45 ? 0xff4020 : 0xffb030;
-        if (lightCharge) this.armorT = Math.max(this.armorT, 0.05);
+        if (lightCharge) this.giveArmor(0.05, true);   // (once its one hit is spent, holding on doesn't bring it back: the 1.2 s wait)
         if (U.rand() < 0.4) FX.burst(this.fig.socket(lightCharge ? 'wR' : 'wL', [0, 0, lightCharge ? 9 : 2]), { n: 1, color: 0xffd060, glow: true, speed: 1.5, size: 0.06, gravity: -3, life: 0.3 });
         this.vel.x *= 0.8; this.vel.z *= 0.8; this.physics(dt, 0); return;
       }
@@ -464,7 +472,7 @@
     }
     isLeftMove() { if (this.move && this.move.offhand) return true; if (this.move && this.move.twoHand) return false; return ['heavy', 'launch', 'airHeavy', 'gun'].includes(this.kind) || (this.move && /^(jabL|heavyDiag|bash|shoot)/.test(this.move.pose)); }
     addBuff(b) {
-      if (b.id === 'bulwark') { this.armorT = b.t; this.buffs.bulwark = b.t; this.m.call(this, 'BULWARK', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.6, normal: new V3(0, 1, 0), color: 0x66aaff }); }
+      if (b.id === 'bulwark') { this.armorT = b.t; this.armorHits = 99; this.buffs.bulwark = b.t; this.m.call(this, 'BULWARK', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.6, normal: new V3(0, 1, 0), color: 0x66aaff }); }
       if (b.id === 'fury') { this.buffs.fury = b.t; this.m.call(this, 'FURY', 'buff'); }
       if (b.id === 'nova') { const heal = Math.round(this.maxHp * b.heal * this.st.healMult); this.hp = Math.min(this.maxHp, this.hp + heal); this.m.call(this, '+' + heal + ' HP', 'heal'); }
       if (b.id === 'valor') { this.buffs.valor = b.t; this.m.call(this, 'SONG OF VALOR', 'buff'); for (let i = 0; i < 3; i++) FX.ring(_c.copy(this.pos).setY(0.3 + i * 0.5), { r1: 1.4 + i * 0.3, life: 0.4 + i * 0.1, color: 0xff8ad8 }); }
@@ -886,7 +894,7 @@
       // the hit flash and status glows
       this.flash = Math.max(0, this.flash - dt * 5);
       let e = this.flash, col = this.flashCol;
-      if (this.armorT > 0 && !e) { e = 0.18 + Math.sin(this.m.time * 20) * 0.06; col = 0xff9a30; }
+      if (this.armorT > 0 && this.armorHits > 0 && !e) { e = 0.18 + Math.sin(this.m.time * 20) * 0.06; col = 0xff9a30; }
       if (this.buffs.momentum && !e) { e = 0.1 + Math.sin(this.m.time * 8) * 0.05; col = 0xffd040; }
       if (this.inv > 0 && (st === 'getup' || this.respawnInv) && !e) { e = (Math.sin(this.m.time * 30) > 0 ? 0.25 : 0); col = 0xffffff; }
       this.fig.mat.emissive.setHex(col).multiplyScalar(e);
@@ -981,7 +989,7 @@
       if (!vic.comboing || vic.combo.by !== att) { if (!o.noCombo) vic.combo = vic.freshCombo(); }
       const pr = o.kind === 'super' ? Math.max(0.55, Combat.prorate(vic)) : Combat.prorate(vic);
       const onBeat = att.beatOn && (o.kind === 'light' || o.kind === 'air');
-      let dmg = mv.dmg * (o.charge ? 1 + o.charge * (mv.chargeL ? 1.2 : 0.6) : 1) * att.dmgMult(o.kind) * (1 - vic.st.def) * pr * (counter ? 1.2 : 1) * (onBeat ? 1.3 : 1);
+      let dmg = mv.dmg * (o.charge ? 1 + o.charge * (mv.chargeL ? 0.9 : 0.6) : 1) * att.dmgMult(o.kind) * (1 - vic.st.def) * pr * (counter ? 1.2 : 1) * (onBeat ? 1.3 : 1);
       if (vic.buffs.bulwark) dmg *= 0.75;
       if (vic.st.perk === 'resolve' && vic.hp < vic.maxHp * 0.3) dmg *= 0.85;
       dmg = Math.round(dmg);
@@ -1002,7 +1010,7 @@
       if (part && !vic.broken[part]) { vic.armor[part] -= dmg * (mv.launch ? 0.55 : 0.35); if (vic.armor[part] <= 0) { Combat.breakPart(vic, part, dir); m.event('partbreak', { att, vic, part }); } }
 
       // ---- the reaction
-      const armored = vic.armorT > 0 && o.kind !== 'super' && o.kind !== 'throw' && mv.type !== 'grab' && vic.state !== 'held';
+      const armored = vic.armorT > 0 && vic.armorHits > 0 && o.kind !== 'super' && o.kind !== 'throw' && mv.type !== 'grab' && vic.state !== 'held';
       const hs = o.multiHit ? 0.018 : 0.045 + Math.min(0.12, dmg * 0.0009) + (counter ? 0.05 : 0);
       if (!o.remote) att.hitstop = hs; vic.hitstop = o.remote ? Math.min(hs, 0.05) : hs;
       if (mv.holy) { FX.ring(atPos.clone(), { r1: 1.6, life: 0.3, normal: m.camDir(), color: 0xfff07a }); FX.burst(atPos, { n: 10, color: [0xfff07a, 0xffffff], glow: true, speed: 4, size: 0.07, gravity: -2, life: 0.5 }); }
@@ -1020,7 +1028,12 @@
       if (counter) m.call(vic, 'COUNTER', 'counter');
       if (vic.hp <= 0) { vic.hp = 0; m.ko(vic, att, dir, mv); return 'ko'; }
       if (o.pummel) { if (vic.combo.hits >= 2) m.comboShow(att, vic); return 'hit'; }   // a pummel: they're still held
-      if (armored) { m.call(vic, 'ARMOR', 'small'); vic.flashCol = 0xffa040; return 'armor'; }
+      if (armored) {
+        vic.flashCol = 0xffa040;
+        if (vic.armorHits < 99 && --vic.armorHits <= 0) { vic.armorT = 0; vic.armorCd = 1.2; m.call(vic, 'ARMOR BROKEN', 'small'); }   // the Viking's: one hit, then gone for a moment
+        else m.call(vic, 'ARMOR', 'small');
+        return 'armor';
+      }
 
       if (vic.grabbing) vic.dropGrab();
       vic.move = null; vic.pauseWin = null; vic.crumpled = vic.dizzy = vic.asleep = false; vic.held = vic.state === 'held' && vic.held && vic.held.kind === 'super' && o.kind !== 'super' ? vic.held : null;

@@ -40,7 +40,10 @@
 (function () {
   'use strict';
   const { el } = U;
-  const VERSION = 'kb-online-4';                  // everyone in a room needs the same game: a different build won't connect
+  // everyone in a room needs the same game: the release stamp (?v=, tools/bump.py) is part of the version, so after any
+  // update (a balance change alters the fight's maths) players who haven't reloaded are asked to, rather than fighting out of step
+  const BUILD = (() => { const sc = document.currentScript && document.currentScript.src; const m = sc && sc.match(/[?&]v=(\w+)/); return m ? m[1] : 'dev'; })();
+  const VERSION = 'kb-online-4-' + BUILD;
   const PEER_JS = ['https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
   const MQTT_JS = ['https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js', 'https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'];
   const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1316,7 +1319,6 @@
      shrinks a two-minute fight to a few kilobytes. Every online fight you play or watch to the end is saved (the last
      30, plus up to 20 you KEEP); EXPORT gives a .kbr file to send a friend, IMPORT plays theirs. Fingerprints every
      5 s say whether a replay still plays the same in this version of the game. */
-  const BUILD = (() => { const sc = document.currentScript && document.currentScript.src; const m = sc && sc.match(/[?&]v=(\w+)/); return m ? m[1] : 'dev'; })();
   const rleEnc = arr => { const out = []; let pk = null, n = 0, px = null; for (const x of arr) { const v = x || ZERO, k = v[0] + ',' + v[1] + ',' + v[2]; if (k === pk) n++; else { if (pk != null) out.push(n, px[0], px[1], px[2]); pk = k; px = v; n = 1; } } if (pk != null) out.push(n, px[0], px[1], px[2]); return out; };
   const rleDec = a => { const out = []; for (let i = 0; i + 3 < a.length; i += 4) { const x = [a[i + 1] | 0, a[i + 2] | 0, a[i + 3] | 0]; for (let k = 0; k < a[i]; k++) out.push(x); } return out; };
   function buildReplay(cfg, side, inputs, snaps, fp, end, res) {
