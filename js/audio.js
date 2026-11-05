@@ -130,7 +130,8 @@
     get current() { return Object.keys(SONGS).find(k => SONGS[k] === cur) || null; },
     /* the beat of the music that's playing (falls back to the match clock): n counts beats, near = within 85 ms of one */
     beat(m) {
-      const per = 60 / ((cur && cur.bpm) || 148), live = ctx && cur && ctx.state === 'running' && !(m && m.opts && m.opts.online);
+      const online = !!(m && m.opts && m.opts.online), song = online ? SONGS.battle : cur;   // online: the battle tempo on every screen, whatever music this device is playing
+      const per = 60 / ((song && song.bpm) || 148), live = ctx && cur && ctx.state === 'running' && !online;
       const x = (live ? ctx.currentTime - songT0 : (m ? m.time : 0)) / per;
       return { n: Math.floor(x), near: Math.abs(x - Math.round(x)) * per < 0.085, per };
     },

@@ -195,15 +195,32 @@ Accounts are local (this browser's storage), with salted password hashes. It is 
 
 ## Online
 
-**ONLINE** in the hub (`js/online.js`): fight a friend over the internet. One of you **HOSTS** a room and gets a
-five-letter code; the other types it in and **JOINS**. In the room, on the **CHARACTER SELECT**, you each pick a figure:
-any of your own, or any of the ten base characters (their Standard set). The host picks the arena, the rounds and
-whether rarity bonuses count, and presses FIGHT. After a fight: REMATCH (both of you), **CHARACTER SELECT** (takes you
-both back to pick again), or LEAVE.
+**ONLINE** in the hub (`js/online.js`): rooms of up to **six** over the internet. Two fight; everyone else **watches the
+fight live** and waits for their turn.
 
-- **How you connect:** your browsers connect to each other directly (WebRTC). The free [PeerJS](https://peerjs.com)
-  service only introduces you, so there's no game server. Like any peer-to-peer game, your friend's browser can see
-  your IP address. Some school, work or mobile networks block this kind of connection.
+- **The room list:** public and private rooms are listed; join one with a tap (a private room asks for its password).
+  You can also join any room by its five-letter **code**, or keep yours off the list (code only). The list lives on two
+  free public MQTT brokers (no account, no server of ours): each host keeps a short note about its room there (name,
+  host, players, rules, whether it needs a password, never the password itself), and the broker drops it when the
+  host's browser goes away. If the list can't be reached you can still host and join by code.
+- **In a room:** pick **your fighter** any time you're not fighting: one of your custom fighters (the Workshop's
+  Custom slots) or any of the ten base characters (their Standard set). Switching takes your READY off. Press
+  **READY**, or **SIT OUT** to just watch. A queue decides who fights next; with **auto-start** the next fight begins
+  5 s after both are ready. Quick chat (set phrases only, since rooms can be public). Turn off "watch fights
+  automatically" to stay on the room screen; WATCH joins a fight that's on.
+- **The host** runs the room: its name; public or private (password); listed or code only; locked to new players; room
+  size (2 to 6); the rules (arena, first to 1/2/3, round time 60/99/180 s, rarity bonus, any fighters or base
+  characters only); rotation (winner stays, both rotate, or the host picks with ▲ NEXT); auto-start; kick and block.
+  Closing the room ends it for everyone.
+- **After a fight:** YOU WIN / YOU LOSE with your records and rewards, then READY (back to the room, ready for the next
+  one), CHARACTER SELECT (back to the room to pick again) or LEAVE ROOM. Watchers go back to the room on their own.
+- **How you connect:** browsers connect to each other directly (WebRTC). The free [PeerJS](https://peerjs.com) service
+  only introduces them, so there's no game server. The host links to every member; a fight between two members who
+  aren't the host gets its own direct link (relayed through the host if a direct one can't be made). Each fighter also
+  sends its buttons to the host, who passes them on to the watchers: their games replay the fight from them, a few
+  frames behind, and someone who comes in late catches up from the start in a second or two. Like any peer-to-peer
+  game, the people in your room can see your IP address. Some school, work or mobile networks block this kind of
+  connection.
 - **Netcode: rollback** (the GGPO kind). Both games run the same fight, 60 frames a second, and only the buttons
   travel. Your presses play after a small input delay (1 or 2 frames; more only on a very long ping) on both screens.
   Your friend's presses take a moment to arrive, so the game doesn't wait: it guesses they're still doing what they
@@ -219,14 +236,15 @@ both back to pick again), or LEAVE.
   - **Determinism:** fixed steps; a seeded random source for gameplay (`U.rand`); looks use `U.vrand` and must never
     decide whether gameplay randomness is drawn; timers and the Bard's beat on the fight's clock; nothing in the fight
     reads the camera (it differs per screen). Events (for rewards) and the end of a match only count once their frame
-    is settled. Every half second the two compare a fingerprint of a settled frame; if they ever differ, the host's
-    fight is copied over at an agreed frame (a safety net).
+    is settled. Every half second the two fighters compare a fingerprint of a settled frame; if they ever differ, the
+    first fighter's fight is copied over at an agreed frame (a safety net; watchers take the same copy).
   - **Tests** (`tools/harness.js`): `__rbRun(seed, frames, l1, l2, every, depth)` rewinds and replays a fight
-    constantly and checks the whole save comes out identical; `__duoSetup(lag, jitter, picks)` + `__duoRun(ticks)` run
-    two games on one page over a fake connection with lag and check they stay in sync.
+    constantly and checks the whole save comes out identical; `__roomSetup(n, lag, jitter, picks)` + `__roomRun(ticks)`
+    run a whole room of `n` games on one page over a fake PeerJS network (lag, jitter, `net.failDirect` to force the
+    relay), and with `Online._t.debug = 1` every fighter and watcher records fingerprints to compare.
 
-  An online fight can't be paused (Esc opens a menu to leave it). Both of you need the same version of the game: reload
-  if it says otherwise.
+  An online fight can't be paused (Esc opens a menu: leave the fight, or stop watching). Everyone in a room needs the
+  same version of the game: reload if it says otherwise.
 
 ## Tutorial
 
@@ -272,7 +290,9 @@ Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CP
 **CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that
 ignores rarity bonuses; it remembers your setup) · Training (dummy settings, full meters, combo readout, and a start
 by a wall to practise wall combos; R resets) ·
-Workshop (three builds) · Shelf (collection and records).
+Workshop (your custom slots: Custom A and B free, Custom C to F unlocked with tokens for 1,000 / 2,000 / 3,000 /
+5,000; your starter figure stays its Standard set; the hub's ACTIVE FIGURE plate picks which one you fight with) ·
+Shelf (collection and records).
 
 **Figures are never quite still:** standing, they breathe, shift their weight and glance about, and every few seconds
 fidget in their own way (a samurai resettles its grip, a pirate flourishes the cutlass, a ninja bounces on its toes, a
@@ -299,7 +319,7 @@ shake** setting (Full, Reduced, Off).
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
-| `js/online.js` | ONLINE: rooms by code over PeerJS, character select, rollback netcode (the fight's save/restore, time sync), fingerprints and resync, the lobby |
+| `js/online.js` | ONLINE: the room list (MQTT), rooms of six over PeerJS (host controls, queue, fighter select, chat), fights between any two members, spectating, rollback netcode (the fight's save/restore, time sync), fingerprints and resync |
 | `js/trials.js` | COMBO TRIALS: the seventy trials, the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |

@@ -26,6 +26,10 @@
     document.body.append(ov); return close;
   }
   const activeBuild = () => Inv.levelled(S().builds[S().active || 0]);
+  /* builds[0] is your starter figure (its Standard set); builds[1..] are your custom slots: A and B come free, the
+     next four are bought with tokens, in order */
+  const CUSTOMS = [{ name: 'Custom A', cost: 0 }, { name: 'Custom B', cost: 0 }, { name: 'Custom C', cost: 1000 }, { name: 'Custom D', cost: 2000 }, { name: 'Custom E', cost: 3000 }, { name: 'Custom F', cost: 5000 }];
+  const starterLine = () => S().starter || S().builds[0].core.line;
   const partLabel = (it, slot) => KB.itemName(it.line, slot || it.slot) + (it.lv ? ' +' + it.lv : '');
 
   /* ------------------------------------------------------- the showroom --
@@ -174,22 +178,26 @@
         el('div', { class: 'hubmenu' },
           item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
           item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
-          item('ONLINE', 'Fight a friend over the internet: host a room, share the code.', () => Online.open(), 'hot'),
+          item('ONLINE', 'Rooms of up to six, public or private: fight, watch, wait your turn.', () => Online.open(), 'hot'),
           item('TUTORIAL', Tutorial.done() ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +900 tokens.', () => Tutorial.start(), Tutorial.done() ? '' : 'hot'),
           item('TRAINING', 'A dummy, full meters, every system to practise.', () => Menu.training()),
           item('COMBO TRIALS', 'Every fighter\'s combos, step by step, with a demo.', () => Trials.open()),
-          item('WORKSHOP', 'Snap parts together. Three builds.', () => Menu.workshop()),
+          item('WORKSHOP', 'Snap parts together on your custom slots: A and B, and four more to unlock.', () => Menu.workshop()),
           (() => { const n = Rewards.ready(); const b = item('REWARDS', n ? n + ' ready to claim · daily and weekly jobs, fighter mastery, milestones, awards' : 'Daily and weekly jobs, fighter mastery, milestones and awards.', () => Rewards.screen(), n ? 'gold' : ''); if (n) b.append(el('em', { class: 'badge' }, n)); return b; })(),
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),
           item('SHELF', 'Your collection and records.', () => Menu.shelf()),
           item('HOW TO PLAY', 'The wall bounce, and how to get out of it.', () => Menu.howto()),
           item('OPTIONS', 'Sound and controls.', () => Menu.options())),
-        el('div', { class: 'plate' }, el('small', null, 'ACTIVE FIGURE'), el('b', null, b.name), el('span', null, 'HP ' + st.hp + ' · ' + KB.LINES[b.core.line].name + ' core' + (st.set === 2 ? ' · MINT SET' : '')))));
+        el('button', { class: 'plate', title: 'Change your figure', onclick: () => { SFX.play('ok'); Menu.pickActive(); } }, el('small', null, 'ACTIVE FIGURE · CHANGE ▸'), el('b', null, b.name), el('span', null, 'HP ' + st.hp + ' · ' + KB.LINES[b.core.line].name + ' core' + (st.set === 2 ? ' · MINT SET' : '')))));
     },
     /* ---------------------------------------------------------- workshop */
     workshop(slotOpen) {
       Music.play('menu');
-      const Sv = S(); const bi = Sv.active || 0; const raw = Sv.builds[bi]; const b = Inv.levelled(raw);
+      const Sv = S();
+      // the workshop edits your custom slots only (your starter figure stays its Standard set)
+      let bi = Menu._ws; if (!(bi >= 1 && bi < Sv.builds.length)) bi = Sv.active >= 1 && Sv.active < Sv.builds.length ? Sv.active : 1;
+      Menu._ws = bi;
+      const raw = Sv.builds[bi]; const b = Inv.levelled(raw);
       useRoom(b);
       const st = KB.stats(b);
       const rows = KB.SLOTS.map(slot => {
@@ -214,7 +222,14 @@
         el('div', { class: 'wsbody' },
           el('div', { class: 'blisterframe', style: { '--lc': KB.LINES[b.card.line].css } }, el('div', { class: 'bf-top' }, logo('l-tiny'), el('span', null, st.set === 2 ? 'MINT SET' : st.set === 1 ? 'PARTIAL SET' : 'CUSTOM')), el('div', { class: 'bf-name' }, raw.name)),
           el('div', { class: 'panel wspanel' },
-            el('div', { class: 'tabs' }, ...Sv.builds.map((x, i) => el('button', { class: i === bi ? 'on' : '', onclick: () => { Sv.active = i; Auth.save(); Menu.workshop(); } }, x.name || 'Build ' + (i + 1)))),
+            el('div', { class: 'tabs wstabs' }, ...CUSTOMS.map((c, k) => {
+              const i = k + 1;
+              if (i < Sv.builds.length) return el('button', { class: (i === bi ? 'on' : '') + (Sv.active === i ? ' inuse' : ''), title: Sv.active === i ? 'In use in fights' : '', onclick: () => { Menu._ws = i; Menu.workshop(); } }, Sv.builds[i].name || c.name);
+              const next = i === Sv.builds.length;
+              return el('button', { class: 'locked' + (next ? '' : ' far'), onclick: () => next ? Menu.unlockCustom(i) : toast('Unlock ' + CUSTOMS[Sv.builds.length - 1].name + ' first.') }, '🔒 ' + c.name, el('small', null, U.fmt(c.cost)));
+            })),
+            el('div', { class: 'wsuse' }, Sv.active === bi ? el('span', { class: 'inuse' }, '✓ IN USE IN FIGHTS') : btn('USE IN FIGHTS', () => { Sv.active = bi; Auth.save(); toast(raw.name + ' is your figure now.', 'gold'); Menu.workshop(slotOpen); }, 'small'),
+              el('small', null, 'Your figure for Arcade, Versus and Training. Change it from the hub too.')),
             el('label', { class: 'nameedit' }, 'NAME', nameIn),
             el('div', { class: 'slots' }, ...rows),
             picker,
@@ -223,6 +238,27 @@
               stat('WEIGHT', +st.weight.toFixed(2), 1.4), stat('GUARD', st.guard, 300), stat('AIR JUMPS', st.airJumps, 2), stat('HYPE GAIN', +st.hypeGain.toFixed(2), 1.6)),
             el('div', { class: 'wsfoot' }, el('span', { class: 'setb' }, st.set === 2 ? 'MINT SET: +8% damage, +6% HP' : st.set === 1 ? 'PARTIAL SET (3+ parts match the card): +4% damage' : 'Match 3+ parts to your Legend Card\'s line for a set bonus'),
               btn('MOVE LIST', () => modal(HUD.moveList(b, 0)), 'small'))))));
+    },
+    /* a new custom slot: it starts as your starter's set, ready to rebuild */
+    unlockCustom(i) {
+      const Sv = S(), c = CUSTOMS[i - 1]; if (!c || i !== Sv.builds.length) return;
+      const can = Sv.tokens >= c.cost;
+      const close = modal([el('h2', null, 'UNLOCK ' + c.name.toUpperCase()),
+        el('p', { class: 'note' }, 'Another build slot in the Workshop to snap parts together on. It starts as your ' + KB.LINES[starterLine()].name + ' set.'),
+        el('p', { class: 'note' }, el('i', { class: 'coin' }), ' ' + U.fmt(c.cost) + ' tokens · you have ' + U.fmt(Sv.tokens)),
+        el('div', { class: 'row' }, btn(can ? 'UNLOCK FOR ' + U.fmt(c.cost) : 'NOT ENOUGH TOKENS', () => {
+          if (Sv.tokens < c.cost || i !== Sv.builds.length) return;
+          Sv.tokens -= c.cost; Sv.builds.push(Object.assign(KB.mintBuild(starterLine(), 0), { name: c.name })); Auth.save();
+          close(); SFX.play('reveal', { r: 1 }); toast(c.name + ' unlocked!', 'gold'); Menu._ws = i; Menu.workshop();
+        }, 'big' + (can ? '' : ' off')))]);
+    },
+    /* the figure you fight with (the hub's plate): your starter or any custom slot */
+    pickActive() {
+      const Sv = S();
+      const close = modal([el('h2', null, 'YOUR FIGURE'), el('p', { class: 'note' }, 'The figure you take into Arcade, Versus and Training. Build your custom slots in the Workshop.'),
+        el('div', { class: 'actpick' }, ...Sv.builds.map((x, i) => { const lb = Inv.levelled(x);
+          return el('button', { class: 'actfig' + (i === (Sv.active || 0) ? ' on' : ''), style: { '--lc': KB.LINES[lb.core.line].css }, onclick: () => { Sv.active = i; Auth.save(); close(); Menu.hub(); } },
+            el('img', { src: Models.figIcon(lb), alt: '' }), el('b', null, lb.name), el('small', null, i === 0 ? 'Starter · ' + KB.LINES[lb.core.line].name + ' set' : 'Custom · ' + KB.LINES[lb.core.line].name + ' core')); }))]);
     },
     /* ---------------------------------------------------------- capsules */
     capsules(bannerIdx) {

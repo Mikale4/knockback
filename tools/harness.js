@@ -236,49 +236,96 @@ window.__snapDiff = (a, b) => {
   }
   return out;
 };
-/* two games on one page, joined by a fake connection with lag (in ticks) and jitter: __duoSetup() then __duoRun(ticks) */
-window.__duoSetup = async (lag, jitter, picks, seed, debug) => {
+/* online rooms on one page: n games in iframes over a fake PeerJS network (lag and jitter in ticks; net.failDirect
+   makes direct fighter links fail so fights go through the host). __roomSetup(n, lag, jitter, picks) opens a room in
+   game 0 (private, password 'pw') and the rest join it; __roomRun(ticks) steps every game 1/60 s a tick. */
+window.__mkNet = (lag, jitter) => {
+  const net = { peers: new Map(), q: [], tick: 0, lag: lag || 0, jitter: jitter || 0, rnd: Online._t.rng(4242), failDirect: false, sent: 0 };
+  const later = (fn, dt) => net.q.push({ at: net.tick + (dt == null ? 1 : dt), fn });
+  net.pump = () => { for (let k = 0; k < 4; k++) { const due = net.q.filter(x => x.at <= net.tick); if (!due.length) return; net.q = net.q.filter(x => x.at > net.tick); due.forEach(x => x.fn()); } };
+  class Conn {
+    constructor(peer, metadata) { this.peer = peer; this.metadata = metadata; this.open = false; this.h = {}; this.last = 0; this.other = null; this.closed = false; }
+    on(e, f) { (this.h[e] = this.h[e] || []).push(f); }
+    emit(e, ...a) { (this.h[e] || []).slice().forEach(f => f(...a)); }
+    send(o) {
+      if (!this.open || !this.other) return; const b = this.other, s = JSON.stringify(o); net.sent++;
+      const at = Math.max(this.last, net.tick + net.lag + Math.floor(net.rnd() * (net.jitter + 1))); this.last = at;
+      net.q.push({ at, fn: () => { if (b.open) b.emit('data', JSON.parse(s)); } });
+    }
+    close() { if (this.closed) return; this.closed = true; this.open = false; const b = this.other; later(() => { this.emit('close'); if (b && !b.closed) { b.closed = true; b.open = false; b.emit('close'); } }, net.lag); }
+  }
+  class FakePeer {
+    constructor(id) {
+      if (typeof id !== 'string') id = 'fp-' + Math.floor(net.rnd() * 1e9).toString(36);
+      this.id = id; this.h = {}; this.destroyed = false; this.conns = [];
+      if (net.peers.has(id)) later(() => this.emit('error', { type: 'unavailable-id' })); else { net.peers.set(id, this); later(() => this.emit('open', id)); }
+    }
+    on(e, f) { (this.h[e] = this.h[e] || []).push(f); }
+    emit(e, ...a) { (this.h[e] || []).slice().forEach(f => f(...a)); }
+    connect(id, opts) {
+      const meta = opts && opts.metadata, a = new Conn(id, meta); this.conns.push(a);
+      const t = net.peers.get(id);
+      if (!t || t.destroyed || (meta && meta.fid && net.failDirect)) { later(() => this.emit('error', { type: 'peer-unavailable' }), net.lag); return a; }
+      const b = new Conn(this.id, meta); t.conns.push(b); a.other = b; b.other = a;
+      later(() => { if (t.destroyed) return; t.emit('connection', b); later(() => { a.open = b.open = true; a.emit('open'); b.emit('open'); }, net.lag); }, net.lag);
+      return a;
+    }
+    destroy() { if (this.destroyed) return; this.destroyed = true; net.peers.delete(this.id); this.conns.forEach(c => c.close()); }
+    reconnect() {}
+  }
+  net.FakePeer = FakePeer;
+  return net;
+};
+window.__roomSetup = async (n, lag, jitter, picks, opts) => {
   document.querySelectorAll('iframe.duo').forEach(f => f.remove());
-  const mk = () => new Promise(r => { const f = document.createElement('iframe'); f.className = 'duo'; f.style.cssText = 'position:fixed;left:0;top:0;width:480px;height:270px;z-index:99;opacity:0.02;pointer-events:none'; f.src = '/?duo=' + Date.now() + Math.random(); f.onload = () => r(f); document.body.append(f); });
-  const fr = [await mk(), await mk()];
-  for (let k = 0; k < 80 && !fr.every(f => f.contentWindow.__ready); k++) await new Promise(r => setTimeout(r, 100));
-  const W = fr.map(f => f.contentWindow);
-  W.forEach(w => { w.requestAnimationFrame = () => 0; w.performance.now = () => (window.__duo ? window.__duo.tick : 0) * 1000 / 60; });
-  for (let i = 0; i < 2; i++) { await W[i].Auth.register('Duo' + i + Math.floor(Math.random() * 1e6), 'test1234', false); W[i].Auth.starter(['samurai', 'knight'][i]); }
-  const D = window.__duo = { W, tick: 0, lag: lag || 0, jitter: jitter || 0, rnd: Online._t.rng(99), sent: 0, slow: [0, 0], stalls: [0, 0] };
-  const conns = [0, 1].map(i => ({ open: true, h: {}, inbox: [], last: 0, on(e, fn) { this.h[e] = fn; }, close() { this.open = false; },
-    send(o) { const p = conns[1 - i], at = Math.max(p.last, D.tick + D.lag + Math.floor(D.rnd() * (D.jitter + 1))); p.last = at; p.inbox.push({ at, d: JSON.parse(JSON.stringify(o)) }); D.sent++; } }));
-  D.conns = conns;
-  W[0].Online._t.fake(conns[0], true); W[1].Online._t.fake(conns[1], false);
-  if (picks) { W[0].Online._t.pick(picks[0]); W[1].Online._t.pick(picks[1]); }
-  conns.forEach(c => c.h.open());
-  D.pump = () => { for (let i = 0; i < 2; i++) { const c = conns[i]; while (c.inbox.length && c.inbox[0].at <= D.tick) c.h.data(c.inbox.shift().d); } };
-  for (let k = 0; k < 40 + 4 * (D.lag + D.jitter); k++) { D.tick++; if (k % 20 === 0) W.forEach(w => w.Online._t.ping()); D.pump(); }
-  W.forEach(w => { w.Online._t.debug = debug || 0; });
-  W[0].Online._t.fight(seed);
+  const mk = () => new Promise(r => { const f = document.createElement('iframe'); f.className = 'duo'; f.style.cssText = 'position:fixed;left:0;top:0;width:640px;height:400px;z-index:99;opacity:0.02;pointer-events:none'; f.src = '/?duo=' + Date.now() + Math.random(); f.onload = () => r(f); document.body.append(f); });
+  const fr = []; for (let i = 0; i < n; i++) fr.push(await mk());
+  for (let k = 0; k < 100 && !fr.every(f => f.contentWindow.__ready); k++) await new Promise(r => setTimeout(r, 100));
+  const W = fr.map(f => f.contentWindow), net = __mkNet(lag, jitter);
+  const D = window.__duo = { W, net, get tick() { return net.tick; }, hold: 4, cur: [], auto: true, stalls: W.map(() => 0) };
+  W.forEach(w => { w.requestAnimationFrame = () => 0; w.performance.now = () => net.tick * 1000 / 60; w.__errs = []; const oe = w.console.error.bind(w.console); w.console.error = (...a) => { w.__errs.push(String(a[0] && a[0].stack || a[0]).slice(0, 300)); oe(...a); }; w.console.warn = (...a) => w.__errs.push('W ' + a.join(' ')); });
+  for (let i = 0; i < n; i++) { await W[i].Auth.register('P' + i + '_' + Math.floor(Math.random() * 1e5), 'test1234', false); W[i].Auth.starter(KB.LINE_ORDER[i % 10]); }
+  W.forEach(w => { w.Online._t.usePeer(net.FakePeer); w.Online._t.Dir.disabled = true; });
+  W.forEach((w, i) => { w.Online.open(); if (picks && picks[i]) w.Online._t.pick(picks[i]); });
+  D.step = k => { for (let j = 0; j < k; j++) { net.tick++; net.pump(); W.forEach(w => w.Online._t.later()); if (net.tick % 60 === 0) W.forEach(w => w.Online._t.tick()); } };
+  W[0].Online.create(Object.assign({ name: 'Test room', priv: true, pass: 'pw', listed: false, max: 6 }, opts || {}));
+  await new Promise(r => setTimeout(r, 0)); D.step(10);
+  const code = W[0].Online._t.N().code;
+  for (let i = 1; i < n; i++) { W[i].Online.join(code, 'pw'); await new Promise(r => setTimeout(r, 0)); D.step(4 * lag + 10); }
+  D.step(20);
   return W.map(w => w.Online._t.info());
 };
-window.__duoRun = ticks => {
-  const D = window.__duo, IN = Online._t.rng(D.tick + 7), A = Input.ACTIONS;
+/* every game, one tick: the network, then each game's frame (a random player each; D.hold: frames between changes) */
+window.__roomRun = (ticks, fn) => {
+  const D = window.__duo, IN = Online._t.rng(D.net.tick + 7), A = Input.ACTIONS;
   for (let t = 0; t < ticks; t++) {
-    D.tick++; if (D.tick % 60 === 0) D.W.forEach(w => w.Online._t.ping()); D.pump();
-    for (let wi = 0; wi < 2; wi++) {
+    D.step(1);
+    for (let wi = 0; wi < D.W.length; wi++) {
       const w = D.W[wi];
-      if (D.slow[wi] && D.tick % D.slow[wi] === 0) continue;   // this game's clock runs a little slow
-      const P0 = w.Input.players[0];
-      D.cur = D.cur || [null, null];
-      if (!D.cur[wi] || !D.hold || IN() < 1 / D.hold) {       // D.hold: a player keeps the same buttons for ~hold frames (people don't change every frame)
+      if (!D.cur[wi] || IN() < 1 / D.hold) {
         const c = { held: {}, move: { x: Math.round((IN() * 2 - 1) * 100) / 100, y: Math.round((IN() * 2 - 1) * 100) / 100 } };
         for (const a of A) c.held[a] = IN() < (a === 'light' ? 0.3 : a === 'guard' ? 0.05 : 0.05);
         D.cur[wi] = c;
       }
-      P0.cpu = D.cur[wi];
-      w.Input.update(D.tick / 60);
-      if (w.App.view && w.App.view.fighters) { const g = w.Online._t.info(), f0 = g.f; w.App.view.update(1 / 60); if (w.Online._t.info().f === f0) D.stalls[wi]++; }
+      w.Input.players[0].cpu = D.cur[wi];
+      w.Input.update(D.net.tick / 60);
+      if (w.App.view && w.App.view.fighters) w.App.view.update(1 / 60);
     }
+    if (fn) fn(t);
   }
   return D.W.map(w => w.Online._t.info());
 };
+/* the old two-game rollback check, now over a room of two: __duoSetup(lag, jitter, picks, seed, debug) then __duoRun(ticks) */
+window.__duoSetup = async (lag, jitter, picks, seed, debug) => {
+  await __roomSetup(2, lag, jitter, picks);
+  const D = window.__duo; D.W.forEach(w => { w.Online._t.debug = debug || 0; });
+  const H = D.W[0].Online._t;
+  D.W[0].Online._t.N().room.auto = false;
+  D.W.forEach(w => w.Online._t.act({ t: 'ready', on: true })); D.step(4 * lag + 10);
+  H.H.start(seed); D.step(1);
+  return D.W.map(w => w.Online._t.info());
+};
+window.__duoRun = ticks => __roomRun(ticks);
 /* touch screens: anything on the current screen that's off the screen and can't be scrolled to */
 window.__scrollAudit = () => {
   const W = innerWidth, H = innerHeight, bad = [], scrollers = new Set();

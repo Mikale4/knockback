@@ -600,3 +600,71 @@ body.touch input, body.touch select, body.touch textarea { font-size: 16px !impo
 .screen > .panel { min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .screen.results > .panel { max-height: 100%; box-sizing: border-box; }
 .overlay > .panel { max-height: 100%; box-sizing: border-box; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+/* online rooms (online.js) */
+.olh { margin: 4px 0 10px; font: 30px var(--head); letter-spacing: 3px; }
+.olfield { display: grid; grid-template-columns: 110px 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+.olfield > span { font: 700 11px var(--body); letter-spacing: 2px; color: var(--dim); }
+.olfield > small { grid-column: 2 / 4; color: var(--dim); font-size: 11.5px; }
+.olinput { background: #0f0c18; color: var(--ink); border: 2px solid var(--line); border-radius: 8px; padding: 7px 10px; font: 600 14px var(--body); min-width: 0; width: 100%; box-sizing: border-box; -webkit-user-select: text; user-select: text; }
+.olpass { margin-top: 2px; letter-spacing: 3px; }
+.olrooms { background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+.olroomshead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.olroomshead h3 { margin: 0; font: 26px var(--head); letter-spacing: 3px; } .olroomshead small { color: var(--dim); font-size: 12px; text-align: right; }
+.ollist { display: grid; gap: 6px; margin-top: 8px; max-height: 340px; overflow: auto; }
+.olempty { color: var(--dim); text-align: center; margin: 8px 0; }
+.olroom { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto auto auto auto; gap: 8px; align-items: center; background: #15111f; border: 2px solid var(--line); border-left: 6px solid var(--lc); border-radius: 10px; padding: 6px 10px; }
+.olroom img { width: 44px; height: 44px; object-fit: contain; }
+.olroom.off { opacity: .6; }
+.olroomt { min-width: 0; display: grid; } .olroomt b { font: 20px var(--head); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .olroomt small { color: var(--dim); font-size: 11.5px; }
+.olroomn { font: 900 14px var(--body); }
+.olrpass { width: 120px; }
+.olt { font: 900 10px var(--body); font-style: normal; letter-spacing: .5px; border-radius: 6px; padding: 2px 6px; background: #2a2438; color: var(--ink); white-space: nowrap; }
+.olt.priv { background: #ffb02e; color: #000; } .olt.st-open { background: #2fbf5a; color: #000; } .olt.st-fight { background: var(--red); color: #fff; } .olt.st-full, .olt.st-locked { background: #555; }
+.olt.h { background: var(--yel); color: #000; } .olt.y { background: var(--cyan); color: #000; } .olt.f { background: var(--red); color: #fff; } .olt.r { background: #2fbf5a; color: #000; } .olt.q { background: #3b3352; } .olt.s { background: #444; } .olt.w { background: #6b4bd8; color: #fff; }
+.olhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.olhead h2 { margin: 0; font: 34px var(--head); letter-spacing: 2px; overflow-wrap: anywhere; }
+.olbadges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; } .olbadges em { font: 900 10px var(--body); font-style: normal; border-radius: 6px; padding: 2px 7px; background: #2a2438; } .olbadges em.priv { background: #ffb02e; color: #000; } .olbadges em.pub { background: #2fbf5a; color: #000; } .olbadges em.lock { background: #555; } .olbadges span { color: var(--dim); font-size: 12px; }
+.olcodebox { display: flex; align-items: center; gap: 8px; background: #0f0c18; border: 2px solid var(--line); border-radius: 10px; padding: 4px 6px 4px 10px; }
+.olcodebox small { color: var(--dim); font: 700 10px var(--body); letter-spacing: 1px; } .olcodebox b { font: 900 22px var(--body); letter-spacing: 5px; color: var(--yel); }
+.olnow { display: grid; justify-items: center; gap: 6px; text-align: center; background: #15111f; border: 2px solid var(--line); border-radius: 12px; padding: 10px; margin: 8px 0; }
+.olnow b { font: 24px var(--head); letter-spacing: 2px; } .olnow small { color: var(--dim); } .olnow.live { border-color: var(--red); }
+.ollast { text-align: center; color: var(--dim); font-size: 12px; margin: 2px 0 8px; }
+.olmembers { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
+.olmem { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: var(--panel2); border: 2px solid var(--line); border-left: 6px solid var(--lc, var(--line)); border-radius: 10px; padding: 6px 8px; min-height: 56px; }
+.olmem.ready { border-color: #2fbf5a; border-left-color: var(--lc, #2fbf5a); } .olmem.empty { place-items: center; grid-template-columns: 1fr; border-style: dashed; border-left-width: 2px; color: var(--dim); }
+.olmem img { width: 48px; height: 48px; object-fit: contain; }
+.olmemt { min-width: 0; display: grid; gap: 1px; } .olmemt b { font: 19px var(--head); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .olmemt > small { color: var(--dim); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oltags { display: flex; gap: 3px; flex-wrap: wrap; }
+.olmping { color: var(--dim); font-size: 11px; }
+.olmact { grid-column: 1 / -1; display: flex; gap: 4px; justify-content: flex-end; }
+.olmact button { background: #15111f; color: var(--ink); border: 2px solid var(--line); border-radius: 6px; padding: 3px 8px; font: 800 10px var(--body); cursor: pointer; }
+.olmine { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+.olcheck { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 12.5px; cursor: pointer; }
+.olchat { background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
+.olchatlog { max-height: 132px; overflow: auto; display: grid; gap: 2px; font-size: 13px; margin-bottom: 6px; } .olchatlog .sys { color: var(--dim); font-style: italic; }
+.olchatbtns { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 6px 0; }
+.olchatbtns button { background: #15111f; color: var(--ink); border: 2px solid var(--line); border-radius: 14px; padding: 4px 10px; font: 700 12px var(--body); cursor: pointer; }
+.olset { background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+.olset h3 { margin: 0 0 8px; font: 24px var(--head); letter-spacing: 3px; }
+.btn.off { opacity: .55; filter: grayscale(.4); }
+.btn.big.on { background: #2fbf5a; }
+.btn.ghost.on { border-color: var(--yel); color: var(--yel); }
+.olpick:disabled { opacity: .35; cursor: not-allowed; }
+.onlinehud.spect span { color: var(--cyan); }
+@media (max-width: 640px) { .olroom { grid-template-columns: 40px minmax(0, 1fr) auto auto; } .olroom .olt.priv, .olroom .olroomn { display: none; } .olroom img { width: 40px; height: 40px; } .olrpass { width: 92px; } .olfield { grid-template-columns: 1fr; } .olfield > small { grid-column: 1; } .olmembers { grid-template-columns: 1fr; } .olhead h2 { font-size: 28px; } }
+.olhint { margin: 0 0 4px; color: var(--dim); font-size: 12.5px; }
+.olmact button.mine { border-color: var(--cyan); color: var(--cyan); }
+
+/* workshop custom slots, the figure picker (menu.js) */
+.tabs.wstabs { flex-wrap: wrap; }
+.tabs.wstabs button { flex: 1 1 30%; display: grid; justify-items: center; gap: 1px; }
+.tabs.wstabs button.inuse { box-shadow: inset 0 -3px 0 var(--yel); }
+.tabs.wstabs button.locked { color: var(--dim); border-style: dashed; } .tabs.wstabs button.locked small { color: var(--yel); font-size: 10px; }
+.tabs.wstabs button.far { opacity: .5; }
+.wsuse { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0; } .wsuse small { color: var(--dim); font-size: 11.5px; } .wsuse .inuse { font: 900 12px var(--body); color: #2fbf5a; }
+button.plate { cursor: pointer; color: var(--ink); font-family: var(--body); } button.plate:hover { border-color: var(--yel); }
+.actpick { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin: 10px 0; }
+.actfig { display: grid; justify-items: center; gap: 2px; background: var(--panel2); border: 2px solid var(--line); border-bottom: 5px solid var(--lc); border-radius: 12px; padding: 8px; color: var(--ink); cursor: pointer; }
+.actfig img { width: 72px; height: 72px; object-fit: contain; } .actfig b { font: 20px var(--head); letter-spacing: 1px; text-align: center; } .actfig small { color: var(--dim); font-size: 11px; text-align: center; }
+.actfig.on { border-color: var(--yel); box-shadow: 0 0 0 2px var(--yel) inset; }
