@@ -44,7 +44,7 @@
   U.touch = (() => {
     const q = new URLSearchParams(location.search).get('touch');
     if (q === '1') return true; if (q === '0') return false;
-    try { return matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && matchMedia('(hover: none)').matches); } catch (e) { return false; }
+    try { return matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && matchMedia('(hover: none)').matches) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)); } catch (e) { return false; }
   })();
 
   window.U = U;

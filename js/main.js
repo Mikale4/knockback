@@ -29,6 +29,18 @@
     quitMatch() { if (window.Tutorial && Tutorial.running()) return Tutorial.quit(); if (window.Trials && Trials.running()) return Trials.quit(); App.setView(null); Menu.hub(); },
   };
   window.App = App;
+  /* phones and tablets: the page never zooms. Safari ignores the viewport's user-scalable=no, so a pinch is stopped
+     here (its gesture events, and any two-finger move outside the game's own touch controls); and if the page did end
+     up zoomed (a text box, an old browser), it snaps back to 1x once you're done typing */
+  if (U.touch) {
+    for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, e => e.preventDefault(), { passive: false });
+    document.addEventListener('touchmove', e => { if (e.touches.length > 1 && !e.target.closest('#touch')) e.preventDefault(); }, { passive: false });
+    const vp = document.querySelector('meta[name=viewport]'), base = vp.content;
+    const unzoom = () => { const v = window.visualViewport; if (v && v.scale <= 1.01) return; if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; vp.content = base + ', minimum-scale=1'; setTimeout(() => { vp.content = base; }, 60); };
+    document.addEventListener('focusout', () => setTimeout(unzoom, 50));
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(unzoom, 300));
+    window.addEventListener('orientationchange', () => setTimeout(unzoom, 400));
+  }
   /* step away (another tab, another window) and the fight pauses itself */
   const autoPause = () => { const v = App.view; if (v && v.fighters && !v.attract && v.opts && v.opts.mode !== 'watch' && v.phase !== 'end' && !v.paused && !v.disposed) HUD.pause(v); };
   document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
