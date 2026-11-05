@@ -642,7 +642,7 @@ body.touch input, body.touch select, body.touch textarea { font-size: 16px !impo
 .olmine { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
 .olcheck { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 12.5px; cursor: pointer; }
 .olchat { background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
-.olchatlog { max-height: 132px; overflow: auto; display: grid; gap: 2px; font-size: 13px; margin-bottom: 6px; } .olchatlog .sys { color: var(--dim); font-style: italic; }
+.olchatlog { max-height: 200px; min-height: 60px; overflow-wrap: anywhere; overflow: auto; display: grid; gap: 2px; font-size: 13px; margin-bottom: 6px; } .olchatlog .sys { color: var(--dim); font-style: italic; }
 .olchatbtns { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 6px 0; }
 .olchatbtns button { background: #15111f; color: var(--ink); border: 2px solid var(--line); border-radius: 14px; padding: 4px 10px; font: 700 12px var(--body); cursor: pointer; }
 .olset { background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
@@ -694,3 +694,9 @@ button.plate { cursor: pointer; color: var(--ink); font-family: var(--body); } b
 
 /* the FPS counter (Options: SHOW FPS) */
 #fps { position: fixed; right: 8px; bottom: calc(6px + env(safe-area-inset-bottom)); z-index: 60; font: 800 11px var(--body); color: #9dff7a; background: rgba(0,0,0,.55); border-radius: 6px; padding: 2px 6px; pointer-events: none; }
+
+/* typed chat (online.js) */
+.olsayrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; margin: 4px 0; }
+.olsay:disabled { opacity: .6; }
+.olchatlog .typed { -webkit-user-select: text; user-select: text; }
+.olchatprefs { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }

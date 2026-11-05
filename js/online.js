@@ -54,6 +54,15 @@
   const delayFor = rtt => U.clamp(Math.max(rtt < 60 ? 1 : 2, Math.ceil(rtt / 2 / 16.7) - 5), 1, 8);
   // quick chat (set phrases only: rooms can be public)
   const CHAT = ['GG!', 'Nice combo!', 'Good luck!', 'One more?', 'Ready!', 'Be right back', 'Wow!', 'Thanks for the fight!'];
+  /* typed chat: plain text (shown as text, never as markup), 120 characters at most, no control or direction-flipping
+     characters; the host passes it on (and turns away floods). Each player can hide typed chat, mute someone, and turn
+     on a swear filter (off by default); the host can switch typed chat off or mute someone for the whole room. */
+  const CHAT_MAX = 120;
+  const cleanText = t => String(t == null ? '' : t).replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/g, '').replace(/\s+/g, ' ').trim().slice(0, CHAT_MAX);
+  const SWEARS = /\b(f+u+c+k|s+h+i+t|b+i+t+c+h|c+u+n+t|a+s+s+h+o+l+e|b+a+s+t+a+r+d|s+l+u+t|w+h+o+r+e|t+w+a+t|w+a+n+k|d+i+c+k+h+e+a+d|m+o+t+h+e+r+f+u+c+k)\w*/gi;
+  const ChatPrefs = Object.assign({ typed: true, filter: false, mute: [] }, U.read('kb.chat', {}));   // (the swear filter is off unless you turn it on)
+  const saveChatPrefs = () => U.write('kb.chat', ChatPrefs);
+  const shown = text => ChatPrefs.filter ? text.replace(SWEARS, w => w[0] + '*'.repeat(Math.max(1, w.length - 1))) : text;
 
   const Online = window.Online = {};
   /* the room's timers run on performance.now (tests drive it), checked a few times a second */
@@ -337,7 +346,7 @@
   /* ---- the host's side */
   function newRoom(o, code, id) {
     return { code, hostId: id, name: String(o.name || '').trim().slice(0, 24) || (Auth.user.user + '\'s room'), priv: !!o.priv, listed: o.listed !== false, locked: false,
-      max: U.clamp(o.max | 0 || ROOM_MAX, 2, ROOM_MAX), rules: { arena: 'random', wins: 2, time: 99, bonus: false, figs: 'any' }, rot: 'winner', auto: true,
+      max: U.clamp(o.max | 0 || ROOM_MAX, 2, ROOM_MAX), rules: { arena: 'random', wins: 2, time: 99, bonus: false, figs: 'any' }, rot: 'winner', auto: true, chat: 'on', muted: [],
       members: [], queue: [], fight: null, cd: null, last: null };
   }
   function listing() {
@@ -356,7 +365,12 @@
     R.queue = R.queue.filter((id, i, a) => ok(id) && a.indexOf(id) === i);
     for (const m of R.members) if (!m.sit && !R.queue.includes(m.id)) R.queue.push(m.id);
   }
-  function chatLine(c) { N.chat.push(c); if (N.chat.length > 40) N.chat.shift(); drawChat(); if (N.stage !== 'room' && !c.sys && c.from !== Auth.user.user) toastMsg(c.from + ': ' + CHAT[c.i]); }
+  const lineText = c => c.text != null ? shown(c.text) : CHAT[c.i] || '';
+  const hiddenLine = c => c.text != null && (!ChatPrefs.typed || ChatPrefs.mute.includes(c.id));
+  function chatLine(c) {
+    N.chat.push(c); if (N.chat.length > 60) N.chat.shift(); drawChat();
+    if (N.stage !== 'room' && !c.sys && c.id !== N.myId && !hiddenLine(c) && !(G && !G.watch && !G.ended)) toastMsg(c.from + ': ' + lineText(c));
+  }
   function say(c) { if (!N.host) return; toAll(Object.assign({ t: 'chat' }, c)); chatLine(c); }
   const sysSay = text => say({ sys: text });
 
@@ -397,7 +411,19 @@
       case 'ready': m.ready = !!d.on && !m.sit && (R.rules.figs !== 'base' || isBase(m.info)); break;
       case 'sit': m.sit = !!d.on; if (m.sit) m.ready = false; break;
       case 'watching': m.watch = !!d.on; break;
-      case 'chat': if (CHAT[d.i] != null) say({ from: m.name, i: d.i | 0 }); return;
+      case 'chat': if (CHAT[d.i] != null) say({ from: m.name, id, i: d.i | 0 }); return;
+      case 'say': {
+        const text = cleanText(d.text); if (!text) return;
+        const no = w => { if (id === N.myId) toastMsg(w); else toMember(id, { t: 'chatno', why: w }); };
+        if (R.chat === 'quick') { no('Typed chat is off in this room: quick chat only.'); return; }
+        if ((R.muted || []).includes(id)) { no('The host muted your typed chat.'); return; }
+        const M = N.mem.get(id) || (N.selfChat = N.selfChat || {}), now = performance.now();
+        M.said = (M.said || []).filter(t => now - t < 6000);
+        if (M.said.length >= 4) { if (id === N.myId) toastMsg('Slow down a little.'); else toMember(id, { t: 'chatno', why: 'Slow down a little.' }); return; }
+        M.said.push(now);
+        say({ from: m.name, id, text });
+        return;
+      }
       case 'ping': toMember(id, { t: 'pong', ts: d.ts }); return;
       case 'pong': m.rtt = Math.round(performance.now() - d.ts); return;
       // (a fight's buttons keep coming for a moment after it's over: the watchers are a little behind and need them all)
@@ -441,6 +467,7 @@
       const M = N.mem.get(id); setTimeout(() => { try { M && M.conn.close(); } catch (e) { /* fine */ } }, 400);
       memberGone(id, 'kick');
     },
+    mute(id) { const R = N.room; R.muted = R.muted || []; const i = R.muted.indexOf(id); if (i >= 0) R.muted.splice(i, 1); else R.muted.push(id); pushRoom(); },
     front(id) { const R = N.room; R.queue = [id].concat(R.queue.filter(x => x !== id)); requeue(); pushRoom(); },
     start(seed) { startNext(seed); },
   };
@@ -511,6 +538,7 @@
       }
       case 'room': { const key = roomKey(d.room); N.room = d.room; checkRules(); if (key !== N.roomKey) { N.roomKey = key; draw(); } else updPings(); return; }
       case 'chat': chatLine(d); return;
+      case 'chatno': toastMsg(d.why || 'Your message didn\'t go through.'); return;
       case 'ping': toHost({ t: 'pong', ts: d.ts }); return;
       case 'kicked': roomGone(d.block ? 'The host removed you from the room and blocked you.' : 'The host removed you from the room.'); return;
       case 'closed': roomGone('The host closed the room.'); return;
@@ -1080,12 +1108,14 @@
           if (m.host) tags.push(['HOST', 'h']); if (m.id === N.myId) tags.push(['YOU', 'y']);
           if (F && F.ids.includes(m.id)) tags.push(['FIGHTING', 'f']); else if (m.sit) tags.push(['SITTING OUT', 's']); else if (qpos(m.id) >= 0) tags.push([qpos(m.id) < 2 ? 'NEXT UP' : '#' + (qpos(m.id) + 1) + ' IN LINE', 'q']);
           if (m.ready) tags.push(['READY', 'r']); if (m.watch) tags.push(['WATCHING', 'w']);
+          if ((R.muted || []).includes(m.id)) tags.push(['MUTED', 's']); else if (m.id !== N.myId && ChatPrefs.mute.includes(m.id)) tags.push(['MUTED BY YOU', 's']);
           const can = host && m.id !== N.myId;
           return el('div', { class: 'olmem' + (m.ready ? ' ready' : ''), style: { '--lc': KB.LINES[m.info.line].css } },
             figIcon(m.info), el('div', { class: 'olmemt' }, el('b', null, m.name), el('small', null, m.info.fig + ' · ' + lineName(m.info)),
               el('div', { class: 'oltags' }, ...tags.map(([t, c]) => el('em', { class: 'olt ' + c }, t)))),
             el('span', { class: 'olmping', 'data-id': m.id }, m.host ? '' : (m.rtt ? m.rtt + ' ms' : '')),
-            can ? el('div', { class: 'olmact' }, el('button', { title: 'Fight next', onclick: () => H.front(m.id) }, '▲ NEXT'), el('button', { onclick: () => H.kick(m.id, false) }, 'KICK'), el('button', { onclick: () => H.kick(m.id, true) }, 'BLOCK'))
+            can ? el('div', { class: 'olmact' }, el('button', { title: 'Fight next', onclick: () => H.front(m.id) }, '▲ NEXT'), el('button', { title: 'Mute their typed chat for the whole room', onclick: () => H.mute(m.id) }, (R.muted || []).includes(m.id) ? 'UNMUTE' : 'MUTE'), el('button', { onclick: () => H.kick(m.id, false) }, 'KICK'), el('button', { onclick: () => H.kick(m.id, true) }, 'BLOCK'))
+              : m.id !== N.myId ? el('div', { class: 'olmact' }, el('button', { title: 'Hide their typed messages (just for you)', onclick: () => { const L = ChatPrefs.mute, i = L.indexOf(m.id); if (i >= 0) L.splice(i, 1); else L.push(m.id); saveChatPrefs(); render(); } }, ChatPrefs.mute.includes(m.id) ? 'UNMUTE' : 'MUTE'))
               : m.id === N.myId && !(F && F.ids.includes(m.id)) ? el('div', { class: 'olmact' }, el('button', { class: 'mine', onclick: () => { const s2 = document.querySelector('.screen.online .olselect'); if (s2) s2.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, 'CHANGE FIGHTER')) : null);
         };
         const empties = Array.from({ length: Math.max(0, R.max - R.members.length) }, () => el('div', { class: 'olmem empty' }, el('small', null, 'Open slot')));
@@ -1104,7 +1134,19 @@
             btn(me.sit ? 'SITTING OUT' : 'SIT OUT', () => act({ t: 'sit', on: !me.sit }), 'ghost' + (me.sit ? ' on' : '')),
             el('label', { class: 'olcheck' }, el('input', { type: 'checkbox', checked: N.autoWatch || null, onchange: e => { N.autoWatch = e.target.checked; } }), 'Watch fights automatically')),
           pickFig,
-          el('div', { class: 'olchat' }, N.chatEl = el('div', { class: 'olchatlog' }), el('div', { class: 'olchatbtns' }, ...CHAT.map((t, i) => el('button', { onclick: () => act({ t: 'chat', i }) }, t)))),
+          (() => {
+            const typedOk = R.chat !== 'quick' && !(R.muted || []).includes(N.myId);
+            const box = el('input', { type: 'text', maxlength: CHAT_MAX, class: 'olinput olsay', placeholder: typedOk ? 'Say something...' : R.chat === 'quick' ? 'Typed chat is off in this room' : 'The host muted your typed chat', disabled: !typedOk || null, value: N.draft || '', autocomplete: 'off', enterkeyhint: 'send',
+              oninput: e => { N.draft = e.target.value; } });
+            const sendIt = () => { const t = cleanText(box.value); if (!t) return; act({ t: 'say', text: t }); N.draft = ''; box.value = ''; box.focus(); };
+            box.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendIt(); } });
+            return el('div', { class: 'olchat' }, N.chatEl = el('div', { class: 'olchatlog' }),
+              el('div', { class: 'olsayrow' }, box, btn('SEND', sendIt, 'small' + (typedOk ? '' : ' off'))),
+              el('div', { class: 'olchatbtns' }, ...CHAT.map((t, i) => el('button', { onclick: () => act({ t: 'chat', i }) }, t))),
+              el('div', { class: 'olchatprefs' },
+                el('label', { class: 'olcheck' }, el('input', { type: 'checkbox', checked: ChatPrefs.typed || null, onchange: e => { ChatPrefs.typed = e.target.checked; saveChatPrefs(); drawChat(); } }), 'Show typed messages'),
+                el('label', { class: 'olcheck' }, el('input', { type: 'checkbox', checked: ChatPrefs.filter || null, onchange: e => { ChatPrefs.filter = e.target.checked; saveChatPrefs(); drawChat(); } }), 'Filter swear words')));
+          })(),
           el('div', { class: 'olset' }, el('h3', null, 'RULES' + (host ? '' : ' (the host sets these)')),
             seg('ARENA', rules.arena, [['random', 'Random'], ...Arena.LIST.map(a => [a, Arena.THEMES[a].name])], v => H.rule('arena', v), host),
             seg('ROUNDS', rules.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => H.rule('wins', +v), host),
@@ -1120,6 +1162,7 @@
               : field('PASSWORD', hostPass, btn('MAKE PRIVATE', () => { const p = hostPass.value.trim(); if (!p) { toastMsg('Type a password first.'); return; } H.set('priv', { on: true, pass: p }); }, 'ghost small')),
             seg('ROOM LIST', R.listed, [[true, 'Show it in the list'], [false, 'Code only']], v => H.set('listed', v === true || v === 'true')),
             seg('NEW PLAYERS', R.locked, [[false, 'Let them in'], [true, 'Locked']], v => H.set('locked', v === true || v === 'true')),
+            seg('CHAT', R.chat || 'on', [['on', 'Typed and quick chat'], ['quick', 'Quick chat only']], v => H.set('chat', v)),
             seg('ROOM SIZE', R.max, [2, 3, 4, 5, 6].map(n => [n, String(n)]), v => H.set('max', +v))) : null,
           el('div', { class: 'row' }, btn(host ? 'CLOSE THE ROOM' : 'LEAVE THE ROOM', () => Online.leave(), 'ghost danger'))];
       } else return;
@@ -1158,7 +1201,7 @@
     drawChat = () => {
       if (!N || !N.chatEl || !document.body.contains(N.chatEl)) return;
       N.chatEl.innerHTML = '';
-      for (const c of N.chat.slice(-8)) N.chatEl.append(c.sys ? el('div', { class: 'sys' }, c.sys) : el('div', null, el('b', null, c.from + ': '), CHAT[c.i] || ''));
+      for (const c of N.chat.filter(x => !hiddenLine(x)).slice(-30)) N.chatEl.append(c.sys ? el('div', { class: 'sys' }, c.sys) : el('div', { class: c.text != null ? 'typed' : '' }, el('b', null, c.from + ': '), lineText(c)));
       N.chatEl.scrollTop = 1e6;
     };
     N.redraw = render;
@@ -1427,6 +1470,7 @@
   // (tests)
   Online._t = { rng, withRng, onIn: null, prepSnap, snapshot, restoreSnap, hashSnap, Dir, H, act,
     usePeer: C => { PeerImpl = C; }, N: () => N, G: () => G, playReplay, seekTo, rleEnc, rleDec, tick: () => hostTick(), later: runLater, debug: 0, deepFilter: null,
+    say: text => act({ t: 'say', text }), ChatPrefs, cleanText, shown,
     pick: k => { N.pick = k; N.me = meInfo(); if (N.room) act({ t: 'fig', me: N.me }); draw(); },
     info: () => G && !G.watch ? { f: G.f, conf: G.conf, D: G.D, local: G.local, syncs: G.syncs, desyncs: G.desyncs || 0, rollbacks: G.rollbacks, rbFrames: G.rbFrames, rbMax: G.rbMax, rbMs: Math.round(G.rbMs * 10) / 10, rbAvg: Math.round(G.rbSum / Math.max(1, G.rollbacks) * 100) / 100, guesses: G.guesses, skips: G.skips, adv: Math.round(G.adv * 100) / 100, hp: G.m.fighters.map(f => Math.round(f.hp)), fp: fingerprint(), stage: N && N.stage, link: G.link && G.link.mode }
       : G && G.watch ? { watch: true, f: G.f, avail: Math.min(G.log.top[0], G.log.top[1]), hp: G.m.fighters.map(f => Math.round(f.hp)), fp: fingerprint(), stage: N && N.stage }

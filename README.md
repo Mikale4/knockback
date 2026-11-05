@@ -229,8 +229,13 @@ fight live** and waits for their turn.
 - **In a room:** pick **your fighter** any time you're not fighting: one of your custom fighters (the Workshop's
   Custom slots) or any of the ten base characters (their Standard set). Switching takes your READY off. Press
   **READY**, or **SIT OUT** to just watch. A queue decides who fights next; with **auto-start** the next fight begins
-  5 s after both are ready. Quick chat (set phrases only, since rooms can be public). Turn off "watch fights
-  automatically" to stay on the room screen; WATCH joins a fight that's on.
+  5 s after both are ready. Turn off "watch fights automatically" to stay on the room screen; WATCH joins a fight
+  that's on.
+- **Chat:** type your own messages (up to 120 characters; plain text, so no links or formatting get through) or tap a
+  quick-chat phrase. The host passes messages on and slows down floods (4 every 6 s). Each player can MUTE someone
+  (just for themselves), hide typed messages, or turn on a swear filter (off by default). The host can switch the room
+  to quick chat only, or MUTE someone's typed chat for the whole room, besides kick and block. Messages from the room
+  pop up while you're watching a fight or on the results screen (not in the middle of your own fight).
 - **The host** runs the room: its name; public or private (password); listed or code only; locked to new players; room
   size (2 to 6); the rules (arena, first to 1/2/3, round time 60/99/180 s, rarity bonus, any fighters or base
   characters only); rotation (winner stays, both rotate, or the host picks with ▲ NEXT); auto-start; kick and block.
