@@ -204,7 +204,9 @@
       const tgt = predict(o, 0, new V3());
       for (let k = 0; k < 3 && speed; k++) predict(o, tgt.distanceTo(from) / speed, tgt);
       const d = tgt.sub(from), flat = _v.copy(d).setY(0), fl = flat.length();
-      if (fl < 0.05 || d.length() > range + 1.5 || (down && d.y > -0.2)) return dir;
+      // (a downward shot -- Kunai Rain, Plunging Shot, Spirit Bolt -- aims at them too, level or below: the hit's own
+      // knockback is what spikes them, so in an air combo it goes at them, not at the floor)
+      if (fl < 0.05 || d.length() > range + 1.5) return dir;
       if (flat.multiplyScalar(1 / fl).dot(_q.copy(f.forward)) < cone) return dir;
       f.yaw = Math.atan2(d.x, d.z);
       return d.normalize();
