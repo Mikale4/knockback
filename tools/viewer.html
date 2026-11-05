@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Figure Viewer</title>
+<style>html,body{margin:0;background:#1b1b24;color:#fff;font:12px monospace;overflow:hidden}#info{position:fixed;left:8px;top:8px}</style></head>
+<body><div id="info"></div>
+<script src="../lib/three.min.js"></script>
+<script src="../js/util.js"></script><script src="../js/voxel.js"></script><script src="../js/parts.js"></script>
+<script src="../js/models.js"></script><script src="../js/anim.js"></script>
+<script>
+// tools/viewer.html?pose=ready|slashA|...&r=0..3&rot=0.5&mix=1
+const q = new URLSearchParams(location.search);
+const R = new THREE.WebGLRenderer({ antialias: true }); R.setSize(innerWidth, innerHeight); R.shadowMap.enabled = true; document.body.append(R.domElement);
+
+const sc = new THREE.Scene(); sc.background = new THREE.Color(0x2a2a36);
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 100);
+sc.add(new THREE.HemisphereLight(0xfff4e8, 0x3a3040, 0.75)); const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(3, 6, 5); sun.castShadow = true; sc.add(sun);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshLambertMaterial({ color: 0x8a6a4a })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; sc.add(fl);
+const lines = KB.LINE_ORDER, figs = [];
+const rr = q.has('r') ? +q.get('r') : null;
+lines.forEach((l, i) => {
+  let b = KB.mintBuild(l, rr != null ? rr : (i % 4));
+  if (q.get('mix')) b = KB.randomBuild(3);
+  const F = Models.figure(b); F.root.position.set((i - 2.5) * 1.6, 0, 0); F.root.rotation.y = +(q.get('rot') || 0.45); sc.add(F.root); figs.push(F);
+  const pn = q.get('pose') || 'ready';
+  let pose = Anim.readyFor(b);
+  if (Anim.P[pn]) pose = Anim.blend(Anim.readyFor(b), Anim.P[pn][q.get('ph') || 'strike'], 1, Anim.readyFor(b));
+  else if (Anim.STATE[pn]) pose = Anim.fill(Anim.STATE[pn]);
+  Anim.set(F, pose);
+});
+cam.position.set(+(q.get("cx")||0), 1.6, +(q.get("cz")||10.5)); cam.lookAt(+(q.get("cx")||0), 1.0, 0); cam.fov = +(q.get("fov")||30); cam.updateProjectionMatrix();
+R.render(sc, cam);
+document.getElementById('info').textContent = (q.get('pose') || 'ready') + ' r=' + rr;
+window.__ready = true;
+</script></body></html>
