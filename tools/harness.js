@@ -172,3 +172,19 @@ window.__superTest = (l1, l2, dist, opt) => {
   });
   return { cine, cineT: +cineT.toFixed(2), phases: phases.join('>'), dmg: Math.round(hp0 - b.hp), bst: b.state, calls: __calls.join(', '), errs: __errs.slice(0, 3), maxY: +maxY.toFixed(1), left: !!m.cine };
 };
+/* ONLINE determinism: an online fight run twice from one seed with one button stream must end identically.
+   Runs `frames` fixed steps with both fighters mashing (a seeded stream), returns a fingerprint log. */
+window.__detRun = (seed, frames, l1, l2) => {
+  const { rng, withRng } = Online._t, PC = Input.players[0].constructor, net = [new PC(0), new PC(1)];
+  net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 } }; });
+  const opts = { mode: 'online', online: true, local: 0, builds: [KB.mintBuild(l1, 0), KB.mintBuild(l2, 0)], cpu: [null, null], arena: 'shelf', wins: 9, time: 99, bonus: false, inputs: net, onEnd: () => {} };
+  const m = Match.create(opts); App.setView(m); const R = rng(seed); withRng(R, () => m.restart());
+  const IN = rng(seed ^ 0x5bd1e995), A = Input.ACTIONS, log = [];
+  for (let f = 0; f < frames; f++) {
+    for (let i = 0; i < 2; i++) { const p = net[i]; p.cpu.held = {}; for (const a of A) p.cpu.held[a] = IN() < (a === 'light' ? 0.25 : a === 'guard' ? 0.05 : 0.04); p.cpu.move.x = Math.round((IN() * 2 - 1) * 100) / 100; p.cpu.move.y = Math.round((IN() * 2 - 1) * 100) / 100; p.poll(f / 60, [], false); }
+    const n0 = Input.now; Input.now = f / 60; withRng(R, () => m.update(1 / 60)); Input.now = n0;
+    if (f % 60 === 59) log.push(m.fighters.map(x => x.state[0] + x.pos.x.toFixed(3) + ',' + x.pos.z.toFixed(3) + ':' + Math.round(x.hp)).join('|') + ' r' + R.get());
+  }
+  App.setView(null);
+  return log;
+};

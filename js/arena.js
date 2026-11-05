@@ -95,10 +95,10 @@
         const before = w.stress; w.stress = Math.min(99, w.stress + add);
         const branches = 2 + Math.floor(add / 14);
         for (let b = 0; b < branches; b++) {
-          let px = at.x, py = U.clamp(at.y, 0.2, w.h * AS - 0.15), pz = at.z, a = Math.random() * Math.PI * 2;
-          const steps = 3 + Math.floor(Math.random() * 3);
+          let px = at.x, py = U.clamp(at.y, 0.2, w.h * AS - 0.15), pz = at.z, a = U.vrand() * Math.PI * 2;
+          const steps = 3 + Math.floor(U.vrand() * 3);
           for (let s = 0; s < steps; s++) {
-            const l = U.rnd(0.18, 0.42); a += U.rnd(-0.8, 0.8);
+            const l = U.vrnd(0.18, 0.42); a += U.vrnd(-0.8, 0.8);
             const du = Math.cos(a) * l, dy = Math.sin(a) * l;
             const m = new THREE.Mesh(seg, w.stress > 65 ? hotMat : crackMat);
             const u0 = w.axis === 'x' ? pz : px;
@@ -117,7 +117,7 @@
         while (w.cracks.children.length) w.cracks.remove(w.cracks.children[0]);
         const out = new V3(-w.n.x, 0.2, -w.n.z);
         for (let i = 0; i < 6; i++) {
-          const p = at.clone(); if (w.axis === 'x') p.z += U.rnd(-2.5, 2.5); else p.x += U.rnd(-2.5, 2.5); p.y = U.rnd(0.2, w.h * AS);
+          const p = at.clone(); if (w.axis === 'x') p.z += U.vrnd(-2.5, 2.5); else p.x += U.vrnd(-2.5, 2.5); p.y = U.vrnd(0.2, w.h * AS);
           FX.burst(p, { n: 14, color: A.wallColors, speed: 9, size: 0.24, life: 1.6, dir: out, floor: T.outY, gravity: 22 });
         }
         FX.burst(at, { n: 30, color: A.wallColors, speed: 13, size: 0.16, life: 1.2, dir: out, floor: T.outY });

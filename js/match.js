@@ -27,7 +27,7 @@
     const human = [opts.cpu ? opts.cpu[0] == null : true, opts.cpu ? opts.cpu[1] == null : false];
     Input.mode = human[0] && human[1] ? 'versus' : 'solo';
     for (let i = 0; i < 2; i++) Input.players[i].cpu = null;
-    M.fighters = [0, 1].map(i => new Fighter(M, i, opts.builds[i], Input.players[i], { bonus: opts.bonus }));
+    M.fighters = [0, 1].map(i => new Fighter(M, i, opts.builds[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus }));
     M.ai = [null, null];
     for (let i = 0; i < 2; i++) if (!human[i]) { M.ai[i] = new AI(M, M.fighters[i], opts.cpu[i]); Input.players[i].cpu = M.ai[i]; }
     if (M.training) { M.ai[1] = new AI(M, M.fighters[1], 1); M.ai[1].dummy = 'stand'; Input.players[1].cpu = M.ai[1]; }
@@ -119,7 +119,7 @@
             let vx = dx / d * 4.4, vz = dz / d * 4.4;
             for (const k of M.minions) if (k !== mn) { const ex = mn.pos.x - k.pos.x, ez = mn.pos.z - k.pos.z, e = Math.hypot(ex, ez); if (e < 0.85 && e > 1e-3) { vx += ex / e * 3; vz += ez / e * 3; } }
             mn.vel.x = U.smooth(mn.vel.x, vx, 10, dt); mn.vel.z = U.smooth(mn.vel.z, vz, 10, dt); mn.yaw = Math.atan2(dx, dz);
-            if (Math.random() < dt * 2.5) { mn.vel.y = 2.4; mn.air = true; }
+            if (U.rand() < dt * 2.5) { mn.vel.y = 2.4; mn.air = true; }
           } else { mn.vel.x *= 0.8; mn.vel.z *= 0.8; mn.yaw = Math.atan2(dx, dz); if (mn.cd <= 0) lunge(mn, o, 0.25); }
         } else if (!mn.air) { mn.vel.x *= Math.exp(-8 * dt); mn.vel.z *= Math.exp(-8 * dt); }
         mn.vel.y -= 22 * dt; mn.pos.addScaledVector(mn.vel, dt);
@@ -166,12 +166,12 @@
       f.hp -= M.training ? 0 : dmg; M.event('ringout', { vic: f, by: M.opp(f) });
       M.call(f, 'RING OUT  -' + dmg, 'break', new V3(f.pos.x * 0.8, 1.5, f.pos.z * 0.8));
       if (f.hp <= 0) { f.hp = 0; M.phase = 'fight'; M.ko(f, M.opp(f), new V3(0, 0, 0), null, true); f.vel.set(0, 0, 0); return; }
-      setTimeout(() => { if (M.disposed) return;
+      M.after(0.7, () => { if (M.disposed) return;
         const o = M.opp(f); const a = Math.atan2(-o.pos.x, -o.pos.z) + U.rnd(-0.5, 0.5);
         f.pos.set(U.clamp(Math.sin(a) * 4, -6, 6), 7, U.clamp(Math.cos(a) * 3, -4, 4)); f.vel.set(0, 0, 0); f.grounded = false;
         f.setState('air'); f.inv = 1.5; f.respawnInv = true; f.spin.rotation.set(0, 0, 0); f.yaw = U.ang(f.pos, o.pos); f.endCombo();
-        setTimeout(() => { f.respawnInv = false; }, 1500);
-      }, 700);
+        M.after(1.5, () => { f.respawnInv = false; });
+      });
     };
 
     /* ---------------------------------------------------------- the super */
@@ -336,7 +336,7 @@
           const hit = rayHit(f, o, muzzle, dir, range), end = hit || muzzle.clone().addScaledVector(dir, range);
           dart(f, mv, 'bullet', muzzle, dir, muzzle.distanceTo(end), { visual: true });
           if (hit && o.inv <= 0 && !['ko', 'out', 'down'].includes(o.state)) f.superCaught = true;
-          setTimeout(() => { f.superCaught = false; }, 600);
+          M.after(0.6, () => { f.superCaught = false; });
         } else dart(f, mv, 'bullet', muzzle, dir, range, { charge });
       } else if (mv.proj === 'chain') {
         // NINJA: the kusarigama's weighted chain. It flies out, wraps them up, and drags them in (see updProjs)
@@ -502,14 +502,18 @@
     }
 
     /* ---------------------------------------------------------- update */
+    /* M.after(sec, fn): a timer on the fight's clock */
+    M.timers = [];
+    M.after = (sec, fn) => { M.timers.push({ at: M.time + sec, fn }); };
+    const runTimers = () => { if (!M.timers.length) return; const due = M.timers.filter(t => M.time >= t.at); if (!due.length) return; M.timers = M.timers.filter(t => M.time < t.at); for (const t of due) t.fn(); };
     M.update = rawDt => {
       if (M.paused) { updCamera(0); return; }
       if (M.slowT > 0) { M.slowT -= rawDt; if (M.slowT <= 0) M.slow = 1; }
       const dt = Math.min(rawDt, 1 / 30) * M.slow;
-      M.time += dt; M.phaseT += dt;
+      M.time += dt; M.phaseT += dt; runTimers();
       // pause
       const esc = Input.keyDown('Escape');
-      if (!M.attract && ((esc && !M.escHeld) || Input.players.some(p => !p.cpu && p.pressed('pause')))) HUD.pause(M);
+      if (!M.attract && !opts.online && ((esc && !M.escHeld) || Input.players.some(p => !p.cpu && p.pressed('pause')))) HUD.pause(M);
       M.escHeld = esc;
       if (M.frozen) {
         M.freezeT -= rawDt;
@@ -555,7 +559,7 @@
         const p = M.projs[i]; p.t += dt;
         if (p.kind === 'bomb') {
           p.vel.y -= 22 * dt; p.pos.addScaledVector(p.vel, dt); p.mesh.position.copy(p.pos); p.mesh.rotation.x += dt * 8;
-          if (Math.random() < 0.5) FX.burst(p.pos.clone().setY(p.pos.y + 0.3), { n: 1, color: 0xffc040, glow: true, speed: 0.5, size: 0.05, life: 0.2, gravity: -2 });
+          if (U.rand() < 0.5) FX.burst(p.pos.clone().setY(p.pos.y + 0.3), { n: 1, color: 0xffc040, glow: true, speed: 0.5, size: 0.05, life: 0.2, gravity: -2 });
           const o = M.opp(p.f); const near = o && o.pos.distanceTo(_v.copy(p.pos).setY(p.pos.y - 0.9)) < 0.9;
           if (p.pos.y <= 0.15 && p.vel.y < 0) { p.pos.y = 0.15; p.vel.y *= -0.4; p.vel.x *= 0.6; p.vel.z *= 0.6; p.bounced = (p.bounced || 0) + 1; }
           for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.15) { p.pos[w.axis] = w.sign * (w.lim - 0.15); p.vel[w.axis] *= -0.5; }
@@ -595,7 +599,7 @@
           p.mesh.position.copy(p.pos); if (p.look === 'kunai') p.mesh.rotateZ(dt * 25);
           const tl = Math.min(LOOK[p.look].trail, p.pos.distanceTo(p.from));
           if (tl > 0.03) { p.trail.visible = true; p.trail.position.copy(p.pos).addScaledVector(p.dir, -tl / 2); p.trail.scale.z = tl; p.trail.lookAt(p.pos); }
-          if (p.look === 'bolt' && Math.random() < 0.6) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.6, size: 0.06, life: 0.3, gravity: 0 });
+          if (p.look === 'bolt' && U.rand() < 0.6) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.6, size: 0.06, life: 0.3, gravity: 0 });
           if (!end) continue;
           if (what === 'fighter') { p.grp.done = true; Combat.hit(f, o, p.mv, { kind: p.k, charge: p.charge, at: end.clone(), from: f.pos.clone(), dir: _v.copy(p.dir).setY(0).normalize().clone(), proj: true, otg: o.state === 'down' }); }
           dartImpact(p, end, what);
@@ -609,7 +613,7 @@
           const f = p.f, o = M.opp(f), a = _q.copy(p.pos).clone(), step = Math.min(22 * dt, p.range - p.dist);
           p.pos.addScaledVector(p.dir, step); p.dist += step; p.mesh.position.copy(p.pos); p.mesh.quaternion.copy(camera.quaternion); p.mesh.rotateZ(p.t * 9);   // a magic circle, turned to face you
           const sc = 1.3 + p.dist * 0.1; p.mesh.scale.setScalar(sc);
-          if (Math.random() < 0.7) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.5, size: 0.06, life: 0.3, gravity: 0 });
+          if (U.rand() < 0.7) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.5, size: 0.06, life: 0.3, gravity: 0 });
           const q = o ? bodyHit(f, o, a, p.pos, 0.9, p.mv, p.k) : null;
           let wall = false; for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.15) { p.pos[w.axis] = w.sign * (w.lim - 0.15); wall = true; }
           if (q || wall || p.dist >= p.range) {
@@ -632,7 +636,7 @@
             else { const sp = p.vel.length(), cur = p.vel.clone().normalize(), w = want.normalize(), ang = cur.angleTo(w), k = ang > 1e-4 ? Math.min(1, 9 * dt / ang) : 1; p.vel.copy(cur.lerp(w, k).normalize().multiplyScalar(sp)); }
           } else p.vel.y -= 18 * dt;
           p.pos.addScaledVector(p.vel, dt); p.grp.rotation.x += p.spin.x * dt; p.grp.rotation.y += p.spin.y * dt;
-          if (Math.random() < 0.5) FX.burst(p.pos.clone(), { n: 1, color: 0xffffff, speed: 0.4, size: 0.05, life: 0.25, gravity: 0 });
+          if (U.rand() < 0.5) FX.burst(p.pos.clone(), { n: 1, color: 0xffffff, speed: 0.4, size: 0.05, life: 0.25, gravity: 0 });
           let land = p.t > 1.6 || (p.pos.y <= 0.15 && !(p.homing && o && o.state === 'down'));
           const q = o && !p.done ? bodyHit(f, o, a, p.pos, 0.75, p.mv, p.k) : null;
           if (q) {
@@ -676,7 +680,7 @@
                 const k = U.clamp(p.T / 0.2, 0, 1), e = k * k;
                 v.pos.lerpVectors(p.vicFrom, p.pullTo, e); v.pos.y = p.vicFrom.y * (1 - e); v.vel.set(0, 0, 0); v.grounded = v.pos.y <= 0.01;
                 v.yaw = Math.atan2(f.pos.x - v.pos.x, f.pos.z - v.pos.z);
-                if (Math.random() < 0.8) FX.burst(_q.copy(v.pos).setY(0.05), { n: 1, color: arena.dust, speed: 1.2, size: 0.08, life: 0.35 });
+                if (U.rand() < 0.8) FX.burst(_q.copy(v.pos).setY(0.05), { n: 1, color: arena.dust, speed: 1.2, size: 0.08, life: 0.35 });
                 if (k >= 1) { v.chained = null; p.vic = null; FX.burst(_q.copy(v.pos).setY(0.05), { n: 8, color: arena.dust, speed: 2.5, size: 0.08 }); SFX.play('land'); endChain(p); M.projs.splice(i, 1); continue; }
               }
             }
@@ -692,7 +696,7 @@
           // its notes ride round the ring, bobbing
           const side = _v.set(p.dir.z, 0, -p.dir.x).normalize(), upv = _w.crossVectors(side, p.dir).normalize();
           p.notes.forEach((n, j) => { const a = p.t * 7 + j * Math.PI / 2, r = 0.85 * s; n.position.copy(p.pos).addScaledVector(side, Math.cos(a) * r).addScaledVector(upv, Math.sin(a) * r + Math.sin(p.t * 20 + j) * 0.06); n.quaternion.copy(camera.quaternion); n.rotateZ(Math.sin(p.t * 9 + j) * 0.4); n.scale.setScalar(1.1 * (1 - 0.4 * p.dist / p.range)); });
-          if (Math.random() < 0.5) FX.burst(p.pos, { n: 1, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 1, size: 0.08, gravity: -1, life: 0.4 });
+          if (U.rand() < 0.5) FX.burst(p.pos, { n: 1, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 1, size: 0.08, gravity: -1, life: 0.4 });
           M.hitMinions(p.f, p.pos, 0.6 + s * 0.3, p.id);
           const o = M.opp(p.f);
           if (!p.hit && o && o.inv <= 0 && Combat.overlap(p.pos, 0.5 + s * 0.3, o)) { p.hit = true; Combat.hit(p.f, o, p.mv, { kind: p.k, charge: p.charge, at: p.pos.clone(), from: p.f.pos.clone(), dir: p.dir.clone(), proj: true }); M.noteFX(p.pos.clone(), 4); }

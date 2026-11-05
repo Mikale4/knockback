@@ -80,6 +80,7 @@
     { id: 'f_art', name: 'The real thing', desc: 'Land a Legend Art.', stat: 'arts', goal: 1, pay: { tokens: 150 } },
     { id: 'f_steal', name: 'Spare parts', desc: 'Snap on a part you knocked off them.', stat: 'steals', goal: 1, pay: { tokens: 150 } },
     { id: 'f_versus', name: 'Couch rivals', desc: 'Play a 2-player Versus.', stat: 'versus', goal: 1, pay: { tokens: 150 } },
+    { id: 'f_online', name: 'Long distance', desc: 'Play an online fight.', stat: 'online', goal: 1, pay: { tokens: 200 } },
   ];
   /* the chains: one number and a ladder of targets; the tiers are claimed in order and pay
      TIER_PAY scaled by the chain's weight */
@@ -131,6 +132,7 @@
     { id: 'a_throwko', name: 'Thrown out', desc: 'Win a round with a throw.', pay: 100, check: (c, F) => F && F.throwKO },
     { id: 'a_artko', name: 'Legendary finish', desc: 'Win a round with a Legend Art.', pay: 150, check: (c, F) => F && F.artKO },
     { id: 'a_graduate', name: 'Graduate', desc: 'Finish the tutorial.', pay: 0, check: c => c.life.tutorials >= 1 },
+    { id: 'a_online', name: 'Friendly fire', desc: 'Win an online fight.', pay: 200, check: c => c.life.onlineWins >= 1 },
     { id: 'a_trials', name: 'Mastered', desc: 'Clear every combo trial for one fighter.', pay: 300, check: c => c.owned.trialLines >= 1 },
     { id: 'a_trialsAll', name: 'Professor', desc: 'Clear every combo trial for every fighter.', pay: 2000, check: c => c.owned.trialLines >= 10 },
   ];
@@ -227,8 +229,8 @@
   /* ---------------------------------------------------- watching a fight */
   const Rewards = { DAILY, WEEKLY, FIRST, CHAINS, AWARDS, featured };
   Rewards.watch = (m, opts) => {
-    if (!Auth.S || opts.tutorial || !['cpu', 'arcade', 'versus'].includes(opts.mode)) return;
-    const me = m.fighters[0];
+    if (!Auth.S || opts.tutorial || !['cpu', 'arcade', 'versus', 'online'].includes(opts.mode)) return;
+    const me = m.fighters[opts.mode === 'online' ? opts.local : 0];
     const F = { bounces: 0, wallBreaks: 0, ringouts: 0, otgs: 0, extends: 0, throws: 0, bursts: 0, arts: 0, partBreaks: 0, steals: 0, hybrids: 0, bestCombo: 0, maxBounces: 0, perfect: false, comeback: false, doubleExt: false, throwKO: false, artKO: false, hitThisRound: false, flushed: false };
     m.on((k, d) => {
       if (k === 'hit') {
@@ -265,9 +267,9 @@
     const n = { bounces: F.bounces, wallBreaks: F.wallBreaks, ringouts: F.ringouts, otgs: F.otgs, extends: F.extends, throws: F.throws, bursts: F.bursts, arts: F.arts, partBreaks: F.partBreaks, steals: F.steals, hybrids: F.hybrids };
     let card = null;
     if (res) {
-      const win = res.winner === 0, b = opts.builds[0], lines = KB.SLOTS.map(s => b[s].line);
+      const meI = opts.mode === 'online' ? opts.local : 0, win = res.winner === meI, b = opts.builds[meI], lines = KB.SLOTS.map(s => b[s].line);
       F.won = win;
-      Object.assign(n, { fights: 1, wins: win ? 1 : 0, versus: opts.mode === 'versus' ? 1 : 0 });
+      Object.assign(n, { fights: 1, wins: win ? 1 : 0, versus: opts.mode === 'versus' ? 1 : 0, online: opts.mode === 'online' ? 1 : 0, onlineWins: opts.mode === 'online' && win ? 1 : 0 });
       if (win && opts.mode !== 'versus') {
         if ((opts.lvl || 0) >= 3) n.champWins = 1;
         if (lines.includes(featured())) n.featWins = 1;

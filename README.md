@@ -189,6 +189,23 @@ stages, a daily bonus) — never real money.
 
 Accounts are local (this browser's storage), with salted password hashes. It is not a secure account system.
 
+## Online
+
+**ONLINE** in the hub (`js/online.js`): fight a friend over the internet. One of you **HOSTS** a room and gets a
+five-letter code; the other types it in and **JOINS**. In the room you both pick your figure, the host picks the arena,
+the rounds and whether rarity bonuses count, and presses FIGHT. After a fight: REMATCH (both of you), back to the room,
+or leave.
+
+- **How you connect:** your browsers connect to each other directly (WebRTC). The free [PeerJS](https://peerjs.com)
+  service only introduces you, so there's no game server. Like any peer-to-peer game, your friend's browser can see
+  your IP address. Some school, work or mobile networks block this kind of connection.
+- **Netcode:** delay-based lockstep, the classic fighting-game kind. Both games run the same fight, 60 frames a second,
+  and only the buttons travel. Your presses play a few frames later (2 to 8, from your ping) on both screens. The fight is
+  deterministic online: fixed steps, a seeded random source for gameplay (`U.rand`; looks use `U.vrand`), timers and the
+  Bard's beat on the fight's clock. Every half second the two games compare a fingerprint of the fight, and if they
+  ever differ the host's fight is copied over at an agreed frame. An online fight can't be paused (Esc opens a menu to
+  leave it). Both of you need the same version of the game: reload if it says otherwise.
+
 ## Tutorial
 
 New collectors are offered it right after opening their first figure, and it's in the hub (**TUTORIAL**) and HOW TO
@@ -260,6 +277,7 @@ shake** setting (Full, Reduced, Off).
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
+| `js/online.js` | ONLINE: rooms by code over PeerJS, the lockstep netcode, fingerprints and resync, the lobby |
 | `js/trials.js` | COMBO TRIALS: the seventy trials, the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |

@@ -42,7 +42,7 @@
     window.addEventListener('orientationchange', () => setTimeout(unzoom, 400));
   }
   /* step away (another tab, another window) and the fight pauses itself */
-  const autoPause = () => { const v = App.view; if (v && v.fighters && !v.attract && v.opts && v.opts.mode !== 'watch' && v.phase !== 'end' && !v.paused && !v.disposed) HUD.pause(v); };
+  const autoPause = () => { const v = App.view; if (v && v.fighters && !v.attract && v.opts && v.opts.mode !== 'watch' && !v.opts.online && v.phase !== 'end' && !v.paused && !v.disposed) HUD.pause(v); };
   document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
   window.addEventListener('blur', autoPause);
   /* in a fight, the cursor hides once it stops moving */

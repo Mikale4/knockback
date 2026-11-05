@@ -228,7 +228,10 @@
       if (!f || t > f.end + f.gap || t < f.start) {
         const line = build && build.armR ? build.armR.line : 'samurai', list = (FIDGETS[line] || ['look', 'shrug']).slice();
         if (build && build.armL && SHIELDS.includes(build.armL.line)) list.push('shield');
-        f = o.fidget = { kind: list[Math.floor(Math.random() * list.length)], start: t + (f ? 0 : 1 + Math.random() * 2), gap: 2.5 + Math.random() * 3.5, dir: Math.random() < 0.5 ? -1 : 1 };
+        // the next fidget: chosen by a counter, not at random -- a pose moves the hands, and shots start from the hands,
+        // so an online fight needs both screens to pose the same
+        const n = o.fidN = (o.fidN || 0) + 1, h = k => { let x = Math.imul(n * 2654435761 + k * 40503 + (o.idx || 0) * 97, 1597334677) >>> 0; x ^= x >>> 15; return (Math.imul(x, 2246822519) >>> 0) / 4294967296; };
+        f = o.fidget = { kind: list[Math.floor(h(1) * list.length)], start: t + (f ? 0 : 1 + h(2) * 2), gap: 2.5 + h(3) * 3.5, dir: h(4) < 0.5 ? -1 : 1 };
         f.end = f.start + (f.kind === 'twirl' ? 0.8 : f.kind === 'look' ? 1.6 : 1.0);
       }
       if (t >= f.start && t < f.end) { f.q = (t - f.start) / (f.end - f.start); FID[f.kind](p, Math.sin(Math.PI * f.q), t, f); }

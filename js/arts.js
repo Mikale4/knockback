@@ -56,7 +56,7 @@
     bolt(col) {
       return Prop.vox(g => {
         let x = 0, z = 0;
-        for (let y = 90; y > 0; y -= 6) { const nx = x + U.rndi(-4, 4), nz = z + U.rndi(-4, 4); g.line(x, y, z, nx, y - 6, nz, G(col), 0.6); x = nx; z = nz; }
+        for (let y = 90; y > 0; y -= 6) { const nx = x + Math.floor(U.vrnd(-4, 5)), nz = z + Math.floor(U.vrnd(-4, 5)); g.line(x, y, z, nx, y - 6, nz, G(col), 0.6); x = nx; z = nz; }
       }, 0.08);
     },
     ball(r) { return Prop.vox(g => { g.ell(0, 0, 0, r, r, r, 0x1a1a20); g.set(0, r + 1, 0, 0x8a5a2b); g.set(0, r + 2, 0, G(0xffa020)); }, 0.09); },
@@ -133,7 +133,7 @@
           const sp = 13; f.pos.x += D.x * sp * dt; f.pos.z += D.z * sp * dt; f.yaw = Math.atan2(D.x, D.z); pose(c, 'lance');
           o.pos.set(f.pos.x + D.x * 1.3, 0.5, f.pos.z + D.z * 1.3);
           if (beat(c, 'run', 5, 0.05, 0.85)) tick(c);
-          if (Math.random() < 0.5) FX.burst(_v.copy(f.pos).setY(0.1), { n: 2, color: c.m.arena.dust, speed: 2, size: 0.08, life: 0.4 });
+          if (U.vrand() < 0.5) FX.burst(_v.copy(f.pos).setY(0.1), { n: 2, color: c.m.arena.dust, speed: 2, size: 0.08, life: 0.4 });
           const wall = c.m.arena.walls.some(w => !w.broken && w.sign * o.pos[w.axis] > w.lim - 0.9);
           if (wall || t > 0.9) { s.imp = t; s.pin = o.pos.clone(); FX.addShake(0.8); SFX.play('knock', { n: 3 }); FX.ring(chest(o), { r1: 2.2, normal: D.clone().negate(), color: 0xfff1c0 }); c.O = s.pin.clone().setY(0); }
           return false;
@@ -197,7 +197,7 @@
         }
         if (t > 1.22) {
           pose(c, 'dragonPalm', 'wind');
-          if (Math.random() < 0.7) { const h = f.fig.socket('armR', [0, -9, 0]); FX.burst(h.add(new V3(U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6))), { n: 1, color: KB.LINES.monk.pal.glow, glow: true, speed: 0.4, size: 0.06, gravity: 0, life: 0.25 }); }
+          if (U.vrand() < 0.7) { const h = f.fig.socket('armR', [0, -9, 0]); FX.burst(h.add(new V3(U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6), U.rnd(-0.6, 0.6))), { n: 1, color: KB.LINES.monk.pal.glow, glow: true, speed: 0.4, size: 0.06, gravity: 0, life: 0.25 }); }
         }
         if (t >= this.fin) { pose(c, 'dragonPalm'); FX.ring(chest(o), { r1: 3.4, life: 0.4, normal: D.clone(), color: 0x9ff7ff }); FX.ring(chest(o), { r1: 2.2, life: 0.3, normal: D.clone(), color: 0xffffff }); SFX.play('heavy'); return true; }
         return false;
@@ -353,7 +353,7 @@
           s.wings = prop(c, Prop.wings(col), p => { const k = U.easeOut(Math.min(1, p.t / 0.4)); p.obj.scale.setScalar(k); p.obj.position.copy(f.pos).setY(f.pos.y + 0.5); p.obj.rotation.y = f.yaw; });
           SFX.play('superStart'); FX.burst(chest(f), { n: 30, color: [col, 0xffffff], glow: true, speed: 4, size: 0.08, gravity: -2, life: 0.8 });
         }
-        if (t >= 0.6 && t < 1.25) { moveTo(f.pos, P(c, -2.4, 0, 2.0), 3, dt); pose(c, 'overhead', 'wind'); if (Math.random() < 0.6) glowAt(c, f.fig.socket('wR', [0, 0, 11]), col, 2); }
+        if (t >= 0.6 && t < 1.25) { moveTo(f.pos, P(c, -2.4, 0, 2.0), 3, dt); pose(c, 'overhead', 'wind'); if (U.vrand() < 0.6) glowAt(c, f.fig.socket('wR', [0, 0, 11]), col, 2); }
         if (t >= 1.25 && t < 1.5) { moveTo(f.pos, _v.copy(o.pos).addScaledVector(c.D, -0.9).setY(o.pos.y + 0.6), 14, dt); pose(c, 'overhead', 'wind'); }
         if (t >= 1.5) {
           const k = span(t, 1.5, 1.72); pose(c, 'overhead'); o.pos.y = U.lerp(o.pos.y, 0.05, U.easeIn(k)); f.pos.y = Math.max(0, o.pos.y - 0.1);

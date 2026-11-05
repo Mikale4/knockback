@@ -4,9 +4,17 @@
   const U = {};
   U.clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   U.lerp = (a, b, t) => a + (b - a) * t;
-  U.rnd = (a, b) => a + Math.random() * (b - a);
+  /* visual randomness (particles, sounds, cracks, fidgets) has its own source, so an online fight's seeded one
+     (online.js swaps Math.random) is spent the same way on every device */
+  const R0 = Math.random.bind(Math);
+  U.vrand = () => R0(); U.vrnd = (a, b) => a + R0() * (b - a);
+  /* the gameplay source: Math.random, unless an online fight seeds it (U.setRand). three.js stamps every new object
+     with a random id from Math.random, so gameplay can't share Math.random with it */
+  let RNG = R0;
+  U.rand = () => RNG(); U.setRand = f => { RNG = f || R0; };
+  U.rnd = (a, b) => a + U.rand() * (b - a);
   U.rndi = (a, b) => Math.floor(U.rnd(a, b + 1));
-  U.pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  U.pick = arr => arr[Math.floor(U.rand() * arr.length)];
   U.chance = p => Math.random() < p;
   U.dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
   U.ang = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);         // yaw that faces from a to b (model faces +Z)
@@ -18,7 +26,7 @@
   U.smooth = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
   U.fmt = n => Math.round(n).toLocaleString('en-US');
   U.hex = n => '#' + (n & 0xffffff).toString(16).padStart(6, '0');
-  U.shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  U.shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(U.rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   U.$ = id => document.getElementById(id);
   /* el('div', {class:'x', onclick:fn}, child, 'text', ...) */

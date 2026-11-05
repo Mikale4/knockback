@@ -114,6 +114,7 @@
       return panel;
     },
     pause(match) {
+      if (match.opts && match.opts.online) { if (window.Online) Online.menu(); return; }
       if ($('pause') || match.phase === 'end') return;
       match.paused = true; SFX.play('ui');
       const close = () => { match.paused = false; ov.remove(); for (const p of Input.players) p.clear(); };

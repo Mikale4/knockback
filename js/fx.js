@@ -36,21 +36,21 @@
     burst(pos, o) {
       o = o || {}; const n = o.n || 10;
       for (let i = 0; i < n && P.length < MAX * 2; i++) {
-        const sp = (o.speed || 5) * U.rnd(0.4, 1.1), a = Math.random() * Math.PI * 2, up = o.up != null ? o.up : 0.6;
-        let dx = Math.cos(a), dz = Math.sin(a), dy = U.rnd(-0.2, 1) * up + (o.lift || 0);
+        const sp = (o.speed || 5) * U.vrnd(0.4, 1.1), a = U.vrand() * Math.PI * 2, up = o.up != null ? o.up : 0.6;
+        let dx = Math.cos(a), dz = Math.sin(a), dy = U.vrnd(-0.2, 1) * up + (o.lift || 0);
         if (o.dir) { dx = dx * 0.5 + o.dir.x; dz = dz * 0.5 + o.dir.z; dy += o.dir.y || 0; }
         const l = Math.hypot(dx, dy, dz) || 1;
-        const col = Array.isArray(o.color) ? U.pick(o.color) : (o.color != null ? o.color : 0xffffff);
-        P.push({ x: pos.x + U.rnd(-0.1, 0.1), y: pos.y + U.rnd(-0.1, 0.1), z: pos.z + U.rnd(-0.1, 0.1), vx: dx / l * sp, vy: dy / l * sp, vz: dz / l * sp,
-          life: (o.life || 0.6) * U.rnd(0.6, 1.2), t: 0, size: (o.size || 0.09) * U.rnd(0.6, 1.3), col, glow: !!o.glow, g: o.gravity != null ? o.gravity : 18,
-          rx: Math.random() * 6, ry: Math.random() * 6, spin: U.rnd(-12, 12), floor: o.floor != null ? o.floor : 0, drag: o.drag || 0.6, shrink: o.shrink !== false });
+        const col = Array.isArray(o.color) ? o.color[Math.floor(U.vrand() * o.color.length)] : (o.color != null ? o.color : 0xffffff);
+        P.push({ x: pos.x + U.vrnd(-0.1, 0.1), y: pos.y + U.vrnd(-0.1, 0.1), z: pos.z + U.vrnd(-0.1, 0.1), vx: dx / l * sp, vy: dy / l * sp, vz: dz / l * sp,
+          life: (o.life || 0.6) * U.vrnd(0.6, 1.2), t: 0, size: (o.size || 0.09) * U.vrnd(0.6, 1.3), col, glow: !!o.glow, g: o.gravity != null ? o.gravity : 18,
+          rx: U.vrand() * 6, ry: U.vrand() * 6, spin: U.vrnd(-12, 12), floor: o.floor != null ? o.floor : 0, drag: o.drag || 0.6, shrink: o.shrink !== false });
       }
     },
     /* a white-hot star at an impact */
     spark(pos, o) {
       o = o || {};
       const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, color: o.color || 0xffffff, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, toneMapped: false, transparent: true }));
-      m.position.copy(pos); const s = o.size || 1.2; m.scale.set(s, s, 1); m.material.rotation = Math.random() * 6; m.renderOrder = 20;
+      m.position.copy(pos); const s = o.size || 1.2; m.scale.set(s, s, 1); m.material.rotation = U.vrand() * 6; m.renderOrder = 20;
       scene.add(m); sparks.push({ m, t: 0, life: o.life || 0.16, s });
     },
     /* an expanding ring on the floor or facing a direction */
@@ -88,7 +88,7 @@
     update(dt) {
       // shake decays; its offset is applied by whoever owns the camera
       shake.amt = Math.max(0, shake.amt - dt * 2.8);
-      shake.x = (Math.random() - 0.5) * shake.amt * 0.5; shake.y = (Math.random() - 0.5) * shake.amt * 0.5;
+      shake.x = (U.vrand() - 0.5) * shake.amt * 0.5; shake.y = (U.vrand() - 0.5) * shake.amt * 0.5;
       let li = 0, gi = 0;
       for (let i = P.length - 1; i >= 0; i--) {
         const p = P[i]; p.t += dt;

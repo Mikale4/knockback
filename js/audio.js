@@ -19,7 +19,7 @@
     sfxBus = ctx.createGain(); sfxBus.gain.value = vol.sfx; sfxBus.connect(master);
     musBus = ctx.createGain(); musBus.gain.value = vol.music; musBus.connect(master);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 1.5, ctx.sampleRate);
-    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = U.vrand() * 2 - 1;
     return ctx;
   }
   const unlock = () => { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); };
@@ -42,7 +42,7 @@
     const f = ctx.createBiquadFilter(); f.type = type || 'bandpass'; f.frequency.setValueAtTime(freq || 2000, t); f.Q.value = q || 1;
     if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur);
     const a = ctx.createGain(); a.gain.setValueAtTime(g || 0.3, t); a.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f); f.connect(a); a.connect(bus || sfxBus); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.02);
+    s.connect(f); f.connect(a); a.connect(bus || sfxBus); s.start(t, U.vrand() * 0.5); s.stop(t + dur + 0.02);
   }
 
   const S = {
@@ -55,7 +55,7 @@
       for (let i = 0; i < 2; i++) { const w = t + i * 0.085; tone(240 + n * 18, 120, 0.12, 'triangle', 0.5, w); noise(0.05, 0.35, 1400, 3, 'bandpass', w); tone(95, 55, 0.18, 'sine', 0.45, w); } },
     crack() { noise(0.2, 0.4, 3000, 0.5, 'highpass'); tone(300, 70, 0.15, 'sawtooth', 0.1); },
     wallbreak() { if (!ctx) return; const t = ctx.currentTime; tone(70, 25, 0.9, 'sine', 0.8); noise(0.9, 0.6, 1200, 0.4, 'lowpass', t, null, 200);
-      for (let i = 0; i < 9; i++) { const w = t + 0.05 + Math.random() * 0.6; tone(U.rnd(300, 900), U.rnd(100, 300), 0.07, 'triangle', 0.18, w); } },
+      for (let i = 0; i < 9; i++) { const w = t + 0.05 + U.vrand() * 0.6; tone(U.vrnd(300, 900), U.vrnd(100, 300), 0.07, 'triangle', 0.18, w); } },
     guard() { tone(1400, 900, 0.07, 'square', 0.12); noise(0.06, 0.2, 4000, 2); },
     jguard() { tone(1800, 1800, 0.25, 'sine', 0.25); tone(2700, 2700, 0.2, 'sine', 0.12); },
     gbreak() { tone(600, 80, 0.4, 'sawtooth', 0.25); noise(0.3, 0.35, 2000, 0.6); },
@@ -130,7 +130,7 @@
     get current() { return Object.keys(SONGS).find(k => SONGS[k] === cur) || null; },
     /* the beat of the music that's playing (falls back to the match clock): n counts beats, near = within 85 ms of one */
     beat(m) {
-      const per = 60 / ((cur && cur.bpm) || 148), live = ctx && cur && ctx.state === 'running';
+      const per = 60 / ((cur && cur.bpm) || 148), live = ctx && cur && ctx.state === 'running' && !(m && m.opts && m.opts.online);
       const x = (live ? ctx.currentTime - songT0 : (m ? m.time : 0)) / per;
       return { n: Math.floor(x), near: Math.abs(x - Math.round(x)) * per < 0.085, per };
     },

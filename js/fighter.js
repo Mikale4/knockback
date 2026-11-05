@@ -313,7 +313,7 @@
       if ((heavyCharge || lightCharge) && this.moveT >= mv.su * 0.6) {
         this.charge += dt; this.flash = 0.3; this.flashCol = lightCharge && this.charge >= 0.45 ? 0xff4020 : 0xffb030;
         if (lightCharge) this.armorT = Math.max(this.armorT, 0.05);
-        if (Math.random() < 0.4) FX.burst(this.fig.socket(lightCharge ? 'wR' : 'wL', [0, 0, lightCharge ? 9 : 2]), { n: 1, color: 0xffd060, glow: true, speed: 1.5, size: 0.06, gravity: -3, life: 0.3 });
+        if (U.rand() < 0.4) FX.burst(this.fig.socket(lightCharge ? 'wR' : 'wL', [0, 0, lightCharge ? 9 : 2]), { n: 1, color: 0xffd060, glow: true, speed: 1.5, size: 0.06, gravity: -3, life: 0.3 });
         this.vel.x *= 0.8; this.vel.z *= 0.8; this.physics(dt, 0); return;
       }
       // MONK signature, Flow: every hit of the running combo makes the strings faster
@@ -429,7 +429,7 @@
         this.yaw = U.ang(this.pos, o.pos); this.vel.x = this.vel.z = 0; SFX.play('dodge');
         FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 10, color: 0x30243f, speed: 3, size: 0.11, gravity: -1, life: 0.4 });
       }
-      if (this.kind === 'light' && mv.id && Math.random() < 0) this.m.call(this, mv.name);
+      if (this.kind === 'light' && mv.id && U.rand() < 0) this.m.call(this, mv.name);
     }
     activeFrames(mv) {
       const o = this.opp; if (!o) return;
@@ -566,7 +566,7 @@
           this.vel.x = U.clamp((tx - this.pos.x) / left, -30, 30); this.vel.z = U.clamp((tz - this.pos.z) / left, -30, 30); this.yaw = U.ang(this.pos, o.pos);
         }
         this.physics(dt, 0, 0, LEAPG);
-        if (Math.random() < 0.7) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.8), { n: 1, color: [0xffd080, 0xff6020], glow: true, speed: 0.6, size: 0.08, gravity: -2, life: 0.35 });
+        if (U.rand() < 0.7) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.8), { n: 1, color: [0xffd080, 0xff6020], glow: true, speed: 0.6, size: 0.08, gravity: -2, life: 0.35 });
         if (t > 0.1 && this.grounded) {
           this.vel.set(0, 0, 0);
           FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.2, life: 0.45, color: 0xffd080 }); FX.addShake(0.9); SFX.play('boom');
@@ -831,7 +831,7 @@
     }
 
     /* ------------------------------------------------------------ animation */
-    shakeFig() { this.fig.root.position.x = (Math.random() - 0.5) * 0.06 * (this.inHitstun ? 1 : 0.3); }
+    shakeFig() { this.fig.root.position.x = (U.rand() - 0.5) * 0.06 * (this.inHitstun ? 1 : 0.3); }
     animate(dt) {
       this.fig.root.position.x = 0;
       this.obj.rotation.y = this.yaw;
@@ -863,7 +863,7 @@
           else { pose = Anim.blend(R, Anim.P.grab.strike, 1, R); rate = 20; }
         }
         else if (st === 'hit' && this.crumpled) { pose = Anim.fill(Anim.STATE.crumple); rate = 9; }
-        else if (st === 'hit' && this.asleep) { pose = Anim.fill(Anim.STATE.stunned); pose.head = [0.75, 0, 0.35]; pose.torso = [0.3, 0, 0.15]; rate = 6; if (Math.random() < 0.04) FX.burst(this.fig.socket('head', [0, 9, 0]), { n: 1, color: 0xffffff, glow: true, speed: 0.4, size: 0.08, gravity: -1.5, life: 0.8 }); }
+        else if (st === 'hit' && this.asleep) { pose = Anim.fill(Anim.STATE.stunned); pose.head = [0.75, 0, 0.35]; pose.torso = [0.3, 0, 0.15]; rate = 6; if (U.rand() < 0.04) FX.burst(this.fig.socket('head', [0, 9, 0]), { n: 1, color: 0xffffff, glow: true, speed: 0.4, size: 0.08, gravity: -1.5, life: 0.8 }); }
         else if (st === 'hit' && this.dizzy) { pose = Anim.fill(Anim.STATE.stunned); pose.head[1] = Math.sin(this.stateT * 8) * 0.5; pose.armL = [-2.2, 0, -0.6]; rate = 10; }
         else if (st === 'hit' || st === 'held') { pose = Anim.fill(Anim.STATE.flinch); rate = 30; }
         else if (st === 'tumble' || st === 'out') { pose = Anim.fill(Anim.STATE.tumble); rate = 24; }
@@ -953,7 +953,7 @@
       const guarding = (vic.state === 'guard' || vic.state === 'guardstun') && !o.force && Combat.facing(vic, o.from || att.pos);
       if (guarding && mv.type !== 'grab') {
         let just = vic.state === 'guard' && m.time - (vic.guardStart || -9) < 0.12;
-        const cpu = vic.input.cpu; if (just && cpu && cpu.lv != null && !cpu.dummy && Math.random() > [0.1, 0.22, 0.35, 0.5][cpu.lv]) just = false;
+        const cpu = vic.input.cpu; if (just && cpu && cpu.lv != null && !cpu.dummy && U.rand() > [0.1, 0.22, 0.35, 0.5][cpu.lv]) just = false;
         const raw = mv.dmg * att.dmgMult(o.kind);
         if (just) {
           vic.setState('guardstun'); vic.hitstun = 0.08; vic.hype = Math.min(100, vic.hype + 10);
