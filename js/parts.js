@@ -179,7 +179,7 @@
   mv('smAirB', { name: 'Spirit Bolt', type: 'proj', proj: 'boltDown', pose: 'cast', su: 0.09, rc: 0.24, dmg: 34, kb: [3, -11], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'whoosh' });
   mv('impBite', { name: 'Imp', dmg: 14, kb: [2, 0], stun: 0.42, zone: 'mid', hype: 0.6, trail: 0 });
   mv('impPounce', { name: 'Imp Pounce', dmg: 18, kb: [2.5, 0], stun: 0.5, zone: 'mid', hype: 0.6, trail: 0 });
-  mv('hexBlast', { name: 'Hex Blast', type: 'proj', proj: 'hex', pose: 'cast', su: 0.2, rc: 0.32, dmg: 76, kb: [15.5, 5], launch: 1, range: 4.2, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('hexBlast', { name: 'Hex Blast', type: 'proj', proj: 'hex', pose: 'cast', su: 0.2, rc: 0.64, dmg: 76, kb: [15.5, 5], launch: 1, range: 6, charge: 1, trail: 0, sfx: 'whoosh' });
   mv('risingGlyph', { name: 'Rising Glyph', pose: 'palmUp', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1, 13], launch: 1, launcher: 1, trail: 0, sfx: 'jguard' });
   mv('fallingTome', { name: 'Falling Tome', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 52, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
   mv('summonPair', { name: 'Summon Imps', type: 'summon', summon: 2, pose: 'summon', su: 0.2, rc: 0.3, trail: 0, sfx: 'jguard' });
@@ -270,7 +270,7 @@
       head: { name: "Captain's Tricorne", armor: 105, weight: 0.95, special: 'powderKeg', uses: 3, hype: 1.15, desc: 'SPECIAL: Powder Keg. Lob a bomb that blows them off their feet.' },
       core: { name: 'Frock Coat', hp: 950, def: 0.04, weight: 0.95, guard: 0, desc: 'Light and loose. Builds Hype faster.', hypeBonus: 0.1 },
       armR: { name: 'Cutlass', armor: 125, weight: 0.95, light: 'cuA', air: 'cuAirA', sig: 'dirty', sigName: 'Dirty Fighting', sigDesc: 'Pause after the Backcut and throw sand: they stand there dizzy.', trail: 0xfff1c0, desc: 'Cut › Backcut › Flourish (spin) › Boot to the Face. Pause after Backcut: Sand in the Eyes (dizzy). Air ends in a Cannonball dive. With the Flintlock: Heavy mid-string is a Quick Shot.' },
-      armL: { name: 'Flintlock', armor: 110, weight: 0.9, heavy: 'pointBlank', launch: 'pistolWhip', airHeavy: 'airShot', guard: 70, chip: 1.1, trail: 0xffd28a, holster: 1, gunCancel: 'quickShot', rounds: 3, reload: 5, desc: 'Holstered until he fires (the cutlass is put away while it is out). HEAVY: Point Blank, a shot that reaches 5.5 m. THREE ROUNDS in the chamber (Point Blank, Quick Shot and the Plunging Shot each spend one); empty, he reloads for 5 s and Heavy clubs them with the butt. Guard: weak.' },
+      armL: { name: 'Flintlock', armor: 110, weight: 0.9, heavy: 'pointBlank', launch: 'pistolWhip', airHeavy: 'airShot', guard: 70, chip: 1.1, trail: 0xffd28a, holster: 1, gunCancel: 'quickShot', rounds: 4, reload: 5, desc: 'Holstered until he fires (the cutlass is put away while it is out). HEAVY: Point Blank, a shot that reaches 5.5 m. FOUR ROUNDS in the chamber (Point Blank, Quick Shot and the Plunging Shot each spend one); empty, he reloads for 5 s and Heavy clubs them with the butt. Guard: weak.' },
       legs: { name: 'Peg & Boot', armor: 165, weight: 0.95, speed: 6.2, jump: 11, airJumps: 1, dashAtk: 'pegSweep', perk: 'sealegs', desc: 'Sea legs: dodges travel 30% further. DASH ATTACK: Peg Sweep.' },
       card: { name: 'Jolly Plunder', super: 'broadside', passive: 'plunder', desc: 'LEGEND ART: Broadside, a cannon barrage. PASSIVE (Plunder): +35% Hype gain.' },
     },
@@ -302,7 +302,7 @@
       head: { name: "Conjurer's Cowl", armor: 100, weight: 0.9, special: 'summonPair', uses: 3, hype: 1.05, desc: 'SPECIAL: Summon Imps. Two imps pop out of a circle and go for them. Each one takes two hits.' },
       core: { name: "Conjurer's Robe", hp: 900, def: 0.03, weight: 0.9, guard: -5, desc: 'Loose robes. Light, and a little fragile.' },
       armR: { name: 'Summoning Staff', armor: 115, weight: 0.9, light: 'smA', air: 'smAirA', sig: 'pack', sigName: 'Pack Tactics', sigDesc: "Your imps pounce on anyone you hit. Sic 'Em sends them all in at once.", trail: 0x9dffc0, desc: "Staff Jab › Staff Swing › Sic 'Em (every imp attacks) › Conjure Bolt. Pause after Staff Swing: Call Imp. Air ends in a Spirit Bolt spike. SIGNATURE: imps join your hits." },
-      armL: { name: 'Grimoire', armor: 110, weight: 0.85, heavy: 'hexBlast', launch: 'risingGlyph', airHeavy: 'fallingTome', guard: 65, chip: 1.15, trail: 0x9dffc0, desc: 'HEAVY: Hex Blast, a glyph that bursts 4 m out. Guard: weak.' },
+      armL: { name: 'Grimoire', armor: 110, weight: 0.85, heavy: 'hexBlast', launch: 'risingGlyph', airHeavy: 'fallingTome', guard: 65, chip: 1.15, trail: 0x9dffc0, desc: 'HEAVY: Hex Blast, a glyph that bursts 6 m out; casting it leaves her open a while. Guard: weak.' },
       legs: { name: 'Ritual Sandals', armor: 150, weight: 0.9, speed: 6.0, jump: 11, airJumps: 1, dashAtk: 'staffSweep', perk: 'familiar', desc: 'Familiar: start every round with an imp at your side. DASH ATTACK: Staff Sweep.' },
       card: { name: 'Ninefold Circle', super: 'grandSummon', passive: 'legion', desc: 'LEGEND ART: Grand Summoning, a spirit giant. PASSIVE (Legion): her imps bite 30% harder.' },
     },

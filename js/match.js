@@ -260,6 +260,13 @@
       const p = from.clone().addScaledVector(dir, t); return p.distanceTo(c) < (w || 0.75) ? p : null;
     }
     const glowMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op == null ? 0.9 : op, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+    /* a shot has to read on a white floor too, where an additive glow is only more white: a glowing shot gets a dark
+       shell behind it, every trail a dark band under it, and everything that flies casts a shadow (looks only) */
+    const INK = {}, inkCol = col => new THREE.Color(col == null ? 0xffffff : col).multiplyScalar(0.16);
+    const inkMat = (col, op) => { const k = col + '|' + (op || 0); return INK[k] || (INK[k] = op ? new THREE.MeshBasicMaterial({ color: inkCol(col), transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }) : new THREE.MeshBasicMaterial({ color: inkCol(col), side: THREE.BackSide, toneMapped: false })); };
+    const inked = (mesh, col, s) => { const sh = new THREE.Mesh(mesh.geometry, inkMat(col)); sh.scale.setScalar(s); sh.castShadow = true; sh.userData.keep = true; mesh.add(sh); return mesh; };
+    const underTrail = (trail, col) => { const u = new THREE.Mesh(trail.geometry, inkMat(col, 0.45)); u.scale.set(2.4, 2.4, 1); u.renderOrder = -1; u.userData.keep = true; trail.add(u); return trail; };
+    const shadows = o => { o.traverse(c => { if (c.isMesh) c.castShadow = true; }); return o; };
     /* ---- what flies: aim, the muzzle flash, darts (a bullet, a kunai, a bolt) and the chain */
     const UP = new V3(0, 1, 0), CHAIN_N = 64, _q = new V3(), _o3 = new THREE.Object3D();
     // things that turn to face you (notes, the hex glyph) face the usual camera angle, never the camera itself: the fight
@@ -402,19 +409,20 @@
       const ring = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.46, 6), glowMat(col, 0.95)); g.add(ring);
       const tri = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.22, 3), glowMat(0xffffff, 0.9)); g.add(tri);
       const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), glowMat(col, 1)); g.add(core);
+      const seal = new THREE.Mesh(new THREE.CircleGeometry(0.56, 6), new THREE.MeshBasicMaterial({ color: inkCol(col), side: THREE.DoubleSide, toneMapped: false })); seal.position.z = -0.03; seal.castShadow = true; g.add(seal);
       g.renderOrder = 14; return g;
     }
-    function disposeGroup(g) { scene.remove(g); g.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
+    function disposeGroup(g) { scene.remove(g); g.traverse(o => { if (o.isMesh && !o.userData.keep) { o.geometry.dispose(); o.material.dispose(); } }); }
     function dart(f, mv, look, from, dir, range, opt) {
       opt = opt || {}; const L = LOOK[look];
       let mesh, own = true;
       if (look === 'kunai') { mesh = kunaiMesh(); own = false; }
-      else if (look === 'bolt') mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), glowMat(opt.col || 0xffffff, 0.95));
+      else if (look === 'bolt') mesh = inked(new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), glowMat(opt.col || 0xffffff, 0.95)), opt.col, 1.75);
       else if (BALL_MAKE[look]) { mesh = ballMesh(look); own = false; }
       else if (SPORT_MESH[look]) { mesh = SPORT_MESH[look](); mesh.castShadow = true; }
-      else mesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.24), glowMat(0xfff4d0, 1));
-      mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
-      const trail = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(look === 'bolt' ? opt.col : L.tcol, look === 'kunai' ? 0.45 : 0.8));
+      else mesh = inked(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.24), glowMat(0xfff4d0, 1)), 0xc08a30, 1.9);
+      shadows(mesh); mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
+      const trail = underTrail(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(look === 'bolt' ? opt.col : L.tcol, look === 'kunai' ? 0.45 : 0.8)), look === 'bolt' ? opt.col : L.tcol);
       trail.scale.set(L.tw, L.tw, 0.001); trail.visible = false; scene.add(trail);
       M.projs.push({ kind: 'dart', look, f, mv, k: f.kind, charge: opt.charge || 0, pos: from.clone(), from: from.clone(), back: f.pos.clone().setY(f.pos.y + 1.15), dir: dir.clone().normalize(), speed: L.speed, range, dist: 0, w: L.w,
         mesh, trail, own, grp: opt.grp || { done: false }, id: 's' + (++M.shotId), visual: !!opt.visual, col: opt.col, t: 0, stuck: null });
@@ -584,9 +592,9 @@
       } else if (mv.proj === 'wave') {
         // BARD: a ring of sound that rolls forward
         const from = _w.copy(f.pos).setY(f.pos.y + 1).clone(), ring = new THREE.Group();
-        [[0.95, 0xff8ad8, 0.5, 0], [0.7, 0xfff0fa, 0.4, -0.3]].forEach(([r, c, op, z]) => {
+        [[0.95, 0xf0469e, 0.5, 0], [0.7, 0xffb4e2, 0.4, -0.3]].forEach(([r, c, op, z]) => {
           const g = new THREE.SphereGeometry(r, 22, 6, 0, Math.PI * 2, 0, 0.8); g.rotateX(Math.PI / 2); g.translate(0, 0, z - r);
-          const sh = new THREE.Mesh(g, glowMat(c, op)); sh.userData.op = op; sh.renderOrder = 14; ring.add(sh);
+          const sh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, side: THREE.DoubleSide, depthWrite: false, toneMapped: false })); sh.userData.op = op; sh.renderOrder = 14; ring.add(sh);
         });
         ring.position.copy(from); ring.lookAt(from.clone().add(F)); scene.add(ring);
         const notes = [0, 1, 2, 3].map(i => { const n = noteMesh(i); scene.add(n); return n; });
@@ -858,9 +866,9 @@
     };
     M.BALL = BALL;
     function throwBall(f, mv, S, from, dir, range, charge) {
-      const L = LOOK[S.look], mesh = ballMesh(S.look);
+      const L = LOOK[S.look], mesh = shadows(ballMesh(S.look));
       mesh.position.copy(from); scene.add(mesh);
-      const trail = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(L.tcol, 0.7)); trail.scale.set(L.tw, L.tw, 0.001); trail.visible = false; scene.add(trail);
+      const trail = underTrail(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(L.tcol, 0.7)), L.tcol); trail.scale.set(L.tw, L.tw, 0.001); trail.visible = false; scene.add(trail);
       const vel = dir.clone().normalize().multiplyScalar(L.speed);
       if (S.hook) { const o = M.opp(f), d = o ? Math.hypot(o.pos.x - from.x, o.pos.z - from.z) : 6; vel.applyAxisAngle(UP, (f.idx ? -1 : 1) * U.clamp(0.08 * d, 0.1, 0.5)); }   // a hook: out to one side, curling back in (tighter up close)
       const p = { kind: 'sball', ball: S.ball, look: S.look, f, mv, k: f.kind, charge: charge || 0, pos: from.clone(), from: from.clone(), vel, ph: 'fly', dist: 0, range, n: 0, t: 0,
