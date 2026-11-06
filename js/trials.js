@@ -466,9 +466,11 @@
   /* -------------------------------------------------------- the panel */
   function draw() {
     if (!R || !R.panel) return;
-    const t = R.trial, P = R.panel; P.innerHTML = '';
-    const ok = R.state === 'ok', bad = R.state === 'fail';
-    P.className = 'trialp' + (ok ? ' ok' : bad ? ' bad' : '');
+    const t = R.trial, P = R.panel, keep = P.querySelector('.tsteps'), scrolled = keep ? keep.scrollTop : 0; P.innerHTML = '';
+    const ok = R.state === 'ok', bad = R.state === 'fail', long = t.steps.length > 11;
+    // a long route: two columns, read top to bottom (on a wide screen); and the list scrolls if it still won't fit
+    P.className = 'trialp' + (long ? ' long' : '') + (ok ? ' ok' : bad ? ' bad' : '');
+    P.style.setProperty('--rows', Math.ceil(t.steps.length / 2));
     P.append(...[
       el('div', { class: 'th' }, el('span', null, (R.tier === 'pro' ? 'PROFESSIONAL · ' : R.tier === 'adv' ? 'ADVANCED · ' : 'COMBO TRIALS · ') + KB.LINES[R.line].name), el('span', { class: 'stars' }, '★'.repeat(t.stars) + '☆'.repeat(5 - t.stars))),
       el('h3', null, (R.i + 1) + ' / ' + R.list.length + '  ' + t.name + (cleared(R.line, R.i, R.tier) ? '  ✓' : '')),
@@ -483,6 +485,9 @@
         el('button', { onclick: () => { SFX.play('ui'); stopDemo(); reset(); } }, 'RESET'),
         el('button', { disabled: R.i + 1 >= R.list.length || null, onclick: () => { SFX.play('ui'); go(R.i + 1); } }, '▸'),
         el('button', { class: 'exit', onclick: () => { SFX.play('back'); Trials.quit(); } }, 'EXIT'))].filter(Boolean));   // (an empty row is null: DOM append would print it)
+    // keep the step you're on in view (the list keeps its place between redraws otherwise)
+    const ol = P.querySelector('.tsteps'), now = P.querySelector('.tsteps li.now'); ol.scrollTop = scrolled;
+    if (now && ol.scrollHeight > ol.clientHeight + 1) { const top = now.offsetTop - ol.offsetTop, bot = top + now.offsetHeight; if (top < ol.scrollTop + 4 || bot > ol.scrollTop + ol.clientHeight - 4) ol.scrollTop = Math.max(0, top - ol.clientHeight / 2 + now.offsetHeight / 2); }
   }
   function go(i) { if (!R) return; stopDemo(); R.i = i; R.trial = R.list[i]; reset(); }
 
