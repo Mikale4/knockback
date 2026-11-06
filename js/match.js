@@ -259,16 +259,23 @@
       return out;
     }
     /* aim a shot of the given speed at them: lead them, and turn to face it. Outside the cone (or out of range) it goes straight */
+    /* a shot knocks them AWAY from the shooter (body to body), not along its own line: from the hand, at point blank,
+       that line can run off to one side and the knock went sideways */
+    const shotDir = (f, o, fly) => { const d = _v.subVectors(o.pos, f.pos).setY(0); if (d.lengthSq() < 0.04) d.copy(fly).setY(0); return d.normalize().clone(); };
     function aimDir(f, o, from, dir, range, cone, down, speed) {
       if (!o || ['out', 'ko', 'getup'].includes(o.state) || (o.state === 'down' && !Combat.otgOk(f, o, f.move || {}, f.kind))) return dir;
       const tgt = predict(o, 0, new V3());
       for (let k = 0; k < 3 && speed; k++) predict(o, tgt.distanceTo(from) / speed, tgt);
-      const d = tgt.sub(from), flat = _v.copy(d).setY(0), fl = flat.length();
+      // "are they in front?" is judged body to body, and the shooter turns to face them that way too: the hand can be a
+      // metre to one side, and at point blank the angle from it put someone right in front of you outside the cone (the
+      // shot went straight past them). The shot itself still flies from the hand to them
+      const bx = tgt.x - f.pos.x, bz = tgt.z - f.pos.z, bl = Math.hypot(bx, bz), F = f.forward;
+      const d = tgt.sub(from), fl = Math.hypot(d.x, d.z);
       // (a downward shot -- Kunai Rain, Plunging Shot, Spirit Bolt -- aims at them too, level or below: the hit's own
       // knockback is what spikes them, so in an air combo it goes at them, not at the floor)
-      if (fl < 0.05 || d.length() > range + 1.5) return dir;
-      if (flat.multiplyScalar(1 / fl).dot(_q.copy(f.forward)) < cone) return dir;
-      f.yaw = Math.atan2(d.x, d.z);
+      if (fl < 0.05 || bl < 0.05 || d.length() > range + 1.5) return dir;
+      if ((bx * F.x + bz * F.z) / bl < cone) return dir;
+      f.yaw = Math.atan2(bx, bz);
       return d.normalize();
     }
     function muzzleFlash(at, dir) {
@@ -766,7 +773,7 @@
           if (tl > 0.03) { p.trail.visible = true; p.trail.position.copy(p.pos).addScaledVector(p.dir, -tl / 2); p.trail.scale.z = tl; p.trail.lookAt(p.pos); }
           if (p.look === 'bolt' && U.rand() < 0.6) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.6, size: 0.06, life: 0.3, gravity: 0 });
           if (!end) continue;
-          if (what === 'fighter') { p.grp.done = true; Combat.hit(f, o, p.mv, { kind: p.k, charge: p.charge, at: end.clone(), from: f.pos.clone(), dir: _v.copy(p.dir).setY(0).normalize().clone(), proj: true, otg: o.state === 'down' }); }
+          if (what === 'fighter') { p.grp.done = true; Combat.hit(f, o, p.mv, { kind: p.k, charge: p.charge, at: end.clone(), from: f.pos.clone(), dir: shotDir(f, o, p.dir), proj: true, otg: o.state === 'down' }); }
           dartImpact(p, end, what);
           if (p.look === 'kunai' && (what === 'wall' || what === 'floor')) { p.stuck = 0.9; if (p.trail) { M.fx.push({ m: p.trail, t: 0, life: 0.1 }); p.trail = null; } continue; }
           killDart(p); M.projs.splice(i, 1);
@@ -788,7 +795,7 @@
             M.hitMinions(f, at, 1.0, p.id);
             // the burst catches them if they're right there, glyph or no glyph
             const c = o && _w.copy(o.pos).setY(o.pos.y + 0.9);
-            if (o && o.inv <= 0 && (q || c.distanceTo(at) < 1.25)) Combat.hit(f, o, p.mv, { kind: p.k, charge: p.charge, at: at.clone(), from: f.pos.clone(), dir: _v.copy(p.dir).setY(0).normalize().clone(), proj: true, otg: o.state === 'down' });
+            if (o && o.inv <= 0 && (q || c.distanceTo(at) < 1.25)) Combat.hit(f, o, p.mv, { kind: p.k, charge: p.charge, at: at.clone(), from: f.pos.clone(), dir: shotDir(f, o, p.dir), proj: true, otg: o.state === 'down' });
             disposeGroup(p.mesh); M.projs.splice(i, 1);
           }
         } else if (p.kind === 'part') {
@@ -865,7 +872,7 @@
           if (U.rand() < 0.5) FX.burst(p.pos, { n: 1, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 1, size: 0.08, gravity: -1, life: 0.4 });
           M.hitMinions(p.f, p.pos, 0.6 + s * 0.3, p.id);
           const o = M.opp(p.f);
-          if (!p.hit && o && o.inv <= 0 && Combat.overlap(p.pos, 0.5 + s * 0.3, o)) { p.hit = true; Combat.hit(p.f, o, p.mv, { kind: p.k, charge: p.charge, at: p.pos.clone(), from: p.f.pos.clone(), dir: p.dir.clone(), proj: true }); M.noteFX(p.pos.clone(), 4); }
+          if (!p.hit && o && o.inv <= 0 && Combat.overlap(p.pos, 0.5 + s * 0.3, o)) { p.hit = true; Combat.hit(p.f, o, p.mv, { kind: p.k, charge: p.charge, at: p.pos.clone(), from: p.f.pos.clone(), dir: shotDir(p.f, o, p.dir), proj: true }); M.noteFX(p.pos.clone(), 4); }
           let wall = false; for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.4) { p.pos[w.axis] = w.sign * (w.lim - 0.4); wall = true; }
           if (wall) { FX.ring(p.pos.clone(), { r1: 1.2, life: 0.3, normal: p.dir.clone(), color: 0xff8ad8 }); FX.burst(p.pos.clone(), { n: 10, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 3, size: 0.08, gravity: 0, life: 0.4 }); }
           if (wall || p.dist >= p.range) { disposeGroup(p.mesh); p.notes.forEach(n => scene.remove(n)); M.noteFX(p.pos.clone(), 2); M.projs.splice(i, 1); }

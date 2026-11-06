@@ -99,13 +99,15 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
 - **OTG (off the ground)** — twice a combo, a hit can pick a knocked-down opponent back up off the floor ("OTG!", then
   "OTG 2!", which pops them a little lower and for less time): a
   Heavy, a dash attack, a dive (air Heavy), a sweep or a downward shot. They're scooped into the air and the combo
-  carries on. Quick Rise (Dodge as you land) gets out of it.
+  carries on (the first one hangs them there a moment, so you can get to them). Quick Rise (Dodge as you land) gets out
+  of it.
 - **Down Dash** — in the air, hold Guard and press Dodge: a dive straight to the floor, steered with the stick. It uses
   your air dodge and has no invincibility (it's for getting down fast); you can act the moment you land.
 - **Part Toss** (its own button: F, or click the right stick) — pull a part off your own figure and throw it: the head first, then the L-arm, then
   the R-arm. It works as a cancel off any hit. A toss that lands **extends the combo** ("EXTEND 1/2"): its clock and
-  decay start over, and you get a fresh OTG and ground bounce. Twice a combo at most: combo, toss, combo, toss, final
-  combo. The part lands on the floor; go and snap it back on (before they take it, see Parts).
+  decay start over, and you get a fresh OTG and ground bounce; it pops them up a little and **hangs them there a
+  moment**, time to follow the throw. Twice a combo at most: combo, toss, combo, toss, final combo. The part lands on
+  the floor; go and snap it back on (before they take it, see Parts).
 
 ## Legend Arts (supers)
 
@@ -322,22 +324,33 @@ swings when a lesson wants it to and nobody can lose. Finishing it the first tim
 ## Combo Trials
 
 **COMBO TRIALS** in the hub (`js/trials.js`): every fighter's combos on its own **base** move list (a figure of that
-line, never a mixed string), seven trials each, seventy in all: the string, the pause combo, the Launcher into an air
+line, never a mixed string), ten trials each, a hundred in all: the string, the pause combo, the Launcher into an air
 combo, the KNOCK//BACK with the rebound catch, a Special cancel, the line's signature trick (the Samurai's Rising Cut
 into Tsubame Gaeshi, the Pirate's sand and Quick Shot, the Monk's mashed Flurry, the Viking's full wind-up, the Ninja's
-Shadow Dash, the Summoner's Sic 'Em, the Paladin's crumple, the Dragoon's Vault, the Bard on the beat), and a Legend Art
-finish. A panel lists the steps in your own keys; each ticks off as it lands, and the trial resets (with why) if the
-combo drops or a wrong move comes out. **DEMO** plays it for you, and the same bot proves every one of the seventy
-can be done. Clears are saved per collector and count toward REWARDS (*Combo scholar*, *Mastered*, *Professor*).
+Shadow Dash, the Summoner's Sic 'Em, the Paladin's crumple, the Dragoon's Vault, the Bard on the beat), a Legend Art
+finish, the air Heavy SPIKE into a ground bounce, an OTG off the floor, and a Part Toss extension. A panel lists the
+steps in your own keys; each ticks off as it lands, and the trial resets (with why) if the combo drops or a wrong move
+comes out. **DEMO** plays it for you, and the same bot proves every one can be done, at 60 and 144 frames a second and
+on uneven frames. Clears are saved per collector and count toward REWARDS (*Combo scholar* counts every tier;
+*Mastered* and *Professor* count a fighter's basic trials).
 
-**ADVANCED** (the second tab): each fighter's own long routes, built on what only it has, forty-two in all (four each,
-six for the Summoner). They use ground bounces, wall bounces, OTGs, Special cancels and the Legend Arts' two
+**ADVANCED** (the second tab): each fighter's own routes, built on what only it has, seven each, seventy in all. They
+use ground bounces, wall bounces, OTGs, Special cancels, Snap Cancels, Part Tosses and the Legend Arts' two
 endings: a raw Art that opens with a bounce, or one that ends a combo in a hard knockdown to OTG. A few examples:
 the Pirate's **Pistols and powder** (Point Blank into the wall, BROADSIDE off it: nothing but the gun and the cannons)
 and **Keelhaul**; the Ninja's **Hook and blade** (Chain Hook them in, Shadow Slash them away, hook them back);
 the Summoner's **Fetch!** and **Imp juggler** (two imps in hand, two throws, two extensions); the Viking's
 **Berserker** wind-up; the Bard's **Lullaby**. A trial can start you at range, by a wall, or with imps in hand. The
 same DEMO bot proves every one.
+
+**PROFESSIONAL** (the third tab): the longest and hardest-hitting routes in the game, five for every fighter, fifty in
+all, 12 to 22 steps each, using everything at once: a KNOCK//BACK and its rebound, the launcher and an air SPIKE for the
+ground bounce, Special cancels, Snap Cancels, Part Tosses (or the Summoner's imps) for extensions (each one gives back a
+ground bounce and the OTGs), each fighter's own tricks, and the Legend Arts, raw to open or to end it in a hard
+knockdown with an OTG after. They're built the way the game wants: the air part early (the longer a combo runs, the
+faster they fall), one wall bounce per wall, and the Special before the first Part Toss (the first part you throw is
+your head). Off a wall rebound they launch rather than run a whole string: each hit lifts the target, and by the third
+they're out of reach.
 
 ## Training lab
 
