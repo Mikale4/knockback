@@ -33,7 +33,7 @@
     constructor(m, idx, build, input, opts) {
       opts = opts || {};
       this.m = m; this.idx = idx; this.build = build; this.baseBuild = build; this.input = input; this.opts = opts;
-      this.st = KB.stats(build, opts.bonus);
+      this.st = this.calc(build);
       this.fig = Models.figure(build);
       this.obj = new THREE.Group(); this.spin = new THREE.Group();
       this.spin.position.y = 0.95; this.fig.root.position.y = -0.95;
@@ -53,7 +53,7 @@
     resetRound(x, z, yaw) {
       // a part taken off the other figure only lasts the round: back to your own build and your own parts
       if (this.spearOut) this.catchSpear(true);   // a thrown lance comes back for the new round
-      if (this.build !== this.baseBuild) { this.build = this.baseBuild; this.st = KB.stats(this.build, this.opts.bonus); this.ready = Anim.readyFor(this.build); this.newTrails(); }
+      if (this.build !== this.baseBuild) { this.build = this.baseBuild; this.st = this.calc(this.build); this.ready = Anim.readyFor(this.build); this.newTrails(); }
       this.fig.restore();
       const S = this.st;
       this.pos.set(x, 0, z); this.vel.set(0, 0, 0); this.yaw = yaw; this.obj.rotation.y = yaw;
@@ -92,6 +92,30 @@
       }
       log.push(now); L[id] = log; return true;
     }
+    /* the stats from the build, then the fight's modifiers for this figure (opts.mods: an Arcade boss's extra HP,
+       damage, defence, weight) */
+    calc(b) {
+      const s = KB.stats(b, this.opts.bonus), k = this.opts.mods;
+      if (k) {
+        if (k.hp) s.hp = Math.round(s.hp * k.hp);
+        if (k.dmg) for (const x of ['dmgR', 'dmgL', 'dmgH', 'dmgG', 'dmgK']) s[x] *= k.dmg;
+        if (k.def) s.def = Math.min(0.4, s.def + k.def);
+        if (k.kbTaken) s.kbTaken *= k.kbTaken;
+        if (k.guard) s.guard = Math.round(s.guard * k.guard);
+        if (k.hype) s.hypeGain *= k.hype;
+      }
+      return s;
+    }
+    /* a new body between rounds (the Arcade's PROTO-0 re-casts itself): new parts, stats, moves and trails; the round
+       reset that follows puts it on its feet */
+    recast(build) {
+      if (this.spearOut) this.catchSpear(true);
+      this.fig.dispose(); this.brokenMat.dispose();
+      this.build = this.baseBuild = build; this.st = this.calc(build);
+      this.fig = Models.figure(build); this.fig.root.position.y = -0.95; this.spin.add(this.fig.root);
+      this.brokenMat = this.fig.mat.clone(); this.brokenMat.color.setHex(0x6a6a72);
+      this.ready = Anim.readyFor(build); this.newTrails(); this.color = KB.LINES[build.core.line].css;
+    }
     freshCombo() { return { hits: 0, dmg: 0, bounces: 0, t: 0, gb: false, by: null, otg: 0, ext: 0, dh: 0 }; }
     newTrails() { if (this.trailR) { this.trailR.dispose(); this.trailL.dispose(); } this.trailR = FX.trail(this.st.trailR); this.trailL = FX.trail(this.st.trailL); }
     /* snap a part on off the floor: your own, or the same part off the other figure if yours is missing (its moves come with it) */
@@ -100,7 +124,7 @@
       if (this.fig.parts[part] === p.grp) this.fig.reattach(part); else this.fig.adopt(part, p.grp);
       const swapped = !!p.item && this.build[part] !== p.item;
       if (swapped) {
-        this.build = Object.assign({}, this.build, { [part]: p.item }); this.st = KB.stats(this.build, this.opts.bonus);
+        this.build = Object.assign({}, this.build, { [part]: p.item }); this.st = this.calc(this.build);
         this.armorMax[part] = this.st.armor[part]; this.ready = Anim.readyFor(this.build);
         if (part === 'head') this.uses = Math.min(Math.max(this.uses, 1), this.st.uses);
         if (part === 'armL') { this.guardMax = this.st.guard; this.guardHp = Math.min(this.guardHp, this.guardMax); }

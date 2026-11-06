@@ -131,7 +131,7 @@
           el('div', { class: 'cols' },
             el('div', { class: 'col' },
               el('button', { class: 'btn big', onclick: close }, 'RESUME'),
-              el('button', { class: 'btn', onclick: () => { close(); match.restart(); } }, 'RESTART'),
+              el('button', { class: 'btn', onclick: () => { close(); if (match.opts.mode === 'arcade' && window.Arcade) Arcade.restarted(); match.restart(); } }, match.opts.mode === 'arcade' ? 'RESTART (A CONTINUE)' : 'RESTART'),
               match.training && !match.opts.tutorial && !match.opts.trials ? el('button', { class: 'btn', onclick: () => { close(); App.setView(null); Menu.training(); } }, 'CHARACTER SELECT') : null,
               match.lab ? el('button', { class: 'btn', onclick: () => { close(); Lab.record(match); } }, match.lab.rec ? 'STOP RECORDING' : 'RECORD THE DUMMY') : null,
               match.lab ? el('button', { class: 'btn', onclick: () => { close(); Lab.play(match); } }, match.ai[1] && match.ai[1].play && !match.ai[1].play.loop ? 'STOP PLAYBACK' : 'PLAY THE RECORDING') : null,

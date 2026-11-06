@@ -33,7 +33,9 @@
     { name: 'ROYAL', h: 0.76, h2: 0.84, acc: 0xffd040 },
     { name: 'SHADOW', dark: 1 },
     { name: 'IVORY', light: 1 },
+    { name: 'PROTOTYPE', proto: 1, hidden: 1 },   // the Arcade's PROTO-0: raw grey plastic, never in the menus
   ];
+  const PUBLIC_PAINTS = PAINTS.filter(P => !P.hidden).length;
   const _C = new THREE.Color(), _H = {}, clamp01 = v => Math.min(1, Math.max(0, v));
   const hsl = (c, f) => { _C.setHex(c & 0xffffff); _C.getHSL(_H); f(_H); _C.setHSL(((_H.h % 1) + 1) % 1, clamp01(_H.s), clamp01(_H.l)); return _C.getHex(); };
   function painted(b, k) {
@@ -48,6 +50,8 @@
     } else if (P.dark) {
       for (const key of ['main', 'second', 'cloth']) p[key] = hsl(b[key], o => { o.s *= 0.25; o.l = 0.1 + o.l * 0.3; });
       p.dark = 0x060608; p.accent = hsl(b.glow, o => { o.l = Math.max(o.l, 0.55); });
+    } else if (P.proto) {
+      Object.assign(p, { main: 0x9c9ca4, second: 0x84848c, accent: 0xb4b4bc, dark: 0x4a4a52, metal: 0xa8a8b0, skin: 0x8e8e96, cloth: 0x7a7a82, glow: 0xff2a3a });
     } else if (P.light) {
       p.main = mix(b.main, 0xf2eee4, 0.72); p.second = mix(b.second, 0xd8d2c4, 0.6); p.cloth = mix(b.cloth, 0xffffff, 0.55); p.dark = mix(b.dark, 0x7a7468, 0.5); p.accent = 0xd8a830;
     }
@@ -712,12 +716,13 @@
      A part rendered to a little PNG (gacha results, the shelf, the workshop). */
   let iconR = null, iconScene, iconCam;
   const ICONS = new Map();
-  function iconRender(grp, slot) {
+  function iconRender(grp, slot, size) {
     if (!iconR) {
-      iconR = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); iconR.setPixelRatio(1); iconR.setSize(192, 192);
+      iconR = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); iconR.setPixelRatio(1); iconR.setSize(192, 192); iconR.kbSize = 192;
       iconScene = new THREE.Scene(); iconCam = new THREE.PerspectiveCamera(28, 1, 0.05, 50);
       iconScene.add(new THREE.HemisphereLight(0xffffff, 0x404050, 0.95)); const dl = new THREE.DirectionalLight(0xffffff, 0.65); dl.position.set(2, 3, 4); iconScene.add(dl);
     }
+    const want = size || 192; if (iconR.kbSize !== want) { iconR.setSize(want, want); iconR.kbSize = want; }
     const sz = grp.userData.size || new THREE.Vector3(1, 1, 1);
     const R = Math.max(sz.x, sz.y, sz.z) * 0.6;
     grp.rotation.y = slot === 'armR' ? -0.9 : slot === 'armL' ? 0.9 : slot === 'fig' ? 0.4 : 0.55;
@@ -737,13 +742,14 @@
 
   /* a whole figure in its ready stance, as a PNG (blister packs, select screens) */
   const FIGS = new Map();
-  function figIcon(build) {
-    const k = KB.SLOTS.map(s => build[s].line + build[s].r).join('|') + '|' + (build.paint | 0) + (build.tint ? 't' : ''); if (FIGS.has(k)) return FIGS.get(k);
+  /* big: a 420 px portrait (the Arcade's story scenes and VS screen) */
+  function figIcon(build, big) {
+    const k = KB.SLOTS.map(s => build[s].line + build[s].r).join('|') + '|' + (build.paint | 0) + (build.tint ? 't' : '') + (big ? 'B' : ''); if (FIGS.has(k)) return FIGS.get(k);
     const F = figure(build); Anim.set(F, Anim.readyFor(build)); F.parts.wL.visible = !KB.PARTS[build.armL.line].armL.holster;
     const grp = new THREE.Group(); grp.add(F.root);
     const box = new THREE.Box3().setFromObject(F.root), c = box.getCenter(new THREE.Vector3());
     F.root.position.sub(c); grp.userData.size = box.getSize(new THREE.Vector3()).multiplyScalar(0.92);
-    const url = iconRender(grp, 'fig').toDataURL('image/png'); F.dispose(); FIGS.set(k, url); return url;
+    const url = iconRender(grp, 'fig', big ? 420 : 192).toDataURL('image/png'); F.dispose(); FIGS.set(k, url); return url;
   }
 
   /* ------------------------------------------------------- Legend Cards --
@@ -774,5 +780,5 @@
     CARDS.set(k, c); return c;
   }
 
-  window.Models = { S, D, palette, imp, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER, PAINTS, looksAlike, swatch };
+  window.Models = { S, D, palette, imp, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER, PAINTS, PUBLIC_PAINTS, looksAlike, swatch };
 })();

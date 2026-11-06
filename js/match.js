@@ -31,7 +31,7 @@
     for (let i = 0; i < 2; i++) Input.players[i].cpu = null;
     const looks = opts.builds.map(b => Object.assign({}, b, { tint: 0 }));
     if (Models.looksAlike(looks[0], looks[1])) looks[1].tint = 1;   // two that would look alike: the second is TINTED
-    M.fighters = [0, 1].map(i => new Fighter(M, i, looks[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus }));
+    M.fighters = [0, 1].map(i => new Fighter(M, i, looks[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus, mods: opts.mods && opts.mods[i] }));
     M.ai = [null, null];
     for (let i = 0; i < 2; i++) if (!human[i]) { M.ai[i] = new AI(M, M.fighters[i], opts.cpu[i]); Input.players[i].cpu = M.ai[i]; }
     if (M.training) { M.ai[1] = new AI(M, M.fighters[1], 1); M.ai[1].dummy = 'stand'; Input.players[1].cpu = M.ai[1]; }
@@ -189,11 +189,15 @@
       arena.reset(); FX.clear();
       for (const p of M.picks) { if (p.grp.parent) p.grp.parent.remove(p.grp); }
       M.picks = []; M.projs.forEach(dropProj); M.projs = []; M.camShot = null; M.clones.forEach(c => c.f.dispose()); M.clones = [];
+      // an Arcade boss that re-casts itself: a new body for each round after the first (opts.recast[round - 1])
+      const rc = M.round > 1 && opts.recast && opts.recast[M.round - 1];
+      if (rc && M.fighters[1].baseBuild !== rc) { M.fighters[1].recast(rc); M.recastNow = rc; } else M.recastNow = null;
       M.fighters[0].resetRound(-3.2, 0.6, Math.PI / 2); M.fighters[1].resetRound(3.2, 0.6, -Math.PI / 2);
       for (const f of M.fighters) { f.pos.y = 7; f.grounded = false; f.setState('intro'); f.dropIn = true; }
       for (const f of M.fighters) if (f.st.perk === 'familiar') M.summon(f, 1, true);   // FAMILIAR: an imp from the start
       M.phase = 'intro'; M.phaseT = 0; M.clock = opts.time; M.slow = 1; M.slowT = 0;
       if (!M.attract) HUD.banner(M.training ? (opts.tutorial ? 'TUTORIAL' : opts.trials ? 'COMBO TRIALS' : 'TRAINING') : (M.round === 1 && !opts.final ? 'ROUND 1' : opts.final && M.wins[0] === opts.wins - 1 && M.wins[1] === opts.wins - 1 ? 'FINAL ROUND' : 'ROUND ' + M.round), 'round', 1.2);
+      if (M.recastNow && opts.recastCall) M.after(0.9, () => M.call(M.fighters[1], opts.recastCall(M.round, M.recastNow), 'bad'));
     }
     M.restart = () => { M.round = 1; M.wins = [0, 0]; for (const f of M.fighters) { f.hype = 0; f.burst = 60; } place(); };
     place();
@@ -702,7 +706,7 @@
         for (const f of M.fighters) f.update(dt);
         separate();
         if (M.phase === 'fight' && !M.training && !M.attract && !M.cine) {
-          M.clock -= dt;
+          M.clock -= dt; M.fightT = (M.fightT || 0) + dt;   // (the fight's own time, for the Arcade's ranks)
           if (M.clock <= 0) { M.clock = 0; timeUp(); }
         }
         if (M.phase === 'ko') {
@@ -899,7 +903,7 @@
       if (M.attract) { M.round++; if (M.round > 3) { opts.onEnd && opts.onEnd({ attract: true }); return; } place(); return; }
       if (M.wins[0] >= need || M.wins[1] >= need) {
         M.phase = 'end';
-        const res = { winner: M.wins[0] >= need ? 0 : 1, wins: M.wins.slice(), mode: opts.mode, records: M.fighters.map(f => f.records), builds: opts.builds };
+        const res = { winner: M.wins[0] >= need ? 0 : 1, wins: M.wins.slice(), mode: opts.mode, records: M.fighters.map(f => f.records), builds: opts.builds, time: M.fightT || 0, hpLeft: M.fighters.map(f => Math.max(0, f.hp / f.maxHp)) };
         M.results = res; Touch.hide(); opts.onEnd && opts.onEnd(res);
         return;
       }

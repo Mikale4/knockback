@@ -50,7 +50,7 @@
       App.setView(m);
       if (window.Rewards) Rewards.watch(m, opts);
     },
-    quitMatch() { if (window.Tutorial && Tutorial.running()) return Tutorial.quit(); if (window.Trials && Trials.running()) return Trials.quit(); App.setView(null); Menu.hub(); },
+    quitMatch() { if (window.Tutorial && Tutorial.running()) return Tutorial.quit(); if (window.Trials && Trials.running()) return Trials.quit(); const arc = App.view && App.view.opts && App.view.opts.mode === 'arcade'; App.setView(null); if (arc && window.Arcade) { Arcade.restarted(); Arcade.open(); } else Menu.hub(); },
   };
   window.App = App;
   /* phones and tablets: the page never zooms. Safari ignores the viewport's user-scalable=no, so a pinch is stopped

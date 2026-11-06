@@ -17,11 +17,11 @@
   function paintRow(label, val, line, set, redraw) {
     val = val | 0;
     return el('div', { class: 'seg paints' }, el('span', null, label), el('div', { class: 'swatches' },
-      ...Models.PAINTS.map((P, k) => { const [a, b, c] = Models.swatch(line, k);
+      ...Models.PAINTS.slice(0, Models.PUBLIC_PAINTS).map((P, k) => { const [a, b, c] = Models.swatch(line, k);
         return el('button', { class: 'sw' + (val === k ? ' on' : ''), title: P.name, 'aria-label': P.name, style: { background: 'linear-gradient(135deg, ' + a + ' 0 52%, ' + b + ' 52% 100%)', borderColor: c }, onclick: () => { SFX.play('ok'); set(k); redraw(); } }); }),
       el('small', { class: 'swname' }, (Models.PAINTS[val] || Models.PAINTS[0]).name)));
   }
-  const myPaint = () => (S().paint | 0) % Models.PAINTS.length;
+  const myPaint = () => (S().paint | 0) % Models.PUBLIC_PAINTS;
   const painted = (b, k) => Object.assign({}, b, { paint: k | 0 });
   function topbar(title, onBack) {
     return el('div', { class: 'topbar' }, onBack ? back(onBack) : null, el('h1', null, title), el('div', { class: 'grow' }),
@@ -190,7 +190,7 @@
       const tutDone = Tutorial.done(), nRw = Rewards.ready(), nSel = S().selTickets | 0;
       const GROUPS = [
         { id: 'fight', label: 'FIGHT', sub: 'Arcade, Versus, Online and your Replays.', cls: 'hot', items: () => [
-          item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
+          item('ARCADE', 'Your fighter\'s story: seven fights up the shelf, a rival, a boss and two endings.', () => Menu.arcade(), 'hot'),
           item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
           item('ONLINE', 'Rooms of up to six, public or private: fight, watch, wait your turn.', () => Online.open(), 'hot'),
           item('REPLAYS', 'Your online fights and the ones you watched: watch again, keep, share.', () => Online.replays())] },
@@ -473,31 +473,11 @@
       else b2 = cfg.p2 === 'random' ? KB.randomBuild(Math.min(3, cfg.lvl)) : KB.mintBuild(cfg.p2, Math.min(3, cfg.lvl));
       App.startMatch({ mode: cfg.mode === 'two' ? 'versus' : 'cpu', builds: [b1, b2], cpu: [null, cfg.mode === 'two' ? null : cfg.lvl], arena, wins: cfg.wins, bonus: cfg.bonus, lvl: cfg.lvl });
     },
-    /* ----------------------------------------------------------- arcade */
-    arcade() {
-      Music.play('menu'); useRoom(activeBuild());
-      const ladder = Menu.ladder();
-      const run = Menu._arc || null;
-      const stage = run ? run.stage : 0;
-      App.screen(el('div', { class: 'screen arcade' }, topbar('ARCADE', () => Menu.hub()),
-        el('div', { class: 'panel arcp' },
-          el('p', { class: 'note' }, 'Six figures, each tougher than the last. The last one is a CHASE variant. Lose a fight and you can retry it.'),
-          el('div', { class: 'ladder' }, ...ladder.map((L, i) => el('div', { class: 'rung' + (i < stage ? ' done' : i === stage ? ' next' : ''), style: { '--lc': KB.LINES[L.line].css } },
-            el('img', { src: Models.figIcon(L.build) }), el('b', null, (i + 1) + '. ' + L.build.name), el('small', null, AI.LEVELS[L.lvl] + ' · ' + stars(L.r) + ' · +' + L.reward)))),
-          el('div', { class: 'row' }, btn(run ? 'CONTINUE: STAGE ' + (stage + 1) : 'START', () => Menu.arcadeFight(), 'big fight'), run ? btn('NEW RUN', () => { Menu._arc = null; Menu.arcade(); }, 'ghost') : null))));
-    },
-    ladder() {
-      if (!Menu._ladder) {
-        const lines = U.shuffle(KB.LINE_ORDER.slice()).slice(0, 6);
-        Menu._ladder = lines.map((line, i) => { const r = [0, 0, 1, 1, 2, 3][i]; const b = KB.mintBuild(line, r); if (i === 5) b.name = 'CHASE ' + KB.LINES[line].figure; return { line, r, lvl: [0, 1, 1, 2, 2, 3][i], build: b, reward: 60 + i * 40, arena: Arena.LIST[i % 3] }; });
-      }
-      return Menu._ladder;
-    },
-    arcadeFight() {
-      Menu._arc = Menu._arc || { stage: 0 };
-      const L = Menu.ladder()[Menu._arc.stage];
-      App.startMatch({ mode: 'arcade', builds: [painted(activeBuild(), myPaint()), L.build], cpu: [null, L.lvl], arena: L.arena, wins: 2, bonus: true, lvl: L.lvl, stage: Menu._arc.stage });
-    },
+    /* ----------------------------------------------------------- arcade
+       THE TOP SHELF: each fighter's story, rivals, two bosses and two endings (arcade.js, story.js) */
+    arcade() { Arcade.open(); },
+    /* the showroom turntable, for other modules' screens */
+    room: (b, side) => useRoom(b, side),
     /* --------------------------------------------------------- training */
     /* TRAINING: pick yourself (your figures, or any base fighter), the dummy and the arena (it remembers them) */
     training(cfg) {
@@ -612,20 +592,17 @@
     results(res, opts) {
       setTimeout(() => { const onKey = e => { if (!document.querySelector('.screen.results')) return window.removeEventListener('keydown', onKey); if (e.code === 'Enter' || e.code === 'Space') { const b = document.querySelector('.screen.results .btn.big'); if (b) { e.preventDefault(); window.removeEventListener('keydown', onKey); b.click(); } } }; window.addEventListener('keydown', onKey); }, 600);
       Music.play('menu'); const hud = U.$('hud'); if (hud) hud.hidden = true;
+      if (opts.mode === 'arcade') return Arcade.results(res, opts);   // the Arcade has its own (ranks, the story, continues)
       const watch = opts.mode === 'watch';
       const win = res.winner === 0, me = res.records[watch ? res.winner : 0];
-      let reward = 0, extra = null, sel = false;
+      let reward = 0;
       if (opts.mode === 'cpu') reward = win ? 80 + 40 * (opts.lvl || 0) : 30;
       if (opts.mode === 'versus') reward = 40;
-      if (opts.mode === 'arcade') {
-        const L = Menu.ladder()[opts.stage];
-        if (win) { reward = L.reward; Menu._arc.stage++; if (Menu._arc.stage >= 6) { reward += 600; extra = 'ARCADE CLEAR!  +600'; S().records.arcadeClears++; Menu._arc = null; Menu._ladder = null; sel = Rewards.selGrant('arcade'); } }
-        else reward = 20;
-      }
       if (!watch) Auth.record(res, opts.mode, reward);
       const awards = watch ? [] : Rewards.fightDone(res, opts), ready = watch ? 0 : Rewards.ready();
       const stat = (k, v) => el('div', null, el('small', null, k), el('b', null, v));
-      const next = opts.mode === 'arcade' && win && Menu._arc ? btn('NEXT STAGE ▸', () => Menu.arcadeFight(), 'big fight') : null;
+      // the winner's WIN QUOTE (story.js): the line of their Legend Card
+      const wl = res.builds[res.winner].card.line, wq = window.Story ? Story.win(wl, (Math.random() * 99) | 0) : null;
       App.screen(el('div', { class: 'screen results' },
         el('div', { class: 'panel resp ' + (win || watch ? 'win' : 'lose') },
           el('h1', null, watch ? 'CPU ' + (res.winner + 1) + ' WINS' : opts.mode === 'versus' ? 'PLAYER ' + (res.winner + 1) + ' WINS' : win ? 'YOU WIN' : 'YOU LOSE'),
@@ -633,14 +610,12 @@
           el('div', { class: 'score' }, res.wins[0] + ' — ' + res.wins[1]),
           el('div', { class: 'recs' }, stat('BEST COMBO', me.maxCombo), stat('MOST BOUNCES', me.maxBounces), stat('WALL BREAKS', me.breaks), stat('DAMAGE', Math.round(me.dmg))),
           reward ? el('div', { class: 'reward' }, el('i', { class: 'coin' }), '+' + reward + ' TOKENS') : null,
-          extra ? el('div', { class: 'reward gold' }, extra) : null,
-          sel ? el('div', { class: 'reward gold selwon' }, '🎫 SELECTION TICKET!', el('small', null, 'Your first Arcade clear: pick any fighter you don\'t have yet and its whole set is yours.'),
-            el('button', { class: 'rwready', onclick: () => { App.setView(null); Menu.selection(); } }, 'CHOOSE A FIGHTER ▸')) : null,
+          wq ? el('blockquote', { class: 'ar-quote', style: { '--lc': KB.LINES[wl].css } }, el('b', null, res.builds[res.winner].name), '“' + wq + '”') : null,
           ...awards.map(a => el('div', { class: 'reward gold' }, '★ AWARD: ' + a.name + (a.pay ? '  +' + a.pay : ''))),
           ready ? el('button', { class: 'rwready', onclick: () => { App.setView(null); Rewards.screen(); } }, '🎁 ' + ready + ' REWARD' + (ready > 1 ? 'S' : '') + ' READY TO CLAIM ▸') : null,
-          el('div', { class: 'row' }, next,
+          el('div', { class: 'row' },
             watch ? btn('NEXT FIGHT', () => Menu.versusStart(opts.cfg), 'big fight') : null,
-            opts.mode !== 'arcade' ? btn('REMATCH', () => App.startMatch(opts), watch ? 'ghost' : 'big') : (!win ? btn('RETRY', () => Menu.arcadeFight(), 'big') : null),
+            btn('REMATCH', () => App.startMatch(opts), watch ? 'ghost' : 'big'),
             btn('MENU', () => { App.setView(null); Menu.hub(); }, 'ghost')))));
     },
   };

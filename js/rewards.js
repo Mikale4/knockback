@@ -275,7 +275,7 @@
         if (lines.includes(featured())) n.featWins = 1;
         if (b.armR.line !== b.armL.line) n.mixedWins = 1;
         if (KB.stats(b).set === 2) n.mintWins = 1;
-        if (opts.mode === 'arcade') { n.arcadeStages = 1; if (opts.stage >= 5) n.arcadeClears = 1; }
+        if (opts.mode === 'arcade') n.arcadeStages = 1;   // (a clear is counted at the ending: arcade.js)
         card = b.card.line;
       }
     }

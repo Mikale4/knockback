@@ -38,7 +38,7 @@
       const v = attrs[k];
       if (v == null || v === false) continue;
       if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
-      else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+      else if (k === 'style' && typeof v === 'object') { for (const p in v) { if (p.startsWith('--')) e.style.setProperty(p, v[p]); else e.style[p] = v[p]; } }   // (CSS variables need setProperty)
       else if (k === 'html') e.innerHTML = v;
       else e.setAttribute(k, v === true ? '' : v);
     }

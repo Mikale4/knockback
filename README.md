@@ -403,7 +403,35 @@ the tutorial), **COLLECTION** (Workshop, Capsules, Shelf), then **REWARDS** (wit
 **OPTIONS**. BACK, Esc or a pad's back button closes a list, and coming back from a mode returns you to the list you
 left from.
 
-Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CPU at four levels, two players on one keyboard / two pads, or
+**ARCADE: THE TOP SHELF** (`js/arcade.js`, the script in `js/story.js`). Built the way story-driven fighting-game
+arcades are: every fighter has their own route, scenes before the fights, a rival, a boss, and a hidden route to a true
+ending. Lights out in the playroom: the figures wake, and at the top of the bookcase stands the CASE, the one place no
+figure is ever sold, boxed or lost. Your figure's Legend Card picks whose story you play, and every fighter climbs
+because they lost something (the Samurai's lord, the Pirate's map, the Dragoon's little wyrm...).
+
+- **The climb:** seven fights up the bookcase (toy chest, study desk, playroom shelf). Each opens with a short
+  **story scene**: two portraits, the speaker lit, the text typing out (click / any key / SKIP). Then a **VS screen**.
+- **Stage 4: your RIVAL**, who knows a piece of what you lost (Samurai and Ninja, Knight and Viking, Pirate and Bard,
+  Summoner and Paladin, Monk and Dragoon), with its own scene.
+- **Stage 7: THE SOVEREIGN**, the gold-edition keeper of the Case (a boss: more HP and defence). Beat it for the
+  **NORMAL ENDING**.
+- **The hidden route:** reach and beat the Sovereign with **no continues and no more than two rounds lost**, and the
+  Case opens. **PROTO-0**, the first figure ever cast (raw grey plastic, no line at all), steps out: the **TRUE FINAL
+  BOSS**. It **re-casts its body every round**: a mix of every line, then your rival's body, then a copy of YOU. Beat it
+  for the **TRUE ENDING**, where the room gets back everything it lost. The VS screen shows "THE CASE IS WATCHING"
+  while the route is still open.
+- **Ranks and score:** every win is ranked S to D (victory, speed, HP kept, combo, bounces, wall breaks, a perfect,
+  minus rounds lost) and scored (times the difficulty; rival and bosses add a bonus), with your **win quote**. The run
+  ends with an overall rank. Win quotes also show on every fight's results.
+- **CONTINUE?** with a 9-second countdown when you lose. A continue, a RESTART or quitting mid-fight costs a continue,
+  which closes the hidden route for that run.
+- **Four difficulties** (EASY, NORMAL, HARD, LEGEND) with a best score for each. A run saves as you go: SAVE & QUIT and
+  pick it up later from the Arcade screen.
+- **Rewards:** tokens for every stage, a clear bonus (doubled for the true ending), +500 for each fighter's first
+  normal ending, +1,000 and a Capsule Ticket for each first true ending, and the Selection Ticket for your first clear.
+- **STORIES:** every fighter's prologue, and every ending you've reached, to watch again.
+
+Versus (CPU at four levels, two players on one keyboard / two pads, or
 **CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that
 ignores rarity bonuses; it remembers your setup) · Training (pick yourself from your figures or any base fighter, the dummy and the arena; dummy settings, full meters, a
 combo readout, health back the moment a combo ends, a start by a wall or a SAVED POSITION; R resets and T saves, or tap /
@@ -447,5 +475,7 @@ shake** setting (Full, Reduced, Off).
 | `js/online.js` | ONLINE: the room list (MQTT), rooms of six over PeerJS (host controls, queue, fighter select, chat), fights between any two members, spectating, rollback netcode (the fight's save/restore, time sync), fingerprints and resync |
 | `js/trials.js` | COMBO TRIALS: the seventy trials, the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
+| `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |
+| `js/arcade.js` | ARCADE: the run, story scenes, VS screen, ranks, continues, the hidden route, endings, STORIES |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |
 | `tools/harness.js` | Test helpers: step the game at a fixed rate, script inputs, log callouts |
