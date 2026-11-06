@@ -1,9 +1,10 @@
 # KNOCK//BACK
 
 A voxel arena fighter where the fighters are **action figures**, in series of their own: **HISTORICAL FANTASY**
-(Pirate, Monk, Viking, Summoner, Bard), **EDO JAPAN** (Samurai, Shinobi, Ronin, Kunoichi, Shogun, Daimyo), **KNIGHTS
-OF THE REALM** (Knight, Paladin, Dragoon, Templar, Crusader, Lancer) and **MODERN SPORTS** (eleven athletes) — and every
-figure is six snap-on parts you can mix freely.
+(Monk, Viking, Summoner, Bard), **EDO JAPAN** (Samurai, Shinobi, Ronin, Kunoichi, Shogun, Daimyo), **KNIGHTS OF THE
+REALM** (Knight, Paladin, Dragoon, Templar, Crusader, Lancer), **LOVERS OF THE SEA** (Pirate, Captain, Cannoneer,
+Blackbeard, Redbeard, Sailor, Marauder, Musketeer, Ghost Pirate) and **MODERN SPORTS** (eleven athletes) — 36 lines,
+and every figure is six snap-on parts you can mix freely.
 
 **The gimmick is the name:** launch someone into a wall and they **bounce back off it**, still helpless, so you can keep
 the combo going and knock them back into the wall again. The ways out of that loop are taken from Guilty Gear.
@@ -197,7 +198,7 @@ Arts; `js/sports_story.js` their Arcade stories). Every list of fighters in the 
 Tickets, your figures, Versus, Training, Online, the Shelf, Combo Trials, Stories, the Rewards fighter tracks) shows
 one series at a time under a tab for each (Versus has a SERIES row); the series you last looked at carries over. The
 Capsule machine has a banner for each series. Parts mix freely across series: a Samurai with a Boxer's glove and a
-Skateboarder's legs is a real figure with its own mixed string (756 pairings now, all generated).
+Skateboarder's legs is a real figure with its own mixed string (1,260 pairings now, all generated).
 
 | Line (R-ARM) | Light string | Pause branch | Air string | Signature | Heavy (L-ARM) | Special (HEAD) | Legend Art |
 |---|---|---|---|---|---|---|---|
@@ -271,6 +272,31 @@ mission scroll, the shogun's seal, a castle, a sealed reliquary, a pilgrim's she
 rivals are Ronin and Shogun, Kunoichi and Daimyo, Templar and Crusader, and the Lancer rides at the Knight. Their
 Advanced and Professional trials come from one set of route patterns over each kit (`genRoutes` in `js/trials.js`),
 with fixes where a kit needs them, and like every trial they're proven at 60 Hz, 144 Hz and on uneven frames.
+
+## LOVERS OF THE SEA
+
+The **Pirate** moved here from HISTORICAL FANTASY, and eight more joined him (`js/sea.js`, `js/sea_look.js`,
+`js/sea_arts.js`, `js/sea_story.js`), each armed the way they really were:
+
+| Line (R-ARM) | Light string | Pause branch | Air string | Signature | Heavy (L-ARM) | Special (HEAD) | Legend Art |
+|---|---|---|---|---|---|---|---|
+| Captain (Naval Sabre) | Sabre Cut › Backcut › Thrust › Captain's Slash (a KNOCK) | Spyglass Bonk (dizzy) | Air Cut › Boarding Drop | **All Hands**: her Lights hit the SPOTTED 10% harder again | Spyglass Smash (the brass spyglass) | **Spotted!**: for 5 s everything hits them 15% harder | Walk the Plank: along the board at sword-point, and a splash |
+| Cannoneer (Linstock) | Match Jab › Pole Swing › Linstock Spin › Touch-Hole (launches, BURNING) | Powder Flash (dizzy) | Air Jab › Ramrod Drop | **Slow Match**: his Lights +20% on anyone burning | Grapeshot (a swivel gun, wide, 6 m) | Chain Shot (two balls chained, 10 m) | Full Battery: a row of cannons and every one fires |
+| Blackbeard (Cutlass) | Cutlass Hack › Backhand › Beard Butt (smoulders) › The Boot (a KNOCK) | Close Shot (a pistol point blank, crumple) | Air Hack › Cutlass Drop | **Dread**: the fuses leave them smouldering | Six Pistols (one a press; six, back over 12 s) | Smoke & Fuses (dizzy, all around) | Queen Anne's Revenge: six pistols and the cutlass |
+| Redbeard (Kilij) | Kilij Cut › Draw Cut › Crescent (all round) › Corsair's Rise | Kalkan Rim (crumple) | Air Cut › Falling Crescent | **Admiral**: +15% on anyone with their back to a wall | Kalkan Charge (armoured) | Naphtha Pot (a fire pot, BURNING) | Corsair Fleet: cuts like a galley's oars, and the crescent |
+| Sailor (Belaying Pin) | Pin Swing › Pin Backhand › Knee to the Gut › Sailor's Uppercut | Spit in the Eye (dizzy) | Air Pin › Deck Drop | **Bar Brawler**: a landed Heavy gives him a second of armour | Haymaker (a bare fist) | Hornpipe (+12% damage, 10% faster) | Sea Shanty: a punch on every beat and the anchor comes down |
+| Marauder (Boarding Axe) | Axe Hack › Backhand › Bearded Hook (pulls in) › Cleave (a KNOCK) | Hatchet Throw | Air Hack › Axe Drop | **Keep What You Break**: each part he breaks heals him 8% | Grappling Hook (hauls them in) | Boarding Rush (armoured) | Boarding Party: the hook, the haul, the axe, overboard |
+| Musketeer (Musket & Bayonet) | Bayonet Thrust › Butt Stroke › Bayonet Twist › Musket Lift | Bayonet Charge (through them) | Air Thrust › Plunging Bayonet | **Drilled**: reloads in 1.8 s, not 3 | Musket Shot (12 m; then reload) | Aimed Shot (crumples at 14 m) | Fix Bayonets!: the charge, the thrusts, one shot point blank |
+| Ghost Pirate (Spectral Cutlass) | Spectral Cut › Phantom Backcut › Through the Body (every time) › Drowning Rise | Wail (dizzy) | Air Cut › Undertow | **Haunting**: Through the Body passes through them every time | Ghostfire (a green flame, GHOSTFIRE ticks) | Phase (everything passes through him for a second) | Davy Jones' Locker: black water, cold hands, and up again |
+
+Passives: Quarterdeck (Captain, +12% while ahead on HP), Powder Keg (Cannoneer, his burns last twice as long), Terror
+(Blackbeard, anyone within 3 m deals 10% less), Barbarossa (Redbeard, +10% damage and Hype 15% faster), Scrapper
+(Sailor, +15% for 3 s after he's hit), Reaver (Marauder, breaks parts 30% faster), Steady Aim (Musketeer, shots +18%),
+Undying (Ghost, once a round a blow that would KO him leaves him at 1 HP). In the Arcade each lost something to
+PROTO-0 (a ship in a bottle, the gold salute ball, the black flag, the admiral's ring, a compass, a treasure map, a
+ramrod, a brass nameplate with a name on it); the rivals are Blackbeard and Redbeard, the Captain and the Ghost, the
+Sailor and the Marauder, the Musketeer and the Cannoneer. HISTORICAL FANTASY keeps the Monk, the Viking, the Summoner
+and the Bard for now. Their trials come from the same route generator, proven at 60 Hz, 144 Hz and on uneven frames.
 
 ## Mixed strings (every pair of arms has its own)
 
@@ -616,6 +642,7 @@ shake** setting (Full, Reduced, Off).
 | `js/edo_look.js`, `js/realm_look.js` | Their voxel parts and stances (the Lancer's warhorse, `Anim.mounted`) |
 | `js/edo_arts.js`, `js/realm_arts.js` | Their Legend Arts (and the Basketball player's) |
 | `js/edo_story.js`, `js/realm_story.js` | Their Arcade stories (and the Basketball player's) |
+| `js/sea.js`, `js/sea_look.js`, `js/sea_arts.js`, `js/sea_story.js` | LOVERS OF THE SEA: the crew's lines, figures, Legend Arts and stories |
 | `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |
 | `js/arcade.js` | ARCADE: the run, story scenes, VS screen, ranks, continues, the hidden route, endings, STORIES |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |

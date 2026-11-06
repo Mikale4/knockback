@@ -70,7 +70,7 @@
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
-      this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
+      this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false; this.undyingUsed = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
       Anim.set(this.fig, this.ready);
@@ -84,12 +84,13 @@
       this.armorT = Math.max(this.armorT, t);
     }
     /* moves with a use limit (the Ninja's Chain Hook: twice in any 5 s): canUse asks, useLimited spends one (or says how long to wait) */
-    canUse(id) { const mv = KB.MOVES[id]; if (!mv || !mv.limit) return true; const now = this.m.time, log = (this.limits && this.limits[id]) || []; return log.filter(t => now - t < mv.limit.t).length < mv.limit.n; }
+    limitT(mv) { return mv.limit.t * (this.st.sig === 'drill' ? 0.6 : 1); }   // (MUSKETEER: Drilled, a faster reload)
+    canUse(id) { const mv = KB.MOVES[id]; if (!mv || !mv.limit) return true; const now = this.m.time, log = (this.limits && this.limits[id]) || []; return log.filter(t => now - t < this.limitT(mv)).length < mv.limit.n; }
     useLimited(id, mv) {
-      const now = this.m.time, L = this.limits = this.limits || {}, log = (L[id] || []).filter(t => now - t < mv.limit.t);
+      const now = this.m.time, L = this.limits = this.limits || {}, log = (L[id] || []).filter(t => now - t < this.limitT(mv));
       if (log.length >= mv.limit.n) {
         L[id] = log;
-        if (now - (this.limitCall || -9) > 0.6) { this.limitCall = now; this.m.call(this, mv.name.toUpperCase() + ': ' + (mv.limit.t - (now - log[0])).toFixed(1) + ' s', 'bad'); }
+        if (now - (this.limitCall || -9) > 0.6) { this.limitCall = now; this.m.call(this, mv.name.toUpperCase() + ': ' + (this.limitT(mv) - (now - log[0])).toFixed(1) + ' s', 'bad'); }
         return false;
       }
       log.push(now); L[id] = log; return true;
@@ -466,6 +467,7 @@
       if (S.passive === 'domain' && Math.hypot(this.pos.x, this.pos.z) < 4) m *= 1.12;
       if (S.passive === 'charger') m *= 1 + Math.min(0.2, (this.runT || 0) * 0.1);
       if (S.sig === 'mounted' && (kind === 'dash' || kind === 'special')) m *= 1.15;
+      if (S.passive === 'admiral') m *= 1.1; if (this.buffs.scrap) m *= 1.15;
       return m;
     }
     updAttack(dt) {
@@ -585,7 +587,7 @@
       }
       // NINJA Vanishing Stab: blink to their far side, so the hit carries them back the other way
       // the Vanishing Stab blinks behind them once a combo; after that it's just a stab
-      if (mv.cross && o && U.dist(this.pos, o.pos) < (mv.reach || 1) + 1.8 && !['out', 'ko', 'down'].includes(o.state) && !(o.combo.by === this && o.comboing && o.combo.blink)) {
+      if (mv.cross && o && U.dist(this.pos, o.pos) < (mv.reach || 1) + 1.8 && !['out', 'ko', 'down'].includes(o.state) && !(o.combo.by === this && o.comboing && o.combo.blink && this.st.sig !== 'haunt')) {
         if (o.combo.by === this && o.comboing) o.combo.blink = true;
         FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 10, color: 0x30243f, speed: 3, size: 0.11, gravity: -1, life: 0.4 });
         const d = _v.subVectors(o.pos, this.pos).setY(0); if (d.lengthSq() < 0.01) d.copy(F); d.normalize();
@@ -636,6 +638,10 @@
       if (b.id === 'kawarimi') { this.buffs.kawarimi = b.t; this.m.call(this, 'KAWARIMI', 'buff'); }
       if (b.id === 'vow') { this.buffs.vow = b.t; this.m.call(this, 'VOW OF THE TEMPLE', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, normal: new V3(0, 1, 0), color: 0xffffff }); }
       if (b.id === 'zeal') { this.buffs.zeal = b.t; this.m.call(this, 'DEUS VULT!', 'buff'); }
+      // LOVERS OF THE SEA
+      if (b.id === 'spot') { const o = this.opp; if (o && U.dist(this.pos, o.pos) < 12 && !['ko', 'out'].includes(o.state)) { o.buffs.spotted = b.t; this.m.call(o, 'SPOTTED!', 'bad'); FX.ring(_c.copy(o.pos).setY(0.08), { r0: 0.3, r1: 1.2, life: 0.4, color: 0xd8a830 }); } else this.m.call(this, 'NOTHING IN SIGHT', 'small'); }
+      if (b.id === 'hornpipe') { this.buffs.valor = b.t; this.m.call(this, 'HORNPIPE!', 'buff'); for (let i = 0; i < 2; i++) FX.ring(_c.copy(this.pos).setY(0.2 + i * 0.4), { r1: 1.3 + i * 0.3, life: 0.35, color: 0x7ad8ff }); }
+      if (b.id === 'phase') { this.inv = Math.max(this.inv, b.t); this.buffs.phase = b.t; this.m.call(this, 'PHASE', 'buff'); FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 14, color: [0x6affb0, 0xd8fff0], glow: true, speed: 2, size: 0.08, gravity: -1, life: 0.6 }); }
       if (b.id === 'parry') { this.buffs.parry = b.t; this.m.call(this, 'EN GARDE', 'buff'); FX.spark(this.fig.socket('wR', [0, 0, 8]), { color: 0x9ad8ff, size: 1.2 }); }
       if (b.id === 'nova') { const heal = Math.round(this.maxHp * b.heal * this.st.healMult); this.hp = Math.min(this.maxHp, this.hp + heal); this.m.call(this, '+' + heal + ' HP', 'heal'); }
       if (b.id === 'valor') { this.buffs.valor = b.t; this.m.call(this, 'SONG OF VALOR', 'buff'); for (let i = 0; i < 3; i++) FX.ring(_c.copy(this.pos).setY(0.3 + i * 0.5), { r1: 1.4 + i * 0.3, life: 0.4 + i * 0.1, color: 0xff8ad8 }); }
@@ -1243,7 +1249,15 @@
         if (G === 'reach' && lite && dist >= 1.6) dmg *= 1.15;
         if (vic.st.passive === 'ironrule' && lite) dmg *= 0.85;
         if (vic.buffs.vow) dmg *= 0.8;
-        if (vic.st.passive === 'penance') vic.penance = Math.min(0.3, (vic.penance || 0) + 0.02); }
+        if (vic.st.passive === 'penance') vic.penance = Math.min(0.3, (vic.penance || 0) + 0.02);
+        // LOVERS OF THE SEA
+        if (vic.buffs.spotted) dmg *= G === 'broadside' && lite ? 1.265 : 1.15;
+        if (P === 'quarterdeck' && att.hp > vic.hp) dmg *= 1.12;
+        if (G === 'match' && lite && vic.burn && !vic.burn.poison) dmg *= 1.2;
+        if (G === 'cornered' && m.arena.walls.some(w => !w.broken && w.lim - w.sign * vic.pos[w.axis] < 1.5)) dmg *= 1.15;
+        if (P === 'steadyaim' && mv.type === 'proj') dmg *= 1.18;
+        if (vic.st.passive === 'terror' && dist < 3) dmg *= 0.9;
+        if (vic.st.passive === 'scrapper') vic.buffs.scrap = 3; }
       if (vic.buffs.bulwark) dmg *= 0.75;
       if (vic.st.perk === 'resolve' && vic.hp < vic.maxHp * 0.3) dmg *= 0.85;
       dmg = Math.round(dmg);
@@ -1254,15 +1268,17 @@
       if (bn && vic.hp > 0) {
         const pz = !mv.burn;
         if (!vic.burn || !!vic.burn.poison !== pz) { m.call(vic, pz ? 'POISONED' : 'BURNING', 'bad'); m.event('burn', { att, vic, poison: pz }); }
-        vic.burn = { t: bn[1], left: Math.round(bn[1] / 0.5), tick: 0, dps: bn[0] * att.dmgMult(o.kind), by: att, poison: pz };
+        const bt = bn[1] * (!pz && att.st.passive === 'powder' ? 2 : 1);   // (CANNONEER: Powder Keg, his burns last twice as long)
+        vic.burn = { t: bt, left: Math.round(bt / 0.5), tick: 0, dps: bn[0] * att.dmgMult(o.kind), by: att, poison: pz };
       }
       // DAIMYO: Tribute levies their Hype
       if (mv.steal && vic.hp > 0) { const st = Math.min(Math.round(vic.hype), mv.steal); if (st > 0) { vic.hype -= st; att.hype = Math.min(100, att.hype + st); m.call(att, 'TRIBUTE +' + st, 'buff'); } }
       // PART TOSS: the combo is extended -- its clock starts over, with a fresh OTG and ground bounce (twice a combo)
       if (o.ext && !o.noCombo && vic.combo.ext < 2) { const n = ++vic.combo.ext; vic.combo.t = 0; vic.combo.dh = vic.combo.hits; vic.combo.otg = 0; vic.combo.gb = false; vic.floatT = 0.35;   /* (they hang a moment: time to follow the throw) */ m.call(att, 'EXTEND ' + n + '/2', 'buff'); m.event('extend', { att, vic, n }); }
       if (!o.remote) att.moveHit = true;
+      if (att.st.sig === 'brawler' && o.kind === 'heavy' && !o.remote) att.giveArmor(1, true);
       if (att.st.passive === 'gains' && o.kind === 'heavy' && (att.gainsK || 0) < 0.2) { att.gainsK = Math.min(0.2, (att.gainsK || 0) + 0.04); m.call(att, 'GAINS +' + Math.round(att.gainsK * 100) + '%', 'buff'); }
-      att.hype = Math.min(100, att.hype + dmg * 0.11 * att.st.hypeGain * (att.buffs.momentum ? 1.5 : 1) * (mv.hype == null ? 1 : mv.hype) * (onBeat ? 1.5 : 1) * (att.st.sig === 'style' && !att.grounded ? 1.5 : 1));
+      att.hype = Math.min(100, att.hype + dmg * 0.11 * att.st.hypeGain * (att.st.passive === 'admiral' ? 1.15 : 1) * (att.buffs.momentum ? 1.5 : 1) * (mv.hype == null ? 1 : mv.hype) * (onBeat ? 1.5 : 1) * (att.st.sig === 'style' && !att.grounded ? 1.5 : 1));
       if (onBeat && !att.beatShown) { att.beatShown = true; m.call(att, '♪ ON THE BEAT', 'buff'); }
       // PALADIN: the warhammer heals her
       if (mv.heal && dmg > 0 && att.hp > 0) { const h = Math.max(1, Math.round(dmg * mv.heal * att.st.healMult)); att.hp = Math.min(att.maxHp, att.hp + h); if (h >= 8) m.call(att, '+' + h, 'heal'); FX.burst(_c.copy(att.pos).setY(1.2), { n: 4, color: [0xfff07a, 0x9dff9a], glow: true, speed: 1.2, gravity: -3, size: 0.06, life: 0.5 }); }
@@ -1270,7 +1286,13 @@
       vic.burst = Math.min(100, vic.burst + dmg * 0.055 * vic.st.burstRate);
       // part armour
       const part = mv.zone ? Combat.zonePart(att, vic, mv.zone) : null;
-      if (part && !vic.broken[part]) { vic.armor[part] -= dmg * (mv.launch ? 0.55 : 0.35); if (vic.armor[part] <= 0) { Combat.breakPart(vic, part, dir); m.event('partbreak', { att, vic, part }); } }
+      if (part && !vic.broken[part]) {
+        vic.armor[part] -= dmg * (mv.launch ? 0.55 : 0.35) * (att.st.passive === 'reaver' ? 1.3 : 1);
+        if (vic.armor[part] <= 0) {
+          Combat.breakPart(vic, part, dir); m.event('partbreak', { att, vic, part });
+          if (att.st.sig === 'plunder') { const h = Math.round(att.maxHp * 0.08); att.hp = Math.min(att.maxHp, att.hp + h); att.hype = Math.min(100, att.hype + 15); m.call(att, 'PLUNDER +' + h, 'heal'); }   // (MARAUDER)
+        }
+      }
 
       // ---- the reaction
       const armored = vic.armorT > 0 && vic.armorHits > 0 && o.kind !== 'super' && o.kind !== 'throw' && mv.type !== 'grab' && vic.state !== 'held';
@@ -1289,6 +1311,7 @@
       FX.burst(atPos, { n: 4 + Math.round(power * 4), color: [0xffffff, 0xffe080, KB.LINES[vic.build.core.line].pal.main], speed: 4 + power * 2, size: 0.07, life: 0.4, glow: true, gravity: 6 });
       FX.addShake(0.08 + power * 0.12);
       if (counter) m.call(vic, 'COUNTER', 'counter');
+      if (vic.hp <= 0 && vic.st.passive === 'undying' && !vic.undyingUsed) { vic.undyingUsed = true; vic.hp = 1; m.call(vic, 'NOT DEAD YET', 'tech'); FX.burst(_c.copy(vic.pos).setY(vic.pos.y + 1), { n: 18, color: [0x6affb0, 0xffffff], glow: true, speed: 3, size: 0.08, gravity: -2, life: 0.7 }); }
       if (vic.hp <= 0) { vic.hp = 0; m.ko(vic, att, dir, mv); return 'ko'; }
       if (o.pummel) { if (vic.combo.hits >= 2) m.comboShow(att, vic); return 'hit'; }   // a pummel: they're still held
       if (armored) {

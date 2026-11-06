@@ -320,6 +320,12 @@
       // EDO JAPAN: the Ronin's straw hat, the Kunoichi's hairpins
       kasa: { speed: 22, trail: 0.4, tw: 0.22, tcol: 0xe8c878, w: 0.75, flat: 16 },
       needle: { speed: 40, trail: 1.0, tw: 0.025, tcol: 0xff9ad0, w: 0.5 },
+      // LOVERS OF THE SEA
+      pellet: { speed: 44, trail: 0.8, tw: 0.04, tcol: 0xffd27a, w: 0.55 },
+      cannonball: { speed: 26, trail: 0.8, tw: 0.16, tcol: 0xffa040, w: 0.7, spin: 10 },
+      chainshot: { speed: 24, trail: 0.5, tw: 0.2, tcol: 0xc8ccd4, w: 1.2, flat: 22 },
+      hatchet: { speed: 26, trail: 0.6, tw: 0.08, tcol: 0xd8dde6, w: 0.6, spin: 24 },
+      wisp: { speed: 24, trail: 1.2, tw: 0.16, tcol: 0x6affb0, w: 0.8 },
       plate: { speed: 28, trail: 0.7, tw: 0.1, tcol: 0xc8ccd4, w: 0.7, spin: 18 },
     };
     /* MODERN SPORTS shots: where each comes from (a hand, the feet, or rolled along the floor), its look, a spread, aimed down */
@@ -331,6 +337,8 @@
       roll: { look: 'bowling', roll: 1, ball: 'bowling' }, hook: { look: 'bowling', roll: 1, hook: 1, ball: 'bowling' }, rollDown: { look: 'bowling', from: 'wR', down: 1, ball: 'bowling' },
       plate: { look: 'plate', from: 'wR' },
       kasa: { look: 'kasa', from: 'head' },
+      grape: { look: 'pellet', from: 'wL', spread: [-0.3, -0.15, 0, 0.15, 0.3], gun: 1 }, mortar: { look: 'cannonball', from: 'wL', down: 1, gun: 1 }, chainshot: { look: 'chainshot', from: 'wL', gun: 1 },
+      hatchet: { look: 'hatchet', from: 'wL' }, musket: { look: 'bullet', from: 'wR', gun: 1 }, musketAim: { look: 'bullet', from: 'wR', gun: 1 }, wisp: { look: 'wisp', from: 'wL' },
       pin: { look: 'needle', from: 'wL' }, pins: { look: 'needle', from: 'wL', spread: [-0.14, 0, 0.14] }, pinsDown: { look: 'needle', from: 'wL', down: 1, spread: [-0.14, 0, 0.14] },
     };
     /* the real balls, in voxels like the figures: built once, cloned for every throw (so never disposed) */
@@ -341,6 +349,11 @@
       soccer: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 5, 5, 5, (x, y, z) => { const l = Math.hypot(x, y, z) || 1; return ICO.some(a => (a[0] * x + a[1] * y + a[2] * z) / l > 0.93) ? 0x1c1c22 : 0xf4f4f0; }); return VX.object(g, 0.034); },
       bowling: () => { const M2 = 0x2a1c40, g = new VX.Grid(); g.ell(0, 0, 0, 6.2, 6.2, 6.2, (x, y, z) => Math.sin(x * 1.3 + z * 0.9) > 0.6 ? M2 : Models.H.shade(M2, 1.6)); [[-1, 5, 3], [1, 5, 3], [0, 4, 4]].forEach(([x, y, z]) => g.set(x, y, z + 1, 0x0a0a0e)); return VX.object(g, 0.035); },
       kasa: () => { const g = new VX.Grid(); for (let y = 0; y <= 3; y++) { const r = 6 - y * 1.6; g.ell(0, y, 0, r, 0.6, r, (x, yy, z) => (Math.round(x + z) & 1) ? 0xd8b060 : 0xc89a48); } g.box(-1, -1, -1, 1, -1, 1, 0x6a4a2a); return VX.object(g, 0.045); },
+      pellet: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 1.2, 1.2, 1.2, 0x2a2a30); return VX.object(g, 0.05); },
+      cannonball: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 3, 3, 3, 0x1c1c22); return VX.object(g, 0.05); },
+      chainshot: () => { const g = new VX.Grid(); g.ell(-6, 0, 0, 2.2, 2.2, 2.2, 0x1c1c22); g.ell(6, 0, 0, 2.2, 2.2, 2.2, 0x1c1c22); for (let x = -4; x <= 4; x++) g.set(x, (x & 1) ? 0 : 1, 0, 0x8a8e98); return VX.object(g, 0.05); },
+      hatchet: () => { const g = new VX.Grid(); g.box(0, 0, -4, 0, 0, 3, 0x6a4a2a); g.box(0, -2, 3, 0, 2, 5, 0xc8ccd4); g.box(0, -3, 5, 0, 3, 5, 0xe8eef8); return VX.object(g, 0.05); },
+      wisp: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 2.6, 2.6, 2.6, VX.glow(0x6affb0)); g.ell(0, 0, -3, 1.6, 1.6, 2, VX.glow(0x2aa878)); g.set(0, 0, 2, VX.glow(0xd8fff0)); return VX.object(g, 0.055); },
       needle: () => { const g = new VX.Grid(); g.box(0, 0, -6, 0, 0, 5, 0xd8dde6); g.box(-1, -1, -8, 1, 1, -7, 0xff6ab0); g.set(0, 2, -8, 0xe8b84a); return VX.object(g, 0.03); },
       basketball: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 6.2, 6.2, 6.2, (x, y, z) => Math.abs(x) < 0.5 || Math.abs(y) < 0.5 || Math.abs(Math.hypot(x, y) - 4.6) < 0.5 ? 0x2a1a10 : 0xe8681a); return VX.object(g, 0.035); },
     };
@@ -358,6 +371,11 @@
     const chainWeight = () => {
       if (!weightSrc) { const g = new VX.Grid(); g.ell(0, 0, 0, 1.6, 1.6, 1.6, 0x4a4e5a); g.set(0, 0, 2, 0x9aa0ad); g.set(0, 0, 3, 0xc8ced8); g.set(0, 0, -2, 0x9aa0ad); weightSrc = VX.object(g, 0.055); }
       return weightSrc.clone();
+    };
+    let grapnelSrc = null;
+    const grapnel = () => {
+      if (!grapnelSrc) { const g = new VX.Grid(); g.box(0, 0, -2, 0, 0, 2, 0x8a8e98); for (const [x, y] of [[1, 0], [-1, 0], [0, 1]]) { g.set(x * 2, y * 2, 2, 0xb8bcc4); g.set(x * 2, y * 2, 1, 0xb8bcc4); g.set(x, y, 2, 0x8a8e98); } return grapnelSrc = VX.object(g, 0.055), grapnelSrc.clone(); }
+      return grapnelSrc.clone();
     };
     const chainHand = f => f.fig.detached.armL ? _v.copy(f.pos).setY(1.1).addScaledVector(f.forward, 0.3).clone() : f.fig.socket('wL', [0, 0, 2]).clone();
     /* BARD: music notes, glowing voxel quavers in three colours */
@@ -459,12 +477,12 @@
           if (hit && o.inv <= 0 && !['ko', 'out', 'down'].includes(o.state)) f.superCaught = true;
           M.after(0.6, () => { f.superCaught = false; });
         } else dart(f, mv, 'bullet', muzzle, dir, range, { charge });
-      } else if (mv.proj === 'chain') {
+      } else if (mv.proj === 'chain' || mv.proj === 'hookline') {
         // NINJA: the kusarigama's weighted chain. It flies out, wraps them up, and drags them in (see updProjs)
         const range = mv.range + (charge || 0) * 2.5, hand = inside(chainHand(f));
         const dir = aimDir(f, o, hand, F.clone(), range, 0.35, false, 42);
-        const weight = chainWeight(); weight.position.copy(hand); scene.add(weight);
-        const links = new THREE.InstancedMesh(new THREE.BoxGeometry(0.075, 0.028, 1), new THREE.MeshLambertMaterial({ color: 0x9aa0ad }), CHAIN_N);
+        const rope = mv.proj === 'hookline', weight = rope ? grapnel() : chainWeight(); weight.position.copy(hand); scene.add(weight);
+        const links = new THREE.InstancedMesh(new THREE.BoxGeometry(rope ? 0.05 : 0.075, rope ? 0.05 : 0.028, 1), new THREE.MeshLambertMaterial({ color: rope ? 0xb08a5a : 0x9aa0ad }), CHAIN_N);
         links.count = 0; links.frustumCulled = false; links.castShadow = true; scene.add(links);
         M.projs.push({ kind: 'chain', f, mv, k: f.kind, charge, ph: 'out', pos: hand.clone(), dir, range, dist: 0, T: 0, t: 0, weight, links, id: 's' + (++M.shotId), vic: null });
         SFX.play('whoosh');
@@ -549,6 +567,7 @@
         } else {
           const grp = { done: false };
           for (const a of S.spread || [0]) dart(f, mv, S.look, from, dir.clone().applyAxisAngle(UP, a), range, { grp, charge });
+          if (S.gun) { SFX.play(S.look === 'bullet' || S.look === 'pellet' ? 'shot' : 'boom'); FX.addShake(0.2); muzzleFlash(from, dir); f.kickT = 0.14; }
           SFX.play(S.look === 'arrow' ? 'whoosh' : 'whoosh'); if (S.from === 'feet') FX.burst(from, { n: 6, color: arena.dust, speed: 2, size: 0.07, life: 0.4 });
         }
       } else if (mv.proj === 'volley') {
@@ -572,12 +591,14 @@
         ring.position.copy(from); ring.lookAt(from.clone().add(F)); scene.add(ring);
         const notes = [0, 1, 2, 3].map(i => { const n = noteMesh(i); scene.add(n); return n; });
         M.projs.push({ kind: 'wave', f, mv, k: f.kind, charge, mesh: ring, notes, pos: from, dir: F.clone(), dist: 0, range: mv.range + (charge || 0) * 2, t: 0, id: 's' + (++M.shotId), hit: false });
-      } else if (mv.proj === 'bomb') {
-        const g = new VX.Grid(); g.ell(0, 0, 0, 2, 2, 2, 0x22222a); g.set(0, 3, 0, 0x8a5a2b); g.set(0, 4, 0, VX.glow(0xffa020));
+      } else if (mv.proj === 'bomb' || mv.proj === 'pot') {
+        const g = new VX.Grid();
+        if (mv.proj === 'pot') { g.ell(0, 0, 0, 2, 2.2, 2, 0xb8683a); g.box(-1, 2, -1, 1, 3, 1, 0x9a5a30); g.set(0, 4, 0, VX.glow(0xff7a2a)); }
+        else { g.ell(0, 0, 0, 2, 2, 2, 0x22222a); g.set(0, 3, 0, 0x8a5a2b); g.set(0, 4, 0, VX.glow(0xffa020)); }
         const mesh = VX.object(g, 0.07); scene.add(mesh);
         const p = inside(f.fig.socket('armR', [0, -9, 1])); mesh.position.copy(p);
-        const d = o ? Math.min(7, U.dist(f.pos, o.pos)) : 5;
-        M.projs.push({ kind: 'bomb', f, mv, mesh, pos: p, vel: new V3(F.x * (3 + d), 6.5, F.z * (3 + d)), t: 0 });
+        const d = o ? Math.min(7, U.dist(f.pos, o.pos)) : 5, pot = mv.proj === 'pot', h = pot ? Math.max(3, d / 0.27) : 3 + d;   // (the naphtha pot: a flatter lob that comes down on them)
+        M.projs.push({ kind: 'bomb', f, mv, mesh, pos: p, vel: new V3(F.x * h, pot ? 3 : 6.5, F.z * h), t: 0 });
       }
     };
     function explode(p) {

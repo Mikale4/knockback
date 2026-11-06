@@ -106,6 +106,11 @@
     },
   };
   // the KUNOICHI's hairpins KNOCK from so close she'd overrun the rebound on foot: she jumps to meet it
+  // the MARAUDER's grapnel hauls them in: his wall combo is the whole string, the Cleave
+  FIX.marauder = (T, S, g) => {
+    const t = T.find(x => x.name === 'KNOCK//BACK');
+    t.note = 'The whole string: the Cleave KNOCKS them into the wall. Catch them on the rebound.'; t.steps = [...g.map(L), { e: 'bounce' }, L(g[0]), L(g[1])];
+  };
   FIX.kunoichi = (T, S, g, a, air) => {
     const t = T.find(x => x.name === 'KNOCK//BACK');
     t.note = 'Toward + Heavy mid-string: the Kanzashi Volley KNOCKS them into the wall. Jump to meet the rebound with the air string.';
@@ -469,6 +474,14 @@
     templar: ['Zornhau', 'Cross drop', 'Wrath', 'Beauséant', 'Mordhau', 'The vow', 'Penance', 'Non nobis', 'The order', 'Pilgrimage', 'Murder-stroke', 'Vigil'],
     crusader: ['Morning star', 'Falling star', 'Heater charge', 'Siege of faith', 'Shield hook', 'Deus vult', 'Two stars', 'The long road', 'Over the shield', 'Faith and iron', 'Siege engine', 'Onward'],
     lancer: ['Unhorse', 'Lance fall', 'Couched lance', 'The joust', 'Trample', 'The tilt', 'Two falls', 'Tournament', 'Grand melee', 'The lists', 'Champion', 'Victory lap'],
+    captain: ['Broadside', 'Boarding drop', 'Spyglass', 'Walk the plank', 'Spotted', 'All hands', 'Two bells', 'Admiralty', 'Ship of the line', 'Crow\u2019s nest', 'Quarterdeck', 'Make sail'],
+    cannoneer: ['Touch-hole', 'Mortar', 'Grapeshot', 'Full battery', 'Powder flash', 'Chain shot', 'Two salutes', 'Gun deck', 'Fire in the hole', 'Run out the guns', 'Salvo', 'Twenty-one guns'],
+    blackbeard: ['The boot', 'Cutlass drop', 'Six pistols', 'Queen Anne', 'Close shot', 'Smoke and fuses', 'Two shots', 'Terror of the seas', 'Black flag', 'Lit fuses', 'No quarter', 'Ocracoke'],
+    redbeard: ['Corsair\u2019s rise', 'Falling crescent', 'Kalkan', 'Corsair fleet', 'Kalkan rim', 'Naphtha', 'Two crescents', 'Admiral', 'Galley', 'Barbarossa', 'Against the wall', 'The fleet'],
+    sailor: ['Uppercut', 'Deck drop', 'Haymaker', 'Sea shanty', 'Spit in the eye', 'Hornpipe', 'Shore leave', 'Bar brawl', 'All hands on deck', 'Heave ho', 'The ship\u2019s anchor', 'Port of call'],
+    marauder: ['Cleave', 'Axe drop', 'Grapnel', 'Boarding party', 'Hatchet', 'Boarding rush', 'Two axes', 'Plunder', 'Take it all', 'Over the side', 'Reaver', 'X marks the spot'],
+    musketeer: ['Musket lift', 'Plunging bayonet', 'Musket shot', 'Fix bayonets', 'Bayonet charge', 'Aimed shot', 'Two thrusts', 'By rank', 'Make ready', 'Present', 'Hold the line', 'Fire!'],
+    ghost: ['Drowning rise', 'Undertow', 'Ghostfire', 'Davy Jones', 'Wail', 'Phase', 'Two tides', 'Cold hands', 'The deep', 'Lantern light', 'The locker', 'Undying'],
   };
   const ROUTE_FIX = {};
   // the KUNOICHI's hairpins KNOCK from so close that she overruns the rebound: her routes stay off the wall
@@ -514,6 +527,24 @@
   ROUTE_FIX.lancer = groundFix((adv, pro, k) => {
     adv[6].steps = [...k.spike, ...k.two, PT, ...k.str]; adv[6].note = 'The Lance Drop for the bounce, a Part Toss (a fresh bounce), and the whole string up to the Unhorse.';
   });
+  // the MARAUDER's Heavy hauls them IN: his wall routes ride the Cleave at the end of his string
+  ROUTE_FIX.marauder = (adv, pro, k) => {
+    adv[2].steps = [...k.str, WB, ...k.two, H('hookUpper'), J, A('maAirA')]; adv[2].note = 'The whole string: the Cleave KNOCKS them into the wall. Two hacks off the rebound, the Hook Upper and up after them.';
+    pro[0].steps = [...k.str, WB, ...k.two, PT, ...k.two, ...ART, k.otg]; pro[0].note = 'The Cleave into the wall, two off the rebound, a Part Toss, then BOARDING PARTY and a Boarding Kick on the knockdown.';
+    pro[2].steps = [...k.spike, ...k.str, WB]; pro[2].note = 'The Hook Drop for the bounce, and the whole string off it: the Cleave sends them into the wall.';
+  };
+  ROUTE_FIX.ghost = (adv, pro, k) => {
+    adv[2].steps = [...k.two, TW('ghostfire'), WB, ...k.two, H('lanternUpper')]; adv[2].note = 'Ghostfire mid-string KNOCKS them into the wall (and burns cold); two cuts off the rebound and the Lantern Upper.';
+  };
+  ROUTE_FIX.captain = (adv, pro, k) => {
+    adv[2].steps = [...k.two, TW('spyglassSmash'), WB, ...k.two, H('spyglassUpper')]; adv[2].note = 'Spyglass Smash mid-string KNOCKS them into the wall; two cuts off the rebound and the Spyglass Upper.';
+  };
+  ROUTE_FIX.redbeard = (adv, pro, k) => {
+    adv[5].steps = [...k.two, SPC('naphthaPot'), k.otg]; adv[5].note = 'Two cuts, the NAPHTHA POT straight out of them (it throws them, BURNING), and Corsair Rush off the floor when they land (Dodge, then Light).';
+  };
+  ROUTE_FIX.musketeer = (adv, pro, k) => {
+    pro[2].steps = [...k.two, TW('musketShot'), WB, ...k.two, PT, ...k.str]; pro[2].note = 'The Musket Shot into the wall, two off the rebound, a Part Toss, and the whole string up to the Musket Lift.';
+  };
   ROUTE_FIX.ronin = (adv, pro, k) => {
     adv[2].steps = [...k.two, TW('sayaAte'), WB, ...k.two, H('sayaUpper'), J, A('roAirA')]; adv[2].note = 'Saya-ate mid-string KNOCKS them into the wall; two cuts off the rebound, the Saya Upper, and the Air Draw.';
   };
@@ -524,7 +555,7 @@
     const otg = OTG(S.dashAtk, 'light'), upFin = fin.launcher ? [J, ...air] : [];
     const buff = sp.type === 'buff';
     // the pause branch: a crumple or a stagger leads into the string; a launcher into the air string; anything else ends it
-    const pz = Pm.crumple || (Pm.type === 'proj' && !Pm.launch) ? [PZ(P), ...str, ...upFin] : Pm.launcher ? [PZ(P), J, ...air] : null;
+    const pz = Pm.crumple || Pm.dizzy || (Pm.type === 'proj' && !Pm.launch) ? [PZ(P), ...str, ...upFin] : Pm.launcher ? [PZ(P), J, ...air] : null;
     const adv = [
       { name: N[0], stars: 3, note: nm(g[g.length - 1]) + ' ends the string; ' + nm(S.launch) + ' and the air string, ' + nm(a[a.length - 1]) + ' for the bounce, and the whole string again.', steps: [...up, ...air, GB, ...str] },
       { name: N[1], stars: 4, note: nm(S.airHeavy) + ' (air Heavy) for the ground bounce, then the whole string.', steps: [...spike, ...str] },
@@ -533,13 +564,13 @@
       pz ? { name: N[4], stars: 3, note: 'Pause after ' + nm(g[1]) + ': ' + nm(P) + (Pm.launcher ? ' sends them up, and the air string.' : ', then the whole string.'), steps: [...two, ...pz] }
         : { name: N[4], stars: 3, note: 'Up and down for the bounce, two hits, and the pause branch: ' + nm(P) + '.', steps: [...up, ...air, GB, ...two, PZ(P)] },
       buff ? { name: N[5], stars: 3, note: sp.name.toUpperCase() + ' first, then the whole combo.', steps: [SPC(S.special, 1), ...str, ...upFin] }
-        : Pm.crumple ? { name: N[5], stars: 4, note: nm(P) + ' (pause after ' + nm(g[1]) + ') folds them up; two hits, then ' + sp.name.toUpperCase() + ' straight out of the string.', steps: [...two, PZ(P), ...two, SPC(S.special)] }
+        : Pm.crumple || Pm.dizzy ? { name: N[5], stars: 4, note: nm(P) + ' (pause after ' + nm(g[1]) + ') folds them up; two hits, then ' + sp.name.toUpperCase() + ' straight out of the string.', steps: [...two, PZ(P), ...two, SPC(S.special)] }
         : { name: N[5], stars: 4, note: 'Up and down for the bounce, two hits, then ' + sp.name.toUpperCase() + ' straight out of the string.', steps: [...up, ...air, GB, ...two, SPC(S.special)] },
       { name: N[6], stars: 4, note: 'The second ' + nm(S.airHeavy) + ' can’t bounce them: ' + nm(S.dashAtk) + ' them off the floor (Dodge, then Light).', steps: [...spike, ...up, A(a[0]), AH(S.airHeavy), otg] },
     ];
     const shot = MV(S.heavy).type === 'proj';   // (a thrown KNOCK at someone in the air won't wall-bounce them: it goes in first)
     const pro = [
-      shot ? { name: N[7], wall: true, note: nm(S.heavy) + ' into the wall, up off the rebound and the bounce, a Part Toss, then ' + nm(S.super).toUpperCase() + ' and ' + nm(S.dashAtk) + ' on the knockdown.', steps: [...two, TW(S.heavy), WB, ...up, ...air, GB, ...two, PT, ...two, ...ART, otg] }
+      shot ? { name: N[7], wall: true, note: nm(S.heavy) + ' into the wall, two off the rebound, a Part Toss, then ' + nm(S.super).toUpperCase() + ' and ' + nm(S.dashAtk) + ' on the knockdown.', steps: [...two, TW(S.heavy), WB, ...two, PT, ...two, ...ART, otg] }
         : { name: N[7], wall: true, note: 'Up, the bounce, ' + nm(S.heavy) + ' into the wall, a Part Toss, then ' + nm(S.super).toUpperCase() + ' and ' + nm(S.dashAtk) + ' on the knockdown.', steps: [...up, ...air, GB, ...two, TW(S.heavy), WB, ...two, PT, ...two, ...ART, otg] },
       { name: N[8], note: nm(S.airHeavy) + ', a Part Toss (a fresh ground bounce), and the whole string' + (fin.launcher ? ' into the air string.' : '.'), steps: [...spike, ...two, PT, ...str, ...upFin] },
       shot ? { name: N[9], wall: true, note: nm(S.heavy) + ' into the wall, ' + nm(S.launch) + ' off the rebound, ' + nm(S.airHeavy) + ' for the bounce, and the whole string.', steps: [...two, TW(S.heavy), WB, ...spike, ...str] }
@@ -561,6 +592,14 @@
     templar: (S, g) => ({ name: 'Mordhau', note: 'Pause after the Zwerchhau: grip the blade and strike with the hilt (they crumple). Then the whole string.', steps: [L(g[0]), L(g[1]), PZ('teP'), ...g.map(L)] }),
     crusader: (S, g, a, air) => ({ name: 'Shield hook', note: 'Pause after the Backhand: the shield hooks them up. Jump after them.', steps: [L(g[0]), L(g[1]), PZ('crP'), J, ...air] }),
     lancer: (S, g) => ({ name: 'Trample', note: 'Pause after the Lance Sweep: the horse runs them down.', steps: [L(g[0]), L(g[1]), PZ('lnP')] }),
+    captain: (S, g) => ({ name: 'Spyglass bonk', note: 'Pause after the Backcut: the spyglass leaves them DIZZY. Then the whole string, into the Captain\u2019s Slash.', steps: [L(g[0]), L(g[1]), PZ('caP'), ...g.map(L)] }),
+    cannoneer: (S, g) => ({ name: 'Powder flash', note: 'Pause after the Pole Swing: a puff of powder, they\u2019re DIZZY. Then the string: the Touch-Hole sets them alight.', steps: [L(g[0]), L(g[1]), PZ('cnP'), ...g.map(L)] }),
+    blackbeard: (S, g) => ({ name: 'Close shot', note: 'Pause after the Backhand: a pistol point blank folds them up, smouldering. Then the string and the Boot.', steps: [L(g[0]), L(g[1]), PZ('bbP2'), ...g.map(L)] }),
+    redbeard: (S, g) => ({ name: 'Kalkan rim', note: 'Pause after the Draw Cut: the shield\u2019s rim folds them up. Then the whole string.', steps: [L(g[0]), L(g[1]), PZ('rdP'), ...g.map(L)] }),
+    sailor: (S, g) => ({ name: 'Spit in the eye', note: 'Pause after the Pin Backhand: they\u2019re DIZZY. Then the whole string, up to the Sailor\u2019s Uppercut.', steps: [L(g[0]), L(g[1]), PZ('slP'), ...g.map(L)] }),
+    marauder: (S, g) => ({ name: 'Hatchet', note: 'Pause after the Axe Backhand: he throws the hatchet from his belt.', steps: [L(g[0]), L(g[1]), PZ('maP')] }),
+    musketeer: (S, g) => ({ name: 'Bayonet charge', note: 'Pause after the Butt Stroke: the bayonet charge runs through them.', steps: [L(g[0]), L(g[1]), PZ('muP')] }),
+    ghost: (S, g) => ({ name: 'Wail', note: 'Pause after the Phantom Backcut: the wail leaves them DIZZY. Then the string: Through the Body passes through them every time.', steps: [L(g[0]), L(g[1]), PZ('ghP'), ...g.map(L)] }),
   });
   const all = () => { if (!TRIALS.samurai) for (const l of KB.LINE_ORDER) TRIALS[l] = build(l); return TRIALS; };
   const allAdv = () => { if (!TRIALS_ADV.samurai) for (const l of KB.LINE_ORDER) TRIALS_ADV[l] = ADV[l] ? ADV[l]().map(t => Object.assign({ adv: true }, t)) : []; return TRIALS_ADV; };
