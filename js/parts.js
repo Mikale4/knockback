@@ -73,12 +73,12 @@
   mv('lanceCharge', { name: 'Holy Lance Charge', type: 'super', pose: 'lance', su: 0.16, catchType: 'dash', dist: 10, rad: 1.25, seq: 'charge', armor: 1, dmg: 280, kb: [27, 3], zone: 'mid' });
 
   // PIRATE
-  mv('pointBlank', { name: 'Point Blank', type: 'proj', proj: 'shot', pose: 'shoot', su: 0.2, rc: 0.32, dmg: 74, kb: [15, 5], launch: 1, range: 6.5, charge: 1, trail: 0, sfx: 'shot' });
+  mv('pointBlank', { name: 'Point Blank', type: 'proj', proj: 'shot', pose: 'shoot', su: 0.2, rc: 0.32, dmg: 74, kb: [15, 5], launch: 1, range: 5.5, charge: 1, limit: { n: 1, t: 1 }, trail: 0, sfx: 'shot' });   // (one shot, then a second to reload)
   mv('pistolWhip', { name: 'Pistol Whip', pose: 'upslash', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1.5, 12.5], launch: 1, launcher: 1, trail: 0, sfx: 'whoosh' });
   mv('airShot', { name: 'Plunging Shot', type: 'proj', proj: 'shotDown', pose: 'shootDown', su: 0.14, rc: 0.28, dmg: 50, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'shot' });
   mv('powderKeg', { name: 'Powder Keg', type: 'proj', proj: 'bomb', pose: 'toss', su: 0.18, rc: 0.3, dmg: 88, kb: [13, 9], launch: 1, rad: 2.2, trail: 0, sfx: 'whoosh' });
   mv('pegSweep', { name: 'Peg Sweep', pose: 'sweep', su: 0.1, ac: 0.1, rc: 0.28, dmg: 36, kb: [3, 8], launch: 1, lunge: 7, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
-  mv('broadside', { name: 'Broadside', type: 'super', pose: 'shoot', su: 0.14, catchType: 'proj', range: 11, seq: 'cannon', dmg: 290, kb: [14, 16], zone: 'high' });
+  mv('broadside', { name: 'Broadside', type: 'super', pose: 'shoot', su: 0.14, catchType: 'proj', range: 9.5, seq: 'cannon', dmg: 290, kb: [14, 16], zone: 'high' });
 
   // MONK
   mv('thunderPalm', { name: 'Thunder Palm', pose: 'palm', su: 0.2, ac: 0.07, rc: 0.3, dmg: 92, reach: 1.15, kb: [21, 4], launch: 1, lunge: 5, charge: 1, trail: 0, sfx: 'heavy' });
@@ -139,7 +139,7 @@
   mv('cuAirA', { name: 'Air Cut', pose: 'cutA', su: 0.06, dmg: 24, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'cuAirB' } });
   mv('cuAirB', { name: 'Air Backcut', pose: 'cutB', su: 0.06, dmg: 24, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'cuAirC' } });
   mv('cuAirC', { name: 'Cannonball', pose: 'cannonball', su: 0.1, ac: 0.3, rc: 0.22, dmg: 40, kb: [9, -6], launch: 1, spike: 1, dive: 1, air: 1, h: 0.6, trail: 0, sfx: 'heavy' });
-  mv('quickShot', { name: 'Quick Shot', type: 'proj', proj: 'shot', pose: 'shoot', su: 0.08, rc: 0.16, dmg: 26, kb: [1.5, 0], stun: 0.55, range: 5, trail: 0, sfx: 'shot' });
+  mv('quickShot', { name: 'Quick Shot', type: 'proj', proj: 'shot', pose: 'shoot', su: 0.08, rc: 0.16, dmg: 26, kb: [1.5, 0], stun: 0.55, range: 4.5, trail: 0, sfx: 'shot' });
   // MONK · Fists: a mashable flurry into a palm; the pause branch sweeps the legs
   mv('fiA', { name: 'Jab', pose: 'jabL', su: 0.05, ac: 0.05, rc: 0.11, dmg: 16, reach: 1.0, kb: [1.6, 0], stun: 0.28, lunge: 3, trail: 0, sfx: 'whoosh', nx: { l: 'fiB' } });
   mv('fiB', { name: 'Cross', pose: 'jabR', su: 0.05, ac: 0.05, rc: 0.11, dmg: 18, reach: 1.0, kb: [1.6, 0], stun: 0.45, lunge: 3, trail: 0, sfx: 'whoosh', nx: { l: 'fiC', p: 'fiP' } });
@@ -267,7 +267,7 @@
       head: { name: "Captain's Tricorne", armor: 105, weight: 0.95, special: 'powderKeg', uses: 3, hype: 1.15, desc: 'SPECIAL: Powder Keg. Lob a bomb that blows them off their feet.' },
       core: { name: 'Frock Coat', hp: 950, def: 0.04, weight: 0.95, guard: 0, desc: 'Light and loose. Builds Hype faster.', hypeBonus: 0.1 },
       armR: { name: 'Cutlass', armor: 125, weight: 0.95, light: 'cuA', air: 'cuAirA', sig: 'dirty', sigName: 'Dirty Fighting', sigDesc: 'Pause after the Backcut and throw sand: they stand there dizzy.', trail: 0xfff1c0, desc: 'Cut › Backcut › Flourish (spin) › Boot to the Face. Pause after Backcut: Sand in the Eyes (dizzy). Air ends in a Cannonball dive. With the Flintlock: Heavy mid-string is a Quick Shot.' },
-      armL: { name: 'Flintlock', armor: 110, weight: 0.9, heavy: 'pointBlank', launch: 'pistolWhip', airHeavy: 'airShot', guard: 70, chip: 1.1, trail: 0xffd28a, holster: 1, gunCancel: 'quickShot', desc: 'Holstered until he fires (the cutlass is put away while it is out). HEAVY: Point Blank, a shot that reaches 6 m. Guard: weak.' },
+      armL: { name: 'Flintlock', armor: 110, weight: 0.9, heavy: 'pointBlank', launch: 'pistolWhip', airHeavy: 'airShot', guard: 70, chip: 1.1, trail: 0xffd28a, holster: 1, gunCancel: 'quickShot', desc: 'Holstered until he fires (the cutlass is put away while it is out). HEAVY: Point Blank, a shot that reaches 5.5 m, then a second to reload. Guard: weak.' },
       legs: { name: 'Peg & Boot', armor: 165, weight: 0.95, speed: 6.2, jump: 11, airJumps: 1, dashAtk: 'pegSweep', perk: 'sealegs', desc: 'Sea legs: dodges travel 30% further. DASH ATTACK: Peg Sweep.' },
       card: { name: 'Jolly Plunder', super: 'broadside', passive: 'plunder', desc: 'LEGEND ART: Broadside, a cannon barrage. PASSIVE (Plunder): +35% Hype gain.' },
     },
