@@ -312,7 +312,7 @@ fight live** and waits for their turn.
   to quick chat only, or MUTE someone's typed chat for the whole room, besides kick and block. Messages from the room
   pop up while you're watching a fight or on the results screen (not in the middle of your own fight).
 - **The host** runs the room: its name; public or private (password); listed or code only; locked to new players; room
-  size (2 to 6); the rules (arena, first to 1/2/3, round time 60/99/180 s, rarity bonus, any fighters or base
+  size (2 to 6); the rules (arena, stage hazards on or off, first to 1/2/3, round time 60/99/180 s, rarity bonus, any fighters or base
   characters only); rotation (winner stays, both rotate, or the host picks with ▲ NEXT); auto-start; kick and block.
   Closing the room ends it for everyone.
 - **After a fight:** YOU WIN / YOU LOSE with your records and rewards, then READY (back to the room, ready for the next
@@ -443,6 +443,45 @@ Use it from COLLECTION (SELECTION TICKET, marked 🎫 in the hub), the CAPSULES 
 results of that Arcade clear. The picker shows all ten fighters on one screen, the ones you have greyed out. The hub's
 **ACTIVE FIGURE** plate lists your **figures** (every fighter you have) and then your custom slots.
 
+## Arenas and STAGE HAZARDS
+
+**Twenty arenas** (`js/arena.js`, the newer seventeen in `js/arenas.js`), all the same size (a 16 × 12 floor and four
+walls that stress, crack and break), each somewhere in the house at toy scale, so the room around the figures is huge:
+PLAYROOM SHELF, STUDY DESK, TOY CHEST, TRAIN SET, KITCHEN COUNTER, BATH TIME, CANDY SHOP, RAINY WINDOWSILL (with a
+sleeping cat the size of a hill), INSIDE THE FRIDGE, CHECKMATE, ALARM CLOCK, RECORD PLAYER, PINBALL TABLE, NEON ARCADE,
+SPEEDWAY, SNOW GLOBE, FISH TANK, DINO DIG, SCIENCE FAIR VOLCANO and MOON BASE. Some have life of their own (rain and
+lightning, drifting snow, fish and bubbles, a turning radar dish, a steaming kettle).
+
+**Twelve have a STAGE HAZARD**, always telegraphed before it lands:
+
+| Arena | Hazard |
+|---|---|
+| Train Set | Every 13 s the crossing lights flash and a train runs through the middle (80 damage and a big launch). |
+| Kitchen Counter | The two burners take turns: glowing red is the warning, orange is hot and launches you. |
+| Bath Time | The drain at the back gurgles, then blows a water spout that throws you sky high. |
+| Candy Shop | A lane lights up and a gumball the size of you rolls down it. |
+| Checkmate | The square under someone turns red; a chess piece slams down on it. |
+| Alarm Clock | The red second hand sweeps the whole floor every 15 s, low: jump it as it comes. |
+| Record Player | The floor turns, carrying you round; now and then the record scratches and whips back and forth. |
+| Pinball Table | Three pop bumpers kick you away; a figure flying into one bounces off it harder than off a wall. |
+| Speedway | A lane flashes, then a race car jumps the back wall and tears down it. |
+| Snow Globe | Every 11 s someone shakes the globe: a two-second gale shoves everyone across the floor. |
+| Dino Dig | The T-rex behind the wall roars and stomps: a shockwave rolls across the floor. Jump it. |
+| Science Fair Volcano | It erupts every 7 s: glowing circles mark where the rocks land. |
+
+The lanes and squares favour wherever someone is standing. A hazard is nobody's attack: it **never breaks into a
+combo** (it skips anyone being comboed, in a Legend Art, invincible or already down), hits the same figure once a
+second at most, can finish a fight, and a figure it launches can be caught by the other one. CPUs see hazards coming
+and step out of the way or jump (the better the CPU, the more often). A hazard hit spoils a perfect round.
+
+**STAGE HAZARDS** in OPTIONS turns them all off (every arena is then just its floor and walls). Training never has them.
+Online, the room's host sets a **STAGE HAZARDS** rule next to the arena, and it travels in the fight's setup (replays
+too), so every screen plays the same thing; the hazard's state lives on the match and rewinds with the rollback.
+
+**Picking an arena:** Versus, Training and an online room's rules open a picker with a picture of every arena (rendered
+once, the first time you open it), its line, and its hazard (⚠), plus RANDOM. The Arcade's climb now draws each stage
+from a pool on the way up the house (the bosses still wait on the top shelf).
+
 ## Modes
 
 **The hub** fits on one screen: five buttons, three of which open a short list of their own. **FIGHT** (Arcade,
@@ -457,7 +496,7 @@ ending. Lights out in the playroom: the figures wake, and at the top of the book
 figure is ever sold, boxed or lost. Your figure's Legend Card picks whose story you play, and every fighter climbs
 because they lost something (the Samurai's lord, the Pirate's map, the Dragoon's little wyrm...).
 
-- **The climb:** seven fights up the bookcase (toy chest, study desk, playroom shelf). Each opens with a short
+- **The climb:** seven fights up through the house (from the toy chest, the train set or the fish tank, up past the fridge, the kitchen, the desk and the clock, to the playroom shelf). Each opens with a short
   **story scene**: two portraits, the speaker lit, the text typing out (click / any key / SKIP). Then a **VS screen**.
 - **Stage 4: your RIVAL**, who knows a piece of what you lost (Samurai and Ninja, Knight and Viking, Pirate and Bard,
   Summoner and Paladin, Monk and Dragoon), with its own scene.
@@ -513,7 +552,8 @@ shake** setting (Full, Reduced, Off).
 | `js/fighter.js` | The fighter state machine, Legend Art catches, and `Combat` (hits, guard, wall bounce/tech/break, part breaks) |
 | `js/arts.js` | Each Legend Art's cinematic: its choreography, camera shots, props, lighting |
 | `js/match.js` | Rounds, camera, projectiles, the Summoner's imps, dropped parts, ring outs, training |
-| `js/arena.js` | The three arenas and wall stress/cracks/breaks |
+| `js/arena.js` | Building an arena (floor, walls, light, scenery) and the walls' stress/cracks/breaks |
+| `js/arenas.js` | The seventeen newer arenas, every STAGE HAZARD (sim, CPU warning, meshes), and the arena pictures for the menus |
 | `js/lab.js` | Training's lab: the input history, the frame meter and frame advantage, the dummy recording |
 | `js/ai.js` | The CPU (plays through the same inputs as a human; picks a combo route and plays it out, takes OTGs and rebounds, steers along walls) |
 | `js/gacha.js` | Capsule rates, pity, the 3D machine and reveal |

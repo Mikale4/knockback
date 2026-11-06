@@ -82,12 +82,23 @@
       this.wait -= dt; this.flipT -= dt; this.planT -= dt;
       const d = U.dist(f.pos, o.pos);
       if (this.underFire(dt)) return;
+      if (m.haz && this.hazardThink()) return;
       if (f.state === 'grab') return this.grabThink(dt);
       if (f.state === 'attack') return this.ownMove(dt, d);
       if (f.state === 'air') return this.inAir(dt, d);
       this.neutral(dt, d);
     }
 
+    /* ---- a STAGE HAZARD coming (arenas.js): jump it or step out of its way -- the better the CPU, the more often it does */
+    hazardThink() {
+      const f = this.f, m = this.m, H = Arena.HAZ[m.arena.haz];
+      if (!H || !H.danger || !['idle', 'run', 'air', 'guard'].includes(f.state)) return false;
+      const d = H.danger(m, m.haz, f); if (!d) { this.hazRoll = null; return false; }
+      if (this.hazRoll == null) this.hazRoll = Math.random() < [0.3, 0.55, 0.8, 0.92][this.lv];
+      if (!this.hazRoll) return false;
+      if (d === 'jump') { if (f.grounded) this.press('jump'); return false; }   // (and carries on fighting in the air)
+      this.guardT = 0; this.held.guard = false; this.stickTo(d.x, d.z, 1); return true;
+    }
     /* ---- being comboed: burst, tech the wall, get out */
     underFire(dt) {
       const f = this.f, m = this.m, lv = this.lv, r = Math.random;

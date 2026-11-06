@@ -237,6 +237,7 @@
         if (d.att === me && d.r === 'hit') { F.bestCombo = Math.max(F.bestCombo, d.vic.combo.hits); F.maxBounces = Math.max(F.maxBounces, d.vic.combo.bounces); if (d.mv && d.mv.hybrid && !d.o.multiHit) F.hybrids++; }
         if (d.vic === me && (d.r === 'hit' || d.r === 'ko')) F.hitThisRound = true;
       }
+      else if (k === 'hazard' && d.vic === me) F.hitThisRound = true;
       else if (k === 'bounce' && d.by === me) F.bounces++;
       else if (k === 'wallbreak' && d.vic && d.vic.combo.by === me) F.wallBreaks++;
       else if (k === 'ringout' && d.by === me) F.ringouts++;

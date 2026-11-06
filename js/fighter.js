@@ -69,7 +69,7 @@
       this.buffs = {}; this.burn = null; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
-      this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0;
+      this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
       Anim.set(this.fig, this.ready);
@@ -1270,6 +1270,34 @@
       const p = pos || _c.copy(vic.pos).setY(vic.pos.y + 1 + U.rnd(-0.3, 0.3)).clone();
       FX.spark(p, { size: 1.1 }); FX.burst(p, { n: 5, color: [0xffffff, 0xffe080], glow: true, speed: 5, size: 0.07, life: 0.35 });
       SFX.play('hit', { power: 1.2 }); FX.addShake(0.12); att.m.comboShow(att, vic);
+    },
+    /* a STAGE HAZARD hits (arenas.js). It's nobody's combo, so it never breaks into one: it skips anyone being comboed,
+       in a Legend Art, invincible (a dodge, a respawn) or already down, and hits the same figure once a second at most.
+       o: { dmg, kb: [h, v] (a launch) or push (a stagger), dir {x, z}, call, flash, colors, sfx, stun, cd } */
+    hazard(vic, o) {
+      const m = vic.m;
+      if (m.phase !== 'fight' || m.cine || m.frozen || (vic.hazT || 0) > 0 || vic.inv > 0 || vic.comboing) return false;
+      if (['ko', 'out', 'down', 'getup', 'held', 'grab', 'intro', 'victory', 'burst'].includes(vic.state) || vic.superPhase && vic.state === 'attack') return false;
+      vic.hazT = o.cd || 1.1;
+      const d = new V3(o.dir ? o.dir.x : 0, 0, o.dir ? o.dir.z : 0); if (d.lengthSq() < 1e-6) fwd(vic.yaw, d).multiplyScalar(-1); d.normalize();
+      const dmg = Math.round((o.dmg || 0) * (1 - vic.st.def));
+      vic.hp -= dmg;
+      if (vic.grabbing) vic.dropGrab();
+      vic.move = null; vic.pauseWin = null; vic.held = null; vic.crumpled = vic.dizzy = vic.asleep = false; vic.spiked = false; vic.chained = null; vic.combo = vic.freshCombo();
+      vic.flash = 0.8; vic.flashCol = o.flash || 0xffa040; vic.hitstop = 0.07;
+      const at = _c.copy(vic.pos).setY(vic.pos.y + 1).clone();
+      SFX.play(o.sfx || 'heavy'); FX.spark(at, { size: 1.5, color: o.flash || 0xffc080 }); FX.addShake(0.3);
+      FX.burst(at, { n: 14, color: o.colors || [0xffffff, 0xffd080], speed: 6, size: 0.09, life: 0.5 });
+      if (o.call) m.call(vic, o.call + (dmg ? '  -' + dmg : ''), 'bad');
+      m.event('hazard', { vic, dmg });
+      if (vic.hp <= 0) { vic.hp = 0; m.ko(vic, m.opp(vic), d, null); return true; }
+      if (o.kb) {
+        vic.vel.set(d.x * o.kb[0] * vic.st.kbTaken, o.kb[1], d.z * o.kb[0] * vic.st.kbTaken); vic.grounded = false; vic.pos.y = Math.max(vic.pos.y, 0.02);
+        vic.setState('tumble'); vic.hitstun = 0.3 + 0.02 * Math.hypot(o.kb[0], o.kb[1]); vic.hardKD = false; vic.kdT = 0; vic.yaw = Math.atan2(-d.x, -d.z);
+      } else {
+        vic.setState('hit'); vic.hitstun = o.stun || 0.35; vic.vel.x = d.x * (o.push || 8); vic.vel.z = d.z * (o.push || 8); vic.yaw = Math.atan2(-d.x, -d.z);
+      }
+      return true;
     },
     bounceDamage(vic, base) {
       const d = Math.round(base * Math.max(0.4, Combat.prorate(vic)));

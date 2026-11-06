@@ -37,7 +37,10 @@
     { id: 'legend', name: 'LEGEND', lv: [2, 3, 3, 3, 3, 3, 3, 3], pay: 2, score: 1.5, boss: 1.6, sub: 'Every CPU a Champion, hitting harder.' },
   ];
   const RAR = [0, 1, 1, 2, 2, 3];                                            // stages 1..6 (4 is the rival)
-  const ARENA = ['chest', 'chest', 'desk', 'desk', 'desk', 'shelf', 'shelf', 'shelf'];   // up the bookcase
+  // up through the house: each stage draws its arena from a pool (once per run, from the run's seed); the bosses wait on the top shelf
+  const ARENA = [['chest', 'trainset', 'aquarium'], ['fridge', 'windowsill', 'candy', 'kitchen'], ['desk', 'bathtub', 'chess', 'speedway'], ['clock', 'vinyl', 'neon', 'pinball'],
+    ['snowglobe', 'dino', 'desk', 'chest'], ['volcano', 'moonbase', 'shelf'], ['shelf'], ['shelf']];
+  const arenaOf = (run, i) => { const P = ARENA[i].filter(a => Arena.THEMES[a]); return P[Math.floor(rng((run.seed >>> 0) + 7919 * (i + 1))() * P.length)] || 'shelf'; };
   const PAY = [60, 80, 100, 160, 140, 180, 300, 600];
   const PROTO_PAINT = Models.PAINTS.findIndex(p => p.proto);
   const PTS = { S: 5, A: 4, B: 3, C: 2, D: 1 };
@@ -76,10 +79,10 @@
         recast: [r1, protoOf(KB.mintBuild(run.rival, 0)), protoOf(run.build)] };
     }
     if (i === 6) return { i, kind: 'sov', tag: 'FINAL BOSS', name: 'The Sovereign', line: null, css: '#ffd040', build: SOV(), lvl, arena: 'shelf', mods: Object.assign({ hp: D.boss, def: 0.02 }, hard) };
-    if (i === 3) { const b = KB.mintBuild(run.rival, 2); return { i, kind: 'rival', tag: 'RIVAL', name: b.name, line: run.rival, css: LN(run.rival).css, build: b, lvl, arena: ARENA[i], mods: hard }; }
+    if (i === 3) { const b = KB.mintBuild(run.rival, 2); return { i, kind: 'rival', tag: 'RIVAL', name: b.name, line: run.rival, css: LN(run.rival).css, build: b, lvl, arena: arenaOf(run, i), mods: hard }; }
     const line = run.order[i < 3 ? i : i - 1], r = RAR[i], b = KB.mintBuild(line, r);
     if (r === 3) b.name = 'CHASE ' + LN(line).figure;
-    return { i, kind: 'fight', tag: 'STAGE ' + (i + 1), name: b.name, line, css: LN(line).css, build: b, lvl, arena: ARENA[i], mods: hard };
+    return { i, kind: 'fight', tag: 'STAGE ' + (i + 1), name: b.name, line, css: LN(line).css, build: b, lvl, arena: arenaOf(run, i), mods: hard };
   }
   const youOf = run => ({ name: LN(run.line).figure, build: run.build, css: LN(run.line).css });
   const ctxOf = (run, st) => ({ you: youOf(run), opp: st ? { name: st.name, build: st.build, css: st.css } : null,

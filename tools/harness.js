@@ -205,7 +205,7 @@ window.__detRun = (seed, frames, l1, l2) => {
 window.__rbRun = (seed, frames, l1, l2, every, depth, pre) => {
   const T = Online._t, { rng, withRng } = T, PC = Input.players[0].constructor, net = [new PC(0), new PC(1)];
   net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 } }; });
-  const opts = { mode: 'online', online: true, local: 0, builds: [KB.mintBuild(l1, 0), KB.mintBuild(l2, 0)], cpu: [null, null], arena: 'shelf', wins: 9, time: 99, bonus: false, inputs: net, onEnd: () => {} };
+  const opts = Object.assign({ mode: 'online', online: true, local: 0, builds: [KB.mintBuild(l1, 0), KB.mintBuild(l2, 0)], cpu: [null, null], arena: 'shelf', wins: 9, time: 99, bonus: false, inputs: net, onEnd: () => {} }, window.__rbOpts || {});   // (__rbOpts: e.g. { arena: 'trainset', hazards: true })
   const m = Match.create(opts); App.setView(m); const R = rng(seed); withRng(R, () => m.restart());
   T.prepSnap(m, net);
   const IN = rng(seed ^ 0x5bd1e995), A = Input.ACTIONS, log = [], ins = [], saves = {};
@@ -299,6 +299,7 @@ window.__roomSetup = async (n, lag, jitter, picks, opts) => {
   for (let k = 0; k < 100 && !fr.every(f => f.contentWindow.__ready); k++) await new Promise(r => setTimeout(r, 100));
   const W = fr.map(f => f.contentWindow), net = __mkNet(lag, jitter);
   const D = window.__duo = { W, net, get tick() { return net.tick; }, hold: 4, cur: [], auto: true, stalls: W.map(() => 0) };
+  W.forEach(w => { w.U.write = () => {}; });   // (test players' accounts stay in memory: the real save on this machine is never touched)
   W.forEach(w => { w.requestAnimationFrame = () => 0; w.performance.now = () => net.tick * 1000 / 60; w.__errs = []; const oe = w.console.error.bind(w.console); w.console.error = (...a) => { w.__errs.push(String(a[0] && a[0].stack || a[0]).slice(0, 300)); oe(...a); }; w.console.warn = (...a) => w.__errs.push('W ' + a.join(' ')); });
   for (let i = 0; i < n; i++) { await W[i].Auth.register('P' + i + '_' + Math.floor(Math.random() * 1e5), 'test1234', false); W[i].Auth.starter(KB.LINE_ORDER[i % 10]); }
   W.forEach(w => { w.Online._t.usePeer(net.FakePeer); w.Online._t.Dir.disabled = true; });
@@ -433,4 +434,18 @@ window.__camAudit = (line, cx, cz, axis, opt) => {
     }
   });
   return { line, at: [cx, cz, axis], caught, shots: seen, bad, errs: __errs.slice(0, 2) };
+};
+/* ARENAS: a CPU-vs-CPU fight on a stage (hazards follow the Options setting); fighters parked on spots to prove a hazard
+   lands (__hazTest('trainset', [[0, -1.6], [3, 3]], 18) -> the hits it made); a still, wide shot of a stage at a moment */
+window.__watch = (id, l1, l2, lv) => { App.startMatch({ mode: 'watch', builds: [KB.mintBuild(l1 || 'knight', 0), KB.mintBuild(l2 || 'samurai', 0)], cpu: [lv == null ? 2 : lv, lv == null ? 2 : lv], arena: id, wins: 9, time: 999, bonus: false }); return App.view; };
+window.__hazTest = (id, spots, secs) => {
+  const m = __watch(id); m.ai = [null, null]; Input.players[0].cpu = { held: {}, move: { x: 0, y: 0 } }; Input.players[1].cpu = { held: {}, move: { x: 0, y: 0 } };
+  const ev = []; m.on((k, d) => { if (k === 'hazard') ev.push(d.vic.idx + '@' + m.haz.t.toFixed(1) + ' -' + d.dmg); if (k === 'ko') ev.push('KO ' + d.vic.idx); });
+  __step(secs || 20, () => { for (const f of m.fighters) { const s = spots[f.idx]; if (s && f.state === 'idle' && m.phase === 'fight' && Math.hypot(f.pos.x - s[0], f.pos.z - s[1]) > 0.3) { f.pos.x = s[0]; f.pos.z = s[1]; } } });
+  return { id, n: ev.length, ev: ev.slice(0, 12), hp: m.fighters.map(f => Math.round(f.hp)), errs: __errs.slice(0, 2) };
+};
+window.__shotW = (id, t, cam) => {
+  const m = __watch(id); __step(1.7 + t); m.update = () => {}; m.arena.draw(m, 1 / 60);
+  const c = m.camera, p = cam || [0, 11, 17, 0.5]; c.position.set(p[0], p[1], p[2]); c.lookAt(0, p[3], -1.5);
+  const co = document.getElementById('callouts'); if (co) co.innerHTML = ''; return m.haz ? JSON.stringify(m.haz).slice(0, 140) : 'no hazard';
 };

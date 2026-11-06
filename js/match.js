@@ -185,6 +185,14 @@
       }
     }
 
+    /* ---------------------------------------------------- STAGE HAZARDS
+       (arenas.js) An option, on by default; never in Training. Online, the room's rule comes in the fight's setup
+       (opts.hazards): the sim never reads this device's settings there. Its state, M.haz, is plain numbers that start
+       over each round, so the rollback saves it like everything else */
+    const HZ = arena.haz ? Arena.HAZ[arena.haz] : null;
+    M.hazards = !!HZ && (opts.hazards != null ? !!opts.hazards : !opts.online && !M.training && Input.settings.hazards !== false);
+    M.haz = null;
+
     /* ------------------------------------------------------------ rounds */
     function place() {
       if (M.cine) Arts.end(M.cine);
@@ -199,6 +207,7 @@
       for (const f of M.fighters) { f.pos.y = 7; f.grounded = false; f.setState('intro'); f.dropIn = true; }
       for (const f of M.fighters) if (f.st.perk === 'familiar') M.summon(f, 1, true);   // FAMILIAR: an imp from the start
       M.phase = 'intro'; M.phaseT = 0; M.clock = opts.time; M.slow = 1; M.slowT = 0;
+      M.haz = M.hazards ? Object.assign({ t: 0 }, HZ.init ? HZ.init(M) : {}) : null;
       if (!M.attract) HUD.banner(M.training ? (opts.tutorial ? 'TUTORIAL' : opts.trials ? 'COMBO TRIALS' : 'TRAINING') : (M.round === 1 && !opts.final ? 'ROUND 1' : opts.final && M.wins[0] === opts.wins - 1 && M.wins[1] === opts.wins - 1 ? 'FINAL ROUND' : 'ROUND ' + M.round), 'round', 1.2);
       if (M.recastNow && opts.recastCall) M.after(0.9, () => M.call(M.fighters[1], opts.recastCall(M.round, M.recastNow), 'bad'));
     }
@@ -757,6 +766,8 @@
       } else {
         for (const f of M.fighters) f.update(dt);
         separate();
+        // the STAGE HAZARD: its clock runs while the round does (it waits out a Legend Art)
+        if (M.haz && (M.phase === 'fight' || M.phase === 'ko') && !M.cine) { M.haz.t += dt; for (const f of M.fighters) if (f.hazT > 0) f.hazT = Math.max(0, f.hazT - dt); HZ.step(M, M.haz, dt); }
         if (M.phase === 'fight' && !M.training && !M.attract && !M.cine) {
           M.clock -= dt; M.fightT = (M.fightT || 0) + dt;   // (the fight's own time, for the Arcade's ranks)
           if (M.clock <= 0) { M.clock = 0; timeUp(); }
@@ -771,6 +782,7 @@
       updProjs(dt); updSpears(dt); updPicks(dt); updMinions(dt); arena.update(dt);
       for (let i = M.clones.length - 1; i >= 0; i--) { const c = M.clones[i]; c.t += dt; c.f.root.position.lerpVectors(c.from, c.to, U.clamp(c.t / 0.22, 0, 1)); if (c.t > 0.4) { c.f.root.traverse(o => { if (o.isMesh && o.material.opacity) o.material.opacity *= 0.8; }); } if (c.t > 0.7) { c.f.dispose(); M.clones.splice(i, 1); } }
       if (U.quiet) return;
+      arena.draw(M, dt);   // (the hazard's meshes and the stage's ambient life: drawn frames only)
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
       updCamera(rawDt); FX.update(dt);
       if (!M.attract) HUD.update(M);

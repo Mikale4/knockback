@@ -350,7 +350,7 @@
   /* ---- the host's side */
   function newRoom(o, code, id) {
     return { code, hostId: id, name: String(o.name || '').trim().slice(0, 24) || (Auth.user.user + '\'s room'), priv: !!o.priv, listed: o.listed !== false, locked: false,
-      max: U.clamp(o.max | 0 || ROOM_MAX, 2, ROOM_MAX), rules: { arena: 'random', wins: 2, time: 99, bonus: false, figs: 'any' }, rot: 'winner', auto: true, chat: 'on', muted: [],
+      max: U.clamp(o.max | 0 || ROOM_MAX, 2, ROOM_MAX), rules: { arena: 'random', wins: 2, time: 99, bonus: false, figs: 'any', hazards: true }, rot: 'winner', auto: true, chat: 'on', muted: [],
       members: [], queue: [], fight: null, cd: null, last: null };
   }
   function listing() {
@@ -490,10 +490,11 @@
     const pair = nextPair(); if (!pair) { toastMsg('A fight needs two players.'); return; }
     if (!pair.every(m => m.ready)) { toastMsg('Both fighters need to be READY.'); return; }
     R.cd = null;
-    const rules = R.rules, arena = rules.arena === 'random' ? U.pick(Arena.LIST) : rules.arena;
+    const rules = R.rules, arena = rules.arena === 'random' || !Arena.THEMES[rules.arena] ? U.pick(Arena.LIST) : rules.arena;
     const fid = 'f' + (N.fidN = (N.fidN || 0) + 1) + rid().slice(0, 4);
     const cfg = { fid, seed: seed != null ? seed : (U.vrand() * 4294967296) >>> 0, arena, wins: rules.wins, time: rules.time, bonus: rules.bonus,
-      ids: pair.map(m => m.id), builds: pair.map(m => m.info.build), names: pair.map(m => m.name), track: pair.map(m => !!(m.info && m.info.track)) };   // (each fighter's TARGET TRACKING)
+      ids: pair.map(m => m.id), builds: pair.map(m => m.info.build), names: pair.map(m => m.name), track: pair.map(m => !!(m.info && m.info.track)),   // (each fighter's TARGET TRACKING)
+      hazards: rules.hazards !== false };   // (the room's STAGE HAZARDS rule: every screen plays it the same)
     R.fight = { fid, ids: cfg.ids, names: cfg.names, lines: pair.map(m => m.info.line), state: 'connecting' };
     pair.forEach(m => { m.ready = false; });
     toAll({ t: 'fight', cfg }); onFightCfg(cfg); pushRoom();
@@ -696,6 +697,7 @@
     // the end of the match waits for its frame to be settled (a guessed KO can still be taken back)
     const opts = { mode: 'online', online: true, local: Math.max(0, local), builds, cpu: [null, null], arena: cfg.arena, wins: cfg.wins, time: cfg.time || 99, bonus: cfg.bonus, inputs: net,
       track: Array.isArray(cfg.track) ? [cfg.track[0] === true, cfg.track[1] === true] : [false, false],   // (an older replay: no tracking, as it was played)
+      hazards: cfg.hazards === true,   // (an older replay: no hazards -- its arenas had none)
       onEnd: res => { if (!G) return; if (G.replay) replayEnd(res); else if (G.watch) watchEnd(res); else if (!G.ended && !G.endQ) G.endQ = { f: G.simF, res }; } };
     App.screen(null); Music.play('battle');
     const m = Match.create(opts); App.setView(m);
@@ -1181,7 +1183,8 @@
                 el('label', { class: 'olcheck' }, el('input', { type: 'checkbox', checked: ChatPrefs.filter || null, onchange: e => { ChatPrefs.filter = e.target.checked; saveChatPrefs(); drawChat(); } }), 'Filter swear words')));
           })(),
           el('div', { class: 'olset' }, el('h3', null, 'RULES' + (host ? '' : ' (the host sets these)')),
-            seg('ARENA', rules.arena, [['random', 'Random'], ...Arena.LIST.map(a => [a, Arena.THEMES[a].name])], v => H.rule('arena', v), host),
+            Menu.arenaRow('ARENA', rules.arena, v => H.rule('arena', v), () => {}, { random: true, locked: !host, note: 'Stages marked ⚠ have a STAGE HAZARD; the STAGE HAZARDS rule turns them on or off for the whole room.' }),
+            seg('STAGE HAZARDS', rules.hazards !== false, [[true, 'On'], [false, 'Off']], v => H.rule('hazards', v === true || v === 'true'), host),
             seg('ROUNDS', rules.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => H.rule('wins', +v), host),
             seg('ROUND TIME', rules.time, [[60, '60 s'], [99, '99 s'], [180, '180 s']], v => H.rule('time', +v), host),
             seg('RARITY BONUS', rules.bonus, [[false, 'Off (fair)'], [true, 'On']], v => H.rule('bonus', v === true || v === 'true'), host),
@@ -1353,7 +1356,7 @@
   const rleDec = a => { const out = []; for (let i = 0; i + 3 < a.length; i += 4) { const x = [a[i + 1] | 0, a[i + 2] | 0, a[i + 3] | 0]; for (let k = 0; k < a[i]; k++) out.push(x); } return out; };
   function buildReplay(cfg, side, inputs, snaps, fp, end, res) {
     return { kb: 'replay', v: 1, game: VERSION, build: BUILD, id: rid(), at: Date.now(), side, end: end | 0, winner: res.winner, score: res.wins.slice(0, 2),
-      cfg: { seed: cfg.seed, arena: cfg.arena, wins: cfg.wins, time: cfg.time, bonus: cfg.bonus, builds: cfg.builds, names: cfg.names, track: cfg.track },
+      cfg: { seed: cfg.seed, arena: cfg.arena, wins: cfg.wins, time: cfg.time, bonus: cfg.bonus, builds: cfg.builds, names: cfg.names, track: cfg.track, hazards: cfg.hazards === true },
       in: [rleEnc(inputs[0].slice(0, end + 1)), rleEnc(inputs[1].slice(0, end + 1))], snaps: snaps || {}, fp: fp || {}, keep: false };
   }
   const Replays = {

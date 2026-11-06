@@ -35,6 +35,33 @@
     const close = () => { ov.remove(); onClose && onClose(); };
     document.body.append(ov); return close;
   }
+  /* the ARENA picker: a grid of every stage (a picture of each, its line, its hazard), RANDOM first where it's allowed */
+  function pickArena(cur, onPick, o) {
+    o = o || {};
+    const tile = id => {
+      const I = id === 'random' ? null : Arena.info(id);
+      const img = el('div', { class: 'arimg', style: I ? { backgroundImage: 'linear-gradient(' + I.sky + ', ' + I.floor + ')' } : null }, I ? null : el('span', null, '?'));
+      if (I) Arena.thumb(id, u => { if (u) { img.style.backgroundImage = 'url(' + u + ')'; img.classList.add('lit'); } });
+      return el('button', { class: 'artile' + (cur === id ? ' on' : ''), title: I && I.hazDesc ? I.haz + ': ' + I.hazDesc : null, onclick: () => { SFX.play('ok'); close(); onPick(id); } },
+        img, I && I.haz ? el('em', { class: 'arhaz' }, '⚠ ' + I.haz) : null,
+        el('b', null, I ? I.name : 'RANDOM'), el('small', null, I ? I.tag : 'A different arena every fight'));
+    };
+    const ids = (o.random ? ['random'] : []).concat(Arena.LIST);
+    const close = modal(el('div', { class: 'arpick' }, el('h2', null, 'ARENA'),
+      el('p', { class: 'note' }, o.note || (Input.settings.hazards === false ? 'STAGE HAZARDS are off (Options): the ⚠ stages play without theirs.' : 'Stages marked ⚠ have a STAGE HAZARD (you can turn them off in Options). Hover or long-press one to read what it does.')),
+      el('div', { class: 'argrid' }, ...ids.map(tile))));
+    const ms = document.querySelectorAll('.overlay .modal'), m = ms[ms.length - 1]; if (m) m.classList.add('wide');
+    setTimeout(() => { const on = document.querySelector('.artile.on'); if (on) { on.scrollIntoView({ block: 'nearest' }); Input.focus && Input.focus(on); } }, 30);
+  }
+  /* a settings row that shows the arena picked (its picture and name) and opens the picker */
+  function arenaRow(label, val, set, redraw, o) {
+    o = o || {}; const I = val === 'random' || !Arena.THEMES[val] ? null : Arena.info(val);
+    const img = I ? el('img', { alt: '' }) : el('div', { class: 'arq' }, '?'); if (I) Arena.thumb(val, u => { if (u) img.src = u; });
+    return el('div', { class: 'seg arrow' }, el('span', null, label),
+      el('div', null, el('button', { class: 'arsel', disabled: o.locked || null, onclick: () => pickArena(val, v => { set(v); redraw(); }, o) }, img,
+        el('div', { class: 'artext' }, el('b', null, I ? I.name : 'RANDOM'), el('small', null, I ? (I.haz ? '⚠ ' + I.haz + (o.hazOff ? ' (off here)' : '') : 'No hazard') : 'A different arena every fight')),
+        o.locked ? null : el('i', { class: 'archev' }, 'CHANGE ›'))));
+  }
   const activeBuild = () => Inv.levelled(S().builds[S().active || 0]);
   /* builds[0] is your starter figure (its Standard set); builds[1..] are your custom slots: A and B come free, the
      next four are bought with tokens, in order */
@@ -460,7 +487,7 @@
             two ? paintRow('P2 COLOURS', cfg.c2, p2line, k => { cfg.c2 = k; }, () => Menu.versus(cfg)) : null,
             two ? null : seg('CPU LEVEL', cfg.lvl, lvls, v => cfg.lvl = +v),
           ],
-          seg('ARENA', cfg.arena, [['random', 'Random'], ...Arena.LIST.map(a => [a, Arena.THEMES[a].name])], v => cfg.arena = v),
+          arenaRow('ARENA', cfg.arena, v => { cfg.arena = v; }, () => Menu.versus(cfg), { random: true }),
           seg('ROUNDS', cfg.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => cfg.wins = +v),
           seg('RARITY BONUS', cfg.bonus, [[true, 'On'], [false, 'Off (fair)']], v => cfg.bonus = v === true || v === 'true'),
           two ? el('p', { class: 'note' }, 'P1: arrows + Z X C / A S D / F, Space, L-Shift · P2: I J K L + Numpad 1-7, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Controllers: the first pad is P1, the second P2 (swap them, and rebind anything, in OPTIONS).') : null,
@@ -470,7 +497,7 @@
     versusStart(cfg) {
       const mine = S().builds;
       const pick = (v, lvl) => v === 'random' ? KB.randomBuild(Math.min(3, lvl)) : String(v).startsWith('mine:') ? Inv.levelled(mine[+v.slice(5)]) : KB.mintBuild(v, Math.min(3, lvl));
-      const arena = cfg.arena === 'random' ? U.pick(Arena.LIST) : cfg.arena;
+      const arena = cfg.arena === 'random' || !Arena.THEMES[cfg.arena] ? U.pick(Arena.LIST) : cfg.arena;
       if (cfg.mode === 'watch') {
         App.startMatch({ mode: 'watch', builds: [pick(cfg.w1, cfg.l1), pick(cfg.w2, cfg.l2)], cpu: [cfg.l1, cfg.l2], arena, wins: cfg.wins, bonus: cfg.bonus, cfg });
         return;
@@ -486,6 +513,7 @@
     arcade() { Arcade.open(); },
     /* the showroom turntable, for other modules' screens */
     room: (b, side) => useRoom(b, side),
+    pickArena: (cur, onPick, o) => pickArena(cur, onPick, o), arenaRow: (l, v, set, redraw, o) => arenaRow(l, v, set, redraw, o),
     /* --------------------------------------------------------- training */
     /* TRAINING: pick yourself (your figures, or any base fighter), the dummy and the arena (it remembers them) */
     training(cfg) {
@@ -511,7 +539,7 @@
           el('div', { class: 'olselect' }, el('h3', null, 'THE DUMMY'),
             el('div', { class: 'olgrid' }, tile(cfg.d === 'random', null, 'RANDOM', 'a new one each time', () => { cfg.d = 'random'; }),
               ...themeLines().map(l => tile(cfg.d === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.d = 'mint:' + l; })))),
-          seg('ARENA', cfg.arena, Arena.LIST.map(a => [a, Arena.THEMES[a].name]), v => { cfg.arena = v; }),
+          arenaRow('ARENA', cfg.arena, v => { cfg.arena = v; }, () => Menu.training(cfg), { hazOff: true, note: 'Training never has STAGE HAZARDS: pick any arena for the look of it.' }),
           el('p', { class: 'note' }, 'In training: health comes back the moment a combo ends; R resets, T saves the position you\'re in (or the buttons in the TRAINING panel; on a pad, tap Back to reset and hold it to save). CHARACTER SELECT in the pause menu brings you back here.'),
           btn('START TRAINING', () => Menu.trainingStart(cfg), 'big wide fight'))));
     },
@@ -572,6 +600,9 @@
           el('div', { class: 'seg' }, el('span', null, 'TARGET TRACKING'), el('div', null, ...[[false, 'Off'], [true, 'On']].map(([v, t]) =>
             el('button', { class: !!Input.settings.track === v ? 'on' : '', onclick: () => { Input.setSetting('track', v); Menu.options(); } }, t)))),
           el('p', { class: 'note' }, 'ON: every attack turns you to face your opponent first, whichever way you were facing or holding the stick, so it always aims at them. OFF: attacks go the way you face or hold the stick, and only snap onto someone close in front of you. It applies to everyone playing on this device; online, each player\'s own setting counts.'),
+          el('div', { class: 'seg' }, el('span', null, 'STAGE HAZARDS'), el('div', null, ...[[true, 'On'], [false, 'Off']].map(([v, t]) =>
+            el('button', { class: (Input.settings.hazards !== false) === v ? 'on' : '', onclick: () => { Input.setSetting('hazards', v); Menu.options(); } }, t)))),
+          el('p', { class: 'note' }, 'Twelve of the twenty arenas have a hazard: a train through the middle, hot burners, a sweeping clock hand, gumballs, falling chess pieces and more. OFF: every arena is just its floor and its walls. Training never has them; online, the room\'s host decides.'),
           el('h2', { class: 'osec' }, 'DISPLAY'),
           el('div', { class: 'seg' }, el('span', null, 'GRAPHICS'), el('div', null, ...[['auto', 'Auto'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([v, t]) =>
             el('button', { class: App.gfx.mode === v ? 'on' : '', onclick: () => { App.setGfx(v); Menu.options(); } }, t + (v === 'auto' && App.gfx.mode === 'auto' ? ' (' + App.gfx.level + ')' : ''))))),

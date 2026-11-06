@@ -232,10 +232,10 @@
 
   /* a sky dome: a vertical gradient from `top` (zenith) through `mid` (horizon) to `bottom`, unlit and unfogged */
   function sky(scene, top, mid, bottom) {
-    const geo = new THREE.SphereGeometry(300, 24, 16), pos = geo.attributes.position, cols = [];
+    const geo = new THREE.SphereGeometry(270, 24, 16), pos = geo.attributes.position, cols = [];   // (inside the cameras' far plane, 300, from anywhere near the arena)
     const T = new THREE.Color(top), M = new THREE.Color(mid != null ? mid : top), B = new THREE.Color(bottom != null ? bottom : (mid != null ? mid : top)), c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
-      const h = pos.getY(i) / 300; // -1 .. 1
+      const h = pos.getY(i) / 270; // -1 .. 1
       if (h >= 0) c.copy(M).lerp(T, Math.pow(h, 0.6)); else c.copy(M).lerp(B, Math.min(1, -h * 3));
       cols.push(c.r, c.g, c.b);
     }

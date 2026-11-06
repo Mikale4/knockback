@@ -25,7 +25,7 @@
       name: 'STUDY DESK', sky: [0x2a3550, 0x56607a, 0x1a1a22], fog: 0x3a4258, hemi: [0xd8e4ff, 0x30303a, 0.7], sun: [0xffe2b0, 1.05],
       floor: (x, z) => (x % 8 === 0 || z % 8 === 0) ? 0x7fc79a : ((x + z) % 2 ? 0x2f8a5c : 0x2c8558),
       wall: (x, y, i) => { const b = Math.floor(i / 3); return y > 9 - (b * 7 % 3) ? -1 : [0x8a2a2a, 0x2a4a8a, 0x2a6a4a, 0x7a5a2a, 0x4a2a6a, 0xa0782a][b % 6] - (y === 8 ? 0x101010 : 0); },
-      edge: 0xe8d8b0, dust: [0x2f8a5c, 0x7fc79a], out: 0x4a3426, outY: -9,
+      edge: 0xe8d8b0, noEdge: true, dust: [0x2f8a5c, 0x7fc79a], out: 0x4a3426, outY: -9,
     },
     chest: {
       name: 'TOY CHEST', sky: [0x5a4030, 0x8a6040, 0x2a1a12], fog: 0x6a4a34, hemi: [0xffe4c0, 0x40281a, 0.8], sun: [0xffd8a0, 1.0],
@@ -38,7 +38,7 @@
   function build(scene, id) {
     const T = THEMES[id] || THEMES.shelf;
     const group = new THREE.Group(); scene.add(group);
-    scene.fog = new THREE.Fog(T.fog, 26, 70);
+    scene.fog = new THREE.Fog(T.fog, T.fogR ? T.fogR[0] : 26, T.fogR ? T.fogR[1] : 70);
     VX.sky(scene, T.sky[0], T.sky[1], T.sky[2]);
     const hemi = new THREE.HemisphereLight(T.hemi[0], T.hemi[1], T.hemi[2]); group.add(hemi);
     const sun = new THREE.DirectionalLight(T.sun[0], T.sun[1]); sun.position.set(6, 14, 9); sun.castShadow = true;
@@ -51,10 +51,12 @@
     for (let x = -32; x < 32; x++) for (let z = -24; z < 24; z++) if (x === -32 || x === 31 || z === -24 || z === 23) fg.set(x, -1, z, T.floor(x + 32, z + 24));
     const floor = VX.object(fg, AS, { cast: false }); floor.position.set(0.125, -0.125, 0.125); group.add(floor);
     // what's below the edge (a ring out lands there)
-    const outM = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshLambertMaterial({ color: T.out }));
-    outM.rotation.x = -Math.PI / 2; outM.position.y = T.outY; outM.receiveShadow = true; group.add(outM);
+    // (a stage can size it -- the windowsill's sill -- make it glow -- lava -- or give it its own material)
+    const os = T.outSize || [160, 160, 0];
+    const outM = new THREE.Mesh(new THREE.PlaneGeometry(os[0], os[1]), T.outMat ? T.outMat(T) : T.outGlow ? new THREE.MeshBasicMaterial({ color: T.out, toneMapped: false }) : new THREE.MeshLambertMaterial({ color: T.out }));
+    outM.rotation.x = -Math.PI / 2; outM.position.set(0, T.outY, os[2]); outM.receiveShadow = true; group.add(outM);
     // a plinth under the arena so it reads as raised
-    const pl = new THREE.Mesh(new THREE.BoxGeometry(16.1, Math.abs(T.outY), 12.1), new THREE.MeshLambertMaterial({ color: Models.shade(T.out, 1.3) }));
+    const pl = new THREE.Mesh(new THREE.BoxGeometry(16.1, Math.abs(T.outY), 12.1), new THREE.MeshLambertMaterial({ color: T.plinth != null ? T.plinth : Models.shade(T.out, 1.3) }));
     pl.position.y = T.outY / 2 - 0.13; pl.receiveShadow = true; group.add(pl);
 
     // the four walls
@@ -68,8 +70,8 @@
     for (const w of walls) {
       const g = new VX.Grid(); g.jit = 0.05; const n = w.len / AS;
       for (let i = 0; i < n; i++) for (let y = 0; y < w.h; y++) for (let t = 0; t < 2; t++) {
-        let c = T.wall(0, y, i); if (c < 0) continue;
-        if (y === w.h - 1 && T.edge && id !== 'desk') c = T.edge;
+        let c = T.wall(0, y, i, w); if (c < 0) continue;
+        if (y === w.h - 1 && T.edge && !T.noEdge) c = T.edge;
         colors.add(c);
         if (w.axis === 'x') g.set(t, y, i - n / 2, c); else g.set(i - n / 2, y, t, c);
       }
@@ -81,15 +83,16 @@
     }
     // corner posts
     const cg = new VX.Grid();
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (let y = 0; y < 11; y++) cg.box(sx > 0 ? 32 : -34, y, sz > 0 ? 24 : -26, sx > 0 ? 33 : -33, y, sz > 0 ? 25 : -25, y === 10 ? T.edge : Models.shade(T.out, 1.6));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (let y = 0; y < 11; y++) cg.box(sx > 0 ? 32 : -34, y, sz > 0 ? 24 : -26, sx > 0 ? 33 : -33, y, sz > 0 ? 25 : -25, y === 10 ? T.edge : (T.post != null ? T.post : Models.shade(T.out, 1.6)));
     const corners = VX.object(cg, AS); corners.position.set(0.125, 0.125, 0.125); group.add(corners);
-    // something big in the background for scale
-    scenery(group, id, T);
+    // something big in the background for scale (the newer stages bring their own: arenas.js)
+    if (!T.scenery) scenery(group, id, T);
 
     const crackMat = new THREE.MeshBasicMaterial({ color: 0x1a0f08 }), hotMat = new THREE.MeshBasicMaterial({ color: 0xff7a20, toneMapped: false });
     const seg = new THREE.BoxGeometry(1, 1, 1);
     const A = {
       id, name: T.name, W, D, walls, group, outY: T.outY, dust: T.dust, wallColors: Array.from(colors).slice(0, 6), hemi, sun, base: { hemi: hemi.intensity, sun: sun.intensity },
+      haz: T.haz && HAZ[T.haz] ? T.haz : null, props: {},
       /* a bounce adds stress and spreads a crack from where it hit */
       stress(w, add, at) {
         const before = w.stress; w.stress = Math.min(99, w.stress + add);
@@ -137,8 +140,19 @@
         }
       },
       reset() { for (const w of walls) { w.broken = false; w.rebuild = 0; w.stress = 0; w.obj.visible = true; w.obj.position.y = w.baseY; while (w.cracks.children.length) w.cracks.remove(w.cracks.children[0]); } },
-      dispose() { scene.remove(group); scene.fog = null; const sk = scene.getObjectByName('sky'); if (sk) scene.remove(sk); },
+      dispose() {
+        scene.remove(group); scene.fog = null; const sk = scene.getObjectByName('sky'); if (sk) { scene.remove(sk); sk.geometry.dispose(); sk.material.dispose(); }
+        // free what the stage put on the GPU (the voxel kit's shared materials stay: everything uses them)
+        const keep = new Set([VX.litMat(), VX.glowMat()]);
+        group.traverse(o => { if (o.geometry) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : []; for (const m of ms) { if (keep.has(m)) continue; if (m.map) m.map.dispose(); m.dispose(); } });
+      },
     };
+    // the stage's own scenery, its HAZARD's meshes and its ambient life (rain, fish, snow...): arenas.js
+    if (T.scenery) T.scenery(group, A);
+    const H = A.haz ? HAZ[A.haz] : null, hv = H && H.build ? H.build(group, A) : null, amb = T.ambient ? T.ambient(group, A) : null;
+    if (amb) amb.update(0, null);
+    /* each drawn frame (never in a rollback's replays): pose the hazard from the match's M.haz (null with hazards off) */
+    A.draw = (M, dt) => { if (hv && H.draw) H.draw(hv, M, M.hazards ? M.haz : null, dt); if (amb) amb.update(dt, M); };
     return A;
   }
 
@@ -168,5 +182,6 @@
     }
   }
 
-  window.Arena = { build, THEMES, LIST: ['shelf', 'desk', 'chest'], AS };
+  const HAZ = {};   // the STAGE HAZARDS (arenas.js)
+  window.Arena = { build, THEMES, HAZ, LIST: ['shelf', 'desk', 'chest'], AS, W, D };
 })();

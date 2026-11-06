@@ -889,3 +889,27 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
 .thtabs button.on { color: #000; background: var(--yel); border-color: #000; }
 .actsub { display: block; font: 900 10px var(--body); letter-spacing: 2px; color: var(--dim); margin-top: 6px; }
 @media (max-height: 520px) { .thtabs { margin: 0 auto 4px; } .thtabs button { padding: 3px 8px; font-size: 10px; } }
+
+/* the ARENA picker (menu.js: arenaRow, pickArena) */
+.seg.arrow > div { display: block; }
+.seg .arsel { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 440px; padding: 4px 10px 4px 4px; text-align: left; }
+.seg .arsel:disabled { opacity: 1; cursor: default; }
+.arsel img, .arsel .arq { width: 96px; height: 54px; border-radius: 6px; object-fit: cover; background: #0d0a16; flex: none; }
+.arsel .arq { display: grid; place-items: center; font: 30px var(--head); color: var(--dim); }
+.arsel .artext { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.arsel .artext b { font: 20px var(--head); letter-spacing: 1px; line-height: 1; }
+.arsel .artext small { font: 500 11px var(--body); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arsel .archev { font: 700 10px var(--body); font-style: normal; letter-spacing: 1px; color: var(--dim); white-space: nowrap; }
+.modal.wide { max-width: 1000px; }
+.arpick h2 { margin: 0 0 4px; font: 34px var(--head); letter-spacing: 2px; }
+.arpick .note { margin: 0 0 10px; }
+.argrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.artile { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; text-align: left; background: var(--panel2); border: 2px solid var(--line); border-radius: 10px; padding: 5px 5px 8px; color: var(--ink); transition: transform .12s, border-color .12s; }
+.artile:hover, .artile.padfocus { transform: translateY(-2px); border-color: var(--dim); }
+.artile.on { border-color: var(--yel); box-shadow: 0 0 0 2px var(--yel); }
+.arimg { aspect-ratio: 16 / 9; border-radius: 6px; background-size: cover; background-position: center; display: grid; place-items: center; font: 34px var(--head); color: rgba(255,255,255,.75); }
+.arimg:not(.lit) { opacity: .85; }
+.artile b { font: 18px var(--head); letter-spacing: 1px; line-height: 1; margin-top: 2px; }
+.artile small { font: 500 10.5px var(--body); color: var(--dim); line-height: 1.25; }
+.arhaz { position: absolute; top: 9px; left: 9px; background: rgba(255, 176, 48, .95); color: #1a1006; font: 800 9px var(--body); font-style: normal; letter-spacing: 1px; padding: 2px 6px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+@media (max-width: 560px) { .argrid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 7px; } .arsel img, .arsel .arq { width: 72px; height: 40px; } .seg .arsel .archev { display: none; } }

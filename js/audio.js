@@ -82,6 +82,21 @@
     crank() { if (!ctx) return; const t = ctx.currentTime; for (let i = 0; i < 6; i++) { tone(1500, 900, 0.03, 'square', 0.1, t + i * 0.09); noise(0.03, 0.15, 3000, 3, 'bandpass', t + i * 0.09); } },
     roll() { noise(0.5, 0.2, 400, 1, 'bandpass', null, null, 200); },
     pop() { tone(400, 1600, 0.1, 'sine', 0.3); noise(0.08, 0.3, 3500, 1); },
+    // the STAGE HAZARDS
+    choo() { if (!ctx) return; const t = ctx.currentTime; [587, 740, 880].forEach(f => tone(f, f * 0.96, 0.75, 'triangle', 0.08, t)); noise(0.75, 0.07, 2500, 3, 'bandpass', t); },
+    ding() { if (!ctx) return; const t = ctx.currentTime; for (let i = 0; i < 4; i++) { tone(1480, 1480, 0.18, 'triangle', 0.1, t + i * 0.3); tone(2960, 2960, 0.1, 'sine', 0.04, t + i * 0.3); } },
+    sizzle() { noise(1.1, 0.16, 6000, 0.8, 'highpass'); },
+    splash() { noise(0.8, 0.45, 1800, 0.5, 'bandpass', null, null, 400); tone(300, 80, 0.3, 'sine', 0.3); },
+    bumper() { if (!ctx) return; const t = ctx.currentTime; tone(1200, 600, 0.12, 'square', 0.14, t); tone(1800, 1800, 0.12, 'sine', 0.14, t + 0.05); },
+    gust() { noise(1.8, 0.3, 500, 0.6, 'bandpass', null, null, 1400); },
+    thud() { tone(70, 30, 0.5, 'sine', 0.8); noise(0.3, 0.5, 600, 0.6, 'lowpass'); tone(220, 90, 0.12, 'square', 0.15); },
+    vroom() { tone(90, 260, 0.9, 'sawtooth', 0.13); tone(180, 520, 0.9, 'square', 0.04); noise(0.9, 0.14, 900, 1); },
+    horn() { if (!ctx) return; const t = ctx.currentTime; for (const d of [0, 0.25]) { tone(440, 440, 0.18, 'square', 0.07, t + d); tone(554, 554, 0.18, 'square', 0.07, t + d); } },
+    rumble() { noise(1.2, 0.4, 200, 0.5, 'lowpass'); tone(50, 30, 1.2, 'sine', 0.45); },
+    roar() { noise(1.0, 0.45, 700, 0.8, 'bandpass', null, null, 250); tone(160, 70, 1.0, 'sawtooth', 0.18); tone(110, 60, 1.0, 'square', 0.06); },
+    alarm() { if (!ctx) return; const t = ctx.currentTime; for (let i = 0; i < 14; i++) tone(i % 2 ? 2100 : 2500, null, 0.05, 'square', 0.07, t + i * 0.07); },
+    scratch() { if (!ctx) return; const t = ctx.currentTime; for (let i = 0; i < 4; i++) noise(0.22, 0.32, i % 2 ? 3000 : 900, 2, 'bandpass', t + i * 0.24, null, i % 2 ? 900 : 3000); },
+    thunder() { noise(2.5, 0.3, 300, 0.4, 'lowpass', null, null, 60); tone(45, 25, 2, 'sine', 0.25); },
     reveal(o) { if (!ctx) return; const r = (o && o.r) || 0, t = ctx.currentTime;
       const notes = [[0, 7], [0, 4, 7], [0, 4, 7, 12], [0, 4, 7, 11, 14, 19]][r];
       notes.forEach((s, i) => tone(523 * Math.pow(2, s / 12), null, 0.35 + r * 0.1, r >= 2 ? 'sawtooth' : 'square', 0.1, t + i * 0.07));
