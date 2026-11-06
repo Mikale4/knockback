@@ -246,6 +246,8 @@
         else if (d > R) { toward(); return; } else { this.stop(); this.whiffT = 0; this.press('light'); this.wait = L.react[lv] * 0.5; return; }
       }
 
+      // ---- go get the lance (DRAGOON): it's on the floor and he fights with his fists until he has it
+      if (f.spearOut && f.spear && f.spear.at && !(d < 2 && r() < 0.5)) { this.stickTo(f.spear.at.x - f.pos.x, f.spear.at.z - f.pos.z, 1, true); return; }
       // ---- go get a part that fell off (it always rests inside the walls, so walk straight to it)
       const pick = m.picks.find(p => p.rest && f.broken[p.part]);
       if (pick && d > 2.6) { this.stickTo(pick.grp.position.x - f.pos.x, pick.grp.position.z - f.pos.z, 1, true); return; }
@@ -258,6 +260,7 @@
 
       // ---- neutral
       if (f.hype >= 100 && d < Math.min(6, this.superReach(KB.MOVES[f.st.super])) && r() < 0.015 * (lv + 1)) { this.press('super'); return; }
+      if (lv >= 1 && f.canSpear() && d > 3.5 && d < 9 && o.state !== 'down' && r() < 0.004 * (lv + 1)) { this.press('guard'); this.press('heavy'); return; }   // (the DRAGOON's lance, thrown)
       const sp = KB.MOVES[f.st.special];
       if (f.canSpecial() && r() < 0.006 * (lv + 1)) {
         const imps = m.minions.filter(mn => mn.owner === f).length;

@@ -317,13 +317,14 @@
     return Inv.levelled(S.builds[i] || S.builds[S.active || 0] || S.builds[0]);
   }
   function meInfo() {
-    const b = buildOf(N && N.pick);
+    const b = Object.assign({}, buildOf(N && N.pick), { paint: Menu.myPaint() });
     return { name: Auth.user.user, build: b, fig: b.name, line: b.core.line, pick: String(N && N.pick || '') };
   }
   const goodBuild = b => !!b && typeof b === 'object' && KB.SLOTS.every(s => b[s] && KB.LINES[b[s].line] && Number.isInteger(b[s].r) && b[s].r >= 0 && b[s].r < KB.RARITY.length && (b[s].lv == null || typeof b[s].lv === 'number'));
   function cleanInfo(me) {
     if (!me || !goodBuild(me.build)) return null;
     const b = JSON.parse(JSON.stringify(me.build)); b.name = String(b.name || KB.LINES[b.core.line].figure).slice(0, 40);
+    b.paint = Number.isInteger(b.paint) && b.paint >= 0 && b.paint < Models.PAINTS.length ? b.paint : 0; delete b.tint;
     return { name: String(me.name || 'Player').slice(0, 24), build: b, fig: b.name, line: b.core.line, pick: String(me.pick || '').slice(0, 16) };
   }
   const isBase = info => !!info && String(info.pick).startsWith('mint:');
@@ -597,20 +598,29 @@
   function openLink(cfg, side) {
     const S = N, other = cfg.ids[1 - side], L = N.flink = { cfg, fid: cfg.fid, side, other, mode: 'wait', conn: null, up: false, rtts: [] };
     N.stage = 'room'; draw();
-    if (N.host || other === N.room.hostId) { L.mode = 'room'; L.conn = N.host ? (N.mem.get(other) || {}).conn : N.conn; if (side === 1) linkSend(L, { t: 'hi' }); }
-    else if (side === 1) {
+    // the fight gets a link of its own between the two fighters, UNORDERED (reliable: false in PeerJS: still resent if
+    // lost, but a late packet doesn't hold up the ones behind it -- on an ordered link one lost packet stalls every
+    // message after it, and the fight freezes). No link: the room's own connection (you're fighting the host) or the host passing it on
+    const viaRoom = N.host || other === N.room.hostId; L.viaRoom = viaRoom;
+    if (side === 1) {
       L.mode = 'direct';
-      const c = L.conn = N.peer.connect(other, { reliable: true, serialization: 'json', metadata: { fid: cfg.fid } });
+      const c = L.conn = N.peer.connect(other, { reliable: false, serialization: 'json', metadata: { fid: cfg.fid } });
       c.on('open', () => { if (N === S && N.flink === L && L.mode === 'direct') linkSend(L, { t: 'hi' }); });
       c.on('data', d => { if (N === S) fightData(d, 'direct', c); });
       c.on('close', () => { if (N === S && N.flink === L && L.mode === 'direct' && L.conn === c) linkLost(L); });
       c.on('error', () => {});
-      later(6000, () => { if (N === S && N.flink === L && !L.up) { try { c.close(); } catch (e) { /* fine */ } L.mode = 'relay'; L.conn = null; linkSend(L, { t: 'hi' }); } });   // no direct link: through the host
+      later(viaRoom ? 3000 : 6000, () => {   // no direct link: the room's connection, or through the host
+        if (N !== S || N.flink !== L || L.up) return;
+        try { c.close(); } catch (e) { /* fine */ }
+        if (viaRoom) { L.mode = 'room'; L.conn = roomConnTo(other); } else { L.mode = 'relay'; L.conn = null; }
+        linkSend(L, { t: 'hi' });
+      });
     }
     const early = (N.early || []).filter(e => e[0].fid === cfg.fid); N.early = [];
     early.forEach(e => fightData(...e));
     later(20000, () => { if (N === S && N.flink === L && !L.started) linkAbort(L, 'Couldn\'t connect the two fighters.'); });
   }
+  const roomConnTo = other => N.host ? (N.mem.get(other) || {}).conn : N.conn;
   /* the second fighter calling you (a fighter) directly */
   function fightConn(c) {
     const S = N;
@@ -626,8 +636,8 @@
     if (!N || !d || d.t !== 'F') return;
     const L = N.flink;
     if (!L || L.fid !== d.fid) { (N.early = N.early || []).push([d, via, c]); if (N.early.length > 60) N.early.shift(); return; }
-    if (L.mode === 'wait') { if (via === 'direct') { L.mode = 'direct'; L.conn = c; } else if (via === 'relay') { L.mode = 'relay'; L.conn = null; } }
-    else if (via === 'relay' && L.mode === 'direct' && !L.up) { L.mode = 'relay'; L.conn = null; }
+    if (L.mode === 'wait') { if (via === 'direct') { L.mode = 'direct'; L.conn = c; } else if (via === 'relay') { L.mode = 'relay'; L.conn = null; } else if (via === 'room') { L.mode = 'room'; L.conn = roomConnTo(L.other); } }
+    else if ((via === 'relay' || via === 'room') && L.mode === 'direct' && !L.up) { L.mode = via; L.conn = via === 'room' ? roomConnTo(L.other) : null; }
     L.up = true;
     linkMsg(L, d.m || {});
   }
@@ -700,7 +710,7 @@
     if (G) endFight();
     const { m, R, net, opts } = makeMatch(cfg, side, false);
     G = { m, R, net, local: side, D, f: 0, conf: 0, simF: 0, inputs: [{}, {}], used: {}, snaps: {}, rb: null, acc: 0, latch: {}, hq: {}, mine: {}, theirs: {}, hashFloor: -1,
-      evq: [], endQ: null, ended: false, syncAt: null, snap: null, waitT: 0, remF: null, remAt: 0, adv: 0, raw: null, radv: null, lastSkip: 0, opts, cfg, rtt, link: L,
+      evq: [], endQ: null, ended: false, syncAt: null, snap: null, waitT: 0, remF: null, remAt: 0, adv: 0, raw: null, radv: null, lastSkip: 0, opts, cfg, rtt, link: L, peerAck: 0, lastTx: 0, resends: 0,
       syncs: 0, rollbacks: 0, rbFrames: 0, rbMax: 0, rbMs: 0, rbSum: 0, guesses: 0, skips: 0 };
     G.tx = msg => linkSend(L, msg);
     G.mirror = (f, d) => toHost({ t: 'sin', fid: cfg.fid, s: side, f, d });   // your buttons, for the watchers
@@ -725,11 +735,20 @@
   function onFightMsg(d) {
     if (!G || G.watch || !d) return;
     switch (d.t) {
-      case 'in': { const I = G.inputs[1 - G.local]; if (!Array.isArray(d.d)) return; d.d.forEach((x, k) => { I[d.f + k] = x; }); if (d.cur != null) { G.remF = d.cur; G.remAt = performance.now(); } if (d.adv != null) G.radv = d.adv; if (Online._t.onIn) Online._t.onIn(); return; }
+      case 'in': {
+        const I = G.inputs[1 - G.local]; if (!Array.isArray(d.d)) return;
+        d.d.forEach((x, k) => { if (d.f + k >= G.conf && !I[d.f + k]) I[d.f + k] = x; });
+        if (d.ack != null && d.ack > G.peerAck) G.peerAck = d.ack;
+        if (d.cur != null && (G.remF == null || d.cur >= G.remF)) { G.remF = d.cur; G.remAt = performance.now(); if (d.adv != null) G.radv = d.adv; }   // (an old one, late: not for the time sync)
+        if (Online._t.onIn) Online._t.onIn(); return;
+      }
       case 'h': checkHash(d.f, d.h); return;
       case 'desync': if (G.local === 0) scheduleResync(); return;
-      case 'resync': if (G.local === 1) { if (d.at < G.f) { G.tx({ t: 'desync' }); return; } G.syncAt = d.at; G.snap = null; } return;
-      case 'snap': if (G.local === 1) G.snap = d; return;
+      case 'resync':
+        if (G.local !== 1 || d.at <= G.hashFloor || (G.syncAt != null && d.at < G.syncAt)) return;
+        if (d.at < G.f) { G.tx({ t: 'desync' }); return; }
+        G.syncAt = d.at; if (G.snap && G.snap.at !== d.at) G.snap = null; return;
+      case 'snap': if (G.local === 1 && d.at > G.hashFloor && (!G.snap || d.at >= G.snap.at)) G.snap = d; return;
       case 'left': if (!G.ended) { toHost({ t: 'fover', fid: G.cfg.fid, aborted: true, why: G.cfg.names[1 - G.local] + ' left the fight.' }); toRoom(G.cfg.names[1 - G.local] + ' left the fight.'); } return;
     }
   }
@@ -775,15 +794,24 @@
       simFrame(G.f); if (!G) return;
       G.f++; G.acc -= STEP; n++;
     }
-    if (out) { G.tx({ t: 'in', f: outF, d: out, cur: G.f, adv: G.raw == null ? null : Math.round(G.raw * 10) / 10 }); G.mirror(outF, out); }
+    // send: new buttons, or (waiting on them) the unconfirmed ones again every 50 ms, in case theirs are stuck behind ours
+    const now = performance.now();
+    if (out || (waiting && now - G.lastTx > 50)) { if (!out) G.resends++; sendIns(now); }
+    if (out) G.mirror(outF, out);
     // 4. what's settled now: events, fingerprints, the end of the match
     settle(); if (!G) return;
-    for (let i = 0; i < 2; i++) for (const k in G.inputs[i]) if (+k < G.conf - 40) delete G.inputs[i][k];
+    for (let i = 0; i < 2; i++) { const keep = (i === G.local ? Math.min(G.conf, G.peerAck) : G.conf) - 40; for (const k in G.inputs[i]) if (+k < keep) delete G.inputs[i][k]; }
     for (const k in G.used) if (+k < G.conf - 40) delete G.used[k];
     // waiting on them for a while: say so
     if (waiting && n === 0) G.waitT += realDt; else G.waitT = 0;
     if (G.ui) G.ui.classList.toggle('wait', G.waitT > 0.5);
     if (G.waitT > 15) fightLost();
+  }
+  /* our buttons they haven't confirmed (up to 40 frames' worth), with how far we have theirs and where we are */
+  function sendIns(now) {
+    const mine = G.inputs[G.local], top = G.f - 1 + G.D, from = Math.max(G.peerAck, top - 39, 0), d = [];
+    for (let k = from; k <= top; k++) d.push(mine[k] || ZERO);
+    G.tx({ t: 'in', f: from, d, ack: G.conf, cur: G.f, adv: G.raw == null ? null : Math.round(G.raw * 10) / 10 }); G.lastTx = now;
   }
   /* one fight frame: both players' buttons (theirs guessed if they haven't come: the last ones again; the fight is saved first) */
   function simFrame(f) {
@@ -1059,7 +1087,8 @@
         el('small', { class: 'olsub' }, 'YOUR CUSTOM FIGHTERS' + (baseOnly ? ' (not in this room: the host set base characters only)' : '')),
         el('div', { class: 'olgrid' }, ...S.builds.slice(1).map((b, k) => { const lb = Inv.levelled(b); return tile('mine:' + (k + 1), lb, lb.name, KB.LINES[lb.core.line].name + ' core'); })),
         el('small', { class: 'olsub' }, 'BASE CHARACTERS'),
-        el('div', { class: 'olgrid' }, ...KB.LINE_ORDER.map(l => tile('mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set'))));
+        el('div', { class: 'olgrid' }, ...KB.LINE_ORDER.map(l => tile('mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set'))),
+        Menu.paintRow('COLOURS', Menu.myPaint(), buildOf(N.pick).core.line, k => { S.paint = k; Auth.save(); N.me = meInfo(); if (N.room && !inFight) act({ t: 'fig', me: N.me }); }, () => draw()));
       let body;
       if (N.stage === 'menu') {
         const code = el('input', { type: 'text', maxlength: 5, placeholder: 'CODE', class: 'olcode', autocomplete: 'off', value: N.codeIn || '', oninput: e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); N.codeIn = e.target.value; } });
@@ -1474,7 +1503,7 @@
     usePeer: C => { PeerImpl = C; }, N: () => N, G: () => G, playReplay, seekTo, rleEnc, rleDec, tick: () => hostTick(), later: runLater, debug: 0, deepFilter: null,
     say: text => act({ t: 'say', text }), ChatPrefs, cleanText, shown,
     pick: k => { N.pick = k; N.me = meInfo(); if (N.room) act({ t: 'fig', me: N.me }); draw(); },
-    info: () => G && !G.watch ? { f: G.f, conf: G.conf, D: G.D, local: G.local, syncs: G.syncs, desyncs: G.desyncs || 0, rollbacks: G.rollbacks, rbFrames: G.rbFrames, rbMax: G.rbMax, rbMs: Math.round(G.rbMs * 10) / 10, rbAvg: Math.round(G.rbSum / Math.max(1, G.rollbacks) * 100) / 100, guesses: G.guesses, skips: G.skips, adv: Math.round(G.adv * 100) / 100, hp: G.m.fighters.map(f => Math.round(f.hp)), fp: fingerprint(), stage: N && N.stage, link: G.link && G.link.mode }
+    info: () => G && !G.watch ? { f: G.f, conf: G.conf, D: G.D, local: G.local, syncs: G.syncs, desyncs: G.desyncs || 0, rollbacks: G.rollbacks, rbFrames: G.rbFrames, rbMax: G.rbMax, rbMs: Math.round(G.rbMs * 10) / 10, rbAvg: Math.round(G.rbSum / Math.max(1, G.rollbacks) * 100) / 100, guesses: G.guesses, resends: G.resends, skips: G.skips, adv: Math.round(G.adv * 100) / 100, hp: G.m.fighters.map(f => Math.round(f.hp)), fp: fingerprint(), stage: N && N.stage, link: G.link && G.link.mode }
       : G && G.watch ? { watch: true, f: G.f, avail: Math.min(G.log.top[0], G.log.top[1]), hp: G.m.fighters.map(f => Math.round(f.hp)), fp: fingerprint(), stage: N && N.stage }
         : { stage: N && N.stage, code: N && N.code, status: N && N.status, myId: N && N.myId, room: N && N.room ? { n: N.room.members.length, fight: N.room.fight && N.room.fight.state, queue: N.room.queue.length, cd: N.room.cd } : null, result: !!(N && N.result) } };
   Online.version = VERSION;

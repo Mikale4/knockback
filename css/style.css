@@ -198,6 +198,11 @@ label.check { display: flex; align-items: center; gap: 8px; letter-spacing: 0; f
 .seg > div { display: flex; flex-wrap: wrap; gap: 5px; }
 .seg button { background: var(--panel2); color: var(--ink); border: 2px solid var(--line); border-radius: 8px; padding: 6px 10px; font: 600 12px var(--body); }
 .seg button.on { background: var(--ink); color: #15111f; border-color: #000; }
+/* COLOURS: palette swatches */
+.seg .swatches { align-items: center; gap: 7px; }
+.seg button.sw { width: 32px; height: 32px; padding: 0; border-radius: 50%; border-width: 3px; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.seg button.sw.on { outline: 3px solid var(--ink); outline-offset: 2px; }
+.swname { font: 700 11px var(--body); letter-spacing: 1.5px; color: var(--dim); margin-left: 4px; }
 .ladder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 16px; }
 .rung { background: var(--panel2); border: 3px solid var(--line); border-top: 6px solid var(--lc); border-radius: 12px; padding: 6px; text-align: center; }
 .rung img { width: 100%; max-width: 120px; } .rung b { display: block; font-size: 13px; } .rung small { color: var(--dim); font-size: 11px; }

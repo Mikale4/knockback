@@ -111,7 +111,9 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
 
 100 Hype. The screen freezes for the flash, then the Art tries to **catch** — each in its own way — and if it does,
 it plays a **full cinematic**: black bars, its own camera shots, and the last blow lands with a freeze, a flash and
-its name. The clock and the CPUs wait while it plays.
+its name. The clock and the CPUs wait while it plays. Its camera never looks through a wall: near one, a shot moves in
+just inside it (or swings round to the side with room), and the flash's close-up picks the side of the figure that's
+open.
 
 | Art | Catches by | The cinematic |
 |---|---|---|
@@ -123,7 +125,7 @@ its name. The clock and the CPUs wait while it plays.
 | Shadow Clone Arts (Ninja) | a dash through them | clones cut through, ring them, and strike all at once |
 | Grand Summoning (Summoner) | a circle that opens under them | chains of light, her imps pile on, a giant imp rises and belly-flops them |
 | Judgment of Dawn (Paladin) | a burst of light around her | a beam lifts them, wings of light, the hammer comes down like the dawn |
-| Dragonfall (Dragoon) | a leap out of sight, a reticle that locks on, the dive | skewered, carried up, three dives, and the spirit dragon's own |
+| Dragonfall (Dragoon) | a leap out of sight, a reticle that locks on, the dive; **it OTGs**: it pins them even lying down or getting up | skewered, carried up, three dives, and the spirit dragon's own |
 | Grand Finale (Bard) | a ring of sound rolling outward | the lights go down, spotlights, they dance to every beat, then the lute comes down for the encore |
 
 ## Every line fights its own way
@@ -142,6 +144,12 @@ string and a signature; your stance comes from it too.
 | Summoner (Staff) | Staff Jab › Staff Swing › Sic 'Em (every imp attacks) › Conjure Bolt | Call Imp | Swing › Spirit Bolt (spike) | **Pack Tactics**: her imps pounce on anyone she hits |
 | Paladin (Warhammer) | Smite › Hammer Fall › Consecrate (holy shockwave all around) | Hallowed Strike (crumples, heals big) | Smite › Meteor Hammer (dive) | **Lay on Hands**: string hits heal her |
 | Dragoon (Lance) | Thrust › Twin Thrust › Wheel Sweep › Rising Lance | Impaling Lunge | Thrust › Dragon Dive | **Skyborne**: Jump off an air hit for a fresh jump and air string |
+
+**The Dragoon throws his lance** (Guard + Heavy, on the ground or in the air): it flies flat and fast at them (60
+damage) and stays where it lands, planted in the floor or lying by a wall. Until he walks over it and picks it up
+("LANCE!") he fights with his fists (Gauntlet Jabs and a Shoulder Check; his two-handed lance Heavies become a
+Tackle, a Headbutt and a Body Drop). His Legend Art calls it back, and so does a new round or losing the arm. **His
+Dragon Breath sets them BURNING**: a tick of damage every half second for 3 s (it can't take the last point).
 | Bard (Lute) | Strum › Twang › Power Chord › Encore! | Lullaby (puts them to sleep) | Strum › Crescendo | **On the Beat**: start a Light on the music's beat for +30% damage |
 
 **The Summoner's imps** come from her Special (two at a time), the Call Imp pause branch, and the FAMILIAR legs (one
@@ -248,8 +256,9 @@ fight live** and waits for their turn.
 - **After a fight:** YOU WIN / YOU LOSE with your records and rewards, then READY (back to the room, ready for the next
   one), CHARACTER SELECT (back to the room to pick again) or LEAVE ROOM. Watchers go back to the room on their own.
 - **How you connect:** browsers connect to each other directly (WebRTC). The free [PeerJS](https://peerjs.com) service
-  only introduces them, so there's no game server. The host links to every member; a fight between two members who
-  aren't the host gets its own direct link (relayed through the host if a direct one can't be made). Each fighter also
+  only introduces them, so there's no game server. The host links to every member; every fight gets its own direct
+  link between the two fighters (if one can't be made: the room's connection when you're fighting the host, else
+  relayed through the host). Each fighter also
   sends its buttons to the host, who passes them on to the watchers: their games replay the fight from them, a few
   frames behind, and someone who comes in late catches up from the start in a second or two. Like any peer-to-peer
   game, the people in your room can see your IP address. Some school, work or mobile networks block this kind of
@@ -262,6 +271,13 @@ fight live** and waits for their turn.
   silently (no sound, effect or banner plays twice). It never guesses more than 8 frames ahead; past that it waits
   ("waiting for your friend"). The two games also keep in step (GGPO's time sync): whichever runs ahead holds back a
   frame now and then.
+  - **No freezes from a lost packet:** the two fighters' link is **unordered** (PeerJS `reliable: false`: still resent
+    if lost, but a late packet doesn't hold up the ones behind it). On an ordered link one lost packet stalls every
+    message after it until it's resent, which can take half a second or more, and the fight froze. Every button
+    message also carries all your buttons your friend hasn't confirmed yet, so the next one covers a lost one; while
+    waiting it sends them again every 50 ms. A fight against the host gets its own link too (the room's connection,
+    which stays ordered, is only the fallback). Tested on the fake network with 3% loss and half-second resends: the
+    old link sat frozen a third of the time, the new one never.
   - **The save:** `online.js` walks the whole fight from the match object down (fighters, figure poses, buffered
     presses, projectiles, imps, dropped parts, timers, the Legend Art on screen) and saves every object it reaches by
     value, then puts those values back into the same objects. Looks stay out (trails, wall cracks, the camera,
@@ -327,6 +343,12 @@ hold a pad's Back button) ·
 Workshop (your custom slots: Custom A and B free, Custom C to F unlocked with tokens for 1,000 / 2,000 / 3,000 /
 5,000; your starter figure stays its Standard set; the hub's ACTIVE FIGURE plate picks which one you fight with) ·
 Shelf (collection and records).
+
+**Colours:** every figure comes in seven palettes, chosen on the Versus (P1 and P2), Training and Online fighter
+select screens (your choice is remembered, and Arcade uses it too): CLASSIC (its own), CRIMSON, AZURE, JADE, ROYAL,
+SHADOW and IVORY. A theme repaints any figure's armour and cloth, a mixed custom included. **Two figures that would
+look alike** (the same colours on the same fighter, colours close enough to be confused, or the same theme on anyone)
+never do: the second one is **tinted**, darker and a shade cooler (lighter for SHADOW).
 
 **Figures are never quite still:** standing, they breathe, shift their weight and glance about, and every few seconds
 fidget in their own way (a samurai resettles its grip, a pirate flourishes the cutlass, a ninja bounces on its toes, a

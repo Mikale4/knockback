@@ -475,7 +475,7 @@
       if (S.z < 0 || (S.z === 0 && S.x < 0)) S.multiplyScalar(-1);   // the side toward where the camera normally sits (+Z); never the camera itself, which differs per screen (online, both must agree)
       const O = o.pos.clone(); O.y = 0;
       // side shots stand 4-8 m off to the side: take the side with room for them
-      const room = k => { const A = m.arena, x = O.x + S.x * k, z = O.z + S.z * k; return Math.max(Math.abs(x) - A.W, Math.abs(z) - A.D); };
+      const room = k => { const A = m.arena, x = O.x + S.x * k, z = O.z + S.z * k; return Math.max(Math.abs(x) - A.W, -z - A.D); };   // (the low front wall, +Z, doesn't block a shot)
       if (room(5) > -0.5 && room(-5) < room(5)) S.multiplyScalar(-1);
       const c = { f, o, m, mv, art, D, S, O, t: 0, beats: {}, flags: {}, s: {}, props: [], shot: null, outro: -1, light: 1, lightTo: 1, tint: null, done: false };
       m.cine = c; f.vel.set(0, 0, 0); o.vel.set(0, 0, 0);
@@ -486,7 +486,10 @@
     step(c, dt) {
       if (c.done) return false;
       c.t += dt;
-      if (c.art.step(c, c.t, dt)) { c.done = true; return true; }
+      const fin = c.art.step(c, c.t, dt);
+      // an Art near a wall: nobody is choreographed into or through it
+      for (const w of c.m.arena.walls) if (!w.broken) for (const F of [c.f, c.o]) if (w.sign * F.pos[w.axis] > w.lim - 0.45) F.pos[w.axis] = w.sign * (w.lim - 0.45);
+      if (fin) { c.done = true; return true; }
       return false;
     },
     /* the finisher has landed: freeze, flash, the name */

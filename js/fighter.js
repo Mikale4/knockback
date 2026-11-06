@@ -38,6 +38,7 @@
       this.obj = new THREE.Group(); this.spin = new THREE.Group();
       this.spin.position.y = 0.95; this.fig.root.position.y = -0.95;
       this.obj.add(this.spin); this.spin.add(this.fig.root); m.scene.add(this.obj);
+      this.spearStub = new THREE.Group(); this.spearOut = false; this.spear = null; this.spearGrp = null;
       this.pos = this.obj.position; this.vel = new V3(); this.yaw = 0;
       this.ready = Anim.readyFor(build);
       this.trailR = null; this.newTrails();
@@ -51,6 +52,7 @@
     /* ---------------------------------------------------------------- round */
     resetRound(x, z, yaw) {
       // a part taken off the other figure only lasts the round: back to your own build and your own parts
+      if (this.spearOut) this.catchSpear(true);   // a thrown lance comes back for the new round
       if (this.build !== this.baseBuild) { this.build = this.baseBuild; this.st = KB.stats(this.build, this.opts.bonus); this.ready = Anim.readyFor(this.build); this.newTrails(); }
       this.fig.restore();
       const S = this.st;
@@ -63,7 +65,7 @@
       this.uses = S.uses; this.useRegen = 0;
       this.guardMax = S.guard; this.guardHp = S.guard; this.guardIdle = 0;
       this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0; this.armorHits = 0; this.armorCd = 0; this.limits = {};
-      this.buffs = {}; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
+      this.buffs = {}; this.burn = null; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0;
@@ -131,6 +133,7 @@
       this.inv = Math.max(0, this.inv - dt); this.armorT = Math.max(0, this.armorT - dt); this.armorCd = Math.max(0, this.armorCd - dt); this.dodgeCd = Math.max(0, this.dodgeCd - dt);
       this.techLock = Math.max(0, this.techLock - dt);
       for (const k in this.buffs) { this.buffs[k] -= dt; if (this.buffs[k] <= 0) delete this.buffs[k]; }
+      if (this.burn) this.updBurn(dt);
       if (this.state !== 'guard' && this.state !== 'guardstun') { this.guardIdle += dt; if (this.guardIdle > 0.8) this.guardHp = Math.min(this.guardMax, this.guardHp + this.guardMax * 0.22 * dt); }
       if (!this.comboing && this.state !== 'ko') this.burst = Math.min(100, this.burst + 2.6 * S.burstRate * dt);
       if (this.uses < S.uses && !this.broken.head) { this.useRegen += dt; if (this.useRegen > S.useRegen) { this.useRegen = 0; this.uses++; } }
@@ -221,7 +224,8 @@
           else this.startLight();
           return true;
         }
-        if (I.take('heavy')) { this.startMove(this.broken.armL ? 'tackle' : S.heavy, 'heavy'); return true; }
+        if (I.peek('heavy') && (I.held.guard || I.guardAt.heavy) && this.canSpear()) { I.take('heavy'); this.startMove('spearThrow', 'spear'); return true; }
+        if (I.take('heavy')) { this.startMove(this.leftMove('heavy'), 'heavy'); return true; }
         if (I.held.guard) { this.setState('guard'); this.guardStart = this.m.time; return true; }
       } else {
         if (I.take('jump')) {
@@ -232,7 +236,8 @@
         if (I.peek('dodge') && (I.held.guard || I.guardAt.dodge) && this.airDodges > 0) { I.take('dodge'); this.airDodges--; this.startDownDash(); return true; }
         if (I.take('dodge') && this.airDodges > 0 && this.dodgeCd <= 0) { this.airDodges--; this.startDodge(); return true; }
         if (I.take('light') && !this.airStr) { this.airStr = 1; this.startMove(this.airRoot(), 'air'); return true; }
-        if (I.take('heavy')) { this.startMove(this.broken.armL ? 'bodyDrop' : S.airHeavy, 'airHeavy'); return true; }
+        if (I.peek('heavy') && (I.held.guard || I.guardAt.heavy) && this.canSpear()) { I.take('heavy'); this.startMove('spearThrow', 'spear'); return true; }
+        if (I.take('heavy')) { this.startMove(this.leftMove('airHeavy'), 'airHeavy'); return true; }
       }
       return false;
     }
@@ -291,6 +296,24 @@
       if (this.stateT > 0.5) this.setState('air');
     }
 
+    /* BURNING (Dragon Breath): a tick of damage every half second until it runs out. No hitstun, no combo; it can't KO
+       (it stops at 1 HP), and guarding doesn't put it out. */
+    updBurn(dt) {
+      const b = this.burn;
+      if (['ko', 'out'].includes(this.state) || this.m.phase !== 'fight') { this.burn = null; return; }
+      b.t -= dt; b.tick += dt;
+      if (U.vrand() < 0.35) FX.burst(_c.copy(this.pos).set(this.pos.x + U.vrnd(-0.3, 0.3), this.pos.y + U.vrnd(0.3, 1.6), this.pos.z + U.vrnd(-0.3, 0.3)), { n: 1, color: [0xffd040, 0xff6a20, 0xff3010], glow: true, speed: 0.4, size: 0.09, gravity: -5, life: 0.35 });
+      while (b.tick >= 0.5 && b.left > 0) {
+        b.tick -= 0.5; b.left--;
+        let d = Math.round(b.dps * 0.5 * (1 - this.st.def)); if (this.m.training && this.m.training.godP2 && this.idx === 1) d = 0;
+        d = Math.min(d, Math.max(0, this.hp - 1)); this.hp -= d; if (b.by) b.by.records.dmg += d;
+        if (this.comboing && this.combo.by === b.by) this.combo.dmg += d;
+        this.flash = Math.max(this.flash, 0.35); this.flashCol = 0xff7a20;
+        FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 5, color: [0xffd040, 0xff6a20], glow: true, speed: 2, size: 0.08, gravity: -4, life: 0.4 });
+      }
+      if (b.t <= 0 || b.left <= 0) this.burn = null;
+    }
+
     /* ---------------------------------------------------------------- guard */
     updGuard(dt) {
       const I = this.input;
@@ -301,6 +324,7 @@
       this.physics(dt, 0);
       if (I.take('light')) { this.startMove('throw', 'throw'); return; }
       if (I.take('toss') && this.canToss()) { this.startMove('partToss', 'toss'); return; }
+      if (this.canSpear() && I.take('heavy')) { this.startMove('spearThrow', 'spear'); return; }
       if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return; }
       if (I.take('jump')) { this.jump(1); return; }
       if (!I.held.guard) this.setState('idle');
@@ -312,8 +336,34 @@
     }
 
     /* --------------------------------------------------------------- attacks */
-    lightRoot() { return this.broken.armR ? 'stump1' : this.broken.armL ? this.st.lightPure || this.st.light : this.st.light; }
-    airRoot() { return this.broken.armR ? 'stumpAir' : this.broken.armL ? this.st.airPure || this.st.air : this.st.air; }
+    lightRoot() { return this.broken.armR ? 'stump1' : this.spearOut ? 'fistA' : this.broken.armL ? this.st.lightPure || this.st.light : this.st.light; }
+    airRoot() { return this.broken.armR ? 'stumpAir' : this.spearOut ? 'fistAir' : this.broken.armL ? this.st.airPure || this.st.air : this.st.air; }
+    /* the L-arm's Heavy, launcher and air Heavy: a broken L-arm (or a two-handed lance move with the lance thrown) falls back to the body */
+    leftMove(k) {
+      const fb = { heavy: 'tackle', launch: 'headbutt', airHeavy: 'bodyDrop' }[k], id = this.st[k];
+      if (this.broken.armL) return fb;
+      return this.spearOut && KB.MOVES[id] && KB.MOVES[id].twoHand ? fb : id;
+    }
+    /* DRAGOON: Guard + Heavy throws the lance. It flies at them and stays where it lands; walk over it to pick it back up */
+    canSpear() { return !!this.st.spear && !this.spearOut && !this.broken.armR && !this.fig.detached.armR; }
+    throwSpear() {
+      const F = this.fig, grp = F.parts.wR, stub = this.spearStub;
+      if (this.spearOut || !grp || grp === stub || !grp.parent) return null;
+      grp.updateWorldMatrix(true, false); const mtx = grp.matrixWorld.clone(); grp.parent.remove(grp);
+      mtx.decompose(grp.position, grp.quaternion, grp.scale); grp.scale.setScalar(1); this.m.scene.add(grp);
+      stub.position.copy(F.rest.wR); stub.quaternion.identity(); F.parts.armR.add(stub); F.parts.wR = stub;
+      this.spearGrp = grp; this.spearOut = true; this.trailR.pts.length = 0;
+      return grp;
+    }
+    /* the lance back in his hand: picked up, or called back (his Legend Art, a new round, the arm coming off, lost off the edge) */
+    catchSpear(quiet) {
+      const F = this.fig, grp = this.spearGrp;
+      if (!this.spearOut || !grp) return;
+      if (grp.parent) grp.parent.remove(grp); if (this.spearStub.parent) this.spearStub.parent.remove(this.spearStub);
+      grp.position.copy(F.rest.wR); grp.quaternion.identity(); grp.scale.setScalar(1); F.parts.armR.add(grp); F.parts.wR = grp;
+      this.spearOut = false; this.spearGrp = null; this.spear = null;
+      if (!quiet) { SFX.play('snapon'); FX.burst(F.socket('wR', [0, 0, 8]), { n: 10, color: [0xffffff, 0xffc890], glow: true, speed: 2.5, size: 0.06, life: 0.35 }); }
+    }
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
       const mv = KB.MOVES[id]; if (!mv) return;
@@ -339,7 +389,7 @@
       else if (!d && dist < 9) this.yaw = a;
     }
     dmgMult(kind) {
-      const S = this.st; let m = { light: S.dmgR, air: S.dmgR, heavy: S.dmgL, launch: S.dmgL, airHeavy: S.dmgL, gun: S.dmgL, special: S.dmgH, dash: S.dmgG, super: S.dmgK, throw: 1 }[kind] || 1;
+      const S = this.st; let m = { light: S.dmgR, air: S.dmgR, spear: S.dmgR, heavy: S.dmgL, launch: S.dmgL, airHeavy: S.dmgL, gun: S.dmgL, special: S.dmgH, dash: S.dmgG, super: S.dmgK, throw: 1 }[kind] || 1;
       m *= S.setDmg;
       if (this.buffs.momentum) m *= 1.1; if (this.buffs.fury) m *= 1.15; if (this.buffs.valor) m *= 1.12;
       if (S.passive === 'wyrmblood' && !this.grounded) m *= 1.12;
@@ -401,10 +451,10 @@
         if (hit && t >= su + ac * 0.3 && I.take('heavy', 0.25)) {
           // Heavy in a string launches them up; held toward them, it's the KNOCK instead (back into the wall)
           const s = this.stick(), d0 = I.dirAt.heavy, s0 = d0 && Math.hypot(d0.x, d0.y) > 0.3 ? new V3(d0.x, 0, -d0.y).normalize() : null, o = this.opp;
-          if ((s && s.dot(this.forward) > 0.5) || (s0 && s0.dot(this.forward) > 0.5)) this.startMove(this.broken.armL ? 'tackle' : this.st.heavy, 'heavy');
+          if ((s && s.dot(this.forward) > 0.5) || (s0 && s0.dot(this.forward) > 0.5)) this.startMove(this.leftMove('heavy'), 'heavy');
           // PIRATE with the Flintlock: a Quick Shot gun cancel instead, once a combo, then the string starts over
           else if (this.st.gunCancel && !this.broken.armL && o && !o.combo.gun) { o.combo.gun = true; this.startMove(this.st.gunCancel, 'gun'); }
-          else this.startMove(this.broken.armL ? 'headbutt' : this.st.launch, 'launch');
+          else this.startMove(this.leftMove('launch'), 'launch');
           return true;
         }
       }
@@ -423,7 +473,7 @@
         FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 1.2, life: 0.25, color: 0xffc890 }); SFX.play('tech'); this.m.call(this, 'VAULT', 'small'); this.m.event('vault', { f: this });
         return true;
       }
-      if (k === 'air' && hit && t >= su + ac * 0.3 && I.take('heavy', 0.2)) { this.startMove(this.broken.armL ? 'bodyDrop' : this.st.airHeavy, 'airHeavy'); return true; }
+      if (k === 'air' && hit && t >= su + ac * 0.3 && I.take('heavy', 0.2)) { this.startMove(this.leftMove('airHeavy'), 'airHeavy'); return true; }
       if (k === 'launch' && hit && t >= su + ac * 0.5 && I.take('jump', 0.3)) {
         this.move = null; const o = this.opp; this.vel.y = this.st.jump * 1.12; this.grounded = false; this.setState('air'); this.airStr = 0;
         if (o) { const d = _v.subVectors(o.pos, this.pos).setY(0); const l = d.length(); if (l > 0.01) { this.vel.x = d.x / l * Math.min(6, l * 3); this.vel.z = d.z / l * Math.min(6, l * 3); } }
@@ -538,14 +588,17 @@
     startSuper() {
       this.m.event('super', { f: this });
       const mv = KB.MOVES[this.st.super];
+      if (this.spearOut) this.catchSpear(false);   // (the Art calls the lance back to his hand)
       this.hype -= 100; this.move = mv; this.kind = 'super'; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.superPhase = 'start';
       this.moveSerial = (this.moveSerial || 0) + 1;
       this.setState('attack'); this.aim(Object.assign({}, mv, { range: 12 })); this.inv = 0.9; this.vel.set(0, 0, 0);
       this.m.superFreeze(this, mv);
     }
-    /* can a Legend Art take them? A fated one (Ragnarök) ignores dodges and knockdowns */
-    catchable(o, fated) {
+    /* can a Legend Art take them? A fated one (Ragnarök) ignores dodges and knockdowns; an OTG one (Dragonfall) takes
+       them off the floor, lying down or getting up */
+    catchable(o, fated, otg) {
       if (!o || ['ko', 'out', 'held'].includes(o.state) || o.respawnInv || this.m.phase !== 'fight') return false;
+      if (otg && (o.state === 'down' || o.state === 'getup')) return true;
       return !!fated || (o.inv <= 0 && o.state !== 'down' && o.state !== 'getup');
     }
     updSuper(dt) {
@@ -584,7 +637,7 @@
     }
     /* each Art's way of catching: true when it has them, 'miss' when it hasn't */
     updCatch(mv, o, dt) {
-      const F = this.forward, ct = mv.catchType, t = this.catchT, can = this.catchable(o, mv.fated);
+      const F = this.forward, ct = mv.catchType, t = this.catchT, can = this.catchable(o, mv.fated, mv.otg);
       if (ct === 'dash') {
         const T = 0.2, sp = this.dashLen / T;
         if (t < T) { this.vel.x = F.x * sp; this.vel.z = F.z * sp; } else { this.vel.x *= 0.5; this.vel.z *= 0.5; }
@@ -679,13 +732,14 @@
     }
     beginSeq(o) {
       // guarding doesn't stop a Legend Art that has caught you
-      o.move = null; o.setState('held'); o.held = { by: this, kind: 'super' }; o.heldBySuper = true; o.vel.set(0, 0, 0); o.dizzy = o.crumpled = o.asleep = false;
+      const otg = o.state === 'down' || o.state === 'getup';
+      o.move = null; o.setState('held'); o.held = { by: this, kind: 'super' }; o.heldBySuper = true; o.vel.set(0, 0, 0); o.dizzy = o.crumpled = o.asleep = false; o.hardKD = false;
       if (!o.comboing) o.combo = o.freshCombo();
       this.m.event('art', { f: this, vic: o });
       this.superPhase = 'seq'; this.seqVictim = o; this.inv = 9; this.obj.visible = true; this.vel.set(0, 0, 0);
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
       SFX.play('hit', { power: 2 }); FX.addShake(0.5);
-      this.m.call(o, 'CAUGHT!', 'super');
+      this.m.call(o, otg ? 'OTG!' : 'CAUGHT!', 'super'); if (otg) this.m.event('otg', { att: this, vic: o, art: true });
       this.cine = Arts.begin(this, o, this.move);
     }
     updSeq(dt) {
@@ -1033,6 +1087,10 @@
       if (m.training && m.training.godP2 && vic.idx === 1) dmg = 0;
       vic.hp -= dmg; att.records.dmg += dmg;
       if (!o.noCombo) { vic.combo.hits++; vic.combo.dmg += dmg; vic.combo.by = att; }
+      if (mv.burn && vic.hp > 0) {
+        if (!vic.burn) { m.call(vic, 'BURNING', 'bad'); m.event('burn', { att, vic }); }
+        vic.burn = { t: mv.burn[1], left: Math.round(mv.burn[1] / 0.5), tick: 0, dps: mv.burn[0] * att.dmgMult(o.kind), by: att };
+      }
       // PART TOSS: the combo is extended -- its clock starts over, with a fresh OTG and ground bounce (twice a combo)
       if (o.ext && !o.noCombo && vic.combo.ext < 2) { const n = ++vic.combo.ext; vic.combo.t = 0; vic.combo.dh = vic.combo.hits; vic.combo.otg = 0; vic.combo.gb = false; m.call(att, 'EXTEND ' + n + '/2', 'buff'); m.event('extend', { att, vic, n }); }
       if (!o.remote) att.moveHit = true;
@@ -1192,6 +1250,7 @@
       const m = vic.m; vic.broken[part] = true; vic.armor[part] = 0;
       SFX.play('partbreak'); m.call(vic, { head: 'HEAD OFF!', armR: 'R-ARM BROKEN!', armL: 'L-ARM BROKEN!', legs: 'LEGS CRACKED!' }[part], 'part');
       if (part === 'legs') { vic.setLegMat(true); FX.burst(_c.copy(vic.pos).setY(0.5), { n: 12, color: [0x6a6a72, 0x9a9aa2], speed: 3, size: 0.07 }); return; }
+      if (part === 'armR' && vic.spearOut) vic.catchSpear(true);
       const grp = vic.fig.detach(part, m.scene); if (!grp) return;
       if (part === 'armR') vic.trailR.pts.length = 0; if (part === 'armL') vic.trailL.pts.length = 0;
       m.dropPart(vic, part, grp, dir);

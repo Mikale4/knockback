@@ -159,6 +159,7 @@
         row(k('guard') + ' + ' + k('light'), 'Grab', 'beats guard. Then ' + k('light') + ' pummel, tilt or ' + k('heavy') + ' throw that way (' + k('heavy') + ' alone slams), ' + k('jump') + ' throws up'),
         row(k('toss'), 'Part Toss', 'throw one of your parts: in a combo it EXTENDS it (twice a combo)'),
         row(k('guard') + ' + ' + k('dodge') + ' in the air', 'Down Dash', 'dive straight to the floor (uses your air dodge)'),
+        S.spear ? row(k('guard') + ' + ' + k('heavy'), 'Spear Throw', 'throw the lance; walk over it to pick it up (fists until then)') : null,
         el('h4', null, 'GETTING OUT'),
         row(k('snap') + ' in hitstun', 'Spring Burst', 'full Burst gauge'),
         row(k('dodge') + ' at a wall', 'Wall Tech', 'from the 2nd bounce of a combo'),

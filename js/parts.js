@@ -204,9 +204,9 @@
   mv('wyvernStrike', { name: 'Wyvern Strike', pose: 'tsuki', twoHand: 1, su: 0.2, ac: 0.08, rc: 0.3, dmg: 80, reach: 1.95, kb: [17, 4.5], launch: 1, lunge: 5, charge: 1, sfx: 'heavy' });
   mv('lanceVault', { name: 'Lance Vault', pose: 'twoHandUp', twoHand: 1, su: 0.1, ac: 0.08, rc: 0.28, dmg: 38, kb: [1.4, 13.5], launch: 1, launcher: 1 });
   mv('talonDrop', { name: 'Talon Drop', pose: 'twoHandOver', twoHand: 1, su: 0.12, ac: 0.1, rc: 0.25, dmg: 56, kb: [2.5, -14], launch: 1, spike: 1, air: 1, zone: 'high', h: 0.6, sfx: 'heavy' });
-  mv('dragonBreath', { name: 'Dragon Breath', type: 'proj', proj: 'breath', pose: 'breath', su: 0.16, rc: 0.42, dmg: 18, kb: [10, 6], launch: 1, range: 3.4, trail: 0, sfx: 'whoosh', zone: 'high' });
+  mv('dragonBreath', { name: 'Dragon Breath', type: 'proj', proj: 'breath', pose: 'breath', su: 0.16, rc: 0.42, dmg: 18, kb: [10, 6], launch: 1, range: 3.4, trail: 0, sfx: 'whoosh', zone: 'high', burn: [10, 3] });   // (sets them burning: 10 a second for 3 s)
   mv('lanceDash', { name: 'Lance Dash', type: 'dash', pose: 'tsuki', su: 0.1, ac: 0.12, rc: 0.3, dmg: 44, dist: 4.2, rad: 0.9, kb: [9, 6], launch: 1, sfx: 'slash' });
-  mv('dragonfall', { name: 'Dragonfall', type: 'super', pose: 'twoHandUp', su: 0.1, catchType: 'jump', rad: 1.6, seq: 'skewer', dmg: 300, kb: [10, 15], zone: 'high' });
+  mv('dragonfall', { name: 'Dragonfall', type: 'super', pose: 'twoHandUp', su: 0.1, catchType: 'jump', rad: 1.6, seq: 'skewer', dmg: 300, kb: [10, 15], zone: 'high', otg: 1 });   // (it takes them off the floor too)
   // BARD · Lute: start a Light on the beat for a stronger hit; the pause branch sings them to sleep
   mv('baA', { name: 'Strum', pose: 'cutA', su: 0.06, rc: 0.13, dmg: 22, reach: 1.25, lunge: 3, beat: 1, nx: { l: 'baB' } });
   mv('baB', { name: 'Twang', pose: 'cutB', su: 0.06, rc: 0.13, dmg: 24, reach: 1.25, lunge: 3, stun: 0.5, beat: 1, nx: { l: 'baC', p: 'baP' } });
@@ -226,6 +226,12 @@
   mv('stump1', { name: 'Stump Jab', pose: 'jabL', su: 0.07, dmg: 12, reach: 0.9, kb: [1.5, 0], trail: 0, sfx: 'whoosh', nx: { l: 'stump1b' } });
   mv('stump1b', { name: 'Stump Jab', pose: 'jabR', su: 0.07, dmg: 12, reach: 0.9, kb: [1.5, 0], trail: 0, sfx: 'whoosh', nx: { l: 'stump2' } });
   mv('stump2', { name: 'Shoulder', pose: 'bash', su: 0.1, dmg: 22, reach: 0.95, kb: [8, 3.5], launch: 1, lunge: 4, finisher: 1, trail: 0, sfx: 'heavy' });
+  // DRAGOON: the lance thrown (Guard + Heavy). Until he picks it back up he fights with his fists
+  mv('spearThrow', { name: 'Spear Throw', type: 'proj', proj: 'spear', pose: 'toss', su: 0.16, rc: 0.3, dmg: 60, kb: [12, 6], launch: 1, range: 11, hype: 0.8, trail: 0, sfx: 'whoosh', zone: 'mid' });
+  mv('fistA', { name: 'Gauntlet Jab', pose: 'jabR', su: 0.07, dmg: 14, reach: 0.95, kb: [1.5, 0], trail: 0, sfx: 'whoosh', nx: { l: 'fistB' } });
+  mv('fistB', { name: 'Gauntlet Jab', pose: 'jabL', su: 0.07, dmg: 14, reach: 0.95, kb: [1.5, 0], trail: 0, sfx: 'whoosh', nx: { l: 'fistC' } });
+  mv('fistC', { name: 'Shoulder Check', pose: 'bash', su: 0.1, dmg: 24, reach: 1.0, kb: [8, 3.5], launch: 1, lunge: 4, finisher: 1, trail: 0, sfx: 'heavy' });
+  mv('fistAir', { name: 'Air Knee', pose: 'knee', su: 0.07, dmg: 16, kb: [2.5, 4], air: 1, reach: 0.9, trail: 0, sfx: 'whoosh' });
   mv('stumpAir', { name: 'Air Knee', pose: 'knee', su: 0.07, dmg: 16, kb: [2.5, 4], air: 1, reach: 0.9, trail: 0, sfx: 'whoosh' });
   mv('tackle', { name: 'Tackle', pose: 'bash', su: 0.18, dmg: 40, reach: 1.0, kb: [11, 4], launch: 1, lunge: 7, charge: 1, trail: 0, sfx: 'heavy' });
   mv('headbutt', { name: 'Headbutt', pose: 'bashUp', su: 0.11, dmg: 25, kb: [1, 10.5], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
@@ -304,12 +310,12 @@
       card: { name: 'Oath of Dawn', super: 'dawnJudgment', passive: 'devotion', desc: 'LEGEND ART: Judgment of Dawn. PASSIVE (Devotion): healing +40%, Specials come back faster.' },
     },
     dragoon: {
-      head: { name: 'Wyrm Helm', armor: 125, weight: 1.0, special: 'dragonBreath', uses: 3, hype: 1.0, desc: 'SPECIAL: Dragon Breath. Three bursts of fire in a cone; the last one blows them away.' },
+      head: { name: 'Wyrm Helm', armor: 125, weight: 1.0, special: 'dragonBreath', uses: 3, hype: 1.0, desc: 'SPECIAL: Dragon Breath. Three bursts of fire in a cone; the last one blows them away. It sets them BURNING: damage every half second for 3 s.' },
       core: { name: 'Scale Mail', hp: 980, def: 0.07, weight: 1.0, guard: 10, desc: 'Overlapping dragon scales. Even all round.' },
-      armR: { name: 'Dragon Lance', armor: 130, weight: 1.05, light: 'drA', air: 'drAirA', sig: 'pogo', sigName: 'Skyborne', sigDesc: 'Land an air hit and press Jump: vault off them with a fresh jump and a fresh air string (twice a jump).', trail: 0xffc890, desc: 'Thrust › Twin Thrust › Wheel Sweep › Rising Lance. Pause after Twin Thrust: Impaling Lunge. Air: Thrust › Dragon Dive. SIGNATURE: vault off an air hit.' },
+      armR: { name: 'Dragon Lance', armor: 130, weight: 1.05, light: 'drA', air: 'drAirA', sig: 'pogo', spear: 1, sigName: 'Skyborne', sigDesc: 'Land an air hit and press Jump: vault off them with a fresh jump and a fresh air string (twice a jump).', trail: 0xffc890, desc: 'Thrust › Twin Thrust › Wheel Sweep › Rising Lance. Pause after Twin Thrust: Impaling Lunge. Air: Thrust › Dragon Dive. SIGNATURE: vault off an air hit. GUARD + HEAVY: throw the lance (walk over it to pick it back up; until then, fists).' },
       armL: { name: 'Scale Gauntlet', armor: 125, weight: 0.95, heavy: 'wyvernStrike', launch: 'lanceVault', airHeavy: 'talonDrop', guard: 85, chip: 1, trail: 0xffc890, desc: 'A clawed gauntlet, hand free for a two-handed grip. HEAVY: Wyvern Strike, the longest KNOCK. Guard: medium.' },
       legs: { name: 'Wyrm Greaves', armor: 175, weight: 1.0, speed: 6.0, jump: 14, airJumps: 1, dashAtk: 'lanceDash', perk: 'skyward', desc: 'Skyward: the highest jump, and air dodges go 35% further. DASH ATTACK: Lance Dash.' },
-      card: { name: 'Dragonsoul', super: 'dragonfall', passive: 'wyrmblood', desc: 'LEGEND ART: Dragonfall, a dive from the sky. PASSIVE (Wyrmblood): +12% damage in the air.' },
+      card: { name: 'Dragonsoul', super: 'dragonfall', passive: 'wyrmblood', desc: 'LEGEND ART: Dragonfall, a dive from the sky that pins them even when they\'re down (OTG). PASSIVE (Wyrmblood): +12% damage in the air.' },
     },
     bard: {
       head: { name: 'Feathered Cap', armor: 100, weight: 0.85, special: 'valorSong', uses: 3, hype: 1.1, desc: 'SPECIAL: Song of Valor. +12% damage and +10% speed for 6 s.' },
@@ -357,7 +363,7 @@
       armor: { head: Math.round(H.armor * m('head')), armR: Math.round(R.armor * m('armR')), armL: Math.round(L.armor * m('armL')), legs: Math.round(G.armor * m('legs')) },
       passive: K.passive, special: H.special, uses: H.uses, super: K.super,
       ...(() => { const mixed = b.armR.line !== b.armL.line && M['hx:' + b.armR.line + ':' + b.armL.line + ':0']; return { mixed: !!mixed, light: mixed ? 'hx:' + b.armR.line + ':' + b.armL.line + ':0' : R.light, air: mixed ? 'hxa:' + b.armR.line + ':' + b.armL.line + ':0' : R.air }; })(),
-      lightPure: R.light, airPure: R.air, sig: R.sig, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
+      lightPure: R.light, airPure: R.air, spear: !!R.spear, sig: R.sig, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
       trailR: R.trail, trailL: L.trail,
     };
     return S;

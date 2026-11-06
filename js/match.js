@@ -29,7 +29,9 @@
     // online fights (the other player is over the internet) have one player here, who reads every controller
     Input.mode = human[0] && human[1] && opts.mode !== 'training' && !opts.online ? 'versus' : 'solo';
     for (let i = 0; i < 2; i++) Input.players[i].cpu = null;
-    M.fighters = [0, 1].map(i => new Fighter(M, i, opts.builds[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus }));
+    const looks = opts.builds.map(b => Object.assign({}, b, { tint: 0 }));
+    if (Models.looksAlike(looks[0], looks[1])) looks[1].tint = 1;   // two that would look alike: the second is TINTED
+    M.fighters = [0, 1].map(i => new Fighter(M, i, looks[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus }));
     M.ai = [null, null];
     for (let i = 0; i < 2; i++) if (!human[i]) { M.ai[i] = new AI(M, M.fighters[i], opts.cpu[i]); Input.players[i].cpu = M.ai[i]; }
     if (M.training) { M.ai[1] = new AI(M, M.fighters[1], 1); M.ai[1].dummy = 'stand'; Input.players[1].cpu = M.ai[1]; }
@@ -199,6 +201,9 @@
     const glowMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op == null ? 0.9 : op, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
     /* ---- what flies: aim, the muzzle flash, darts (a bullet, a kunai, a bolt) and the chain */
     const UP = new V3(0, 1, 0), CHAIN_N = 64, _q = new V3(), _o3 = new THREE.Object3D();
+    // things that turn to face you (notes, the hex glyph) face the usual camera angle, never the camera itself: the fight
+    // must come out the same however the camera moves (a replay after a rollback runs with it standing still)
+    const FACE_Q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new V3(0, 0.62, 0.79), new V3(0, 0, 0), new V3(0, 1, 0)));
     /* point a shot at them if they're inside the cone in front (down: only if they're below) */
     /* where they'll be in t seconds: their velocity, gravity if they're in the air, and the walls they can't pass */
     function predict(o, t, out) {
@@ -353,6 +358,7 @@
       } else if (mv.proj === 'part') {
         // PART TOSS: pull off a part of your own figure and throw it at them
         const part = f.tossable(); if (!part) return;
+        if (part === 'armR' && f.spearOut) f.catchSpear(true);
         const grp = f.fig.detach(part, scene); if (!grp) return;
         f.broken[part] = true; f.armor[part] = 0; if (part === 'armR') f.trailR.pts.length = 0; if (part === 'armL') f.trailL.pts.length = 0;
         M.call(f, part === 'head' ? 'HEAD TOSS!' : 'ARM TOSS!', 'part');
@@ -384,6 +390,17 @@
         const mesh = hexGlyph(col); mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
         M.projs.push({ kind: 'hex', f, mv, k: f.kind, charge, mesh, col, pos: from.clone(), dir, range, dist: 0, t: 0, id: 's' + (++M.shotId) });
         SFX.play('whoosh'); FX.burst(from, { n: 8, color: [col, 0xffffff], glow: true, speed: 2, size: 0.06, life: 0.3, gravity: 0 });
+      } else if (mv.proj === 'spear') {
+        // DRAGOON: the lance thrown, flat and fast, at where they'll be (see updSpears)
+        const grp = f.throwSpear(); if (!grp) return;
+        const from = grp.position.clone(), SPD = 22;
+        let dir = f.grounded ? F.clone() : new V3(F.x, -0.35, F.z).normalize();
+        if (o && !['out', 'ko', 'getup', 'down'].includes(o.state) && U.dist(f.pos, o.pos) < mv.range + 2) {
+          const tgt = predict(o, 0, new V3()); for (let k = 0; k < 3; k++) predict(o, tgt.distanceTo(from) / SPD, tgt);
+          const d = tgt.sub(from); if (d.lengthSq() > 0.01 && d.x * F.x + d.z * F.z > 0) { dir = d.normalize(); f.yaw = Math.atan2(dir.x, dir.z); }
+        }
+        f.spear = { ph: 'fly', vel: dir.multiplyScalar(SPD), from, t: 0, id: 's' + (++M.shotId), at: null };
+        grp.lookAt(_w.copy(grp.position).add(f.spear.vel)); SFX.play('whoosh');
       } else if (mv.proj === 'breath') {
         M.projs.push({ kind: 'breath', f, mv, k: f.kind, t: 0, n: 0, id: 's' + (++M.shotId) }); SFX.play('boom');
       } else if (mv.proj === 'wave') {
@@ -433,6 +450,54 @@
       M.clones.push({ f, from, to, t: 0 }); SFX.play('slash');
     };
 
+    /* ---------------------------------------------------- the DRAGOON's thrown lance
+       In flight it hits them (once) or a wall; past its range it noses down. It plants itself in the floor where it lands
+       (or clatters down flat after a hit or a wall) and waits there until he walks over it. Off the edge, it comes back. */
+    const SPEAR_MV = () => KB.MOVES.spearThrow;
+    function spearLand(f, s, g, planted) {
+      const h = _w.set(s.vel.x, 0, s.vel.z); if (h.lengthSq() < 0.01) h.copy(f.forward); h.normalize();
+      s.ph = 'down'; s.t = 0; s.at = new V3(g.position.x, 0, g.position.z);
+      for (const w of arena.walls) if (w.sign * s.at[w.axis] > w.lim - 0.5) s.at[w.axis] = w.sign * (w.lim - 0.5);
+      if (planted) {   // tip in the floor, leaning the way it flew
+        const tip = _v.copy(s.at).setY(-0.25), d = new V3(h.x * 0.57, -0.82, h.z * 0.57);
+        g.position.copy(tip).addScaledVector(d, -1.3); g.lookAt(tip);
+      } else { g.position.set(s.at.x - h.x * 0.4, 0.07, s.at.z - h.z * 0.4); g.lookAt(_v.copy(g.position).add(h)); }
+      FX.burst(_v.copy(s.at).setY(0.05), { n: 8, color: arena.dust, speed: 2.5, size: 0.07, life: 0.4, up: 0.5 }); SFX.play('land');
+    }
+    function updSpears(dt) {
+      for (const f of M.fighters) {
+        const s = f.spear, g = f.spearGrp; if (!f.spearOut || !s || !g) continue;
+        s.t += dt;
+        if (s.ph === 'fly' || s.ph === 'drop') {
+          const a = _q.copy(g.position), fly = s.ph === 'fly';
+          s.vel.y -= (fly ? (s.from.distanceTo(g.position) > SPEAR_MV().range ? 34 : 5) : 26) * dt;
+          g.position.addScaledVector(s.vel, dt);
+          if (fly) g.lookAt(_w.copy(g.position).add(s.vel)); else { g.rotateX(9 * dt); }
+          if (fly) {
+            const o = M.opp(f), q = o && bodyHit(f, o, a, g.position, 0.3, SPEAR_MV(), 'spear');
+            M.hitMinionsSeg(f, a, g.position, 0.2, s.id);
+            if (q) {
+              const d = _w.set(s.vel.x, 0, s.vel.z).normalize().clone();
+              Combat.hit(f, o, SPEAR_MV(), { kind: 'spear', dir: d, from: a.clone(), at: q.clone(), proj: true });
+              s.ph = 'drop'; s.vel.set(-s.vel.x * 0.1, 4.5, -s.vel.z * 0.1); continue;
+            }
+          }
+          let wall = null; for (const w of arena.walls) if (!w.broken && w.sign * g.position[w.axis] > w.lim - 0.2) { g.position[w.axis] = w.sign * (w.lim - 0.2); wall = w; }
+          if (wall) {   // it clangs off the wall and drops
+            if (fly) { SFX.play('guard'); FX.spark(g.position.clone(), { color: 0xffe0a0, size: 1 }); s.ph = 'drop'; s.vel.set(s.vel.x * 0.15, 3, s.vel.z * 0.15); }
+            s.vel[wall.axis] = -Math.abs(s.vel[wall.axis]) * wall.sign * 0.3;
+          }
+          const inside = Math.abs(g.position.x) < arena.W && Math.abs(g.position.z) < arena.D;
+          if (inside && s.vel.y < 0 && g.position.y < (fly ? 0.3 : 0.1)) spearLand(f, s, g, fly);
+          else if (g.position.y < arena.outY + 1) { f.catchSpear(false); M.call(f, 'LANCE RETURNS', 'small'); }   // lost off the edge
+          continue;
+        }
+        // on the floor: walk over it to pick it up
+        if (s.t < 0.25 || !f.grounded || f.inHitstun || f.state === 'ko' || f.state === 'out' || f.state === 'held') continue;
+        if (Math.hypot(f.pos.x - s.at.x, f.pos.z - s.at.z) < 0.9) { f.catchSpear(false); M.call(f, 'LANCE!', 'heal'); M.event('spear', { f }); }
+      }
+    }
+
     /* ---------------------------------------------------- dropped parts */
     M.dropPart = (vic, part, grp, dir) => {
       const vel = new V3(dir.x * 5 + U.rnd(-1, 1), 6 + U.rnd(0, 2), dir.z * 5 + U.rnd(-1, 1));
@@ -470,21 +535,60 @@
     }
 
     /* ---------------------------------------------------------- camera */
+    /* a shot never looks through a wall: from what it looks at (L) out toward where it wants to be (C), it stops just inside
+       the first wall in the way. The low front wall only counts when the line passes under its top. Returns the share kept. */
+    function clearShot(L, C) {
+      let k = 1;
+      for (const w of arena.walls) {
+        if (w.broken) continue;
+        const ax = w.axis, l = w.sign * L[ax], c = w.sign * C[ax];
+        if (c <= w.lim - 0.2) continue;                 // it doesn't reach this wall
+        if (l >= w.lim - 0.35) { k = Math.min(k, 0); continue; }
+        // over the top? the line has to clear both edges of the wall (it's half a metre thick)
+        const yAt = X => L.y + (C.y - L.y) * (X - l) / (c - l), top = w.h * 0.25 + 0.15;
+        if (c > w.lim + 0.05 && yAt(w.lim) > top && yAt(Math.min(c, w.lim + 0.5)) > top) continue;
+        k = Math.min(k, (w.lim - 0.35 - l) / (c - l));   // no: stop just inside it
+      }
+      if (k < 1) C.set(L.x + (C.x - L.x) * k, L.y + (C.y - L.y) * k, L.z + (C.z - L.z) * k);
+      return k;
+    }
+    /* the same, and if that leaves the camera right on top of what it looks at, try the shot mirrored back into the room */
+    function safeShot(L, C) {
+      for (const w of arena.walls) if (!w.broken && w.sign * L[w.axis] > w.lim - 0.4) L[w.axis] = w.sign * (w.lim - 0.4);   // (it looks at something in the room)
+      const want = C.clone(), d0 = want.distanceTo(L);
+      clearShot(L, C);
+      if (C.distanceTo(L) > Math.min(2, d0 * 0.6)) return C;
+      for (const ax of ['x', 'z']) {
+        const B = want.clone(); B[ax] = L[ax] - (want[ax] - L[ax]); clearShot(L, B);
+        if (B.distanceTo(L) > C.distanceTo(L) + 0.3) C.copy(B);
+      }
+      return C;
+    }
+    M.safeShot = safeShot;
     function updCamera(dt) {
       const [a, b] = M.fighters;
       let target, dist, from;
       if (M.cine) {
         const sh = Arts.cam(M.cine), cut = sh.id !== M.camShot; M.camShot = sh.id;
-        if (sh.pos.y < 2.8) { sh.pos.x = U.clamp(sh.pos.x, -arena.W + 0.35, arena.W - 0.35); sh.pos.z = U.clamp(sh.pos.z, -arena.D + 0.35, arena.D - 0.35); }   // never inside a wall
+        safeShot(sh.look, sh.pos); if (sh.pos.y < 0.25) sh.pos.y = 0.25;   // never inside or behind a wall, never under the floor
+        for (const F of [M.cine.o, M.cine.f]) if (F.obj.visible && F.pos.y < 3) clearShot(_v.copy(F.pos).setY(F.pos.y + 1), sh.pos);   // (nor with a wall between it and them)
+        // backed up against a wall right behind someone: rise over their shoulder instead of standing inside them
+        for (const F of M.fighters) if (F.obj.visible && Math.hypot(sh.pos.x - F.pos.x, sh.pos.z - F.pos.z) < 0.8 && sh.pos.y > F.pos.y - 0.2 && sh.pos.y < F.pos.y + 2.2) sh.pos.y = F.pos.y + 2.6;
         if (cut) { M.camT.copy(sh.look); camera.position.copy(sh.pos); }
         else { const k = 6; M.camT.x = U.smooth(M.camT.x, sh.look.x, k, dt); M.camT.y = U.smooth(M.camT.y, sh.look.y, k, dt); M.camT.z = U.smooth(M.camT.z, sh.look.z, k, dt); camera.position.x = U.smooth(camera.position.x, sh.pos.x, k, dt); camera.position.y = U.smooth(camera.position.y, sh.pos.y, k, dt); camera.position.z = U.smooth(camera.position.z, sh.pos.z, k, dt); }
-        camera.lookAt(M.camT); camera.position.x += FX.shake.x; camera.position.y += FX.shake.y; return;
+        camera.lookAt(M.camT); camera.position.x += FX.shake.x; camera.position.y = Math.max(0.2, camera.position.y + FX.shake.y); return;
       }
       M.camShot = null;
       if (M.frozen && M.freezer) {
         const f = M.freezer, F = f.forward;
         target = _v.copy(f.pos).setY(f.pos.y + 1.0).clone(); dist = 4.6;
-        from = new V3(F.x * 0.8 + 0.5, 0.45, F.z * 0.8 + 0.7).normalize();
+        let best = -1;
+        for (const [a, b] of [[0.8, 1], [0.8, -1], [0, 1], [0, -1], [-0.8, 1], [-0.8, -1]]) {
+          const d = new V3(F.x * a + 0.5 * b, 0.45, F.z * a + 0.7 * b).normalize(), C = target.clone().addScaledVector(d, dist), k = clearShot(target, C);
+          if (k > best + 0.05) { best = k; from = d; }
+          if (k >= 0.95) break;
+        }
+        if (best < 0.95) dist *= Math.max(0.55, best);
       } else {
         const ina = a.state !== 'out', inb = b.state !== 'out';
         const pa = ina ? a.pos : b.pos, pb = inb ? b.pos : a.pos;
@@ -545,7 +649,7 @@
         if (M.training) trainingTick(dt);
         if (M.tick) M.tick(dt);
       }
-      updProjs(dt); updPicks(dt); updMinions(dt); arena.update(dt);
+      updProjs(dt); updSpears(dt); updPicks(dt); updMinions(dt); arena.update(dt);
       for (let i = M.clones.length - 1; i >= 0; i--) { const c = M.clones[i]; c.t += dt; c.f.root.position.lerpVectors(c.from, c.to, U.clamp(c.t / 0.22, 0, 1)); if (c.t > 0.4) { c.f.root.traverse(o => { if (o.isMesh && o.material.opacity) o.material.opacity *= 0.8; }); } if (c.t > 0.7) { c.f.dispose(); M.clones.splice(i, 1); } }
       if (U.quiet) return;
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
@@ -611,12 +715,12 @@
           if (p.look === 'kunai' && (what === 'wall' || what === 'floor')) { p.stuck = 0.9; if (p.trail) { M.fx.push({ m: p.trail, t: 0, life: 0.1 }); p.trail = null; } continue; }
           killDart(p); M.projs.splice(i, 1);
         } else if (p.kind === 'fnote') {
-          p.t += 0; p.mesh.position.addScaledVector(p.vel, dt); p.vel.multiplyScalar(Math.exp(-2.5 * dt)); p.mesh.quaternion.copy(camera.quaternion); p.mesh.rotateZ(Math.sin(p.t * 6) * 0.3 + p.spin * 0.05);
+          p.t += 0; p.mesh.position.addScaledVector(p.vel, dt); p.vel.multiplyScalar(Math.exp(-2.5 * dt)); p.mesh.quaternion.copy(FACE_Q); p.mesh.rotateZ(Math.sin(p.t * 6) * 0.3 + p.spin * 0.05);
           const k = p.t / p.life; p.mesh.scale.setScalar(k < 0.15 ? k / 0.15 : k > 0.7 ? Math.max(0.01, (1 - k) / 0.3) : 1);
           if (k >= 1) { scene.remove(p.mesh); M.projs.splice(i, 1); }
         } else if (p.kind === 'hex') {
           const f = p.f, o = M.opp(f), a = _q.copy(p.pos).clone(), step = Math.min(22 * dt, p.range - p.dist);
-          p.pos.addScaledVector(p.dir, step); p.dist += step; p.mesh.position.copy(p.pos); p.mesh.quaternion.copy(camera.quaternion); p.mesh.rotateZ(p.t * 9);   // a magic circle, turned to face you
+          p.pos.addScaledVector(p.dir, step); p.dist += step; p.mesh.position.copy(p.pos); p.mesh.quaternion.copy(FACE_Q); p.mesh.rotateZ(p.t * 9);   // a magic circle, turned to face you
           const sc = 1.3 + p.dist * 0.1; p.mesh.scale.setScalar(sc);
           if (U.rand() < 0.7) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.5, size: 0.06, life: 0.3, gravity: 0 });
           const q = o ? bodyHit(f, o, a, p.pos, 0.9, p.mv, p.k) : null;
@@ -701,7 +805,7 @@
           const s = 1 + p.dist * 0.35; p.mesh.scale.set(s, s, s); p.mesh.children.forEach(c => { c.material.opacity = c.userData.op * (1 - 0.7 * p.dist / p.range); });
           // its notes ride round the ring, bobbing
           const side = _v.set(p.dir.z, 0, -p.dir.x).normalize(), upv = _w.crossVectors(side, p.dir).normalize();
-          p.notes.forEach((n, j) => { const a = p.t * 7 + j * Math.PI / 2, r = 0.85 * s; n.position.copy(p.pos).addScaledVector(side, Math.cos(a) * r).addScaledVector(upv, Math.sin(a) * r + Math.sin(p.t * 20 + j) * 0.06); n.quaternion.copy(camera.quaternion); n.rotateZ(Math.sin(p.t * 9 + j) * 0.4); n.scale.setScalar(1.1 * (1 - 0.4 * p.dist / p.range)); });
+          p.notes.forEach((n, j) => { const a = p.t * 7 + j * Math.PI / 2, r = 0.85 * s; n.position.copy(p.pos).addScaledVector(side, Math.cos(a) * r).addScaledVector(upv, Math.sin(a) * r + Math.sin(p.t * 20 + j) * 0.06); n.quaternion.copy(FACE_Q); n.rotateZ(Math.sin(p.t * 9 + j) * 0.4); n.scale.setScalar(1.1 * (1 - 0.4 * p.dist / p.range)); });
           if (U.rand() < 0.5) FX.burst(p.pos, { n: 1, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 1, size: 0.08, gravity: -1, life: 0.4 });
           M.hitMinions(p.f, p.pos, 0.6 + s * 0.3, p.id);
           const o = M.opp(p.f);
@@ -757,7 +861,7 @@
       M.ai[1].dummy = T.dummy;
       const plain = !opts.tutorial && !opts.trials;
       for (const f of M.fighters) {
-        if (f.comboing) { f.trainCombo = true; f.idleT = 0; continue; }
+        if (f.comboing || f.burn) { f.trainCombo = true; f.idleT = 0; continue; }   // (a burn's still part of it)
         if (f.state === 'ko') continue;
         // a combo on them just ended: plain training puts their health (and unbroken parts) back at once; the tutorial
         // and the trials keep the slow refill (some lessons start the dummy low)

@@ -240,16 +240,20 @@ window.__snapDiff = (a, b) => {
    makes direct fighter links fail so fights go through the host). __roomSetup(n, lag, jitter, picks) opens a room in
    game 0 (private, password 'pw') and the rest join it; __roomRun(ticks) steps every game 1/60 s a tick. */
 window.__mkNet = (lag, jitter) => {
-  const net = { peers: new Map(), q: [], tick: 0, lag: lag || 0, jitter: jitter || 0, rnd: Online._t.rng(4242), failDirect: false, sent: 0 };
+  const net = { peers: new Map(), q: [], tick: 0, lag: lag || 0, jitter: jitter || 0, rnd: Online._t.rng(4242), failDirect: false, sent: 0, loss: 0, rto: 30, lost: 0 };
   const later = (fn, dt) => net.q.push({ at: net.tick + (dt == null ? 1 : dt), fn });
   net.pump = () => { for (let k = 0; k < 4; k++) { const due = net.q.filter(x => x.at <= net.tick); if (!due.length) return; net.q = net.q.filter(x => x.at > net.tick); due.forEach(x => x.fn()); } };
   class Conn {
-    constructor(peer, metadata) { this.peer = peer; this.metadata = metadata; this.open = false; this.h = {}; this.last = 0; this.other = null; this.closed = false; }
+    constructor(peer, metadata, ordered) { this.peer = peer; this.metadata = metadata; this.open = false; this.h = {}; this.last = 0; this.other = null; this.closed = false; this.ordered = ordered !== false || !!window.__allOrdered; }   // (__allOrdered: every link ordered, as before)
     on(e, f) { (this.h[e] = this.h[e] || []).push(f); }
     emit(e, ...a) { (this.h[e] || []).slice().forEach(f => f(...a)); }
     send(o) {
       if (!this.open || !this.other) return; const b = this.other, s = JSON.stringify(o); net.sent++;
-      const at = Math.max(this.last, net.tick + net.lag + Math.floor(net.rnd() * (net.jitter + 1))); this.last = at;
+      let at = net.tick + net.lag + Math.floor(net.rnd() * (net.jitter + 1));
+      if (net.loss && net.rnd() < net.loss) { at += net.rto; net.lost++; }   // lost, then resent
+      if (this.ordered) at = Math.max(this.last, at);
+      if (net.down && net.tick < net.down) at = Math.max(at, net.down + net.lag);   // an outage: everything sent waits (a stalled ordered channel)
+      this.last = Math.max(this.last, at);
       net.q.push({ at, fn: () => { if (b.open) b.emit('data', JSON.parse(s)); } });
     }
     close() { if (this.closed) return; this.closed = true; this.open = false; const b = this.other; later(() => { this.emit('close'); if (b && !b.closed) { b.closed = true; b.open = false; b.emit('close'); } }, net.lag); }
@@ -263,10 +267,10 @@ window.__mkNet = (lag, jitter) => {
     on(e, f) { (this.h[e] = this.h[e] || []).push(f); }
     emit(e, ...a) { (this.h[e] || []).slice().forEach(f => f(...a)); }
     connect(id, opts) {
-      const meta = opts && opts.metadata, a = new Conn(id, meta); this.conns.push(a);
+      const meta = opts && opts.metadata, ord = !(opts && opts.reliable === false), a = new Conn(id, meta, ord); this.conns.push(a);
       const t = net.peers.get(id);
       if (!t || t.destroyed || (meta && meta.fid && net.failDirect)) { later(() => this.emit('error', { type: 'peer-unavailable' }), net.lag); return a; }
-      const b = new Conn(this.id, meta); t.conns.push(b); a.other = b; b.other = a;
+      const b = new Conn(this.id, meta, ord); t.conns.push(b); a.other = b; b.other = a;
       later(() => { if (t.destroyed) return; t.emit('connection', b); later(() => { a.open = b.open = true; a.emit('open'); b.emit('open'); }, net.lag); }, net.lag);
       return a;
     }
@@ -376,4 +380,45 @@ window.__auditAll = async () => {
   if (window.Online) Online.leave(true);
   Menu.hub();
   return out;
+};
+/* SUPER CAMERAS: run a line's Legend Art with the pair placed at (cx, cz), side by side along `axis` ('x' or 'z');
+   every frame of the flash and the cinematic, check each shot: is a wall between the camera and either figure,
+   is a figure off screen, is the camera inside a figure or under the floor. Returns frame counts by shot. */
+window.__camAudit = (line, cx, cz, axis, opt) => {
+  opt = opt || {};
+  const m = __train(line, opt.vs || 'knight'), [a, b] = m.fighters, A = m.arena, cam = m.camera;
+  const dx = axis === 'z' ? 0 : 1, dz = axis === 'z' ? -1 : 0, gap = opt.gap || 2.4;
+  a.pos.set(cx - dx * gap / 2, 0, cz - dz * gap / 2); b.pos.set(cx + dx * gap / 2, 0, cz + dz * gap / 2);
+  a.yaw = Math.atan2(dx, dz); b.yaw = Math.atan2(-dx, -dz); a.hype = 100;
+  if (opt.down) { b.setState('down'); b.stateT = -5; }
+  const bad = {}, seen = {}, V = THREE.Vector3, P = new V();
+  const note = (k, id) => { bad[k] = bad[k] || {}; bad[k][id] = (bad[k][id] || 0) + 1; };
+  const blocked = (from, to) => {
+    for (const w of A.walls) {
+      if (w.broken) continue; const ax = w.axis, s = w.sign, lim = w.lim, h = w.h * 0.25;
+      const fa = s * from[ax], ta = s * to[ax];
+      if (fa <= lim - 0.02 || ta >= lim) continue;            // the camera's on the inside of this wall (or both outside)
+      const k = (lim - ta) / (fa - ta), y = to.y + (from.y - to.y) * k, o = ax === 'x' ? 'z' : 'x', u = to[o] + (from[o] - to[o]) * k;
+      if (y < h + 0.05 && Math.abs(u) < w.len / 2 + 0.6) return w.id;
+    }
+    return null;
+  };
+  let caught = false;
+  __step(opt.secs || 5.5, i => {
+    const f = __pad(); if (i === 2) f.held.super = true;
+    if (opt.down && i < 40 && b.state !== 'down' && !m.cine && a.superPhase !== 'seq') { b.setState('down'); b.stateT = -5; }
+    if (!(m.frozen && m.freezer) && !m.cine) return;
+    if (m.cine) caught = true;
+    const id = m.cine ? (m.camShot || '?') : 'freeze'; seen[id] = (seen[id] || 0) + 1;
+    cam.updateMatrixWorld(); const cp = cam.position;
+    if (cp.y < 0.15) note('floor', id);
+    for (const [who, F] of [['att', a], ['vic', b]]) {
+      if (!F.obj.visible) continue;
+      const c = new V(F.pos.x, F.pos.y + 1, F.pos.z);
+      const w = blocked(cp, c); if (w) note('wall:' + who, id + '/' + w);
+      P.copy(c).project(cam); if (Math.abs(P.x) > 1 || Math.abs(P.y) > 1 || P.z > 1) note('off:' + who, id);
+      if (Math.hypot(cp.x - F.pos.x, cp.z - F.pos.z) < 0.6 && cp.y > F.pos.y - 0.1 && cp.y < F.pos.y + 2) note('inside:' + who, id);
+    }
+  });
+  return { line, at: [cx, cz, axis], caught, shots: seen, bad, errs: __errs.slice(0, 2) };
 };

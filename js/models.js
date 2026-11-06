@@ -22,9 +22,59 @@
   const shade = (c, k) => { const r = Math.min(255, ((c >> 16) & 255) * k) | 0, g = Math.min(255, ((c >> 8) & 255) * k) | 0, b = Math.min(255, (c & 255) * k) | 0; return (r << 16) | (g << 8) | b; };
   const mix = (a, b, t) => { const f = (s) => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t); return (f(16) << 16) | (f(8) << 8) | f(0); };
 
-  /* the line's palette, repainted for a rarity */
-  function palette(line, r) {
-    const b = KB.LINES[line].pal, p = Object.assign({}, b);
+  /* PALETTES: every figure comes in seven colours. CLASSIC is the line's own; the others repaint its armour and cloth in
+     one theme (a mixed custom reads as one colour too). Two figures in a fight that would look alike (the same colours on
+     the same fighter, or the same theme) don't: the second one gets a TINT, darker (lighter for SHADOW) and a shade cooler */
+  const PAINTS = [
+    { name: 'CLASSIC' },
+    { name: 'CRIMSON', h: 0.995, h2: 0.07, acc: 0xffd040 },
+    { name: 'AZURE', h: 0.585, h2: 0.53, acc: 0xeef4ff },
+    { name: 'JADE', h: 0.4, h2: 0.33, acc: 0xffd040 },
+    { name: 'ROYAL', h: 0.76, h2: 0.84, acc: 0xffd040 },
+    { name: 'SHADOW', dark: 1 },
+    { name: 'IVORY', light: 1 },
+  ];
+  const _C = new THREE.Color(), _H = {}, clamp01 = v => Math.min(1, Math.max(0, v));
+  const hsl = (c, f) => { _C.setHex(c & 0xffffff); _C.getHSL(_H); f(_H); _C.setHSL(((_H.h % 1) + 1) % 1, clamp01(_H.s), clamp01(_H.l)); return _C.getHex(); };
+  function painted(b, k) {
+    const P = PAINTS[k]; if (!P || !k) return b;
+    const p = Object.assign({}, b);
+    if (P.h != null) {
+      p.main = hsl(b.main, o => { o.h = P.h; o.s = Math.max(o.s, 0.6); o.l = Math.min(0.55, Math.max(0.3, o.l)); });
+      p.second = hsl(b.second, o => { o.h = P.h2; o.s = Math.max(o.s, 0.45); o.l = Math.min(0.5, Math.max(0.16, o.l)); });
+      p.cloth = hsl(b.cloth, o => { o.h = P.h2; o.s = Math.max(o.s, 0.35); o.l = Math.min(0.6, Math.max(0.2, o.l)); });
+      p.dark = hsl(b.dark, o => { o.h = P.h; o.s = Math.min(o.s, 0.4); o.l = Math.min(o.l, 0.16); });
+      p.accent = P.acc;
+    } else if (P.dark) {
+      for (const key of ['main', 'second', 'cloth']) p[key] = hsl(b[key], o => { o.s *= 0.25; o.l = 0.1 + o.l * 0.3; });
+      p.dark = 0x060608; p.accent = hsl(b.glow, o => { o.l = Math.max(o.l, 0.55); });
+    } else if (P.light) {
+      p.main = mix(b.main, 0xf2eee4, 0.72); p.second = mix(b.second, 0xd8d2c4, 0.6); p.cloth = mix(b.cloth, 0xffffff, 0.55); p.dark = mix(b.dark, 0x7a7468, 0.5); p.accent = 0xd8a830;
+    }
+    return p;
+  }
+  function tinted(p) {
+    _C.setHex(p.main & 0xffffff); _C.getHSL(_H); const lighten = _H.l < 0.22, q = Object.assign({}, p);
+    for (const key of ['main', 'second', 'cloth', 'dark', 'accent', 'metal']) if (q[key] != null && q[key] <= 0xffffff) q[key] = hsl(q[key], o => { o.l = lighten ? o.l * 1.5 + 0.16 : o.l * 0.55; o.h += 0.05; o.s = Math.min(1, o.s * 1.1); });
+    return q;
+  }
+  /* two builds in one fight that would look alike: the same theme on anyone, or close colours on the same fighter
+     (3 of its 5 parts; the SAMURAI's own colours are already crimson, say) */
+  function looksAlike(a, b) {
+    if (!a || !b) return false;
+    const pa = a.paint | 0, pb = b.paint | 0;
+    if (pa === pb && pa > 0) return true;
+    if (['head', 'core', 'armL', 'armR', 'legs'].filter(s => a[s].line === b[s].line).length < 3) return false;
+    if (pa === pb) return true;
+    const ca = painted(KB.LINES[a.core.line].pal, pa).main, cb = painted(KB.LINES[b.core.line].pal, pb).main;
+    return Math.hypot(((ca >> 16) & 255) - ((cb >> 16) & 255), ((ca >> 8) & 255) - ((cb >> 8) & 255), (ca & 255) - (cb & 255)) < 70;
+  }
+  /* a palette's colours on a line, for the menus' swatches */
+  const swatch = (line, k) => { const p = painted(KB.LINES[line].pal, k | 0); return [p.main, p.second, p.accent].map(c => '#' + (c & 0xffffff).toString(16).padStart(6, '0')); };
+
+  /* the line's palette, repainted for a rarity (and a palette, and the look-alike tint) */
+  function palette(line, r, k, tint) {
+    const b = painted(KB.LINES[line].pal, k | 0), p = Object.assign({}, b);
     p.eye = 0x1a1a24; p.joint = JOINT; p.gem = b.glow;
     if (r === 1) { p.accent = shade(b.accent, 1.18); p.metal = 0xf6faff; p.main = shade(b.main, 1.06); p.gem = G(b.glow); }
     if (r === 2) { p.accent = 0xffc83d; p.metal = 0xfff3c4; p.second = shade(b.second, 0.9); p.gem = G(0xfff1a0); p.joint = 0xb8902a; }
@@ -32,7 +82,7 @@
       p.main = mix(b.main, 0x140f22, 0.78); p.second = mix(b.second, 0x0a0812, 0.55); p.dark = 0x07060c; p.cloth = mix(b.cloth, 0x1a1428, 0.6);
       p.accent = G(b.glow); p.metal = G(shade(b.glow, 1.25) | 0x404040); p.eye = G(b.glow); p.gem = G(b.glow); p.joint = 0x2a2838;
     }
-    return p;
+    return tint ? tinted(p) : p;
   }
 
   /* ------------------------------------------------------------- drawing --
@@ -538,10 +588,10 @@
 
   /* -------------------------------------------------------- geometry cache */
   const GEO = new Map();
-  function geo(line, piece, r, draw) {
-    const k = line + ':' + piece + ':' + r;
+  function geo(line, piece, r, draw, pk, tint) {
+    const k = line + ':' + piece + ':' + r + ':' + (pk | 0) + (tint ? 't' : '');
     if (GEO.has(k)) return GEO.get(k);
-    const g = new VX.Grid(); g.jit = 0.035; draw(g, palette(line, r));
+    const g = new VX.Grid(); g.jit = 0.035; draw(g, palette(line, r, pk, tint));
     const out = VX.meshGrid(g, S); GEO.set(k, out); return out;
   }
   let plastic = null;
@@ -563,20 +613,20 @@
   /* a whole figure from a build: { root, parts, mat, socket(), detach(), reattach(), flash() } */
   function figure(build) {
     const mat = plasticMat().clone(); mat.emissive = new THREE.Color(0, 0, 0);
-    const root = new THREE.Group(), parts = {};
+    const root = new THREE.Group(), parts = {}, pk = build.paint | 0, tn = !!build.tint;
     for (const name in LAYOUT) {
       const slot = OWNER[name], it = build[slot], line = it.line, r = it.r || 0, d = D[line];
       const grp = new THREE.Group(); grp.name = name;
       let G;
-      if (name === 'hips') G = geo(line, 'hips', r, d.hips);
-      else if (name === 'torso') G = geo(line, 'torso', r, d.torso);
-      else if (name === 'head') G = geo(line, 'head', r, d.head);
-      else if (name === 'armL') G = geo(line, 'armL', r, (g, p) => d.arm(g, p, 1));
-      else if (name === 'armR') G = geo(line, 'armR', r, (g, p) => d.arm(g, p, -1));
-      else if (name === 'wL') G = geo(line, 'wL', r, d.wL);
-      else if (name === 'wR') G = geo(line, 'wR', r, d.wR);
-      else if (name === 'legL') G = geo(line, 'legL', r, (g, p) => d.leg(g, p, 1));
-      else if (name === 'legR') G = geo(line, 'legR', r, (g, p) => d.leg(g, p, -1));
+      if (name === 'hips') G = geo(line, 'hips', r, d.hips, pk, tn);
+      else if (name === 'torso') G = geo(line, 'torso', r, d.torso, pk, tn);
+      else if (name === 'head') G = geo(line, 'head', r, d.head, pk, tn);
+      else if (name === 'armL') G = geo(line, 'armL', r, (g, p) => d.arm(g, p, 1), pk, tn);
+      else if (name === 'armR') G = geo(line, 'armR', r, (g, p) => d.arm(g, p, -1), pk, tn);
+      else if (name === 'wL') G = geo(line, 'wL', r, d.wL, pk, tn);
+      else if (name === 'wR') G = geo(line, 'wR', r, d.wR, pk, tn);
+      else if (name === 'legL') G = geo(line, 'legL', r, (g, p) => d.leg(g, p, 1), pk, tn);
+      else if (name === 'legR') G = geo(line, 'legR', r, (g, p) => d.leg(g, p, -1), pk, tn);
       meshes(grp, G, mat);
       parts[name] = grp;
     }
@@ -688,7 +738,7 @@
   /* a whole figure in its ready stance, as a PNG (blister packs, select screens) */
   const FIGS = new Map();
   function figIcon(build) {
-    const k = KB.SLOTS.map(s => build[s].line + build[s].r).join('|'); if (FIGS.has(k)) return FIGS.get(k);
+    const k = KB.SLOTS.map(s => build[s].line + build[s].r).join('|') + '|' + (build.paint | 0) + (build.tint ? 't' : ''); if (FIGS.has(k)) return FIGS.get(k);
     const F = figure(build); Anim.set(F, Anim.readyFor(build)); F.parts.wL.visible = !KB.PARTS[build.armL.line].armL.holster;
     const grp = new THREE.Group(); grp.add(F.root);
     const box = new THREE.Box3().setFromObject(F.root), c = box.getCenter(new THREE.Vector3());
@@ -724,5 +774,5 @@
     CARDS.set(k, c); return c;
   }
 
-  window.Models = { S, D, palette, imp, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER };
+  window.Models = { S, D, palette, imp, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER, PAINTS, looksAlike, swatch };
 })();

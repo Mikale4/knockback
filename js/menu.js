@@ -13,6 +13,16 @@
   const btn = (label, onclick, cls, sub) => el('button', { class: 'btn ' + (cls || ''), onclick: e => { SFX.play('ok'); onclick(e); } }, label, sub ? el('small', null, sub) : null);
   const back = to => btn('◂ BACK', () => { SFX.play('back'); to(); }, 'ghost backbtn');
   const glyph = (type, b) => el('span', { class: 'glyph g-' + type + ' gb' + b }, Input.padLabel(type, b));
+  /* COLOURS: a row of palette swatches, each the figure's own colours in that palette */
+  function paintRow(label, val, line, set, redraw) {
+    val = val | 0;
+    return el('div', { class: 'seg paints' }, el('span', null, label), el('div', { class: 'swatches' },
+      ...Models.PAINTS.map((P, k) => { const [a, b, c] = Models.swatch(line, k);
+        return el('button', { class: 'sw' + (val === k ? ' on' : ''), title: P.name, 'aria-label': P.name, style: { background: 'linear-gradient(135deg, ' + a + ' 0 52%, ' + b + ' 52% 100%)', borderColor: c }, onclick: () => { SFX.play('ok'); set(k); redraw(); } }); }),
+      el('small', { class: 'swname' }, (Models.PAINTS[val] || Models.PAINTS[0]).name)));
+  }
+  const myPaint = () => (S().paint | 0) % Models.PAINTS.length;
+  const painted = (b, k) => Object.assign({}, b, { paint: k | 0 });
   function topbar(title, onBack) {
     return el('div', { class: 'topbar' }, onBack ? back(onBack) : null, el('h1', null, title), el('div', { class: 'grow' }),
       el('div', { class: 'tokens', id: 'tok' }, el('i', { class: 'coin' }), U.fmt(S().tokens)),
@@ -167,6 +177,7 @@
       if (!finished) setTimeout(() => toast('The TUTORIAL is in the hub whenever you want it.'), 1600);
     },
     activeBuild: () => activeBuild(),
+    paintRow, myPaint,
     /* -------------------------------------------------------------- hub */
     hub() {
       Music.play('menu'); useRoom(activeBuild(), -1);
@@ -340,7 +351,8 @@
       const opp = [['random', 'Random figure'], ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].figure])];
       const anyFig = [['random', 'Random'], ...mine.map((b, i) => ['mine:' + i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].name])];
       const lvls = AI.LEVELS.map((n, i) => [i, n]);
-      useRoom(watch ? (String(cfg.w1).startsWith('mine:') ? Inv.levelled(mine[+cfg.w1.slice(5)]) : cfg.w1 !== 'random' ? KB.mintBuild(cfg.w1, 0) : activeBuild()) : Inv.levelled(mine[cfg.p1]));
+      useRoom(watch ? (String(cfg.w1).startsWith('mine:') ? Inv.levelled(mine[+cfg.w1.slice(5)]) : cfg.w1 !== 'random' ? KB.mintBuild(cfg.w1, 0) : activeBuild()) : painted(Inv.levelled(mine[cfg.p1]), myPaint()));
+      const p2line = String(cfg.p2b).startsWith('mint:') ? cfg.p2b.slice(5) : (mine[+cfg.p2b] || mine[0]).core.line;
       const seg = (label, val, opts, set) => el('div', { class: 'seg' }, el('span', null, label), el('div', null, ...opts.map(([v, t]) => el('button', { class: String(val) === String(v) ? 'on' : '', onclick: () => { set(v); Menu.versus(cfg); } }, t))));
       App.screen(el('div', { class: 'screen versus' }, topbar('VERSUS', () => Menu.hub()),
         el('div', { class: 'panel vspanel' },
@@ -350,8 +362,10 @@
             seg('CPU 2 FIGURE', cfg.w2, anyFig, v => cfg.w2 = v), seg('CPU 2 LEVEL', cfg.l2, lvls, v => cfg.l2 = +v),
           ] : [
             seg('P1 FIGURE', cfg.p1, mine.map((b, i) => [i, b.name]), v => cfg.p1 = +v),
+            paintRow('P1 COLOURS', myPaint(), (mine[cfg.p1] || mine[0]).core.line, k => { S().paint = k; Auth.save(); }, () => Menu.versus(cfg)),
             two ? seg('P2 FIGURE', cfg.p2b, [...mine.map((b, i) => [i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => ['mint:' + l, KB.LINES[l].name])], v => cfg.p2b = v)
               : seg('OPPONENT', cfg.p2, opp, v => cfg.p2 = v),
+            two ? paintRow('P2 COLOURS', cfg.c2, p2line, k => { cfg.c2 = k; }, () => Menu.versus(cfg)) : null,
             two ? null : seg('CPU LEVEL', cfg.lvl, lvls, v => cfg.lvl = +v),
           ],
           seg('ARENA', cfg.arena, [['random', 'Random'], ...Arena.LIST.map(a => [a, Arena.THEMES[a].name])], v => cfg.arena = v),
@@ -369,9 +383,9 @@
         App.startMatch({ mode: 'watch', builds: [pick(cfg.w1, cfg.l1), pick(cfg.w2, cfg.l2)], cpu: [cfg.l1, cfg.l2], arena, wins: cfg.wins, bonus: cfg.bonus, cfg });
         return;
       }
-      const b1 = Inv.levelled(mine[cfg.p1]);
+      const b1 = painted(Inv.levelled(mine[cfg.p1]), myPaint());
       let b2;
-      if (cfg.mode === 'two') b2 = String(cfg.p2b).startsWith('mint:') ? KB.mintBuild(cfg.p2b.slice(5), 0) : Inv.levelled(mine[+cfg.p2b]);
+      if (cfg.mode === 'two') b2 = painted(String(cfg.p2b).startsWith('mint:') ? KB.mintBuild(cfg.p2b.slice(5), 0) : Inv.levelled(mine[+cfg.p2b]), cfg.c2);
       else b2 = cfg.p2 === 'random' ? KB.randomBuild(Math.min(3, cfg.lvl)) : KB.mintBuild(cfg.p2, Math.min(3, cfg.lvl));
       App.startMatch({ mode: cfg.mode === 'two' ? 'versus' : 'cpu', builds: [b1, b2], cpu: [null, cfg.mode === 'two' ? null : cfg.lvl], arena, wins: cfg.wins, bonus: cfg.bonus, lvl: cfg.lvl });
     },
@@ -398,7 +412,7 @@
     arcadeFight() {
       Menu._arc = Menu._arc || { stage: 0 };
       const L = Menu.ladder()[Menu._arc.stage];
-      App.startMatch({ mode: 'arcade', builds: [activeBuild(), L.build], cpu: [null, L.lvl], arena: L.arena, wins: 2, bonus: true, lvl: L.lvl, stage: Menu._arc.stage });
+      App.startMatch({ mode: 'arcade', builds: [painted(activeBuild(), myPaint()), L.build], cpu: [null, L.lvl], arena: L.arena, wins: 2, bonus: true, lvl: L.lvl, stage: Menu._arc.stage });
     },
     /* --------------------------------------------------------- training */
     /* TRAINING: pick yourself (your figures, or any base fighter), the dummy and the arena (it remembers them) */
@@ -410,7 +424,7 @@
       if (!Arena.LIST.includes(cfg.arena)) cfg.arena = 'shelf';
       Menu._tr = cfg;
       const buildFor = k => String(k).startsWith('mint:') ? KB.mintBuild(k.slice(5), 0) : Inv.levelled(mine[+String(k).slice(5)] || mine[0]);
-      useRoom(buildFor(cfg.p));
+      useRoom(painted(buildFor(cfg.p), myPaint()));
       const tile = (on, b, top, sub, pick) => el('button', { class: 'olpick' + (on ? ' on' : ''), style: { '--lc': b ? KB.LINES[b.core.line].css : '#9aa4b2' }, onclick: () => { SFX.play('ok'); pick(); Menu.training(cfg); } },
         b ? el('img', { src: Models.figIcon(b), alt: '' }) : el('div', { class: 'olq' }, '?'), el('b', null, top), el('small', null, sub));
       const seg = (label, val, opts, set) => el('div', { class: 'seg' }, el('span', null, label), el('div', null, ...opts.map(([v, t]) => el('button', { class: String(val) === String(v) ? 'on' : '', onclick: () => { set(v); Menu.training(cfg); } }, t))));
@@ -420,7 +434,8 @@
             el('small', { class: 'olsub' }, 'YOUR FIGURES'),
             el('div', { class: 'olgrid' }, ...mine.map((b, i) => { const lb = Inv.levelled(b); return tile(cfg.p === 'mine:' + i, lb, lb.name, i === 0 ? 'Your starter' : 'Custom · ' + KB.LINES[lb.core.line].name, () => { cfg.p = 'mine:' + i; }); })),
             el('small', { class: 'olsub' }, 'BASE FIGHTERS'),
-            el('div', { class: 'olgrid' }, ...KB.LINE_ORDER.map(l => tile(cfg.p === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.p = 'mint:' + l; })))),
+            el('div', { class: 'olgrid' }, ...KB.LINE_ORDER.map(l => tile(cfg.p === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.p = 'mint:' + l; }))),
+            paintRow('COLOURS', myPaint(), buildFor(cfg.p).core.line, k => { S().paint = k; Auth.save(); }, () => Menu.training(cfg))),
           el('div', { class: 'olselect' }, el('h3', null, 'THE DUMMY'),
             el('div', { class: 'olgrid' }, tile(cfg.d === 'random', null, 'RANDOM', 'a new one each time', () => { cfg.d = 'random'; }),
               ...KB.LINE_ORDER.map(l => tile(cfg.d === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.d = 'mint:' + l; })))),
@@ -432,7 +447,7 @@
       cfg = cfg || Menu._tr; const Sv = S(); Sv.train = Object.assign({}, cfg); Auth.save();
       const mine = Sv.builds, me = String(cfg.p).startsWith('mint:') ? KB.mintBuild(cfg.p.slice(5), 0) : Inv.levelled(mine[+String(cfg.p).slice(5)] || mine[0]);
       const dummy = cfg.d === 'random' || !String(cfg.d).startsWith('mint:') ? U.pick(KB.LINE_ORDER) : cfg.d.slice(5);
-      App.startMatch({ mode: 'training', builds: [me, KB.mintBuild(dummy, 0)], cpu: [null, null], arena: cfg.arena || 'shelf', wins: 99, time: 999, bonus: true });
+      App.startMatch({ mode: 'training', builds: [painted(me, myPaint()), KB.mintBuild(dummy, 0)], cpu: [null, null], arena: cfg.arena || 'shelf', wins: 99, time: 999, bonus: true });
     },
     /* ---------------------------------------------------------- how to */
     howto() {
