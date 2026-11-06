@@ -40,6 +40,11 @@
      next four are bought with tokens, in order */
   const CUSTOMS = [{ name: 'Custom A', cost: 0 }, { name: 'Custom B', cost: 0 }, { name: 'Custom C', cost: 1000 }, { name: 'Custom D', cost: 2000 }, { name: 'Custom E', cost: 3000 }, { name: 'Custom F', cost: 5000 }];
   const starterLine = () => S().starter || S().builds[0].core.line;
+  /* THEMES: the fighters come in series (KB.THEMES: HISTORICAL FANTASY, MODERN SPORTS). A list of fighters shows one
+     series at a time under a tab for each; the series you last looked at is shared by every screen */
+  const theme = () => (KB.THEMES.find(T => T.id === Menu._theme) || KB.THEMES[0]).id;
+  const themeTabs = redraw => el('div', { class: 'thtabs' }, ...KB.THEMES.map(T => el('button', { class: T.id === theme() ? 'on' : '', onclick: () => { SFX.play('ui'); Menu._theme = T.id; redraw(); } }, T.name)));
+  const themeLines = () => KB.linesOf(theme());
   const partLabel = (it, slot) => KB.itemName(it.line, slot || it.slot) + (it.lv ? ' +' + it.lv : '');
 
   /* ------------------------------------------------------- the showroom --
@@ -87,6 +92,7 @@
 
   const Menu = {
     toast: (t, c) => toast(t, c),
+    themeTabs: r => themeTabs(r), themeLines: () => themeLines(), theme: () => theme(),
     ui: { btn: (...a) => btn(...a), topbar: (...a) => topbar(...a) },
     /* phones: fill the screen and hold landscape, where the browser allows it (Android; iPhone Safari can't) */
     fullscreen() {
@@ -144,7 +150,7 @@
     /* -------------------------------------------------- pick a starter */
     starter() {
       Music.play('menu');
-      const packs = KB.LINE_ORDER.map(line => {
+      const packs = themeLines().map(line => {
         const L = KB.LINES[line], b = KB.mintBuild(line, 0);
         return el('button', { class: 'blister', style: { '--lc': L.css }, onclick: () => pick(line) },
           el('div', { class: 'bl-top' }, logo('l-tiny'), el('span', null, L.name)),
@@ -159,7 +165,7 @@
       };
       App.screen(el('div', { class: 'screen starter' }, el('h1', null, 'CHOOSE YOUR FIRST FIGURE'),
         el('p', { class: 'sub' }, 'Every figure is six snap-on parts. Mix lines later with parts from the Capsule Machine.'),
-        el('div', { class: 'packs' }, ...packs)));
+        themeTabs(() => Menu.starter()), el('div', { class: 'packs' }, ...packs)));
     },
     /* a new collector: the tutorial, played for real (tutorial.js), or straight to the hub */
     offerTutorial() {
@@ -297,7 +303,7 @@
         el('img', { src: Models.figIcon(lb), alt: '' }), el('b', null, lb.name), el('small', null, sub));
       const close = modal([el('h2', null, 'YOUR FIGURE'), el('p', { class: 'note' }, 'The figure you take into Arcade, Versus and Training. Build your custom slots in the Workshop.'),
         el('h3', { class: 'acthead' }, 'FIGURES (' + figs.length + ' / ' + KB.LINE_ORDER.length + ')'),
-        el('div', { class: 'actpick' }, ...figs.map(line => tile(Inv.levelled(KB.mintBuild(line, 0)), !(Sv.active > 0) && cur === line, KB.LINES[line].name + ' set' + (line === Menu.starterLine() ? ' · starter' : ''), () => { Menu.useFigure(line); Sv.active = 0; }))),
+        ...KB.THEMES.filter(T => figs.some(l => KB.themeOf(l) === T.id)).flatMap(T => [el('small', { class: 'actsub' }, T.name), el('div', { class: 'actpick' }, ...figs.filter(l => KB.themeOf(l) === T.id).map(line => tile(Inv.levelled(KB.mintBuild(line, 0)), !(Sv.active > 0) && cur === line, KB.LINES[line].name + ' set' + (line === Menu.starterLine() ? ' · starter' : ''), () => { Menu.useFigure(line); Sv.active = 0; })))]),
         el('h3', { class: 'acthead' }, 'CUSTOM SLOTS'),
         el('div', { class: 'actpick' }, ...Sv.builds.slice(1).map((x, k) => { const lb = Inv.levelled(x); return tile(lb, Sv.active === k + 1, 'Custom · ' + KB.LINES[lb.core.line].name + ' core', () => { Sv.active = k + 1; }); }))]);
     },
@@ -310,7 +316,7 @@
     selection() {
       Music.play('menu'); useRoom(activeBuild());
       const Sv = S(), n = Sv.selTickets | 0;
-      const packs = KB.LINE_ORDER.map(line => {
+      const packs = themeLines().map(line => {
         const L = KB.LINES[line], have = Inv.hasFigure(line), got = KB.SLOTS.filter(s => Inv.has(line, s, 0)).length;
         return el('button', { class: 'blister' + (have ? ' owned' : ''), title: L.blurb, style: { '--lc': L.css }, onclick: () => { if (have) { SFX.play('back'); toast('The ' + L.figure + ' is already in your collection.'); } else pick(line, got); } },
           el('div', { class: 'bl-top' }, logo('l-tiny'), el('span', null, L.name)),
@@ -330,7 +336,7 @@
         el('p', { class: 'sub' }, el('b', null, '🎫 SELECTION TICKET ×' + n), ' · ', !n ? 'No ticket to use right now. Your first Arcade clear gives one.'
           : all ? 'You have every fighter already. Keep the ticket: it waits for the next one.'
             : 'Pick any fighter you don\'t have yet: you get its whole set, ready to fight as.'),
-        el('div', { class: 'packs' }, ...packs)));
+        themeTabs(() => Menu.selection()), el('div', { class: 'packs' }, ...packs)));
     },
     collect(line) {
       const Sv = S(); if (!(Sv.selTickets > 0) || Inv.hasFigure(line)) return;
@@ -413,7 +419,7 @@
       Music.play('menu'); useRoom(activeBuild());
       const R = S().records;
       const grid = el('div', { class: 'shelfgrid' }, el('div'), ...KB.SLOTS.map(s => el('div', { class: 'sh-h' }, KB.SLOT_NAME[s])),
-        ...KB.LINE_ORDER.flatMap(line => [el('div', { class: 'sh-line', style: { '--lc': KB.LINES[line].css } }, KB.LINES[line].name),
+        ...themeLines().flatMap(line => [el('div', { class: 'sh-line', style: { '--lc': KB.LINES[line].css } }, KB.LINES[line].name),
           ...KB.SLOTS.map(slot => {
             let best = -1; for (let r = 3; r >= 0; r--) if (Inv.has(line, slot, r)) { best = r; break; }
             const dots = el('div', { class: 'sh-dots' }, ...[0, 1, 2, 3].map(r => el('i', { class: rcls(r) + (Inv.has(line, slot, r) ? ' on' : '') })));
@@ -423,7 +429,7 @@
       App.screen(el('div', { class: 'screen shelf' }, topbar('SHELF', () => Menu.hub()),
         el('div', { class: 'panel shelfp' },
           el('div', { class: 'recs' }, ...[['WINS', R.wins], ['LOSSES', R.losses], ['ARCADE CLEARS', R.arcadeClears], ['BEST COMBO', R.bestCombo], ['MOST BOUNCES', R.maxBounces], ['WALL BREAKS', R.wallBreaks], ['FIGURES', Inv.figures().length + '/' + KB.LINE_ORDER.length], ['COLLECTION', Inv.count() + '/' + Inv.total()]].map(([k, v]) => el('div', null, el('small', null, k), el('b', null, v)))),
-          grid)));
+          themeTabs(() => Menu.shelf()), grid)));
     },
     /* ----------------------------------------------------------- versus
        Three ways to fight: you against the CPU, two players, or CPU vs CPU (watch). */
@@ -432,8 +438,9 @@
       cfg = cfg || Menu._vs || (S().vs ? Object.assign({}, S().vs) : null) || { mode: 'cpu', p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, w1: 'random', w2: 'random', l1: 2, l2: 2, arena: 'random', wins: 2, bonus: true };
       Menu._vs = cfg; S().vs = Object.assign({}, cfg); if (S().vs.p1 >= S().builds.length) S().vs.p1 = 0; Auth.save();
       const mine = S().builds, watch = cfg.mode === 'watch', two = cfg.mode === 'two';
-      const opp = [['random', 'Random figure'], ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].figure])];
-      const anyFig = [['random', 'Random'], ...mine.map((b, i) => ['mine:' + i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => [l, KB.LINES[l].name])];
+      const TL = themeLines();
+      const opp = [['random', 'Random figure'], ...TL.map(l => [l, KB.LINES[l].figure])];
+      const anyFig = [['random', 'Random'], ...mine.map((b, i) => ['mine:' + i, 'Your ' + b.name]), ...TL.map(l => [l, KB.LINES[l].name])];
       const lvls = AI.LEVELS.map((n, i) => [i, n]);
       useRoom(watch ? (String(cfg.w1).startsWith('mine:') ? Inv.levelled(mine[+cfg.w1.slice(5)]) : cfg.w1 !== 'random' ? KB.mintBuild(cfg.w1, 0) : activeBuild()) : painted(Inv.levelled(mine[cfg.p1]), myPaint()));
       const p2line = String(cfg.p2b).startsWith('mint:') ? cfg.p2b.slice(5) : (mine[+cfg.p2b] || mine[0]).core.line;
@@ -441,13 +448,14 @@
       App.screen(el('div', { class: 'screen versus' }, topbar('VERSUS', () => Menu.hub()),
         el('div', { class: 'panel vspanel' },
           seg('MODE', cfg.mode, [['cpu', 'VS CPU'], ['two', '2 PLAYERS'], ['watch', 'CPU VS CPU']], v => { cfg.mode = v; if (v === 'two') cfg.bonus = false; }),
+          seg('SERIES', theme(), KB.THEMES.map(T => [T.id, T.name]), v => { Menu._theme = v; }),
           watch ? [
             seg('CPU 1 FIGURE', cfg.w1, anyFig, v => cfg.w1 = v), seg('CPU 1 LEVEL', cfg.l1, lvls, v => cfg.l1 = +v),
             seg('CPU 2 FIGURE', cfg.w2, anyFig, v => cfg.w2 = v), seg('CPU 2 LEVEL', cfg.l2, lvls, v => cfg.l2 = +v),
           ] : [
             seg('P1 FIGURE', cfg.p1, mine.map((b, i) => [i, b.name]), v => cfg.p1 = +v),
             paintRow('P1 COLOURS', myPaint(), (mine[cfg.p1] || mine[0]).core.line, k => { S().paint = k; Auth.save(); }, () => Menu.versus(cfg)),
-            two ? seg('P2 FIGURE', cfg.p2b, [...mine.map((b, i) => [i, 'Your ' + b.name]), ...KB.LINE_ORDER.map(l => ['mint:' + l, KB.LINES[l].name])], v => cfg.p2b = v)
+            two ? seg('P2 FIGURE', cfg.p2b, [...mine.map((b, i) => [i, 'Your ' + b.name]), ...TL.map(l => ['mint:' + l, KB.LINES[l].name])], v => cfg.p2b = v)
               : seg('OPPONENT', cfg.p2, opp, v => cfg.p2 = v),
             two ? paintRow('P2 COLOURS', cfg.c2, p2line, k => { cfg.c2 = k; }, () => Menu.versus(cfg)) : null,
             two ? null : seg('CPU LEVEL', cfg.lvl, lvls, v => cfg.lvl = +v),
@@ -497,12 +505,12 @@
           el('div', { class: 'olselect' }, el('h3', null, 'YOU'),
             el('small', { class: 'olsub' }, 'YOUR FIGURES'),
             el('div', { class: 'olgrid' }, ...mine.map((b, i) => { const lb = Inv.levelled(b); return tile(cfg.p === 'mine:' + i, lb, lb.name, i === 0 ? 'Your starter' : 'Custom · ' + KB.LINES[lb.core.line].name, () => { cfg.p = 'mine:' + i; }); })),
-            el('small', { class: 'olsub' }, 'BASE FIGHTERS'),
-            el('div', { class: 'olgrid' }, ...KB.LINE_ORDER.map(l => tile(cfg.p === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.p = 'mint:' + l; }))),
+            el('small', { class: 'olsub' }, 'BASE FIGHTERS'), themeTabs(() => Menu.training(cfg)),
+            el('div', { class: 'olgrid' }, ...themeLines().map(l => tile(cfg.p === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.p = 'mint:' + l; }))),
             paintRow('COLOURS', myPaint(), buildFor(cfg.p).core.line, k => { S().paint = k; Auth.save(); }, () => Menu.training(cfg))),
           el('div', { class: 'olselect' }, el('h3', null, 'THE DUMMY'),
             el('div', { class: 'olgrid' }, tile(cfg.d === 'random', null, 'RANDOM', 'a new one each time', () => { cfg.d = 'random'; }),
-              ...KB.LINE_ORDER.map(l => tile(cfg.d === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.d = 'mint:' + l; })))),
+              ...themeLines().map(l => tile(cfg.d === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.d = 'mint:' + l; })))),
           seg('ARENA', cfg.arena, Arena.LIST.map(a => [a, Arena.THEMES[a].name]), v => { cfg.arena = v; }),
           el('p', { class: 'note' }, 'In training: health comes back the moment a combo ends; R resets, T saves the position you\'re in (or the buttons in the TRAINING panel; on a pad, tap Back to reset and hold it to save). CHARACTER SELECT in the pause menu brings you back here.'),
           btn('START TRAINING', () => Menu.trainingStart(cfg), 'big wide fight'))));

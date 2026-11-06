@@ -63,7 +63,7 @@
         R.guard.style.width = (f.guardHp / f.guardMax * 100) + '%';
         R.hype.style.width = f.hype + '%'; R.hypen.textContent = Math.floor(f.hype); R.hype.parentNode.classList.toggle('max', f.hype >= 100); R.hype.parentNode.classList.toggle('half', f.hype >= 50);
         { const human = !(M.ai && M.ai[f.idx]) && !M.attract && M.opts.mode !== 'watch', on = human && f.hype >= 100 && !M.cine && f.state !== 'ko'; if (on !== R.readyOn) { R.readyOn = on; R.ready.classList.toggle('on', on); if (on) R.ready.textContent = 'LEGEND ART READY · ' + (U.touch && !Input.usingPad(f.idx) ? 'SUPER' : Input.prompt(f.idx, 'super')); } }
-        R.uses.textContent = f.broken.head ? '✕' : '◆'.repeat(f.uses) + '◇'.repeat(Math.max(0, f.st.uses - f.uses));
+        R.uses.textContent = f.broken.head ? '✕' : '◆'.repeat(Math.max(0, f.uses)) + '◇'.repeat(Math.max(0, f.st.uses - Math.max(0, f.uses)));
         const pd = (el, k) => { const v = f.broken[k] ? 0 : f.armor[k] / f.armorMax[k]; el.className = el.className.split(' ')[0] + (f.broken[k] ? ' off' : v < 0.35 ? ' red' : v < 0.65 ? ' yel' : ''); };
         pd(R.ph, 'head'); pd(R.pr, 'armR'); pd(R.pl, 'armL'); pd(R.pg, 'legs');
         R.pc.className = 'pd-core' + (hp < 0.3 ? ' red' : hp < 0.6 ? ' yel' : '');

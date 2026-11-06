@@ -301,6 +301,29 @@
       bullet: { speed: 58, trail: 1.6, tw: 0.05, tcol: 0xffd27a, w: 0.62 },
       kunai: { speed: 34, trail: 0.7, tw: 0.025, tcol: 0xe6ecf4, w: 0.5 },
       bolt: { speed: 30, trail: 1.3, tw: 0.11, tcol: 0xffffff, w: 0.8 },
+      // MODERN SPORTS
+      baseball: { speed: 46, trail: 1.4, tw: 0.06, tcol: 0xffffff, w: 0.55, spin: 30 },
+      football: { speed: 32, trail: 0.9, tw: 0.08, tcol: 0xffe0c0, w: 0.62, spin: 0 },
+      soccer: { speed: 36, trail: 1.0, tw: 0.12, tcol: 0xffffff, w: 0.66, spin: 22 },
+      arrow: { speed: 52, trail: 1.6, tw: 0.035, tcol: 0xfff07a, w: 0.48 },
+      bowling: { speed: 21, trail: 0.6, tw: 0.16, tcol: 0x6affe8, w: 0.72, spin: 16 },
+      plate: { speed: 28, trail: 0.7, tw: 0.1, tcol: 0xc8ccd4, w: 0.7, spin: 18 },
+    };
+    /* MODERN SPORTS shots: where each comes from (a hand, the feet, or rolled along the floor), its look, a spread, aimed down */
+    const SPORT = {
+      pitch: { look: 'baseball', from: 'wL' }, pitchDown: { look: 'baseball', from: 'wL', down: 1 }, pass: { look: 'football', from: 'wL' },
+      soccer: { look: 'soccer', from: 'feet' }, soccerCurl: { look: 'soccer', from: 'feet' },
+      arrow: { look: 'arrow', from: 'wR' }, arrowBig: { look: 'arrow', from: 'wR' }, arrows: { look: 'arrow', from: 'wR', spread: [-0.16, 0, 0.16] }, arrowDown: { look: 'arrow', from: 'wR', down: 1 },
+      roll: { look: 'bowling', roll: 1 }, roll2: { look: 'bowling', roll: 1, spread: [-0.32, 0.32] }, rollDown: { look: 'bowling', from: 'wR', down: 1 },
+      plate: { look: 'plate', from: 'wR' },
+    };
+    const SPORT_MESH = {
+      baseball: () => new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf6f4ee })),
+      football: () => { const g = new THREE.SphereGeometry(0.13, 10, 8); g.scale(1, 1, 1.75); return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8a4a22 })); },
+      soccer: () => new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 1), new THREE.MeshLambertMaterial({ color: 0xf4f4f0, flatShading: true })),
+      arrow: () => new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.72), new THREE.MeshLambertMaterial({ color: 0xd8c08a })),
+      bowling: () => new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), new THREE.MeshPhongMaterial({ color: 0x3a1c6a, shininess: 80, specular: 0x8a7aaa })),
+      plate: () => { const g = new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16); g.rotateX(Math.PI / 2); return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x3a3e48 })); },
     };
     let kunaiSrc = null, weightSrc = null;
     const kunaiMesh = () => {
@@ -344,6 +367,7 @@
       let mesh, own = true;
       if (look === 'kunai') { mesh = kunaiMesh(); own = false; }
       else if (look === 'bolt') mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), glowMat(opt.col || 0xffffff, 0.95));
+      else if (SPORT_MESH[look]) { mesh = SPORT_MESH[look](); mesh.castShadow = true; }
       else mesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.24), glowMat(0xfff4d0, 1));
       mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
       const trail = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(look === 'bolt' ? opt.col : L.tcol, look === 'kunai' ? 0.45 : 0.8));
@@ -367,8 +391,9 @@
       scene.remove(p.mesh); if (p.own) { p.mesh.geometry.dispose(); p.mesh.material.dispose(); }
       if (p.trail) { if (p.trail.visible) M.fx.push({ m: p.trail, t: 0, life: 0.1 }); else { scene.remove(p.trail); p.trail.geometry.dispose(); p.trail.material.dispose(); } p.trail = null; }
     }
+    const _q2 = new V3();
     function dartImpact(p, at, what) {
-      const col = p.look === 'bolt' ? p.col : p.look === 'kunai' ? 0xe6ecf4 : 0xffd27a;
+      const col = p.look === 'bolt' ? p.col : p.look === 'kunai' ? 0xe6ecf4 : LOOK[p.look] && LOOK[p.look].spin != null ? LOOK[p.look].tcol : 0xffd27a;
       if (what === 'fighter') { if (p.look === 'bolt') FX.burst(at, { n: 10, color: [col, 0xffffff], glow: true, speed: 3.5, size: 0.08, life: 0.4, gravity: 0 }); return; }
       if (what === 'wall' || what === 'floor') {
         FX.spark(at, { color: col, size: p.look === 'bolt' ? 1.1 : 0.6 });
@@ -396,7 +421,7 @@
     M.fire = (f, mv, charge) => {
       const o = M.opp(f), F = f.forward;
       const muzzle = inside(f.fig.detached.armL ? _v.copy(f.pos).setY(1.2).addScaledVector(F, 0.5).clone() : f.fig.socket('wL', [0, 2, 10]));
-      if (mv.proj === 'shot' || mv.proj === 'shotDown' || mv.proj === 'superShot') {
+      if (mv.proj === 'shot' || mv.proj === 'shotDown' || (mv.proj === 'superShot' && !mv.superLook)) {
         const down = mv.proj === 'shotDown', range = (mv.range || 6) + (charge || 0) * 3;
         // a pistol is aimed: if they're in front and in range, the shot goes at them, high or low (or on the floor)
         const dir = aimDir(f, o, muzzle, down ? new V3(F.x * 0.7, -0.7, F.z * 0.7).normalize() : F.clone(), range, 0.35, down, mv.proj === 'superShot' ? 0 : LOOK.bullet.speed);
@@ -474,6 +499,27 @@
         }
         f.spear = { ph: 'fly', vel: dir.multiplyScalar(SPD), from, t: 0, id: 's' + (++M.shotId), at: null };
         grp.lookAt(_w.copy(grp.position).add(f.spear.vel)); SFX.play('whoosh');
+      } else if (SPORT[mv.proj] || mv.proj === 'superShot') {
+        // MODERN SPORTS: a pitch, a pass, a kicked ball, arrows, a rolled ball, a weight plate (darts with their own look);
+        // a sports Legend Art's catch shot too (superLook / superFrom)
+        const S = mv.proj === 'superShot' ? { look: mv.superLook, from: mv.superFrom, roll: mv.superLook === 'bowling' } : SPORT[mv.proj], L = LOOK[S.look];
+        const range = (mv.range || 6) + (charge || 0) * 3;
+        const arm = S.from === 'wL' ? 'armL' : 'armR';
+        const from = inside(S.roll ? _v.copy(f.pos).addScaledVector(F, 0.8).setY(f.pos.y + 0.3).clone()
+          : S.from === 'feet' ? _v.copy(f.pos).addScaledVector(F, 0.7).setY(f.pos.y + 0.5).clone()
+            : f.fig.detached[arm] ? _v.copy(f.pos).setY(f.pos.y + 1.2).addScaledVector(F, 0.5).clone() : f.fig.socket(S.from, [0, 0, 2]));
+        let dir = aimDir(f, o, from, S.down ? new V3(F.x * 0.72, -0.7, F.z * 0.72).normalize() : F.clone(), range, 0.35, !!S.down, mv.proj === 'superShot' ? 0 : L.speed);
+        if (S.roll) { dir.y = 0; if (dir.lengthSq() < 1e-4) dir.copy(F); dir.normalize(); }   // (a rolled ball stays on the floor)
+        if (mv.proj === 'superShot') {
+          const hit = rayHit(f, o, from, dir, range), end = hit || from.clone().addScaledVector(dir, range);
+          dart(f, mv, S.look, from, dir, from.distanceTo(end), { visual: true }); SFX.play('whoosh');
+          if (hit && o.inv <= 0 && !['ko', 'out', 'down'].includes(o.state)) f.superCaught = true;
+          M.after(0.6, () => { f.superCaught = false; });
+        } else {
+          const grp = { done: false };
+          for (const a of S.spread || [0]) dart(f, mv, S.look, from, dir.clone().applyAxisAngle(UP, a), range, { grp, charge });
+          SFX.play(S.look === 'arrow' ? 'whoosh' : 'whoosh'); if (S.from === 'feet') FX.burst(from, { n: 6, color: arena.dust, speed: 2, size: 0.07, life: 0.4 });
+        }
       } else if (mv.proj === 'breath') {
         M.projs.push({ kind: 'breath', f, mv, k: f.kind, t: 0, n: 0, id: 's' + (++M.shotId) }); SFX.play('boom');
       } else if (mv.proj === 'wave') {
@@ -778,7 +824,8 @@
           if (!end && p.pos.y <= 0.04) { p.pos.y = 0.04; end = p.pos.clone(); what = 'floor'; }
           if (!end && p.dist >= p.range) { end = p.pos.clone(); what = 'air'; }
           if (end) p.pos.copy(end);
-          p.mesh.position.copy(p.pos); if (p.look === 'kunai') p.mesh.rotateZ(dt * 25);
+          p.mesh.position.copy(p.pos); if (p.look === 'kunai') p.mesh.rotateZ(dt * 25); else if (LOOK[p.look].spin) p.mesh.rotateX(dt * LOOK[p.look].spin);
+          if (p.look === 'bowling' && U.vrand() < 0.4) FX.burst(_q2.copy(p.pos).setY(0.05), { n: 1, color: arena.dust, speed: 1, size: 0.06, life: 0.3 });
           const tl = Math.min(LOOK[p.look].trail, p.pos.distanceTo(p.from));
           if (tl > 0.03) { p.trail.visible = true; p.trail.position.copy(p.pos).addScaledVector(p.dir, -tl / 2); p.trail.scale.z = tl; p.trail.lookAt(p.pos); }
           if (p.look === 'bolt' && U.rand() < 0.6) FX.burst(p.pos, { n: 1, color: [p.col, 0xffffff], glow: true, speed: 0.6, size: 0.06, life: 0.3, gravity: 0 });

@@ -313,7 +313,8 @@
     App.screen(el('div', { class: 'screen gallery' }, topbar('STORIES', () => Arcade.open()),
       el('div', { class: 'panel galp' },
         el('p', { class: 'note' }, 'Every fighter has a prologue and two endings. The NORMAL ending comes from beating the Sovereign; the TRUE ending waits for a flawless climb.'),
-        el('div', { class: 'galgrid' }, ...KB.LINE_ORDER.map(l => { const e = a.ends[l] || {};
+        Menu.themeTabs(() => Arcade.gallery()),
+        el('div', { class: 'galgrid' }, ...Menu.themeLines().map(l => { const e = a.ends[l] || {};
           return el('div', { class: 'galcard', style: { '--lc': LN(l).css } }, el('img', { src: Models.figIcon(KB.mintBuild(l, 0)), alt: '' }), el('b', null, LN(l).figure),
             el('div', { class: 'galbtns' }, gb('INTRO', true, () => talk(Story.opening(l), lineCtx(l), back)),
               gb('NORMAL', !!e.normal, () => talk(Story.normal(l), lineCtx(l), back)), gb('TRUE', !!e.true, () => talk(Story.trueEnd(l), lineCtx(l, true), back)))); })))));

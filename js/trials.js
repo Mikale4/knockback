@@ -75,6 +75,19 @@
     dragoon: (S, g, a, air) => ({ name: 'Skyborne', note: 'In the air, Jump off a hit for a fresh jump and a fresh air string.', steps: [L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }, { e: 'jump', k: 'jump' }, air[0], { e: 'vault', k: 'jump' }, ...air] }),
     bard: (S, g) => ({ name: 'On the beat', note: 'Start the string ON the music\'s beat (the ring under your feet pulses with it) for +30% damage.', steps: [{ m: g[0], k: 'light', t: 'beat' }, ...g.slice(1).map(L)] }),
   };
+  // MODERN SPORTS
+  Object.assign(SIG, {
+    wrestler: (S, g) => ({ name: 'Heel tactics', note: 'Pause after the Forearm Smash to rake the eyes: they stand there DIZZY. Then the whole string, Lariat and all.', steps: [L(g[0]), L(g[1]), { m: 'wrP', k: 'light', t: 'pause' }, ...g.map(L)] }),
+    baseball: (S, g) => ({ name: 'Clutch hitter', note: 'HOLD Light on the Home Run Swing to wind it up; a full swing crumples them.', steps: [L(g[0]), L(g[1]), L(g[2]), { m: g[3], k: 'light', t: 'hold' }] }),
+    football: (S, g) => ({ name: 'Pancake', note: 'The Pancake Block drives them into the floor: catch the ground bounce with the string and launch with the Lift Block.', steps: [...g.map(L), { e: 'gbounce' }, L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }] }),
+    soccer: (S, g, a, air) => ({ name: 'Bicycle kick', note: 'The whole string: the Bicycle Kick sends them up. Jump after them for the air string and the Overhead Kick.', steps: [...g.map(L), { e: 'jump', k: 'jump' }, ...air] }),
+    boxer: (S, g, a, air) => ({ name: 'Body work', note: 'Mash Light through the Body Blows, Uppercut, and follow them up.', steps: [L(g[0]), L(g[1]), { m: g[2], k: 'light', t: 'mash' }, L(g[3]), { e: 'jump', k: 'jump' }, ...air] }),
+    fencer: (S, g) => ({ name: 'Flèche', note: 'Pause after the Disengage: the Flèche runs through them and knocks them back the way you came.', steps: [L(g[0]), L(g[1]), { m: 'feP', k: 'light', t: 'pause' }] }),
+    weightlifter: (S, g) => ({ name: 'Max effort', note: 'HOLD Light to wind up the first swing (armour while you hold); a full rep crumples them. Then finish the set.', steps: [{ m: g[0], k: 'light', t: 'hold' }, L(g[1]), L(g[2])] }),
+    bowler: (S, g) => ({ name: 'Gutter ball', note: 'Pause after the Backswing: a ball rolls along the floor and trips them.', steps: [L(g[0]), L(g[1]), { m: 'bwP', k: 'light', t: 'pause' }] }),
+    archer: (S, g) => ({ name: 'Volley', note: 'Pause after the Limb Swipe: three arrows at once.', steps: [L(g[0]), L(g[1]), { m: 'arP', k: 'light', t: 'pause' }] }),
+    skater: (S, g, a, air) => ({ name: 'Style points', note: 'The Kickflip sends them up: jump after them, Shove-It, and the Board Drop.', steps: [...g.map(L), { e: 'jump', k: 'jump' }, ...air] }),
+  });
   /* where a line's own rules change a common trial */
   const FIX = {
     // the Flintlock: the first Heavy of a combo is a Quick Shot, so the launcher comes after one
@@ -356,7 +369,7 @@
       if (R.at > 0 && !(prev && prev.m === d.id)) fail('Wrong move: ' + KB.MOVES[d.id].name + '.');
       return;
     }
-    if (k === 'hit' && d.att === a && (d.r === 'hit' || d.r === 'ko') && s.m && d.mv && d.mv.id === s.m && s.t !== 'nohit' && !s.nohit) {
+    if (k === 'hit' && d.att === a && (d.r === 'hit' || d.r === 'ko') && s.m && d.mv && (d.mv.id === s.m || (KB.MOVES[s.m] && KB.MOVES[s.m].throwMv === d.mv.id)) && s.t !== 'nohit' && !s.nohit) {
       if (s.t === 'hold' && !((d.o.charge || 0) >= 0.45)) { R.note = 'Hold Light longer: a full wind-up (it glows red).'; draw(); return; }
       if (s.t === 'beat' && !a.beatOn) { fail('Not on the beat.'); return; }
       if (!R.combo || R.combo === 'free') R.combo = d.vic.combo;
@@ -523,7 +536,8 @@
         el('div', { class: 'ttabs' }, tab('basic', 'BASIC'), tab('adv', 'ADVANCED'), tab('pro', 'PROFESSIONAL')),
         el('p', { class: 'note' }, (pro ? 'The longest, hardest-hitting combos in the game, with every mechanic there is: KNOCK//BACKs, ground bounces, OTGs, Specials, Snap Cancels, Part Tosses (and imps), and Legend Arts. ' : adv ? 'Each fighter\'s own long combos, built on what only it has: ground and wall bounces, OTGs, and Legend Arts to end them. '
           : 'Every fighter\'s combos on its own move list, step by step. ') + 'DEMO shows you any of them. ' + got + ' / ' + total + ' cleared.'),
-        el('div', { class: 'tgrid' }, ...KB.LINE_ORDER.map(l => {
+        Menu.themeTabs(() => Trials.open(focus)),
+        el('div', { class: 'tgrid' }, ...Menu.themeLines().filter(l => listOf(l, tier).length).map(l => {
           const L = KB.LINES[l], n = listOf(l, tier).length, c = clearedCount(l, tier);
           return el('button', { class: 'tcard' + (c >= n ? ' full' : '') + (l === focus ? ' focus' : ''), style: { '--lc': L.css }, onclick: () => { SFX.play('ok'); Trials.start(l, null, tier); } },
             el('img', { src: Models.figIcon(KB.mintBuild(l, 0)), alt: '' }), el('b', null, L.name), el('small', null, c + ' / ' + n + (c >= n ? ' ✓' : '')),

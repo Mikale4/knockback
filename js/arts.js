@@ -470,6 +470,8 @@
   /* ------------------------------------------------------------ the runner */
   const Arts = {
     ART, Prop,
+    // the helpers, for Arts written in other files (sports_arts.js)
+    H: { P, face, moveTo, span, beat, once, chest, tick, pose, prop, drop, fade, lit, glowAt, addMat, G },
     begin(f, o, mv) {
       const m = f.m, art = ART[mv.seq] || ART.cuts;
       const D = new V3(o.pos.x - f.pos.x, 0, o.pos.z - f.pos.z); if (D.lengthSq() < 0.01) D.copy(f.forward); D.normalize();

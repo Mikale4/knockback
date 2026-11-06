@@ -121,7 +121,7 @@
     { id: 'a_comeback', name: 'Not yet!', desc: 'Win a round with under 10% HP left.', pay: 150, check: (c, F) => F && F.comeback },
     { id: 'a_mint', name: 'Mint condition', desc: 'Win with a full MINT SET (all six parts from one line).', pay: 100, check: c => c.life.mintWins >= 1 },
     { id: 'a_mixed', name: 'Hybrid theory', desc: 'Land a hybrid finisher (arms from two lines).', pay: 100, check: c => c.life.hybrids >= 1 },
-    { id: 'a_all10', name: 'Every line', desc: 'Win with all ten Legend Cards.', pay: 1000, check: c => Object.keys(c.life.cardWins || {}).length >= 10 },
+    { id: 'a_all10', name: 'Every line', desc: 'Win with ten different Legend Cards.', pay: 1000, check: c => Object.keys(c.life.cardWins || {}).length >= 10 },
     { id: 'a_thief', name: 'Wearing your arm', desc: 'Win a fight while wearing a part you took off them.', pay: 200, check: (c, F) => F && F.won && F.steals > 0 },
     { id: 'a_double', name: 'Double extend', desc: 'Extend one combo twice with Part Tosses.', pay: 150, check: (c, F) => F && F.doubleExt },
     { id: 'a_champ', name: 'Champion slayer', desc: 'Beat a CHAMPION CPU.', pay: 200, check: c => c.life.champWins >= 1 },
@@ -134,7 +134,7 @@
     { id: 'a_graduate', name: 'Graduate', desc: 'Finish the tutorial.', pay: 0, check: c => c.life.tutorials >= 1 },
     { id: 'a_online', name: 'Friendly fire', desc: 'Win an online fight.', pay: 200, check: c => c.life.onlineWins >= 1 },
     { id: 'a_trials', name: 'Mastered', desc: 'Clear every combo trial for one fighter.', pay: 300, check: c => c.owned.trialLines >= 1 },
-    { id: 'a_trialsAll', name: 'Professor', desc: 'Clear every combo trial for every fighter.', pay: 2000, check: c => c.owned.trialLines >= 10 },
+    { id: 'a_trialsAll', name: 'Professor', desc: 'Clear every combo trial for every fighter.', pay: 2000, check: c => c.owned.trialLines >= KB.LINE_ORDER.length },
   ];
 
   /* -------------------------------------------------------- the counters */
@@ -319,12 +319,12 @@
           a.it.pay ? el('span', { class: 'rwpay' }, el('span', { class: 'chip tok' }, el('i', { class: 'coin' }), a.it.pay)) : null,
           el('span', { class: 'rwdone' }, a.earned ? new Date(a.earned).toLocaleDateString() : '')))];
     } else {
-      const list = all[tab].slice().sort((a, b) => (b.ready - a.ready) || (a.claimed - b.claimed));
+      const list = all[tab].filter(r => tab !== 'fighters' || KB.themeOf(r.line) === Menu.theme()).sort((a, b) => (b.ready - a.ready) || (a.claimed - b.claimed));
       const head = tab === 'daily' ? 'New jobs in ' + left(R.day) + ' · today\'s featured figure: ' + NAME(featured())
         : tab === 'weekly' ? 'New goals in ' + left(R.week)
           : tab === 'fighters' ? 'Win with a line\'s Legend Card to climb its track. Tiers III and V pay one of its parts.'
             : 'Your first steps, then tiered goals: each tier pays more.';
-      body = [el('p', { class: 'note' }, head), ...list.map(row)];
+      body = [el('p', { class: 'note' }, head), tab === 'fighters' ? Menu.themeTabs(() => Rewards.screen(tab)) : null, ...list.map(row)];
     }
     const total = cnt('daily') + cnt('weekly') + cnt('fighters') + cnt('milestones');
     App.screen(el('div', { class: 'screen rewards' }, topbar('REWARDS', () => Menu.hub()),

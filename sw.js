@@ -7,7 +7,7 @@
    - Google Fonts are kept as they load. Everything else (PeerJS, the room list, the matchmaking services) goes straight
      to the network: online play needs the internet anyway.
    VERSION is set by tools/bump.py; a new version clears the old copies. */
-const VERSION = '202611060100';
+const VERSION = '202611060216';
 const CACHE = 'knockback-' + VERSION;
 const CORE = ['./', './index.html', './manifest.webmanifest', './lib/three.min.js', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png'];
 

@@ -365,7 +365,7 @@
       armor: { head: Math.round(H.armor * m('head')), armR: Math.round(R.armor * m('armR')), armL: Math.round(L.armor * m('armL')), legs: Math.round(G.armor * m('legs')) },
       passive: K.passive, special: H.special, uses: H.uses, super: K.super,
       ...(() => { const mixed = b.armR.line !== b.armL.line && M['hx:' + b.armR.line + ':' + b.armL.line + ':0']; return { mixed: !!mixed, light: mixed ? 'hx:' + b.armR.line + ':' + b.armL.line + ':0' : R.light, air: mixed ? 'hxa:' + b.armR.line + ':' + b.armL.line + ':0' : R.air }; })(),
-      lightPure: R.light, airPure: R.air, spear: !!R.spear, sig: R.sig, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
+      lightPure: R.light, airPure: R.air, spear: !!R.spear, sig: R.sig, ripMove: R.ripMove, ripName: R.ripName, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
       trailR: R.trail, trailL: L.trail,
     };
     return S;
@@ -436,7 +436,8 @@
     if (mv.multi) { mv.dmg = Math.round(mv.dmg * 1.4 / mv.multi); mv.ac = Math.max(mv.ac, 0.06 * mv.multi); }
     return mv;
   }
-  for (const A of LINE_ORDER) for (const B of LINE_ORDER) {
+  /* every pairing of the lines there are now (sports.js adds its lines, then builds again) */
+  function buildHybrids() { for (const A of LINE_ORDER) for (const B of LINE_ORDER) {
     if (A === B) continue;
     const R = P[A].armR, g = chainOf(R.light), air = chainOf(R.air);
     const link = (seq, pre, air) => seq.forEach((s, i) => {
@@ -449,7 +450,15 @@
     });
     link([g[0], g[1], 'OFF', ...(g.length >= 4 ? [g[2]] : []), 'FIN'], 'hx:' + A + ':' + B + ':', null);
     link([...air.slice(0, -1), 'FIN'], 'hxa:' + A + ':' + B + ':', air);
-  }
+  } }
+  buildHybrids();
 
-  window.KB = { SLOTS, SLOT_NAME, RARITY, LINES, LINE_ORDER, PARTS: P, MOVES: M, PASSIVE, stats, mintBuild, randomBuild, key, itemName, part };
+  /* THEMES: the lines come in series. HISTORICAL FANTASY is the first ten; MODERN SPORTS (sports.js) the next. Every
+     list of fighters in the menus is split by theme */
+  const THEMES = [{ id: 'fantasy', name: 'HISTORICAL FANTASY', short: 'FANTASY' }, { id: 'sports', name: 'MODERN SPORTS', short: 'SPORTS' }];
+  const themeOf = line => (LINES[line] && LINES[line].theme) || 'fantasy';
+  const linesOf = theme => LINE_ORDER.filter(l => themeOf(l) === theme);
+
+  window.KB = { SLOTS, SLOT_NAME, RARITY, LINES, LINE_ORDER, PARTS: P, MOVES: M, PASSIVE, stats, mintBuild, randomBuild, key, itemName, part,
+    THEMES, themeOf, linesOf, mv, PREFIX, OFF, FIN, buildHybrids };
 })();

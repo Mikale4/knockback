@@ -23,7 +23,8 @@
     const next = new Date((week() + 1) * 7 * 86400000 - 3 * 86400000);
     return [
       { id: 'feat', name: KB.LINES[line].name + ' SPOTLIGHT', line, desc: 'Half of every capsule is a ' + KB.LINES[line].name + ' part or card. Changes ' + next.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) + '.' },
-      { id: 'std', name: 'STANDARD LINE-UP', line: null, desc: 'Every part and Legend Card from all six lines, evenly.' },
+      { id: 'std', name: 'STANDARD LINE-UP', line: null, desc: 'Every part and Legend Card from all ' + KB.LINE_ORDER.length + ' lines, evenly.' },
+      ...KB.THEMES.map(T => ({ id: 'th:' + T.id, name: T.name, line: null, theme: T.id, desc: 'Only the ' + KB.linesOf(T.id).length + ' ' + T.name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) + ' lines: their parts and cards, evenly.' })),
     ];
   }
   function pickSlot() { let t = Math.random() * 5.6; for (const s of KB.SLOTS) { t -= SLOT_W[s]; if (t <= 0) return s; } return 'card'; }
@@ -39,7 +40,7 @@
       if (n === 10 && i === 9 && !out.some(o => o.r >= 2) && r < 2) r = 2;
       P.total++; P.sinceLtd++; P.sinceChase++;
       if (r >= 2) P.sinceLtd = 0; if (r === 3) P.sinceChase = 0;
-      const line = banner.line && Math.random() < 0.5 ? banner.line : U.pick(KB.LINE_ORDER);
+      const line = banner.line && Math.random() < 0.5 ? banner.line : U.pick(banner.theme ? KB.linesOf(banner.theme) : KB.LINE_ORDER);
       const slot = pickSlot();
       out.push({ line, slot, r });
     }

@@ -26,6 +26,7 @@
   const GRAV = 30, BODY = 0.42, LEAPG = 52;
   // the throws out of a grab: how long the throw takes, its pose, its move
   const THROWS = { f: { t: 0.12, pose: 'hurl', mv: 'throwF' }, s: { t: 0.16, pose: 'hurl', mv: 'throwF' }, b: { t: 0.24, pose: 'hurl', mv: 'throwB' }, u: { t: 0.16, pose: 'palmUp', mv: 'throwU' }, d: { t: 0.24, pose: 'overhead', mv: 'throwD' } };
+  const GRAPPLER = { throwF: 'wrThrowF', throwB: 'wrThrowB', throwU: 'wrThrowU', throwD: 'wrThrowD' };
   const _v = new V3(), _w = new V3(), _c = new V3();
   const fwd = (yaw, v) => (v || new V3()).set(Math.sin(yaw), 0, Math.cos(yaw));
 
@@ -67,7 +68,7 @@
       this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0; this.armorHits = 0; this.armorCd = 0; this.limits = {};
       this.buffs = {}; this.burn = null; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
-      this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0;
+      this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0;
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -242,7 +243,7 @@
       if (I.take('toss') && this.canToss()) { this.startMove(this.tossMove(), 'toss'); return true; }
       if (I.take('special')) { if (this.canSpecial() && (ground || this.moveOk(S.special, 'air'))) { this.startMove(S.special, 'special'); return true; } else if (this.broken.head) this.m.call(this, 'NO HEAD!', 'bad'); }
       if (ground) {
-        if (I.held.guard && I.take('light')) { this.startMove('throw', 'throw'); return true; }
+        if (I.held.guard && I.take('light')) { this.startMove(this.grabMove(), 'throw'); return true; }
         if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return true; }
         if (I.take('jump')) { this.jump(1); return true; }
         if (I.take('light')) {
@@ -350,7 +351,7 @@
       this.vel.x = U.smooth(this.vel.x, 0, 18, dt); this.vel.z = U.smooth(this.vel.z, 0, 18, dt);
       this.faceOpp(1 - Math.exp(-10 * dt));
       this.physics(dt, 0);
-      if (I.take('light')) { this.startMove('throw', 'throw'); return; }
+      if (I.take('light')) { this.startMove(this.grabMove(), 'throw'); return; }
       if (I.take('toss') && this.canToss()) { this.startMove(this.tossMove(), 'toss'); return; }
       if (this.canSpear() && I.take('heavy')) { this.startMove('spearThrow', 'spear'); return; }
       if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return; }
@@ -360,7 +361,7 @@
     /* SAMURAI signature: Light right after a Just Guard is an instant riposte */
     riposte() {
       if (!(this.riposteT > this.m.time) || this.broken.armR || !this.input.take('light', 0.2)) return false;
-      this.riposteT = 0; this.startMove('kaeshi', 'light'); this.m.call(this, 'KAESHI!', 'counter'); SFX.play('slash'); return true;
+      this.riposteT = 0; this.startMove(this.st.ripMove || 'kaeshi', 'light'); this.m.call(this, this.st.ripName || 'KAESHI!', 'counter'); SFX.play('slash'); return true;
     }
 
     /* --------------------------------------------------------------- attacks */
@@ -392,6 +393,7 @@
       this.spearOut = false; this.spearGrp = null; this.spear = null;
       if (!quiet) { SFX.play('snapon'); FX.burst(F.socket('wR', [0, 0, 8]), { n: 10, color: [0xffffff, 0xffc890], glow: true, speed: 2.5, size: 0.06, life: 0.35 }); }
     }
+    grabMove() { return this.st.sig === 'grappler' ? 'wrGrab' : 'throw'; }
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
       const mv = KB.MOVES[id]; if (!mv) return;
@@ -427,6 +429,13 @@
       if (kind === 'minion') m *= S.impDmg || 1;
       if (S.passive === 'bushido' && this.hp < this.maxHp * 0.35) m *= 1.15;
       if (S.passive === 'fury') m *= 1 + Math.min(0.12, (1 - this.hp / this.maxHp) * 0.16);
+      // MODERN SPORTS
+      if (S.passive === 'radical' && !this.grounded) m *= 1.12;
+      if (this.buffs.chalk) m *= 1.15;
+      if (kind === 'throw') { if (S.passive === 'crowd') m *= 1.25; if (S.sig === 'grappler') m *= 1.25; }
+      if (S.passive === 'slugger' && kind === 'heavy') m *= 1.15;
+      if (S.passive === 'juggernaut' && (kind === 'dash' || kind === 'special')) m *= 1.2;
+      if (S.passive === 'gains') m *= 1 + (this.gainsK || 0);
       return m;
     }
     updAttack(dt) {
@@ -591,6 +600,9 @@
     addBuff(b) {
       if (b.id === 'bulwark') { this.armorT = b.t; this.armorHits = 99; this.buffs.bulwark = b.t; this.m.call(this, 'BULWARK', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.6, normal: new V3(0, 1, 0), color: 0x66aaff }); }
       if (b.id === 'fury') { this.buffs.fury = b.t; this.m.call(this, 'FURY', 'buff'); }
+      if (b.id === 'chalk') { this.armorT = b.t; this.armorHits = 99; this.buffs.chalk = b.t; this.m.call(this, 'CHALK UP', 'buff'); FX.burst(_c.copy(this.pos).setY(1.3), { n: 24, color: [0xffffff, 0xe8e8e8], speed: 2.5, gravity: -1, life: 0.8, size: 0.1 }); }
+      if (b.id === 'slip') { this.buffs.slip = b.t; this.m.call(this, 'BOB & WEAVE', 'buff'); }
+      if (b.id === 'parry') { this.buffs.parry = b.t; this.m.call(this, 'EN GARDE', 'buff'); FX.spark(this.fig.socket('wR', [0, 0, 8]), { color: 0x9ad8ff, size: 1.2 }); }
       if (b.id === 'nova') { const heal = Math.round(this.maxHp * b.heal * this.st.healMult); this.hp = Math.min(this.maxHp, this.hp + heal); this.m.call(this, '+' + heal + ' HP', 'heal'); }
       if (b.id === 'valor') { this.buffs.valor = b.t; this.m.call(this, 'SONG OF VALOR', 'buff'); for (let i = 0; i < 3; i++) FX.ring(_c.copy(this.pos).setY(0.3 + i * 0.5), { r1: 1.4 + i * 0.3, life: 0.4 + i * 0.1, color: 0xff8ad8 }); }
       if (b.id === 'mantra') {
@@ -601,7 +613,9 @@
       }
     }
     tryGrab(o) {
-      if (o.inHitstun || o.airborne || o.state === 'dodge' || o.state === 'down' || o.state === 'getup' || o.inv > 0) return;
+      const cmd = this.move && this.move.cmd, cmdMv = this.move && this.move.throwMv;
+      // a command grab (Body Slam) chains out of a string: it takes them while they're staggered on the ground too
+      if ((o.inHitstun && !(cmd && o.grounded && o.state === 'hit')) || o.airborne || o.state === 'dodge' || o.state === 'down' || o.state === 'getup' || o.inv > 0) return;
       // two figures throwing at once: a throw tech, both pushed apart
       if (o.state === 'attack' && o.move && o.move.type === 'grab' && o.moveT < o.move.su + o.move.ac) {
         for (const f of [this, o]) { f.move = null; f.setState('hit'); f.hitstun = 0.25; const d = _v.subVectors(f.pos, f === this ? o.pos : this.pos).setY(0).normalize(); f.vel.x = d.x * 7; f.vel.z = d.z * 7; }
@@ -612,7 +626,8 @@
       o.move = null; o.setState('held'); o.held = { by: this, kind: 'grab', esc: 0 }; o.heldBySuper = false; o.vel.set(0, 0, 0);
       this.grabbing = o; this.grabT = 0; this.throwT = -1; this.pummelT = 0; this.move = null; this.setState('grab');
       this.grabMax = 1.4 + (1 - o.hp / o.maxHp) * 0.8;   // the more hurt they are, the longer you can hold them
-      SFX.play('guard'); this.m.call(this, 'GRAB!', 'small'); this.m.event('grab', { f: this, vic: o });
+      SFX.play('guard'); this.m.call(this, cmd ? KB.MOVES[cmdMv].name.toUpperCase() + '!' : 'GRAB!', 'small'); this.m.event('grab', { f: this, vic: o });
+      if (cmd) { this.cmdThrow = cmdMv; this.startThrow(cmd); }   // a command grab (the WRESTLER's Body Slam) throws at once
     }
 
     /* the Legend Art: a flash, a catch, and if it catches, a cinematic (arts.js) */
@@ -859,7 +874,9 @@
       SFX.play('whoosh');
     }
     releaseThrow() {
-      const o = this.grabbing, k = this.throwKind, T = THROWS[k], mv = KB.MOVES[T.mv];
+      // the WRESTLER (Suplex City) throws his own way; a command grab with its own move
+      const o = this.grabbing, k = this.throwKind, T = THROWS[k], mv = KB.MOVES[this.cmdThrow || (this.st.sig === 'grappler' ? GRAPPLER[T.mv] : T.mv)];
+      this.cmdThrow = null;
       this.grabbing = null; this.throwT = -1;
       if (k === 's') this.yaw = this.throwYawTo;
       // a short recovery in the throw's follow-through
@@ -1102,6 +1119,19 @@
       if (mv.kbBack) dir.copy(fwd(att.yaw)).multiplyScalar(-1);
       dir.y = 0; if (dir.lengthSq() < 1e-4) dir.copy(fwd(att.yaw)); dir.normalize();
 
+      // ---- BOB & WEAVE / PARRY (Specials): the next attack that would land is slipped, or turned aside with a riposte
+      if ((vic.buffs.slip || vic.buffs.parry) && !o.force && !o.remote && mv.type !== 'grab' && o.kind !== 'super' && !['held', 'tumble', 'down', 'ko', 'out', 'hit'].includes(vic.state)) {
+        const side = new V3(-dir.z, 0, dir.x);
+        if (vic.buffs.slip) {
+          delete vic.buffs.slip; vic.inv = Math.max(vic.inv, 0.3); vic.move = null; vic.setState('idle');
+          vic.pos.addScaledVector(side, 0.9); vic.clampInside(); vic.yaw = U.ang(vic.pos, att.pos); vic.hype = Math.min(100, vic.hype + 8);
+          m.call(vic, 'SLIP!', 'tech'); SFX.play('dodge'); m.event('evade', { f: vic, by: att });
+        } else {
+          delete vic.buffs.parry; vic.inv = Math.max(vic.inv, 0.2); att.hitstop = Math.max(att.hitstop, 0.14); vic.yaw = U.ang(vic.pos, att.pos);
+          vic.startMove(vic.st.ripMove || 'feRiposte', 'light'); m.call(vic, 'PARRY!', 'counter'); SFX.play('jguard'); FX.spark(atPos, { color: 0x9ad8ff, size: 1.6 });
+        }
+        return 'miss';
+      }
       // ---- guard
       const guarding = (vic.state === 'guard' || vic.state === 'guardstun') && !o.force && Combat.facing(vic, o.from || att.pos);
       if (guarding && mv.type !== 'grab') {
@@ -1134,7 +1164,10 @@
       if (!vic.comboing || vic.combo.by !== att) { if (!o.noCombo) vic.combo = vic.freshCombo(); }
       const pr = o.kind === 'super' ? Math.max(0.55, Combat.prorate(vic)) : Combat.prorate(vic);
       const onBeat = att.beatOn && (o.kind === 'light' || o.kind === 'air');
-      let dmg = mv.dmg * (o.charge ? 1 + o.charge * (mv.chargeL ? 0.9 : 0.6) : 1) * att.dmgMult(o.kind) * (1 - vic.st.def) * pr * (counter ? 1.2 : 1) * (onBeat ? 1.3 : 1);
+      let dmg = mv.dmg * (o.charge ? 1 + o.charge * (mv.chargeL ? 0.9 : 0.6) : 1) * att.dmgMult(o.kind) * (1 - vic.st.def) * pr * (counter ? (att.st.sig === 'counter' ? 1.5 : 1.2) : 1) * (onBeat ? 1.3 : 1);
+      // MODERN SPORTS passives that need the target
+      { const P = att.st.passive; if (P === 'hattrick' && vic.combo.hits >= 2) dmg *= 1.12; else if (P === 'killer' && vic.hp < vic.maxHp * 0.5) dmg *= 1.15; else if (P === 'precision' && !vic.combo.hits) dmg *= 1.25;
+        else if (P === 'hookspin' && mv.type === 'proj') dmg *= 1.18; else if (P === 'eagle' && Math.hypot(att.pos.x - vic.pos.x, att.pos.z - vic.pos.z) >= 5) dmg *= 1.18; }
       if (vic.buffs.bulwark) dmg *= 0.75;
       if (vic.st.perk === 'resolve' && vic.hp < vic.maxHp * 0.3) dmg *= 0.85;
       dmg = Math.round(dmg);
@@ -1148,7 +1181,8 @@
       // PART TOSS: the combo is extended -- its clock starts over, with a fresh OTG and ground bounce (twice a combo)
       if (o.ext && !o.noCombo && vic.combo.ext < 2) { const n = ++vic.combo.ext; vic.combo.t = 0; vic.combo.dh = vic.combo.hits; vic.combo.otg = 0; vic.combo.gb = false; vic.floatT = 0.35;   /* (they hang a moment: time to follow the throw) */ m.call(att, 'EXTEND ' + n + '/2', 'buff'); m.event('extend', { att, vic, n }); }
       if (!o.remote) att.moveHit = true;
-      att.hype = Math.min(100, att.hype + dmg * 0.11 * att.st.hypeGain * (att.buffs.momentum ? 1.5 : 1) * (mv.hype == null ? 1 : mv.hype) * (onBeat ? 1.5 : 1));
+      if (att.st.passive === 'gains' && o.kind === 'heavy' && (att.gainsK || 0) < 0.2) { att.gainsK = Math.min(0.2, (att.gainsK || 0) + 0.04); m.call(att, 'GAINS +' + Math.round(att.gainsK * 100) + '%', 'buff'); }
+      att.hype = Math.min(100, att.hype + dmg * 0.11 * att.st.hypeGain * (att.buffs.momentum ? 1.5 : 1) * (mv.hype == null ? 1 : mv.hype) * (onBeat ? 1.5 : 1) * (att.st.sig === 'style' && !att.grounded ? 1.5 : 1));
       if (onBeat && !att.beatShown) { att.beatShown = true; m.call(att, '♪ ON THE BEAT', 'buff'); }
       // PALADIN: the warhammer heals her
       if (mv.heal && dmg > 0 && att.hp > 0) { const h = Math.max(1, Math.round(dmg * mv.heal * att.st.healMult)); att.hp = Math.min(att.maxHp, att.hp + h); if (h >= 8) m.call(att, '+' + h, 'heal'); FX.burst(_c.copy(att.pos).setY(1.2), { n: 4, color: [0xfff07a, 0x9dff9a], glow: true, speed: 1.2, gravity: -3, size: 0.06, life: 0.5 }); }

@@ -1087,8 +1087,8 @@
         R ? el('p', { class: 'olhint' }, inFight ? "You're in the fight that's on: you can switch after it." : "Tap a fighter to switch, any time you're not fighting: one of your custom fighters (built in the Workshop) or a base character. Switching takes your READY off.") : null,
         el('small', { class: 'olsub' }, 'YOUR CUSTOM FIGHTERS' + (baseOnly ? ' (not in this room: the host set base characters only)' : '')),
         el('div', { class: 'olgrid' }, ...S.builds.slice(1).map((b, k) => { const lb = Inv.levelled(b); return tile('mine:' + (k + 1), lb, lb.name, KB.LINES[lb.core.line].name + ' core'); })),
-        el('small', { class: 'olsub' }, 'BASE CHARACTERS'),
-        el('div', { class: 'olgrid' }, ...KB.LINE_ORDER.map(l => tile('mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set'))),
+        el('small', { class: 'olsub' }, 'BASE CHARACTERS'), Menu.themeTabs(() => render()),
+        el('div', { class: 'olgrid' }, ...Menu.themeLines().map(l => tile('mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set'))),
         Menu.paintRow('COLOURS', Menu.myPaint(), buildOf(N.pick).core.line, k => { S.paint = k; Auth.save(); N.me = meInfo(); if (N.room && !inFight) act({ t: 'fig', me: N.me }); }, () => draw()));
       let body;
       if (N.stage === 'menu') {

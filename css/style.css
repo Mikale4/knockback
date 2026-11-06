@@ -789,7 +789,7 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
 /* ===== ARCADE: THE TOP SHELF (arcade.js) ===== */
 .arcmenu { border-top: 6px solid var(--lc); display: flex; flex-direction: column; gap: 4px; }
 .arcmenu h2 { font: 44px var(--head); letter-spacing: 2px; margin: 0; line-height: 1; color: var(--lc); text-shadow: 0 3px 0 #000; }
-.arcmenu .story { font-style: italic; margin: 2px 0 8px; }
+.arcmenu .story { font-style: italic; margin: 2px 0 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ar-tag { font: 900 11px var(--body); letter-spacing: 3px; color: var(--yel); }
 .route { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; margin: 4px 0 10px; }
 .rt-node { display: grid; justify-items: center; align-content: start; gap: 2px; background: var(--panel2); border: 2px solid var(--line); border-radius: 10px; padding: 4px 2px; min-height: 76px; }
@@ -882,3 +882,10 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
   .tk-por { height: 44vh; bottom: 32vh; max-width: 60vw; } .tk-text { font-size: 15px; }
   .ar-head { flex-direction: column; gap: 4px; }
 }
+
+/* THEMES: the fighter series tabs (HISTORICAL FANTASY · MODERN SPORTS) on every list of fighters */
+.thtabs { display: flex; gap: 6px; margin: 2px auto 10px; width: min(560px, 100%); }
+.thtabs button { flex: 1; background: var(--panel2); color: var(--dim); border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; font: 900 12px var(--body); letter-spacing: 2px; cursor: pointer; }
+.thtabs button.on { color: #000; background: var(--yel); border-color: #000; }
+.actsub { display: block; font: 900 10px var(--body); letter-spacing: 2px; color: var(--dim); margin-top: 6px; }
+@media (max-height: 520px) { .thtabs { margin: 0 auto 4px; } .thtabs button { padding: 3px 8px; font-size: 10px; } }

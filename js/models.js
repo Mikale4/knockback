@@ -780,5 +780,7 @@
     CARDS.set(k, c); return c;
   }
 
-  window.Models = { S, D, palette, imp, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER, PAINTS, PUBLIC_PAINTS, looksAlike, swatch };
+  // (the drawing helpers, for lines drawn in other files: sports_look.js)
+  const H = { elbow, knee, hand, eyes, lumpy, shade, mix, G, JOINT, WOOD, WOOD2, BONE, LEATHER, WHITE };
+  window.Models = { S, D, H, palette, imp, figure, stand, icon, figIcon, partGroup, cardCanvas, shade, mix, LAYOUT, OWNER, PAINTS, PUBLIC_PAINTS, looksAlike, swatch };
 })();

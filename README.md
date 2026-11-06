@@ -187,6 +187,41 @@ yanks them in along the floor; twice in any 5 s, and a third try says how long t
 the walls (the chain's weight, the hex glyph and the Bard's sonic boom burst or clank before them). Every one is aimed: it leads a moving target, finds them high, low or on the floor,
 and the Part Toss homes in. The Ninja's **Shadow Step** works twice a round, 3 seconds apart.
 
+## MODERN SPORTS (the second series)
+
+Twenty fighters now, in two series: **HISTORICAL FANTASY** (the ten above) and **MODERN SPORTS** (`js/sports.js` the
+lines, parts and moves; `js/sports_look.js` their voxel parts, stances and poses; `js/sports_arts.js` their Legend
+Arts; `js/sports_story.js` their Arcade stories). Every list of fighters in the menus (the starter pick, Selection
+Tickets, your figures, Versus, Training, Online, the Shelf, Combo Trials, Stories, the Rewards fighter tracks) shows
+one series at a time under a tab for each (Versus has a SERIES row); the series you last looked at carries over. The
+Capsule machine has a banner for each series. Parts mix freely across series: a Samurai with a Boxer's glove and a
+Skateboarder's legs is a real figure with its own mixed string (380 pairings now, all generated).
+
+| Line (R-ARM) | Light string | Pause branch | Air string | Signature | Heavy (L-ARM) | Special (HEAD) | Legend Art |
+|---|---|---|---|---|---|---|---|
+| Wrestler (Taped Fists) | Chop › Forearm Smash › Knee Lift › Lariat | Eye Rake (dizzy) | Flying Forearm › Elbow Drop | **Suplex City**: a longer grab, and throws become a Suplex, German Suplex, Gutwrench and Powerbomb (+25%) | Spear (armoured tackle) | **Body Slam**: a command grab, unblockable, chains out of a string | Main Event: airplane spin into a powerbomb |
+| Baseball (Slugger Bat) | Check Swing › Line Drive › Bat Jab (long stagger) › Home Run Swing | Bunt (pops them up) | Air Swing › Chopper dive | **Clutch Hitter**: hold Light to wind up the Home Run Swing | Fastball (a pitch, 9 m) | Curveball (dizzy, 10 m) | Grand Slam: batting practice, then the home run |
+| Football (Stiff-Arm) | Stiff Arm › Forearm Shiver › Swim Move (round behind) › Pancake Block (ground bounce) | Facemask! (crumple) | Leaping Shove › Dogpile | **Pass Block**: armour in the startup of every Light after the first | Bullet Pass (9.5 m) | Blitz (armoured charge) | Touchdown Drive: the length of the field and a spike |
+| Soccer (Captain's Armband) | Toe Poke › Instep Drive › Scissor Kick › Bicycle Kick (launches) | Slide Tackle | Volley › Flying Scissor › Overhead Kick | **Footwork**: every kick carries you with them | Power Shot (a ball, 8.5 m) | Free Kick (crumples, 10 m) | Golden Goal: keep-ups, volleys, the bicycle kick |
+| Boxer (Right Glove) | Jab › Cross › Body Blows (mash) › Uppercut | Haymaker (crumple) | Jab › Cross › Overhand spike | **Counterpuncher**: counter hits +50% (not +20%) | Power Hook | **Bob & Weave**: slip the next attack | Final Round: a flurry, the bell, the uppercut |
+| Fencer (Épée) | Thrust › Disengage › Flurry of Points › Coupé | Flèche (dash through) | Thrust › Plunging Point | **Riposte**: Light after a Just Guard | Balestra Lunge | **Parry**: turn the next hit aside and riposte | Touché: five touches, one lunge |
+| Weightlifter (Dumbbell) | Dumbbell Swing › Curl Smash › Overhead Press (ground-bounces everyone around) | Plate Toss | Swing › Dumbbell Drop | **Max Effort**: hold Light to wind up any swing; armour in every startup | Kettlebell Swing (armoured) | Chalk Up (armour, +15% damage) | World Record: three reps with them on the bar |
+| Bowler (Bowling Ball) | Ball Swing › Backswing › Spinner › Strike! | Gutter Ball (rolls along the floor) | Swing › Ball Drop | **Strike!**: a string that rolls | Rolling Thunder (a ball along the floor, OTG) | Split Shot (two balls in a V) | Perfect Game: they're the pins |
+| Archer (Recurve Bow) | Bow Strike › Limb Swipe › Snap Shot (arrow) › Bow Uppercut | Volley (three arrows) | Strike › Swipe › Arrow Rain | **Quick Draw**: arrows in the string | Power Draw (10.5 m) | Pinning Shot (crumples, 12 m) | Bullseye: a sky of arrows and one through the middle |
+| Skateboarder (Skateboard) | Deck Swing › Tail Whip › Kickflip (launches) | Grind (through them) | Air Kick › Shove-It › Board Drop | **Style Points**: air hits build 50% more Hype | Ollie Slam | Grind Rush (invulnerable) | The 900: two and a half spins and a slam |
+
+Their legs and cards: the Wrestler and Weightlifter are planted (anchor), the Footballer's dash attacks carry armour,
+the Soccer player is the fastest runner and the Boxer has a dancer's dodges, the Fencer and Bowler slide further,
+the Archer jumps highest, and the Skateboarder wall-jumps. Passives: Crowd Pleaser (throws +25%), Slugger (Heavies
++15%), Juggernaut (dash attacks and Specials +20%), Hat Trick (+12% from a combo's 3rd hit), Killer Instinct (+15%
+under half HP), Precision (a combo's first hit +25%), Gains (each landed Heavy +4% for the round, to +20%), Hook Spin
+(thrown and rolled shots +18%), Eagle Eye (+18% from 5 m), Radical (+12% in the air). Their balls and arrows fly as real
+things: a baseball, a football, a soccer ball, arrows (a three-arrow volley too), a weight plate, and bowling balls
+that roll along the floor and trip whoever they reach. In the Arcade they came out of their boxes this week, and each
+is missing something from it (a tag-team partner, a lucky ball, a playbook, a golden boot, a corner man, a medal, a
+weight plate, a tenth pin, a golden arrow, a wheel); their rivals are each other: Wrestler and Boxer, Baseball and
+Archer, Football and Soccer, Fencer and Weightlifter, Bowler and Skateboarder.
+
 ## Mixed strings (every pair of arms has its own)
 
 Put an R-arm and an L-arm from **different lines** on one figure and they make a string of their own. The R-arm
@@ -481,6 +516,10 @@ shake** setting (Full, Reduced, Off).
 | `js/online.js` | ONLINE: the room list (MQTT), rooms of six over PeerJS (host controls, queue, fighter select, chat), fights between any two members, spectating, rollback netcode (the fight's save/restore, time sync), fingerprints and resync |
 | `js/trials.js` | COMBO TRIALS: the seventy trials, the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
+| `js/sports.js` | MODERN SPORTS: the ten lines, their parts, moves, passives and mixed-string entries |
+| `js/sports_look.js` | Their voxel parts, ready stances and attack poses |
+| `js/sports_arts.js` | Their Legend Arts |
+| `js/sports_story.js` | Their Arcade stories, rivals, taunts and win quotes |
 | `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |
 | `js/arcade.js` | ARCADE: the run, story scenes, VS screen, ranks, continues, the hidden route, endings, STORIES |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |
