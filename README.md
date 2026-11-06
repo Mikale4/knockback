@@ -1,7 +1,9 @@
 # KNOCK//BACK
 
-A voxel arena fighter where the fighters are **action figures** of famous warriors — Samurai, Knight, Pirate, Monk,
-Viking, Ninja, Summoner, Paladin, Dragoon, Bard — and every figure is six snap-on parts you can mix freely.
+A voxel arena fighter where the fighters are **action figures**, in series of their own: **HISTORICAL FANTASY**
+(Pirate, Monk, Viking, Summoner, Bard), **EDO JAPAN** (Samurai, Shinobi, Ronin, Kunoichi, Shogun, Daimyo), **KNIGHTS
+OF THE REALM** (Knight, Paladin, Dragoon, Templar, Crusader, Lancer) and **MODERN SPORTS** (eleven athletes) — and every
+figure is six snap-on parts you can mix freely.
 
 **The gimmick is the name:** launch someone into a wall and they **bounce back off it**, still helpless, so you can keep
 the combo going and knock them back into the wall again. The ways out of that loop are taken from Guilty Gear.
@@ -189,13 +191,13 @@ and the Part Toss homes in. The Ninja's **Shadow Step** works twice a round, 3 s
 
 ## MODERN SPORTS (the second series)
 
-Twenty fighters now, in two series: **HISTORICAL FANTASY** (the ten above) and **MODERN SPORTS** (`js/sports.js` the
+The second series was **MODERN SPORTS** (there are four series now: see below) (`js/sports.js` the
 lines, parts and moves; `js/sports_look.js` their voxel parts, stances and poses; `js/sports_arts.js` their Legend
 Arts; `js/sports_story.js` their Arcade stories). Every list of fighters in the menus (the starter pick, Selection
 Tickets, your figures, Versus, Training, Online, the Shelf, Combo Trials, Stories, the Rewards fighter tracks) shows
 one series at a time under a tab for each (Versus has a SERIES row); the series you last looked at carries over. The
 Capsule machine has a banner for each series. Parts mix freely across series: a Samurai with a Boxer's glove and a
-Skateboarder's legs is a real figure with its own mixed string (380 pairings now, all generated).
+Skateboarder's legs is a real figure with its own mixed string (756 pairings now, all generated).
 
 | Line (R-ARM) | Light string | Pause branch | Air string | Signature | Heavy (L-ARM) | Special (HEAD) | Legend Art |
 |---|---|---|---|---|---|---|---|
@@ -206,15 +208,16 @@ Skateboarder's legs is a real figure with its own mixed string (380 pairings now
 | Boxer (Right Glove) | Jab › Cross › Body Blows (mash) › Uppercut | Haymaker (crumple) | Jab › Cross › Overhand spike | **Counterpuncher**: counter hits +50% (not +20%) | Power Hook | **Bob & Weave**: slip the next attack | Final Round: a flurry, the bell, the uppercut |
 | Fencer (Épée) | Thrust › Disengage › Flurry of Points › Coupé | Flèche (dash through) | Thrust › Plunging Point | **Riposte**: Light after a Just Guard | Balestra Lunge | **Parry**: turn the next hit aside and riposte | Touché: five touches, one lunge |
 | Weightlifter (Dumbbell) | Dumbbell Swing › Curl Smash › Overhead Press (ground-bounces everyone around) | Plate Toss | Swing › Dumbbell Drop | **Max Effort**: hold Light to wind up any swing; armour in every startup | Kettlebell Swing (armoured) | Chalk Up (armour, +15% damage) | World Record: three reps with them on the bar |
-| Bowler (Bowling Ball) | Ball Swing › Backswing › Spinner › Strike! | Gutter Ball (rolls along the floor) | Swing › Ball Drop | **Strike!**: a string that rolls | Rolling Thunder (a ball along the floor, OTG) | Split Shot (two balls in a V) | Perfect Game: they're the pins |
+| Bowler (Bowling Ball) | Ball Swing › Backswing › Spinner › Strike! | Gutter Ball (rolls along the floor) | Swing › Ball Drop | **Strike!**: his one ball stops on the floor and trips anyone who runs into it; without it he fights bare-handed | Rolling Thunder (a ball along the floor, OTG) | Hook Shot (out wide, hooking back in) | Perfect Game: they're the pins |
 | Archer (Recurve Bow) | Bow Strike › Limb Swipe › Snap Shot (arrow) › Bow Uppercut | Volley (three arrows) | Strike › Swipe › Arrow Rain | **Quick Draw**: arrows in the string | Power Draw (10.5 m) | Pinning Shot (crumples, 12 m) | Bullseye: a sky of arrows and one through the middle |
 | Skateboarder (Skateboard) | Deck Swing › Tail Whip › Kickflip (launches) | Grind (through them) | Air Kick › Shove-It › Board Drop | **Style Points**: air hits build 50% more Hype | Ollie Slam | Grind Rush (invulnerable) | The 900: two and a half spins and a slam |
+| Basketball (Shooting Sleeve) | Hand Check › Elbow Clear › Spin Move (round behind) › Block Party (launches) | Ankle Breaker (crumple) | Tip-In › Alley Slap › Putback Slam | **Hang Time**: air Lights carry you up, a three-hit air string | Chest Pass (a basketball, 9 m) | Euro Step (invulnerable, pops them up) | Posterized: a crossover, the alley-oop, the dunk |
 
 Their legs and cards: the Wrestler and Weightlifter are planted (anchor), the Footballer's dash attacks carry armour,
 the Soccer player is the fastest runner and the Boxer has a dancer's dodges, the Fencer and Bowler slide further,
 the Archer jumps highest, and the Skateboarder wall-jumps. Passives: Crowd Pleaser (throws +25%), Slugger (Heavies
 +15%), Juggernaut (dash attacks and Specials +20%), Hat Trick (+12% from a combo's 3rd hit), Killer Instinct (+15%
-under half HP), Precision (a combo's first hit +25%), Gains (each landed Heavy +4% for the round, to +20%), Hook Spin
+under half HP, and a sway out of one raw Legend Art in five), Precision (a combo's first hit +25%), Gains (each landed Heavy +4% for the round, to +20%), Hook Spin
 (thrown and rolled shots +18%), Eagle Eye (+18% from 5 m), Radical (+12% in the air). Their balls and arrows fly as real
 things: a baseball, a football, a soccer ball, arrows (a three-arrow volley too), a weight plate, and bowling balls
 that roll along the floor and trip whoever they reach. In the Arcade they came out of their boxes this week, and each
@@ -222,10 +225,52 @@ is missing something from it (a tag-team partner, a lucky ball, a playbook, a go
 weight plate, a tenth pin, a golden arrow, a wheel); their rivals are each other: Wrestler and Boxer, Baseball and
 Archer, Football and Soccer, Fencer and Weightlifter, Bowler and Skateboarder.
 
+**Real balls.** The Baseball, Football, Soccer, Bowling and Basketball players each throw ONE ball, and it stays a
+ball: it flies like a shot to its range, then drops, bounces off the floor and walls, rolls and stops, and waits on the
+floor until its owner walks over it. No ball, no throw: Heavy becomes a Tackle (a Body Drop in the air) and a Special
+that needs it says NO BALL. Each has its own way: one **pitch** in four that lands leaves them **DIZZY** for a couple of
+seconds (now, or the moment they're back on their feet); while the **football** is down, Heavy is a **Full-Force
+Tackle** (armoured, the biggest knockback he has); the **soccer ball** ricochets off the walls and stays live while it's
+fast, and every wall it comes off adds **15%** to its hit until it's trapped; the **bowling ball** is the one the Bowler
+swings, so with it out he fights bare-handed, and anyone who **runs into it** on the floor **trips** and goes down; the
+**basketball** comes off the walls so lively you can catch the rebound. A Legend Art or a new round brings the ball
+back. The CPU fetches its ball and hops over a Bowler's. The **Boxer's** Killer Instinct also sways out of one Legend
+Art in five thrown at him **raw** (not part of a combo).
+
 Their **Combo Trials** match the first series: ten Basic, seven Advanced and five Professional each (220 more, 440
 in all), every one proven by the DEMO bot at 60 Hz, 144 Hz and on uneven frames: the Wrestler's Body Slam chains,
 the Baseball player's Clutch Home Run into the wall, the Football player's Blitz, the Boxer's Bob & Weave openers, the
 Weightlifter's Chalk Up and Max Effort, the Bowler's Split Shot, the Skateboarder's Grind Rush, and every Legend Art.
+
+## EDO JAPAN and KNIGHTS OF THE REALM
+
+The Samurai and the **Shinobi** (who was the Ninja) moved to **EDO JAPAN**, and the Knight, Paladin and Dragoon to
+**KNIGHTS OF THE REALM**; each series gained new figures (`js/edo.js` / `js/realm.js` the lines and moves,
+`*_look.js` their voxel parts and stances, `*_arts.js` their Legend Arts, `*_story.js` their Arcade stories; the
+line ids never changed, so every saved figure and part still works). Every fighter list has a tab per series; on the
+**Versus** screen each figure picks its own series (CPU 1 and CPU 2, or you and your opponent), and Training's dummy
+has its own tabs.
+
+| Line (R-ARM) | Light string | Pause branch | Air string | Signature | Heavy (L-ARM) | Special (HEAD) | Legend Art |
+|---|---|---|---|---|---|---|---|
+| Ronin (Worn Katana) | Nukitsuke › Kesa-giri › Gyaku-giri › Chiburi (launches) | Kasa Toss (his straw hat flies) | Air Draw › Falling Cut | **Battōjutsu**: a string's first cut comes out of the scabbard, +30% | Saya-ate (the scabbard, a KNOCK) | Sake Swig (heal 5%, +15% for 5 s) | Last Draw: one cut, his back turned, the scabbard clicks |
+| Kunoichi (Tessen) | Fan Strike › Fan Sweep › Petal Flurry › Gale Fan (launches) | Needle Kiss (a poisoned hairpin) | Air Fan › Fan Spin › Iris Drop | **Lingering Venom**: Lights +20% on the POISONED | Kanzashi Volley (three poisoned pins, 9 m) | **Kawarimi**: the next hit lands on a log; she's behind them | Thousand Petals: a petal storm and hairpins from every side |
+| Shogun (Tachi) | Tachi Cut › Return Cut › Shogun's Verdict (a KNOCK; armoured startups) | Gunbai Rebuke (crumple) | Air Tachi › Helm-Splitter | **Warlord**: walls take 40% more stress from anyone he sends into them | Gunbai Bash (armoured) | Teppō Volley: the musket line behind him fires (11 m) | Three Ranks: rank after rank of muskets, and the tachi |
+| Daimyo (Naginata) | Sweep › Return Sweep › Wheel (all round) › Rising Crescent | Sune-gari (reaps the shins) | Air Sweep › Crescent Drop | **Long Reach**: Lights from 1.6 m or further +15% | Long Thrust (2 m) | **Tribute**: a sweep that levies 25 of their Hype | Hundred Banners: a ring of banners and the wheeling blade |
+| Templar (Greatsword) | Oberhau › Zwerchhau › Half-Sword Thrust › Zornhau (a KNOCK) | Mordhau (the hilt, crumple) | Air Cleave › Cross Drop | **Half-Sword**: Lights from under 1.1 m +20% | Wrath of the Temple | Vow (20% less damage, double Hype from hits) | Beauséant: the banner, three cuts and the Murder-Stroke |
+| Crusader (Morning Star) | Flail Swing › Backhand › Whirling Chain › Morning Star (ground bounce) | Shield Hook (pops them up) | Air Flail › Falling Star | **Over the Shield**: his Lights can't be Just Guarded, and cost double guard | Heater Charge (armoured) | Deus Vult! (a war cry all round, +12% for 5 s) | Siege of Faith: the flail wheels and comes down like a star |
+| Lancer (Tilting Lance), on horseback | Lance Jab › Lance Sweep › Hoof Strike › Unhorse (launches) | Trample (the horse runs them down) | Lance Up › Lance Fall | **Mounted**: dash attacks and Specials +15% | Couched Lance (a 5.5 m charge) | The Tilt (an 8 m armoured charge) | The Joust: two passes down the lists and the third unhorses them |
+
+Passives: Nothing to Lose (Ronin, +18% while behind on HP), Unseen (Kunoichi, +20% from behind), Iron Rule (Shogun,
+Lights hit him 15% softer), My Domain (Daimyo, +12% in the middle of the floor), Penance (Templar, every hit he takes
+adds 2% to his next, to +30%), First Blood (Crusader, the round's first hit +40%), Charger (Lancer, running before a hit
+adds up to +20%), Above the Rim (Basketball, +15% on anyone in the air). **POISON** works like burning (a tick every
+half second), in green. The Lancer's legs are **Bramble the warhorse**: wear them on any figure and it rides (the
+horse stays level whatever the rider does). In the Arcade each came out of the box missing something (a lord, a
+mission scroll, the shogun's seal, a castle, a sealed reliquary, a pilgrim's shell, a jousting favour, a hoop); the
+rivals are Ronin and Shogun, Kunoichi and Daimyo, Templar and Crusader, and the Lancer rides at the Knight. Their
+Advanced and Professional trials come from one set of route patterns over each kit (`genRoutes` in `js/trials.js`),
+with fixes where a kit needs them, and like every trial they're proven at 60 Hz, 144 Hz and on uneven frames.
 
 ## Mixed strings (every pair of arms has its own)
 
@@ -561,12 +606,16 @@ shake** setting (Full, Reduced, Off).
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
 | `js/online.js` | ONLINE: the room list (MQTT), rooms of six over PeerJS (host controls, queue, fighter select, chat), fights between any two members, spectating, rollback netcode (the fight's save/restore, time sync), fingerprints and resync |
-| `js/trials.js` | COMBO TRIALS: all 440 trials (Basic, Advanced, Professional for twenty fighters), the step checker, the DEMO bot, and the screens |
+| `js/trials.js` | COMBO TRIALS: every trial (Basic, Advanced, Professional for every fighter; the newer lines' routes from `genRoutes`), the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
 | `js/sports.js` | MODERN SPORTS: the ten lines, their parts, moves, passives and mixed-string entries |
 | `js/sports_look.js` | Their voxel parts, ready stances and attack poses |
 | `js/sports_arts.js` | Their Legend Arts |
 | `js/sports_story.js` | Their Arcade stories, rivals, taunts and win quotes |
+| `js/edo.js`, `js/realm.js` | The series (KB.THEMES) and EDO JAPAN / KNIGHTS OF THE REALM: their new lines, parts, moves, passives |
+| `js/edo_look.js`, `js/realm_look.js` | Their voxel parts and stances (the Lancer's warhorse, `Anim.mounted`) |
+| `js/edo_arts.js`, `js/realm_arts.js` | Their Legend Arts (and the Basketball player's) |
+| `js/edo_story.js`, `js/realm_story.js` | Their Arcade stories (and the Basketball player's) |
 | `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |
 | `js/arcade.js` | ARCADE: the run, story scenes, VS screen, ranks, continues, the hidden route, endings, STORIES |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |

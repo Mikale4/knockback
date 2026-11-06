@@ -331,6 +331,37 @@
     },
   };
 
+  /* ------------------------------------------------------------ BASKETBALL */
+  D.basketball = {
+    head(g, p) {
+      g.box(-3, 0, -3, 3, 5, 3, p.skin); eyes(g, p, 3, 3);
+      g.box(-3, 5, -3, 3, 6, 3, HAIR); g.box(-3, 2, -3, 3, 4, -3, HAIR); g.boxM(3, 3, -2, 3, 5, 1, HAIR);              // a short fade
+      g.box(-3, 4, 3, 3, 4, 3, p.second); g.boxM(3, 4, -3, 3, 4, 2, p.second); g.box(-3, 4, -3, 3, 4, -3, p.second);    // the headband
+    },
+    torso(g, p) {
+      g.box(-3, 0, -2, 3, 8, 2, p.main); g.boxM(4, 0, -2, 4, 5, 2, p.main); g.boxM(4, 6, -1, 4, 8, 1, p.skin);         // a tank top, bare shoulders
+      g.box(-2, 8, 2, 2, 8, 2, p.second); g.boxM(3, 0, 2, 3, 8, 2, p.second);                                          // trim
+      g.box(-2, 3, 3, -2, 6, 3, p.second); g.box(2, 3, 3, 2, 6, 3, p.second); g.set(-3, 6, 3, p.second); g.set(1, 6, 3, p.second);   // 11
+      g.box(-1, 9, -1, 1, 9, 1, p.joint);
+    },
+    hips(g, p) { g.box(-3, -1, -2, 3, 0, 2, p.main); g.box(-4, -4, -2, 4, -2, 2, p.main); g.boxM(4, -4, -2, 4, -1, 2, p.accent); },
+    arm(g, p, o) {
+      g.box(-1, -4, -1, 1, 0, 1, p.skin);
+      if (o === -1) g.box(-1, -7, -1, 1, -1, 1, p.second);                                                               // the shooting sleeve
+      else g.box(-1, -7, -1, 1, -5, 1, p.skin);
+      g.box(-1, -7, -1, 1, -7, 1, p.accent);                                                                              // a wristband
+      hand(g, p.skin); elbow(g, p, o);
+    },
+    wR(g, p) { },
+    wL(g, p) { g.ell(0, -1, 2, 3, 3, 3, (x, y, z) => x === 0 || Math.abs(y + 1) < 0.5 ? 0x2a1a10 : 0xe8681a); },   // the ball, in the left hand
+    leg(g, p, o) {
+      g.box(-2, -4, -2, 1, 0, 2, p.main); g.box(o * 2, -4, -2, o * 2, 0, 2, p.accent);                                // long shorts
+      g.box(-1, -7, -1, 1, -5, 1, p.skin); g.box(-1, -9, -1, 1, -8, 1, WHITE);                                          // socks
+      g.box(-2, -11, -2, 2, -10, 2, WHITE); g.box(-2, -10, -2, 2, -10, 2, p.accent); g.set(o * 2, -10, 1, p.main);     // high-tops
+      knee(g, p, o);
+    },
+  };
+
   /* ------------------------------------------------------------ the stances */
   Object.assign(Anim.READY, {
     wrestler: { torso: [0.25, 0.1, 0], head: [-0.15, 0, 0], armR: [-1.0, 0.2, -0.5], wR: [0.2, 0, 0], armL: [-1.0, -0.2, 0.5], wL: [0.2, 0, 0], legL: [-0.45, 0, 0.2], legR: [0.35, 0, -0.2], hy: -1.3 },
@@ -343,6 +374,7 @@
     bowler: { torso: [0.1, 0.2, 0], head: [0, -0.15, 0], armR: [-1.2, 0.3, 0.3], wR: [0.4, 0, 0], armL: [-1.0, -0.2, -0.4], wL: [0, 0, 0], legL: [-0.25, 0, 0.1], legR: [0.25, 0, -0.1], hy: -0.6 },
     archer: { torso: [0.05, 0.3, 0], head: [0, -0.3, 0], armR: [-0.7, 0.2, -0.25], wR: [0.9, 0, 0], armL: [-0.3, 0, 0.35], wL: [0.5, 0, 0], legL: [-0.3, 0, 0.1], legR: [0.3, 0, -0.1], hy: -0.6 },
     skater: { torso: [0.1, 0.25, 0], head: [0, -0.25, 0], armR: [-0.3, 0, -0.35], wR: [1.0, 0, 0], armL: [-0.4, 0, 0.4], wL: [0, 0, 0], legL: [-0.3, 0, 0.12], legR: [0.3, 0, -0.12], hy: -0.7 },
+    basketball: { torso: [0.15, 0.2, 0], head: [-0.1, -0.15, 0], armR: [-0.6, 0.2, -0.3], wR: [0, 0, 0], armL: [-0.9, -0.1, 0.35], wL: [0, 0, 0], legL: [-0.4, 0, 0.15], legR: [0.35, 0, -0.15], hy: -1.2 },
   });
 
   /* ------------------------------------------------------------- the poses */

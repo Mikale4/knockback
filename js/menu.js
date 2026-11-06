@@ -465,9 +465,13 @@
       cfg = cfg || Menu._vs || (S().vs ? Object.assign({}, S().vs) : null) || { mode: 'cpu', p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, w1: 'random', w2: 'random', l1: 2, l2: 2, arena: 'random', wins: 2, bonus: true };
       Menu._vs = cfg; S().vs = Object.assign({}, cfg); if (S().vs.p1 >= S().builds.length) S().vs.p1 = 0; Auth.save();
       const mine = S().builds, watch = cfg.mode === 'watch', two = cfg.mode === 'two';
-      const TL = themeLines();
-      const opp = [['random', 'Random figure'], ...TL.map(l => [l, KB.LINES[l].figure])];
-      const anyFig = [['random', 'Random'], ...mine.map((b, i) => ['mine:' + i, 'Your ' + b.name]), ...TL.map(l => [l, KB.LINES[l].name])];
+      // each figure picks its own series (a fantasy figure against a sports one): the side's own tab, or the series of
+      // the base fighter it has picked
+      const serOf = (k, v) => { const T = KB.THEMES.find(x => x.id === cfg[k]); if (T) return T.id; const l = String(v).replace(/^mint:/, ''); return KB.LINES[l] ? KB.themeOf(l) : theme(); };
+      const serRow = (label, k, v) => seg(label, serOf(k, v), KB.THEMES.map(T => [T.id, T.name]), x => { cfg[k] = x; });
+      const linesIn = (k, v) => KB.linesOf(serOf(k, v));
+      const opp = [['random', 'Random figure'], ...linesIn('s2', cfg.p2).map(l => [l, KB.LINES[l].figure])];
+      const anyFig = (k, v) => [['random', 'Random'], ...mine.map((b, i) => ['mine:' + i, 'Your ' + b.name]), ...linesIn(k, v).map(l => [l, KB.LINES[l].name])];
       const lvls = AI.LEVELS.map((n, i) => [i, n]);
       useRoom(watch ? (String(cfg.w1).startsWith('mine:') ? Inv.levelled(mine[+cfg.w1.slice(5)]) : cfg.w1 !== 'random' ? KB.mintBuild(cfg.w1, 0) : activeBuild()) : painted(Inv.levelled(mine[cfg.p1]), myPaint()));
       const p2line = String(cfg.p2b).startsWith('mint:') ? cfg.p2b.slice(5) : (mine[+cfg.p2b] || mine[0]).core.line;
@@ -475,14 +479,14 @@
       App.screen(el('div', { class: 'screen versus' }, topbar('VERSUS', () => Menu.hub()),
         el('div', { class: 'panel vspanel' },
           seg('MODE', cfg.mode, [['cpu', 'VS CPU'], ['two', '2 PLAYERS'], ['watch', 'CPU VS CPU']], v => { cfg.mode = v; if (v === 'two') cfg.bonus = false; }),
-          seg('SERIES', theme(), KB.THEMES.map(T => [T.id, T.name]), v => { Menu._theme = v; }),
           watch ? [
-            seg('CPU 1 FIGURE', cfg.w1, anyFig, v => cfg.w1 = v), seg('CPU 1 LEVEL', cfg.l1, lvls, v => cfg.l1 = +v),
-            seg('CPU 2 FIGURE', cfg.w2, anyFig, v => cfg.w2 = v), seg('CPU 2 LEVEL', cfg.l2, lvls, v => cfg.l2 = +v),
+            serRow('CPU 1 SERIES', 's1', cfg.w1), seg('CPU 1 FIGURE', cfg.w1, anyFig('s1', cfg.w1), v => cfg.w1 = v), seg('CPU 1 LEVEL', cfg.l1, lvls, v => cfg.l1 = +v),
+            serRow('CPU 2 SERIES', 's2', cfg.w2), seg('CPU 2 FIGURE', cfg.w2, anyFig('s2', cfg.w2), v => cfg.w2 = v), seg('CPU 2 LEVEL', cfg.l2, lvls, v => cfg.l2 = +v),
           ] : [
             seg('P1 FIGURE', cfg.p1, mine.map((b, i) => [i, b.name]), v => cfg.p1 = +v),
             paintRow('P1 COLOURS', myPaint(), (mine[cfg.p1] || mine[0]).core.line, k => { S().paint = k; Auth.save(); }, () => Menu.versus(cfg)),
-            two ? seg('P2 FIGURE', cfg.p2b, [...mine.map((b, i) => [i, 'Your ' + b.name]), ...TL.map(l => ['mint:' + l, KB.LINES[l].name])], v => cfg.p2b = v)
+            serRow(two ? 'P2 SERIES' : 'OPPONENT SERIES', 's2', two ? cfg.p2b : cfg.p2),
+            two ? seg('P2 FIGURE', cfg.p2b, [...mine.map((b, i) => [i, 'Your ' + b.name]), ...linesIn('s2', cfg.p2b).map(l => ['mint:' + l, KB.LINES[l].name])], v => cfg.p2b = v)
               : seg('OPPONENT', cfg.p2, opp, v => cfg.p2 = v),
             two ? paintRow('P2 COLOURS', cfg.c2, p2line, k => { cfg.c2 = k; }, () => Menu.versus(cfg)) : null,
             two ? null : seg('CPU LEVEL', cfg.lvl, lvls, v => cfg.lvl = +v),
@@ -528,6 +532,9 @@
       const tile = (on, b, top, sub, pick) => el('button', { class: 'olpick' + (on ? ' on' : ''), style: { '--lc': b ? KB.LINES[b.core.line].css : '#9aa4b2' }, onclick: () => { SFX.play('ok'); pick(); Menu.training(cfg); } },
         b ? el('img', { src: Models.figIcon(b), alt: '' }) : el('div', { class: 'olq' }, '?'), el('b', null, top), el('small', null, sub));
       const seg = (label, val, opts, set) => el('div', { class: 'seg' }, el('span', null, label), el('div', null, ...opts.map(([v, t]) => el('button', { class: String(val) === String(v) ? 'on' : '', onclick: () => { set(v); Menu.training(cfg); } }, t))));
+      // the dummy has its own series tabs (yours are under YOU)
+      const dl = String(cfg.d).replace(/^mint:/, ''), dSer = KB.THEMES.find(T => T.id === Menu._trD) ? Menu._trD : KB.LINES[dl] ? KB.themeOf(dl) : theme();
+      const dummyTabs = el('div', { class: 'thtabs' }, ...KB.THEMES.map(T => el('button', { class: T.id === dSer ? 'on' : '', onclick: () => { SFX.play('ui'); Menu._trD = T.id; Menu.training(cfg); } }, T.name)));
       App.screen(el('div', { class: 'screen training' }, topbar('TRAINING', () => Menu.hub()),
         el('div', { class: 'panel vspanel' },
           el('div', { class: 'olselect' }, el('h3', null, 'YOU'),
@@ -536,9 +543,9 @@
             el('small', { class: 'olsub' }, 'BASE FIGHTERS'), themeTabs(() => Menu.training(cfg)),
             el('div', { class: 'olgrid' }, ...themeLines().map(l => tile(cfg.p === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.p = 'mint:' + l; }))),
             paintRow('COLOURS', myPaint(), buildFor(cfg.p).core.line, k => { S().paint = k; Auth.save(); }, () => Menu.training(cfg))),
-          el('div', { class: 'olselect' }, el('h3', null, 'THE DUMMY'),
+          el('div', { class: 'olselect' }, el('h3', null, 'THE DUMMY'), dummyTabs,
             el('div', { class: 'olgrid' }, tile(cfg.d === 'random', null, 'RANDOM', 'a new one each time', () => { cfg.d = 'random'; }),
-              ...themeLines().map(l => tile(cfg.d === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.d = 'mint:' + l; })))),
+              ...KB.linesOf(dSer).map(l => tile(cfg.d === 'mint:' + l, KB.mintBuild(l, 0), KB.LINES[l].name, 'Standard set', () => { cfg.d = 'mint:' + l; })))),
           arenaRow('ARENA', cfg.arena, v => { cfg.arena = v; }, () => Menu.training(cfg), { hazOff: true, note: 'Training never has STAGE HAZARDS: pick any arena for the look of it.' }),
           el('p', { class: 'note' }, 'In training: health comes back the moment a combo ends; R resets, T saves the position you\'re in (or the buttons in the TRAINING panel; on a pad, tap Back to reset and hold it to save). CHARACTER SELECT in the pause menu brings you back here.'),
           btn('START TRAINING', () => Menu.trainingStart(cfg), 'big wide fight'))));

@@ -14,6 +14,7 @@
      BOWLER        rolling balls along the floor, split shots, strikes
      ARCHER        arrows at every range, a pinning shot, an arrow rain
      SKATEBOARDER  board tricks, wall jumps, style in the air
+     BASKETBALL    ankle-breakers, a chest pass off the wall, hang time and the dunk
    ========================================================================== */
 (function () {
   'use strict';
@@ -41,6 +42,9 @@
     pal: { main: 0xe8b923, second: 0x2f4a2a, accent: 0xd8323a, dark: 0x14180e, metal: 0x8a6a3a, skin: 0xd8a47a, cloth: 0x3a5a34, glow: 0xfff07a } });
   add('skater', { name: 'SKATEBOARDER', css: '#9bd400', figure: 'Kai "Kickflip" Torres', blurb: 'Board tricks, wall jumps and a 900 to finish. The best in the air, and the flashiest.',
     pal: { main: 0x9bd400, second: 0x2a2a34, accent: 0xff5a1f, dark: 0x121216, metal: 0xe8e8ee, skin: 0xc8946a, cloth: 0x4a4a58, glow: 0xd8ff5a } });
+
+  add('basketball', { name: 'BASKETBALL', css: '#ff7a1a', figure: 'Marcus "Sky" Reed', blurb: 'Crossovers that break ankles, a chest pass off the wall, and a dunk from the free-throw line. The best leaper in the house.',
+    pal: { main: 0x1f5fd0, second: 0xf4f4f0, accent: 0xff7a1a, dark: 0x10141c, metal: 0xe8e8ee, skin: 0x8a5a3a, cloth: 0x1f5fd0, glow: 0xffa040 } });
 
   /* ------------------------------------------------------------- the moves
      (the poses are in sports_look.js; the projectiles -- balls, arrows -- in match.js) */
@@ -75,10 +79,10 @@
   mv('bbP', { name: 'Bunt', pose: 'thrust', su: 0.07, ac: 0.08, rc: 0.26, dmg: 22, reach: 1.3, kb: [1.2, 12], launch: 1, launcher: 1, zone: 'low', h: 0.6, trail: 0, sfx: 'whoosh' });
   mv('bbAirA', { name: 'Air Swing', pose: 'slashA', su: 0.07, dmg: 26, kb: [3, 4.5], air: 1, h: 1, reach: 1.3, nx: { l: 'bbAirB' } });
   mv('bbAirB', { name: 'Chopper', pose: 'overhead', su: 0.09, ac: 0.12, rc: 0.24, dmg: 46, kb: [2, -13], launch: 1, spike: 1, air: 1, reach: 1.3, h: 0.8, sfx: 'heavy' });
-  mv('fastball', { name: 'Fastball', type: 'proj', proj: 'pitch', pose: 'pitchL', su: 0.2, rc: 0.3, dmg: 72, kb: [15, 5], launch: 1, range: 9, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('fastball', { ball: 'baseball', name: 'Fastball', type: 'proj', proj: 'pitch', pose: 'pitchL', su: 0.2, rc: 0.3, dmg: 72, kb: [15, 5], launch: 1, range: 9, charge: 1, trail: 0, sfx: 'whoosh' });
   mv('gloveUpper', { name: 'Glove Upper', pose: 'uppercutL', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1.2, 13], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
-  mv('sinker', { name: 'Sinker', type: 'proj', proj: 'pitchDown', pose: 'pitchL', su: 0.14, rc: 0.28, dmg: 50, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 7, trail: 0, sfx: 'whoosh' });
-  mv('curveball', { name: 'Curveball', type: 'proj', proj: 'pitch', pose: 'pitchL', su: 0.16, rc: 0.3, dmg: 40, kb: [2, 0], dizzy: 1.1, range: 10, trail: 0, sfx: 'whoosh', zone: 'high' });
+  mv('sinker', { ball: 'baseball', name: 'Sinker', type: 'proj', proj: 'pitchDown', pose: 'pitchL', su: 0.14, rc: 0.28, dmg: 50, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 7, trail: 0, sfx: 'whoosh' });
+  mv('curveball', { ball: 'baseball', name: 'Curveball', type: 'proj', proj: 'pitch', pose: 'pitchL', su: 0.16, rc: 0.3, dmg: 40, kb: [2, 0], dizzy: 1.1, range: 10, trail: 0, sfx: 'whoosh', zone: 'high' });
   mv('baseSlide', { name: 'Base Slide', pose: 'slide', su: 0.08, ac: 0.14, rc: 0.3, dmg: 38, kb: [3, 8.5], launch: 1, lunge: 9, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
   mv('grandSlam', { name: 'Grand Slam', type: 'super', pose: 'pitchL', su: 0.14, catchType: 'proj', range: 11, superLook: 'baseball', superFrom: 'wL', seq: 'homer', dmg: 290, kb: [24, 8], zone: 'mid' });
 
@@ -90,11 +94,13 @@
   mv('fbP', { name: 'Facemask!', pose: 'grab', su: 0.08, ac: 0.07, rc: 0.3, dmg: 30, reach: 1.05, crumple: 1.0, lunge: 3, trail: 0, sfx: 'heavy', zone: 'high' });
   mv('fbAirA', { name: 'Leaping Shove', pose: 'palm', su: 0.08, dmg: 28, kb: [3, 4.5], air: 1, h: 1, trail: 0, sfx: 'heavy', nx: { l: 'fbAirB' } });
   mv('fbAirB', { name: 'Dogpile', pose: 'cannonball', su: 0.09, ac: 0.12, rc: 0.24, dmg: 46, kb: [4, -12], launch: 1, spike: 1, air: 1, h: 0.8, rad: 0.95, trail: 0, sfx: 'heavy' });
-  mv('bulletPass', { name: 'Bullet Pass', type: 'proj', proj: 'pass', pose: 'pitchL', su: 0.19, rc: 0.3, dmg: 74, kb: [16, 5], launch: 1, range: 9.5, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('bulletPass', { ball: 'football', noBall: 'fullTackle', name: 'Bullet Pass', type: 'proj', proj: 'pass', pose: 'pitchL', su: 0.19, rc: 0.3, dmg: 74, kb: [16, 5], launch: 1, range: 9.5, charge: 1, trail: 0, sfx: 'whoosh' });
   mv('liftBlock', { name: 'Lift Block', pose: 'bashUp', su: 0.11, ac: 0.08, rc: 0.28, dmg: 40, kb: [1, 12.5], launch: 1, launcher: 1, armorSU: 1, trail: 0, sfx: 'heavy' });
   mv('ballSpike', { name: 'Spike!', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 56, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
   mv('blitz', { name: 'Blitz', type: 'dash', pose: 'tackle', su: 0.14, ac: 0.14, rc: 0.32, dmg: 72, dist: 5.5, rad: 1.0, kb: [17, 6], launch: 1, armor: 1, sfx: 'heavy' });
   mv('shoulderCharge', { name: 'Shoulder Charge', pose: 'tackle', su: 0.12, ac: 0.12, rc: 0.3, dmg: 48, kb: [12, 5], launch: 1, lunge: 9, armor: 1, oneArmor: 1, trail: 0, sfx: 'heavy' });
+  // the ball's on the floor: Heavy is a tackle with everything behind it
+  mv('fullTackle', { name: 'Full-Force Tackle', pose: 'tackle', su: 0.17, ac: 0.12, rc: 0.32, dmg: 84, reach: 1.15, rad: 1.0, kb: [23, 6], launch: 1, lunge: 12, armor: 1, oneArmor: 1, charge: 1, trail: 0, sfx: 'heavy' });
   mv('touchdown', { name: 'Touchdown Drive', type: 'super', pose: 'tackle', su: 0.14, catchType: 'dash', dist: 9, rad: 1.25, armor: 1, seq: 'touchdown', dmg: 290, kb: [3, -14], zone: 'mid' });
 
   // SOCCER · Captain's Armband: every Light is a kick that carries you with them; pause for a Slide Tackle
@@ -106,10 +112,10 @@
   mv('scAirA', { name: 'Volley', pose: 'instep', su: 0.06, dmg: 22, kb: [3, 4.5], air: 1, h: 0.9, trail: 0, sfx: 'whoosh', nx: { l: 'scAirB' } });
   mv('scAirB', { name: 'Flying Scissor', pose: 'spinKick', su: 0.06, dmg: 22, kb: [3, 4.5], air: 1, h: 0.9, trail: 0, sfx: 'whoosh', nx: { l: 'scAirC' } });
   mv('scAirC', { name: 'Overhead Kick', pose: 'bicycle', su: 0.08, ac: 0.1, rc: 0.24, dmg: 38, kb: [3, -12], launch: 1, spike: 1, air: 1, h: 0.8, trail: 0, sfx: 'heavy' });
-  mv('powerShot', { name: 'Power Shot', type: 'proj', proj: 'soccer', pose: 'instep', su: 0.19, rc: 0.3, dmg: 72, kb: [15, 6], launch: 1, range: 8.5, charge: 1, trail: 0, sfx: 'heavy' });
+  mv('powerShot', { ball: 'soccer', name: 'Power Shot', type: 'proj', proj: 'soccer', pose: 'instep', su: 0.19, rc: 0.3, dmg: 72, kb: [15, 6], launch: 1, range: 8.5, charge: 1, trail: 0, sfx: 'heavy' });
   mv('headerFlick', { name: 'Header', pose: 'header', su: 0.09, ac: 0.08, rc: 0.26, dmg: 36, kb: [1, 13], launch: 1, launcher: 1, trail: 0, sfx: 'heavy', zone: 'high' });
   mv('divingHeader', { name: 'Diving Header', pose: 'header', su: 0.11, ac: 0.3, rc: 0.24, dmg: 50, kb: [3, -13], launch: 1, spike: 1, dive: 1, air: 1, h: 0.6, trail: 0, sfx: 'heavy' });
-  mv('freeKick', { name: 'Free Kick', type: 'proj', proj: 'soccerCurl', pose: 'instep', su: 0.16, rc: 0.3, dmg: 58, kb: [3, 0], crumple: 0.9, range: 10, trail: 0, sfx: 'heavy' });
+  mv('freeKick', { ball: 'soccer', name: 'Free Kick', type: 'proj', proj: 'soccerCurl', pose: 'instep', su: 0.16, rc: 0.3, dmg: 58, kb: [3, 0], crumple: 0.9, range: 10, trail: 0, sfx: 'heavy' });
   mv('slideTackle', { name: 'Slide Tackle', pose: 'slide', su: 0.07, ac: 0.14, rc: 0.28, dmg: 36, kb: [3, 8.5], launch: 1, lunge: 10, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
   mv('goldenGoal', { name: 'Golden Goal', type: 'super', pose: 'instep', su: 0.12, catchType: 'proj', range: 10, superLook: 'soccer', superFrom: 'feet', seq: 'golazo', dmg: 285, kb: [24, 9], zone: 'mid' });
 
@@ -164,13 +170,19 @@
   mv('bwB', { name: 'Backswing', pose: 'backswing', su: 0.09, dmg: 32, reach: 1.15, kb: [3, 0], stun: 0.5, lunge: 3, sfx: 'heavy', nx: { l: 'bwC', p: 'bwP' } });
   mv('bwC', { name: 'Spinner', pose: 'spin', su: 0.08, ac: 0.18, rc: 0.18, dmg: 17, multi: 2, around: 1, rad: 1.4, kb: [3, 0], stun: 0.45, sfx: 'heavy', nx: { l: 'bwD' } });
   mv('bwD', { name: 'Strike!', pose: 'bowl', su: 0.1, ac: 0.08, rc: 0.26, dmg: 46, reach: 1.15, kb: [5, 10.5], launch: 1, lunge: 5, zone: 'low', h: 0.6, finisher: 1, sfx: 'heavy' });
-  mv('bwP', { name: 'Gutter Ball', type: 'proj', proj: 'roll', pose: 'bowl', su: 0.1, rc: 0.28, dmg: 30, kb: [2, 9], launch: 1, range: 8, zone: 'low', finisher: 1, trail: 0, sfx: 'whoosh' });
+  mv('bwP', { ball: 'bowling', name: 'Gutter Ball', type: 'proj', proj: 'roll', pose: 'bowl', su: 0.1, rc: 0.28, dmg: 30, kb: [2, 9], launch: 1, range: 8, zone: 'low', finisher: 1, trail: 0, sfx: 'whoosh' });
   mv('bwAirA', { name: 'Air Swing', pose: 'bowlSwing', su: 0.08, dmg: 28, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'bwAirB' } });
   mv('bwAirB', { name: 'Ball Drop', pose: 'bashDown', su: 0.1, ac: 0.3, rc: 0.24, dmg: 48, kb: [2, -13], launch: 1, spike: 1, dive: 1, air: 1, h: 0.5, sfx: 'heavy' });
-  mv('rollingThunder', { name: 'Rolling Thunder', type: 'proj', proj: 'roll', pose: 'bowl', su: 0.19, rc: 0.3, dmg: 70, kb: [15, 6], launch: 1, range: 9.5, charge: 1, otg: 1, zone: 'low', trail: 0, sfx: 'heavy' });
+  mv('rollingThunder', { ball: 'bowling', name: 'Rolling Thunder', type: 'proj', proj: 'roll', pose: 'bowl', su: 0.19, rc: 0.3, dmg: 70, kb: [15, 6], launch: 1, range: 9.5, charge: 1, otg: 1, zone: 'low', trail: 0, sfx: 'heavy' });
   mv('spareLift', { name: 'Spare Lift', pose: 'palmUp', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1, 13], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
-  mv('pinDrop', { name: 'Pin Drop', type: 'proj', proj: 'rollDown', pose: 'bashDown', su: 0.13, rc: 0.28, dmg: 52, kb: [2, -13], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'heavy' });
-  mv('splitShot', { name: 'Split Shot', type: 'proj', proj: 'roll2', pose: 'bowl', su: 0.16, rc: 0.32, dmg: 44, kb: [3, 10], launch: 1, range: 9, zone: 'low', trail: 0, sfx: 'whoosh' });
+  mv('pinDrop', { ball: 'bowling', name: 'Pin Drop', type: 'proj', proj: 'rollDown', pose: 'bashDown', su: 0.13, rc: 0.28, dmg: 52, kb: [2, -13], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'heavy' });
+  mv('hookShot', { ball: 'bowling', name: 'Hook Shot', type: 'proj', proj: 'hook', pose: 'bowl', su: 0.16, rc: 0.32, dmg: 46, kb: [3, 10], launch: 1, range: 9.5, zone: 'low', trail: 0, sfx: 'whoosh' });
+  // his ball lying on the floor: run into it and down you go (match.js); and with it out of his hand, bare hands
+  mv('bowlTrip', { name: 'Tripped', type: 'proj', dmg: 22, kb: [2.5, 5.5], launch: 1, zone: 'low', hype: 0.8, trail: 0, sfx: 'heavy' });
+  mv('bareA', { name: 'Jab', pose: 'jabL', su: 0.06, dmg: 16, reach: 0.95, kb: [1.6, 0], stun: 0.32, lunge: 3, trail: 0, sfx: 'whoosh', nx: { l: 'bareB' } });
+  mv('bareB', { name: 'Cross', pose: 'jabR', su: 0.07, dmg: 18, reach: 0.95, kb: [1.6, 0], stun: 0.45, lunge: 3, trail: 0, sfx: 'whoosh', nx: { l: 'bareC' } });
+  mv('bareC', { name: 'Shoulder Check', pose: 'bash', su: 0.1, dmg: 28, reach: 1.0, kb: [9, 4], launch: 1, lunge: 4, finisher: 1, trail: 0, sfx: 'heavy' });
+  mv('bareAir', { name: 'Air Knee', pose: 'knee', su: 0.07, dmg: 18, kb: [2.5, 4.5], air: 1, reach: 0.9, trail: 0, sfx: 'whoosh' });
   mv('approachSlide', { name: 'Approach Slide', pose: 'slide', su: 0.09, ac: 0.14, rc: 0.3, dmg: 38, kb: [3, 8.5], launch: 1, lunge: 9, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
   mv('perfectGame', { name: 'Perfect Game', type: 'super', pose: 'bowl', su: 0.12, catchType: 'proj', range: 11, superLook: 'bowling', superFrom: 'wR', seq: 'perfect', dmg: 290, kb: [8, 15], zone: 'low' });
 
@@ -205,6 +217,23 @@
   mv('powerslide', { name: 'Powerslide', pose: 'slide', su: 0.07, ac: 0.14, rc: 0.28, dmg: 36, kb: [4, 8.5], launch: 1, lunge: 10, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
   mv('nineHundred', { name: 'The 900', type: 'super', pose: 'kickflip', su: 0.1, catchType: 'dash', dist: 7, rad: 1.2, seq: 'ninehundred', dmg: 290, kb: [4, -14], zone: 'mid' });
 
+  // BASKETBALL · Shooting Sleeve: hand checks and a spin move round them, a swat to finish; pause to break their ankles
+  mv('bkA', { name: 'Hand Check', pose: 'palm', su: 0.06, dmg: 22, reach: 1.1, lunge: 4, trail: 0, sfx: 'whoosh', nx: { l: 'bkB' } });
+  mv('bkB', { name: 'Elbow Clear', pose: 'jabR', su: 0.07, dmg: 26, reach: 1.05, stun: 0.5, lunge: 3, trail: 0, sfx: 'heavy', nx: { l: 'bkC', p: 'bkP' } });
+  mv('bkC', { name: 'Spin Move', pose: 'spin', su: 0.08, ac: 0.06, rc: 0.14, dmg: 26, reach: 1.1, kb: [2.5, 0], stun: 0.4, cross: 1, trail: 0, sfx: 'whoosh', nx: { l: 'bkD' } });
+  mv('bkD', { name: 'Block Party', pose: 'palmUp', su: 0.09, ac: 0.08, rc: 0.25, dmg: 42, reach: 1.1, kb: [2, 13], launch: 1, launcher: 1, lunge: 3, finisher: 1, trail: 0, sfx: 'heavy' });
+  mv('bkP', { name: 'Ankle Breaker', pose: 'palm', su: 0.07, ac: 0.07, rc: 0.3, dmg: 30, reach: 1.05, crumple: 1.0, lunge: 4, finisher: 1, trail: 0, sfx: 'whoosh', zone: 'low' });
+  mv('bkAirA', { name: 'Tip-In', pose: 'palmUp', su: 0.06, dmg: 22, kb: [3, 4.5], air: 1, h: 1, trail: 0, sfx: 'whoosh', nx: { l: 'bkAirB' } });
+  mv('bkAirB', { name: 'Alley Slap', pose: 'palm', su: 0.06, dmg: 22, kb: [3, 4.5], air: 1, h: 1, trail: 0, sfx: 'whoosh', nx: { l: 'bkAirC' } });
+  mv('bkAirC', { name: 'Putback Slam', pose: 'bashDown', su: 0.09, ac: 0.3, rc: 0.24, dmg: 44, kb: [2, -13], launch: 1, spike: 1, dive: 1, air: 1, h: 0.5, rad: 0.95, trail: 0, sfx: 'heavy' });
+  mv('chestPass', { ball: 'basketball', noBall: 'bkCharge', name: 'Chest Pass', type: 'proj', proj: 'chest', pose: 'palm', su: 0.18, rc: 0.3, dmg: 70, kb: [15, 5.5], launch: 1, range: 9, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('bkCharge', { name: 'Charge!', pose: 'tackle', su: 0.17, ac: 0.1, rc: 0.3, dmg: 50, reach: 1.05, kb: [13, 5], launch: 1, lunge: 9, charge: 1, trail: 0, sfx: 'heavy' });
+  mv('jumpBall', { name: 'Jump Ball', pose: 'uppercutL', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1.2, 13.5], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
+  mv('rejection', { name: 'Rejection', pose: 'overhandL', su: 0.12, ac: 0.1, rc: 0.25, dmg: 54, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.6, trail: 0, sfx: 'heavy', zone: 'high' });
+  mv('euroStep', { name: 'Euro Step', type: 'dash', pose: 'palmUp', su: 0.1, ac: 0.14, rc: 0.28, dmg: 52, dist: 5, rad: 0.9, kb: [5, 11.5], launch: 1, inv: 1, sfx: 'whoosh' });
+  mv('fastBreak', { name: 'Fast Break', pose: 'knee', su: 0.07, ac: 0.1, rc: 0.24, dmg: 36, kb: [3, 9], launch: 1, lunge: 9, zone: 'low', h: 0.5, trail: 0, sfx: 'whoosh' });
+  mv('posterize', { name: 'Posterized', type: 'super', pose: 'grab', su: 0.12, catchType: 'melee', lunge: 7, reach: 1.15, rad: 1.1, close: 5, seq: 'posterize', dmg: 295, kb: [4, -14], zone: 'mid' });
+
   /* -------------------------------------------------------------- the parts */
   P.wrestler = {
     head: { name: 'Lucha Mask', armor: 125, weight: 1.05, special: 'bodySlam', uses: 3, hype: 1.05, desc: 'SPECIAL: Body Slam. A command grab that slams them into the floor (it ground-bounces them). It can\'t be guarded.' },
@@ -215,10 +244,10 @@
     card: { name: 'Main Event', super: 'mainEvent', passive: 'crowd', desc: 'LEGEND ART: Main Event, a lift, a spin and a powerbomb. PASSIVE (Crowd Pleaser): throws deal +25% damage.' },
   };
   P.baseball = {
-    head: { name: 'Batting Helmet', armor: 125, weight: 1.0, special: 'curveball', uses: 3, hype: 1.0, desc: 'SPECIAL: Curveball. A pitch that reaches 10 m and leaves them dizzy.' },
+    head: { name: 'Batting Helmet', armor: 125, weight: 1.0, special: 'curveball', uses: 3, hype: 1.0, desc: 'SPECIAL: Curveball. A pitch that reaches 10 m and leaves them dizzy. It\'s your one baseball: pick it up before you pitch again.' },
     core: { name: 'Pinstripe Jersey', hp: 1000, def: 0.06, weight: 1.0, guard: 5, desc: 'An even, sturdy core.' },
     armR: { name: 'Slugger Bat', armor: 135, weight: 1.05, light: 'bbA', air: 'bbAirA', sig: 'clutch', sigName: 'Clutch Hitter', sigDesc: 'Hold Light on the Home Run Swing to wind it up: +45% damage, and a full swing crumples them.', trail: 0xf0e0c0, desc: 'Check Swing › Line Drive › Bat Jab › Home Run Swing (hold to wind up). Pause after the Line Drive: Bunt pops them up. Air: Swing › Chopper dive. SIGNATURE: a wind-up home run.' },
-    armL: { name: 'Leather Glove', armor: 125, weight: 0.95, heavy: 'fastball', launch: 'gloveUpper', airHeavy: 'sinker', guard: 95, chip: 1, trail: 0xc89a5a, desc: 'HEAVY: Fastball, a pitch that KNOCKs them from 9 m. Guard: medium.' },
+    armL: { name: 'Leather Glove', armor: 125, weight: 0.95, heavy: 'fastball', launch: 'gloveUpper', airHeavy: 'sinker', guard: 95, chip: 1, trail: 0xc89a5a, desc: 'HEAVY: Fastball, a real baseball that KNOCKs them from 9 m; one pitch in four that lands leaves them DIZZY for a couple of seconds. The ball stays where it drops: walk over it to pick it up (no ball, no pitch: Heavy is a Tackle). Guard: medium.' },
     legs: { name: 'Cleats & Stirrups', armor: 170, weight: 1.0, speed: 6.4, jump: 11, airJumps: 1, dashAtk: 'baseSlide', perk: null, desc: 'Even footing. DASH ATTACK: Base Slide, low, and it pops them up.' },
     card: { name: 'Grand Slam', super: 'grandSlam', passive: 'slugger', desc: 'LEGEND ART: Grand Slam, batting practice on them. PASSIVE (Slugger): Heavy moves deal +15%.' },
   };
@@ -226,15 +255,15 @@
     head: { name: 'Gridiron Helmet', armor: 160, weight: 1.15, special: 'blitz', uses: 3, hype: 0.95, desc: 'SPECIAL: Blitz. An armoured charge 5.5 m that runs straight through them.' },
     core: { name: 'Shoulder Pads', hp: 1130, def: 0.1, weight: 1.3, guard: 25, desc: 'Big pads, big HP, big defence. Heavy.' },
     armR: { name: 'Stiff-Arm Glove', armor: 145, weight: 1.15, light: 'fbA', air: 'fbAirA', sig: 'blocker', sigName: 'Pass Block', sigDesc: 'Every Light after the first has armour in its startup: block through their jabs.', trail: 0xffa060, desc: 'Stiff Arm › Forearm Shiver › Swim Move (round behind them) › Pancake Block (ground-bounces them). Pause after the Shiver: Facemask! crumples. Air: Shove › Dogpile. SIGNATURE: armoured strings.' },
-    armL: { name: 'Game Ball', armor: 130, weight: 1.0, heavy: 'bulletPass', launch: 'liftBlock', airHeavy: 'ballSpike', guard: 100, chip: 0.9, trail: 0xc87a3a, desc: 'HEAVY: Bullet Pass, a throw that KNOCKs them from 9.5 m. Guard: medium.' },
+    armL: { name: 'Game Ball', armor: 130, weight: 1.0, heavy: 'bulletPass', launch: 'liftBlock', airHeavy: 'ballSpike', guard: 100, chip: 0.9, trail: 0xc87a3a, desc: 'HEAVY: Bullet Pass, a throw that KNOCKs them from 9.5 m. Then the ball is on the floor, and until you pick it up Heavy is a FULL-FORCE TACKLE: armoured, and the biggest knockback he has. Guard: medium.' },
     legs: { name: 'Turf Cleats', armor: 205, weight: 1.25, speed: 5.9, jump: 10, airJumps: 1, dashAtk: 'shoulderCharge', perk: 'unstoppable', desc: 'Dash attacks carry armour against one hit. DASH ATTACK: Shoulder Charge.' },
     card: { name: 'Touchdown', super: 'touchdown', passive: 'juggernaut', desc: 'LEGEND ART: Touchdown Drive, the length of the field and a spike. PASSIVE (Juggernaut): dash attacks and Specials deal +20%.' },
   };
   P.soccer = {
-    head: { name: 'Captain\'s Headband', armor: 100, weight: 0.9, special: 'freeKick', uses: 3, hype: 1.1, desc: 'SPECIAL: Free Kick. A curling shot that reaches 10 m and crumples them.' },
+    head: { name: 'Captain\'s Headband', armor: 100, weight: 0.9, special: 'freeKick', uses: 3, hype: 1.1, desc: 'SPECIAL: Free Kick. A shot that reaches 10 m and crumples them (the same ball: trap it first).' },
     core: { name: 'Home Kit', hp: 930, def: 0.03, weight: 0.88, guard: -5, desc: 'Light and quick. You fly a little further.' },
     armR: { name: 'Captain\'s Armband', armor: 115, weight: 0.85, light: 'scA', air: 'scAirA', sig: 'footwork', sigName: 'Footwork', sigDesc: 'Every Light is a kick that carries you with them: the longest lunges, the easiest wall carry.', trail: 0x7dff9a, desc: 'Toe Poke › Instep Drive › Scissor Kick › Bicycle Kick (launches up). Pause after the Instep: Slide Tackle. Air: Volley › Flying Scissor › Overhead Kick. SIGNATURE: kicks that carry.' },
-    armL: { name: 'Goalie Glove', armor: 110, weight: 0.85, heavy: 'powerShot', launch: 'headerFlick', airHeavy: 'divingHeader', guard: 75, chip: 1.1, trail: 0x7dff9a, desc: 'HEAVY: Power Shot, a ball that KNOCKs them from 8.5 m. Guard: weak.' },
+    armL: { name: 'Goalie Glove', armor: 110, weight: 0.85, heavy: 'powerShot', launch: 'headerFlick', airHeavy: 'divingHeader', guard: 75, chip: 1.1, trail: 0x7dff9a, desc: 'HEAVY: Power Shot, a ball that KNOCKs them from 8.5 m. It ricochets off the walls and stays live while it\'s fast: every wall it comes off adds 15% to its hit. Walk over it to trap it before you shoot again. Guard: weak.' },
     legs: { name: 'Studded Boots', armor: 150, weight: 0.85, speed: 7.2, jump: 11.5, airJumps: 1, dashAtk: 'slideTackle', perk: 'dancer', desc: 'The fastest runner: dodges cool down twice as fast. DASH ATTACK: Slide Tackle.' },
     card: { name: 'Golden Boot', super: 'goldenGoal', passive: 'hattrick', desc: 'LEGEND ART: Golden Goal, keep-ups, volleys and the bicycle kick. PASSIVE (Hat Trick): +12% damage from the third hit of a combo on.' },
   };
@@ -244,7 +273,7 @@
     armR: { name: 'Right Glove', armor: 130, weight: 0.95, light: 'bxA', air: 'bxAirA', sig: 'counter', sigName: 'Counterpuncher', sigDesc: 'Counter hits (catching them in their startup) deal +50% instead of +20%.', trail: 0xff6a5a, desc: 'Jab › Cross › Body Blows (mash Light) › Uppercut. Pause after the Cross: Haymaker crumples. Air: Jab › Cross › Overhand spike. SIGNATURE: big counter hits.' },
     armL: { name: 'Left Glove', armor: 130, weight: 0.95, heavy: 'powerHook', launch: 'risingUpper', airHeavy: 'hammerFist', guard: 140, chip: 0.8, trail: 0xff6a5a, desc: 'HEAVY: Power Hook, one of the strongest straight KNOCKs. Guard: strong (gloves up).' },
     legs: { name: 'Boxing Boots', armor: 160, weight: 0.95, speed: 6.5, jump: 10.5, airJumps: 1, dashAtk: 'leapingHook', perk: 'dancer', desc: 'Footwork: dodges cool down twice as fast. DASH ATTACK: Leaping Hook launcher.' },
-    card: { name: 'Final Round', super: 'finalRound', passive: 'killer', desc: 'LEGEND ART: Final Round, a flurry and the knockout uppercut. PASSIVE (Killer Instinct): +15% damage against anyone under half HP.' },
+    card: { name: 'Final Round', super: 'finalRound', passive: 'killer', desc: 'LEGEND ART: Final Round, a flurry and the knockout uppercut. PASSIVE (Killer Instinct): +15% damage against anyone under half HP, and one Legend Art in five thrown at him raw (not in a combo) misses: he sways out of it.' },
   };
   P.fencer = {
     head: { name: 'Fencing Mask', armor: 110, weight: 0.9, special: 'parry', uses: 3, hype: 1.05, desc: 'SPECIAL: Parry. A guard for half a second: anything that hits you is turned aside and you riposte at once.' },
@@ -263,10 +292,10 @@
     card: { name: 'World Record', super: 'worldRecord', passive: 'gains', desc: 'LEGEND ART: World Record, three reps with them on the bar. PASSIVE (Gains): every Heavy that lands adds +4% damage for the round (up to +20%).' },
   };
   P.bowler = {
-    head: { name: 'Lucky Visor', armor: 110, weight: 0.95, special: 'splitShot', uses: 3, hype: 1.05, desc: 'SPECIAL: Split Shot. Two balls roll out in a V and knock over anyone they reach.' },
+    head: { name: 'Lucky Visor', armor: 110, weight: 0.95, special: 'hookShot', uses: 3, hype: 1.05, desc: 'SPECIAL: Hook Shot. The ball rolls out wide and hooks back into them along the floor, and pops them up.' },
     core: { name: 'League Shirt', hp: 1010, def: 0.05, weight: 1.05, guard: 5, desc: 'A team shirt with your name on it. Even.' },
-    armR: { name: 'Bowling Ball', armor: 140, weight: 1.1, light: 'bwA', air: 'bwAirA', sig: 'strike', sigName: 'Strike!', sigDesc: 'Pause after the Backswing: a Gutter Ball rolls along the floor and trips them from range.', trail: 0x6affe8, desc: 'Ball Swing › Backswing › Spinner (all around) › Strike! (pops them up). Pause after the Backswing: Gutter Ball, a rolling ball. Air: Swing › Ball Drop. SIGNATURE: a string that rolls.' },
-    armL: { name: 'Wrist Brace', armor: 125, weight: 0.95, heavy: 'rollingThunder', launch: 'spareLift', airHeavy: 'pinDrop', guard: 100, chip: 1, trail: 0x6affe8, desc: 'HEAVY: Rolling Thunder, a ball along the floor that knocks them up from 9.5 m, even off the floor (OTG). Guard: medium.' },
+    armR: { name: 'Bowling Ball', armor: 140, weight: 1.1, light: 'bwA', air: 'bwAirA', sig: 'strike', sigName: 'Strike!', sigDesc: 'Every ball he rolls is THE ball: it stops on the floor, and anyone who runs into it trips and goes down. Walk over it to pick it back up; until then he fights bare-handed (Jab › Cross › Shoulder Check).', trail: 0x6affe8, desc: 'Ball Swing › Backswing › Spinner (all around) › Strike! (pops them up). Pause after the Backswing: Gutter Ball, a rolling ball. Air: Swing › Ball Drop. SIGNATURE: a string that rolls.' },
+    armL: { name: 'Wrist Brace', armor: 125, weight: 0.95, heavy: 'rollingThunder', launch: 'spareLift', airHeavy: 'pinDrop', guard: 100, chip: 1, trail: 0x6affe8, desc: 'HEAVY: Rolling Thunder, his ball along the floor: it knocks them up from 9.5 m, even off the floor (OTG), and stays where it stops. Guard: medium.' },
     legs: { name: 'Two-Tone Shoes', armor: 165, weight: 1.0, speed: 6.0, jump: 10.5, airJumps: 1, dashAtk: 'approachSlide', perk: 'sealegs', desc: 'Slick soles: dodges slide 30% further. DASH ATTACK: Approach Slide.' },
     card: { name: 'Perfect Game', super: 'perfectGame', passive: 'hookspin', desc: 'LEGEND ART: Perfect Game, ten frames and ten strikes. PASSIVE (Hook Spin): thrown and rolled shots deal +18%.' },
   };
@@ -287,14 +316,24 @@
     card: { name: 'Kickflip 900', super: 'nineHundred', passive: 'radical', desc: 'LEGEND ART: The 900, two and a half spins and a board slam. PASSIVE (Radical): +12% damage in the air.' },
   };
 
+  P.basketball = {
+    head: { name: 'Headband', armor: 105, weight: 0.92, special: 'euroStep', uses: 3, hype: 1.05, desc: 'SPECIAL: Euro Step. Two long steps through them (invulnerable) and a layup that pops them up.' },
+    core: { name: 'Home Jersey', hp: 960, def: 0.04, weight: 0.92, guard: 0, desc: 'Long and light. A little Hype on the side.', hypeBonus: 0.05 },
+    armR: { name: 'Shooting Sleeve', armor: 120, weight: 0.9, light: 'bkA', air: 'bkAirA', sig: 'hangtime', sigName: 'Hang Time', sigDesc: 'Air Lights carry you up with them: you hang in the air, and the air string is three hits long.', trail: 0xffa040, desc: 'Hand Check › Elbow Clear › Spin Move (round behind them) › Block Party (launches up). Pause after the Elbow: Ankle Breaker, they fall over their own feet (crumple). Air: Tip-In › Alley Slap › Putback Slam. SIGNATURE: hang time.' },
+    armL: { name: 'Basketball', armor: 120, weight: 0.95, heavy: 'chestPass', launch: 'jumpBall', airHeavy: 'rejection', guard: 90, chip: 1, trail: 0xffa040, desc: 'HEAVY: Chest Pass, a real basketball that KNOCKs them from 9 m. It comes off the walls so lively you can catch the rebound (walk into it); without it, Heavy is a Charge. Guard: medium.' },
+    legs: { name: 'High-Tops', armor: 155, weight: 0.9, speed: 6.8, jump: 13, airJumps: 1, dashAtk: 'fastBreak', perk: 'skyward', desc: 'The best leaper: a huge jump, and air dodges go 35% further. DASH ATTACK: Fast Break.' },
+    card: { name: 'Posterized', super: 'posterize', passive: 'rim', desc: 'LEGEND ART: Posterized, a crossover, an alley-oop off the wall, and the slam. PASSIVE (Above the Rim): +15% damage on anyone off the ground.' },
+  };
+
   Object.assign(PASSIVE, {
+    rim: 'Above the Rim: +15% damage on anyone in the air',
     crowd: 'Crowd Pleaser: throws deal +25% damage', slugger: 'Slugger: Heavy moves deal +15% damage', juggernaut: 'Juggernaut: dash attacks and Specials +20%',
-    hattrick: 'Hat Trick: +12% damage from a combo\'s 3rd hit', killer: 'Killer Instinct: +15% damage under half HP', precision: 'Precision: a combo\'s first hit +25%',
-    gains: 'Gains: +4% damage per Heavy landed (to +20%)', hookspin: 'Hook Spin: thrown and rolled shots +18%', eagle: 'Eagle Eye: +18% damage from 5 m or more', radical: 'Radical: +12% damage in the air',
+    hattrick: 'Hat Trick: +12% damage from a combo\'s 3rd hit', killer: 'Killer Instinct: +15% damage under half HP; sways out of 1 raw Legend Art in 5', precision: 'Precision: a combo\'s first hit +25%',
+    gains: 'Gains: +4% damage per Heavy landed (to +20%)', hookspin: 'Hook Spin: rolled and thrown shots +18%', eagle: 'Eagle Eye: +18% damage from 5 m or more', radical: 'Radical: +12% damage in the air',
   });
 
   /* ----------------------------------------- mixed strings with the new lines */
-  Object.assign(PREFIX, { wrestler: 'Lariat', baseball: 'Bat', football: 'Stiff-Arm', soccer: 'Boot', boxer: 'Glove', fencer: 'Épée', weightlifter: 'Dumbbell', bowler: 'Ball', archer: 'Bow', skater: 'Deck' });
+  Object.assign(PREFIX, { wrestler: 'Lariat', baseball: 'Bat', football: 'Stiff-Arm', soccer: 'Boot', boxer: 'Glove', fencer: 'Épée', weightlifter: 'Dumbbell', bowler: 'Ball', archer: 'Bow', skater: 'Deck', basketball: 'Hoop' });
   Object.assign(OFF, {
     wrestler: { name: 'Elbow Smash', pose: 'jabL', stun: 0.5 },
     baseball: { name: 'Glove Pop', pose: 'jabL', stun: 0.45 },
@@ -306,6 +345,7 @@
     bowler: { name: 'Brace Jab', pose: 'jabL', stun: 0.48 },
     archer: { name: 'Arrow Jab', pose: 'jabL', reach: 1.4, stun: 0.45 },
     skater: { name: 'Pad Smack', pose: 'jabL', stun: 0.48 },
+    basketball: { name: 'Ball Fake', pose: 'jabL', stun: 0.48 },
   });
   Object.assign(FIN, {
     wrestler: { n: 'Slam', a: 'Moonsault', g: { launch: 1, spike: 1, kb: [2, -12] }, air: { launch: 1, spike: 1, dive: 1, kb: [2, -14] } },
@@ -318,6 +358,7 @@
     bowler: { n: 'Strike', a: 'Gutter', g: { launch: 1, zone: 'low', kb: [6, 10] }, air: { launch: 1, spike: 1, kb: [3, -12] } },
     archer: { n: 'Bullseye', a: 'Arrowfall', g: { launch: 1, kb: [15, 5] }, air: { launch: 1, spike: 1, kb: [2, -12] } },
     skater: { n: 'Kickflip', a: 'Grind', g: { launch: 1, kb: [2, 13] }, air: { launch: 1, multi: 2, kb: [7, 6] } },
+    basketball: { n: 'Slam', a: 'Dunk', g: { launch: 1, kb: [2, 13] }, air: { launch: 1, spike: 1, kb: [2, -13] } },
   });
   KB.buildHybrids();
 })();

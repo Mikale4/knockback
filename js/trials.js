@@ -105,6 +105,12 @@
       t.steps = [{ m: S.dashAtk, k: 'light', t: 'dash' }, { e: 'bounce' }, L(g[0]), L(g[1])];
     },
   };
+  // the KUNOICHI's hairpins KNOCK from so close she'd overrun the rebound on foot: she jumps to meet it
+  FIX.kunoichi = (T, S, g, a, air) => {
+    const t = T.find(x => x.name === 'KNOCK//BACK');
+    t.note = 'Toward + Heavy mid-string: the Kanzashi Volley KNOCKS them into the wall. Jump to meet the rebound with the air string.';
+    t.steps = [L(g[0]), L(g[1]), { m: S.heavy, k: 'heavy', t: 'toward' }, { e: 'bounce' }, { e: 'jump', k: 'jump' }, ...air.slice(0, 2)];
+  };
   /* ---------------------------------------------------- ADVANCED trials
      each line's own long routes (the move ids are its base kit's) */
   const H = (id, t) => ({ m: id, k: 'heavy', t: t || '' }), TW = id => ({ m: id, k: 'heavy', t: 'toward' }), A = id => ({ m: id, k: 'light', t: 'air' }), AH = id => ({ m: id, k: 'heavy', t: 'air' });
@@ -299,11 +305,11 @@
     baseball: () => [
       { name: 'Bunt and run', stars: 3, note: 'The pause branch is a Bunt that pops them up: after them, the Chopper spikes, and the whole string off the bounce.', steps: [L('bbA'), L('bbB'), PZ('bbP'), J, A('bbAirA'), A('bbAirB'), GB, L('bbA'), L('bbB'), L('bbC'), L('bbD')] },
       { name: 'Sinker', stars: 4, note: 'A Sinker (air Heavy) pitches them into the floor; launch them again off the ground bounce.', steps: [L('bbA'), L('bbB'), H('gloveUpper'), J, A('bbAirA'), AH('sinker'), GB, L('bbA'), L('bbB'), H('gloveUpper'), J, A('bbAirA'), A('bbAirB')] },
-      { name: 'Fastball', wall: true, stars: 4, note: 'A Fastball mid-string KNOCKS them into the wall; two swings off the rebound and a Curveball out of them.', steps: [L('bbA'), L('bbB'), TW('fastball'), WB, L('bbA'), L('bbB'), SPC('curveball')] },
+      { name: 'Fastball', wall: true, stars: 4, note: 'A Fastball mid-string KNOCKS them into the wall (your one ball: it stays where it drops); two swings off the rebound and the Glove Upper.', steps: [L('bbA'), L('bbB'), TW('fastball'), WB, L('bbA'), L('bbB'), H('gloveUpper')] },
       { name: 'Grand slam', stars: 5, note: 'Sinker, the bounce, then GRAND SLAM to end it: a hard knockdown, so Base Slide them off the floor (Dodge, then Light).', steps: [L('bbA'), L('bbB'), H('gloveUpper'), J, A('bbAirA'), AH('sinker'), GB, L('bbA'), L('bbB'), ...ART, OTG('baseSlide', 'light')] },
       { name: 'Curveball', stars: 3, note: 'A Curveball straight out of the string leaves them dizzy: the whole string while they wobble.', steps: [L('bbA'), L('bbB'), SPC('curveball'), L('bbA'), L('bbB'), L('bbC'), L('bbD')] },
       { name: 'Clutch', wall: true, stars: 4, note: 'The Bat Jab staggers them: HOLD the Home Run Swing to a full wind-up, into the wall, and two swings off the rebound.', steps: [L('bbA'), L('bbB'), L('bbC'), HOLD('bbD'), WB, L('bbA'), L('bbB')] },
-      { name: 'Double play', stars: 4, note: 'The second Sinker can\'t bounce them: Base Slide them off the floor (Dodge, then Light).', steps: [L('bbA'), L('bbB'), H('gloveUpper'), J, A('bbAirA'), AH('sinker'), GB, L('bbA'), L('bbB'), H('gloveUpper'), J, A('bbAirA'), AH('sinker'), OTG('baseSlide', 'light')] },
+      { name: 'Double play', stars: 4, note: 'Sinker for the bounce; the ball is on the floor now, so Bunt them back up, and the Chopper can\'t bounce them: Base Slide them off the floor (Dodge, then Light).', steps: [L('bbA'), L('bbB'), H('gloveUpper'), J, A('bbAirA'), AH('sinker'), GB, L('bbA'), L('bbB'), PZ('bbP'), J, A('bbAirA'), A('bbAirB'), OTG('baseSlide', 'light')] },
     ],
     football: () => [
       { name: 'Pancake', stars: 3, note: 'The Pancake Block ground-bounces them: two hits, Lift Block, and up after them.', steps: [L('fbA'), L('fbB'), L('fbC'), L('fbD'), GB, L('fbA'), L('fbB'), H('liftBlock'), J, A('fbAirA'), A('fbAirB')] },
@@ -352,11 +358,11 @@
     ],
     bowler: () => [
       { name: 'Strike', stars: 3, note: 'Strike! pops them up: the Ball Drop spikes, and the whole string off the bounce.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), L('bwC'), L('bwD')] },
-      { name: 'Pin drop', stars: 4, note: 'Spare Lift, a Pin Drop (air Heavy) for the bounce, and Spare Lift again to send them back up.', steps: [L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop'), GB, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA')] },
-      { name: 'Rolling thunder', wall: true, stars: 4, note: 'Rolling Thunder mid-string sweeps them into the wall; two swings and Spare Lift off the rebound.', steps: [L('bwA'), L('bwB'), TW('rollingThunder'), WB, L('bwA'), L('bwB'), H('spareLift')] },
+      { name: 'Pin drop', stars: 4, note: 'Strike! and the Ball Drop bounce, Spare Lift off it, and drop the ball on them (Pin Drop, air Heavy) to end it.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop')] },
+      { name: 'Rolling thunder', stars: 4, note: 'Spare Lift and the Ball Drop bounce, the whole string to Strike!, and when they land, Rolling Thunder sweeps them off the floor (OTG). Then the ball is on the floor: walk over it to pick it up.', steps: [L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), L('bwC'), L('bwD'), OTG('rollingThunder')] },
       { name: 'Perfect game', stars: 5, note: 'Strike, the Ball Drop bounce, then PERFECT GAME to end it: Approach Slide them off the floor.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), ...ART, OTG('approachSlide', 'light')] },
       { name: 'Gutter and spare', stars: 3, note: 'Strike, the Ball Drop bounce, then the Gutter Ball pause branch trips them.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), PZ('bwP')] },
-      { name: 'Split', stars: 4, note: 'Up and down for the bounce, then a SPLIT SHOT straight out of the string.', steps: [L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), SPC('splitShot')] },
+      { name: 'Hook', stars: 3, note: 'Two swings and the Spinner, then a HOOK SHOT straight out of it: the ball goes out wide and hooks back into them.', steps: [L('bwA'), L('bwB'), L('bwC'), SPC('hookShot')] },
       { name: 'Spare', stars: 3, note: 'Up and down with the Ball Drop, two swings off the ground bounce, and Spare Lift to send them back up.', steps: [L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), H('spareLift')] },
     ],
     archer: () => [
@@ -429,10 +435,10 @@
       { name: 'Deadlift', wall: true, note: 'Kettlebell into the wall, the Press bounce off the rebound, up and down, the Kettlebell off the floor, a Part Toss and the Press.', steps: [L('wlA'), L('wlB'), TW('kettleSwing'), WB, L('wlA'), L('wlB'), L('wlC'), GB, L('wlA'), L('wlB'), H('cleanJerk'), J, A('wlAirA'), A('wlAirB'), OTG('kettleSwing'), L('wlA'), L('wlB'), PT, L('wlA'), L('wlB'), L('wlC')] },
     ],
     bowler: () => [
-      { name: 'Three hundred', note: 'Spare Lift, a Pin Drop for the bounce, a Part Toss, then PERFECT GAME and an Approach Slide on the knockdown.', steps: [L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), ...ART, OTG('approachSlide', 'light')] },
-      { name: 'League night', note: 'Pin Drop, a Part Toss to extend it, and Spare Lift to send them up again.', steps: [L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA')] },
-      { name: 'Ten frames', note: 'Strike and up, a Pin Drop for the bounce, a Part Toss, and Spare Lift to send them back up.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), AH('pinDrop'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA')] },
-      { name: 'Turkey', wall: true, note: 'Open with PERFECT GAME (a raw Art bounces them off the wall), a Pin Drop, a Part Toss and three swings.', steps: [...ART, WB, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), L('bwC')] },
+      { name: 'Three hundred', note: 'Strike!, the Ball Drop bounce, a Part Toss, then PERFECT GAME and an Approach Slide on the knockdown.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), ...ART, OTG('approachSlide', 'light')] },
+      { name: 'League night', note: 'Spare Lift and the Ball Drop bounce, a Part Toss to extend it, Spare Lift again and a Pin Drop to put them down.', steps: [L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop')] },
+      { name: 'Ten frames', note: 'Strike! and up, the Ball Drop bounce, a Part Toss, Spare Lift, and a Pin Drop to end it.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop')] },
+      { name: 'Turkey', wall: true, note: 'Open with PERFECT GAME (a raw Art bounces them off the wall), Strike! and the Ball Drop bounce, a Part Toss, up again and a Pin Drop.', steps: [...ART, WB, L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), PT, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA'), AH('pinDrop')] },
       { name: 'Seven-ten split', note: 'Strike and up, the Ball Drop bounce, Spare Lift off it, and one more swing in the air.', steps: [L('bwA'), L('bwB'), L('bwC'), L('bwD'), J, A('bwAirA'), A('bwAirB'), GB, L('bwA'), L('bwB'), H('spareLift'), J, A('bwAirA')] },
     ],
     archer: () => [
@@ -449,6 +455,112 @@
       { name: 'Drop in', note: 'Open with THE 900 (a raw Art bounces them off the floor), a Rail Drop puts them down, the Ollie Slam picks them up, a Part Toss and the Kickflip.', steps: [...ART, GB, L('skA'), L('skB'), H('padUpper'), J, A('skAirA'), AH('railDrop'), OTG('ollieSlam'), L('skA'), L('skB'), PT, L('skA'), L('skB'), L('skC')] },
       { name: 'Grind the shelf', wall: true, note: 'The Grind into the wall, the Kickflip off the rebound, the Board Drop bounce, and a GRIND RUSH.', steps: [L('skA'), L('skB'), PZ('skP'), WB, L('skA'), L('skB'), L('skC'), J, A('skAirA'), A('skAirB'), A('skAirC'), GB, L('skA'), L('skB'), SPC('grindRush')] },
     ],
+  });
+  /* ---- the newer lines (EDO JAPAN, KNIGHTS OF THE REALM, BASKETBALL): their routes come from one set of
+     patterns over each kit (its string, pause branch, launcher, air string, spike, KNOCK, Special, dash attack and
+     Legend Art), named for the line; ROUTE_FIX[line] swaps a step where a kit needs it. Each was proven at 60 Hz,
+     144 Hz and uneven frames like the rest. */
+  const NAMES = {
+    basketball: ['Fast break', 'Putback', 'From downtown', 'Posterized', 'Ankle breaker', 'Euro step', 'Double double', 'Buzzer beater', 'Triple double', 'And one', 'Showtime', 'Full-court press'],
+    ronin: ['Draw and cut', 'Falling cut', 'Scabbard', 'Last draw', 'The straw hat', 'Courage', 'Two leaves', 'Wandering blade', 'Road to nowhere', 'Moon and blade', 'Masterless', 'Rain on the road'],
+    kunoichi: ['Gale fan', 'Iris drop', 'Kanzashi', 'Thousand petals', 'Needle kiss', 'Kawarimi', 'Two irises', 'Hidden iris', 'Venom', 'Fan dance', 'Smoke and petals', 'Night mission'],
+    shogun: ['Verdict', 'Iron fan', 'Gunbai', 'Three ranks', 'Rebuke', 'Teppō', 'Decree', 'Shogunate', 'Iron rule', 'Siege', 'Unification', 'The long campaign'],
+    daimyo: ['Rising crescent', 'Falling moon', 'Long thrust', 'Hundred banners', 'Shin reap', 'Tribute', 'Two moons', 'Castle lord', 'My domain', 'Hundred sieges', 'Banners raised', 'The levy'],
+    templar: ['Zornhau', 'Cross drop', 'Wrath', 'Beauséant', 'Mordhau', 'The vow', 'Penance', 'Non nobis', 'The order', 'Pilgrimage', 'Murder-stroke', 'Vigil'],
+    crusader: ['Morning star', 'Falling star', 'Heater charge', 'Siege of faith', 'Shield hook', 'Deus vult', 'Two stars', 'The long road', 'Over the shield', 'Faith and iron', 'Siege engine', 'Onward'],
+    lancer: ['Unhorse', 'Lance fall', 'Couched lance', 'The joust', 'Trample', 'The tilt', 'Two falls', 'Tournament', 'Grand melee', 'The lists', 'Champion', 'Victory lap'],
+  };
+  const ROUTE_FIX = {};
+  // the KUNOICHI's hairpins KNOCK from so close that she overruns the rebound: her routes stay off the wall
+  ROUTE_FIX.kunoichi = (adv, pro, k) => {
+    adv[2] = { name: 'Kanzashi', stars: 4, note: 'Needle Kiss poisons them; the string while it burns (+20% to the POISONED), the Rising Fan, and up after them.', steps: [...k.two, PZ('kuP'), ...k.two, H('risingFan'), J, ...k.air] };
+    pro[0] = { name: 'Hidden iris', note: 'Needle Kiss, the whole string and up, the Iris Drop for the bounce, a Part Toss, then THOUSAND PETALS and a Silk Slide on the knockdown.', steps: [...k.two, PZ('kuP'), ...k.str, J, ...k.air, GB, ...k.two, PT, ...k.two, ...ART, k.otg] };
+    pro[3].steps = [...ART, WB, ...k.two, PT, ...k.str.slice(0, 3)]; pro[3].note = 'Open with THOUSAND PETALS (a raw Art bounces them off the wall), two hits off the rebound, a Part Toss, and the string to the Petal Flurry.';
+    pro[2] = { name: 'Fan dance', note: 'Needle Rain for the bounce, a Part Toss, the Rising Fan, and the Fan and the Fan Spin in the air.', steps: [...k.spike, ...k.two, PT, ...k.two, H('risingFan'), J, A('kuAirA'), A('kuAirB')] };
+  };
+  // the SHOGUN is heavy and jumps low: one air hit and the air Heavy after a launch, his strings on the ground
+  ROUTE_FIX.shogun = (adv, pro, k) => {
+    const upAH = [...k.up, A('shAirA'), AH('gunbaiDrop')];
+    adv[1].steps = [...k.spike, ...k.str]; adv[1].note = 'Iron Fan Drop (air Heavy) for the ground bounce, then the whole string: the Verdict sends them away.';
+    adv[2].steps = [...k.two, TW('gunbaiBash'), WB, ...k.str]; adv[2].note = 'Gunbai Bash mid-string KNOCKS them into the wall; the whole string off the rebound, and the Verdict sends them back.';
+    adv[6].steps = [...k.two, PZ('shP'), ...upAH, GB, ...k.two, L('shC')]; adv[6].note = 'The Rebuke crumples them, up and the Iron Fan Drop for the bounce, and the Verdict to finish.';
+    pro[2].steps = [...k.spike, ...k.two, TW('gunbaiBash'), WB, ...k.str]; pro[2].note = 'The bounce, Gunbai Bash into the wall off it, and the whole string off the rebound.';
+    pro[3] = { name: 'Unification', note: 'The Rebuke crumples them, two cuts, a Part Toss, two more, and THREE RANKS: a Cavalry Charge on the knockdown.', steps: [...k.two, PZ('shP'), ...k.two, PT, ...k.two, ...ART, k.otg] };
+    pro[4] = { name: 'The long campaign', note: 'The Rebuke, up and the Iron Fan Drop for the bounce, a Part Toss, two cuts, then THREE RANKS and the Cavalry Charge.', steps: [...k.two, PZ('shP'), ...upAH, GB, ...k.two, PT, ...k.two, ...ART, k.otg] };
+  };
+  ROUTE_FIX.daimyo = (adv, pro, k) => {
+    adv[2].steps = [...k.two, TW('longThrust'), WB, ...k.str]; adv[2].note = 'The Long Thrust mid-string KNOCKS them into the wall; the whole string off the rebound, up to the Rising Crescent.';
+  };
+  // the TEMPLAR is heavy too: strings off the rebound, and the second launch ends with the air Heavy
+  ROUTE_FIX.templar = (adv, pro, k) => {
+    const upAH = [...k.up, A('teAirA'), AH('crossguardDrop')];
+    adv[1].steps = [...k.spike, ...k.str]; adv[1].note = 'Crossguard Drop (air Heavy) for the ground bounce, then the whole string: the Zornhau sends them away.';
+    adv[2].steps = [...k.two, TW('wrathCut'), WB, ...k.str]; adv[2].note = 'Wrath of the Temple mid-string KNOCKS them into the wall; the whole string off the rebound, and the Zornhau sends them back.';
+    pro[3].steps = [...ART, GB, ...k.two, PT, ...k.str]; pro[3].note = 'Open with BEAUSÉANT (a raw Art slams them off the floor), two cuts off the bounce, a Part Toss, and the whole string.';
+    pro[4] = { name: 'Vigil', note: 'The Mordhau crumples them, up and the Crossguard Drop for the bounce, a Part Toss, two cuts, then BEAUSÉANT and the Pilgrim\u2019s Lunge on the knockdown.', steps: [...k.two, PZ('teP'), ...upAH, GB, ...k.two, PT, ...k.two, ...ART, k.otg] };
+  };
+  // the CRUSADER and the LANCER are heavy as well (a low jump): no second launch, strings off the rebound
+  const groundFix = extra => (adv, pro, k) => {
+    const M = id => KB.MOVES[id].name;
+    adv[1].steps = [...k.spike, ...k.str]; adv[1].note = M(k.S.airHeavy) + ' (air Heavy) for the ground bounce, then the whole string.';
+    adv[2].steps = [...k.two, TW(k.S.heavy), WB, ...k.str]; adv[2].note = M(k.S.heavy) + ' mid-string KNOCKS them into the wall, and the whole string off the rebound.';
+    pro[2].steps = [...k.spike, ...k.two, TW(k.S.heavy), WB, ...k.str]; pro[2].note = 'The bounce, ' + M(k.S.heavy) + ' into the wall off it, and the whole string off the rebound.';
+    pro[4].steps = [...k.spike, ...k.two, PT, ...k.two, ...ART, k.otg]; pro[4].note = M(k.S.airHeavy) + ' for the bounce, a Part Toss, two more, then ' + M(k.S.super).toUpperCase() + ' and ' + M(k.S.dashAtk) + ' on the knockdown.';
+    extra(adv, pro, k);
+  };
+  ROUTE_FIX.crusader = groundFix((adv, pro, k) => {
+    adv[6].steps = [...k.two, PZ('crP'), J, A('crAirA'), AH('heaterFall'), GB, ...k.str]; adv[6].note = 'The Shield Hook pops them up, the Shield Fall for the bounce, and the string: the Morning Star can\u2019t bounce them twice.';
+  });
+  ROUTE_FIX.lancer = groundFix((adv, pro, k) => {
+    adv[6].steps = [...k.spike, ...k.two, PT, ...k.str]; adv[6].note = 'The Lance Drop for the bounce, a Part Toss (a fresh bounce), and the whole string up to the Unhorse.';
+  });
+  ROUTE_FIX.ronin = (adv, pro, k) => {
+    adv[2].steps = [...k.two, TW('sayaAte'), WB, ...k.two, H('sayaUpper'), J, A('roAirA')]; adv[2].note = 'Saya-ate mid-string KNOCKS them into the wall; two cuts off the rebound, the Saya Upper, and the Air Draw.';
+  };
+  function genRoutes(line) {
+    const S = S0(line), g = chain(S.light), a = chain(S.air), N = NAMES[line], MV = id => KB.MOVES[id], nm = id => MV(id).name;
+    const P = MV(g[1]).nx && MV(g[1]).nx.p, Pm = P && MV(P), fin = MV(g[g.length - 1]), sp = MV(S.special), slam = Arts.ART[MV(S.super).seq] && Arts.ART[MV(S.super).seq].slam;
+    const str = g.map(L), two = [L(g[0]), L(g[1])], air = a.map(A), up = [...two, H(S.launch), J], spike = [...up, A(a[0]), AH(S.airHeavy), GB];
+    const otg = OTG(S.dashAtk, 'light'), upFin = fin.launcher ? [J, ...air] : [];
+    const buff = sp.type === 'buff';
+    // the pause branch: a crumple or a stagger leads into the string; a launcher into the air string; anything else ends it
+    const pz = Pm.crumple || (Pm.type === 'proj' && !Pm.launch) ? [PZ(P), ...str, ...upFin] : Pm.launcher ? [PZ(P), J, ...air] : null;
+    const adv = [
+      { name: N[0], stars: 3, note: nm(g[g.length - 1]) + ' ends the string; ' + nm(S.launch) + ' and the air string, ' + nm(a[a.length - 1]) + ' for the bounce, and the whole string again.', steps: [...up, ...air, GB, ...str] },
+      { name: N[1], stars: 4, note: nm(S.airHeavy) + ' (air Heavy) for the ground bounce, then the whole string.', steps: [...spike, ...str] },
+      { name: N[2], wall: true, stars: 4, note: nm(S.heavy) + ' mid-string KNOCKS them into the wall, and the whole string off the rebound.', steps: [...two, TW(S.heavy), WB, ...str] },
+      { name: N[3], stars: 5, note: nm(S.airHeavy) + ' for the bounce, then ' + nm(S.super).toUpperCase() + ' to end it: a hard knockdown, so ' + nm(S.dashAtk) + ' them off the floor (Dodge, then Light).', steps: [...spike, ...two, ...ART, otg] },
+      pz ? { name: N[4], stars: 3, note: 'Pause after ' + nm(g[1]) + ': ' + nm(P) + (Pm.launcher ? ' sends them up, and the air string.' : ', then the whole string.'), steps: [...two, ...pz] }
+        : { name: N[4], stars: 3, note: 'Up and down for the bounce, two hits, and the pause branch: ' + nm(P) + '.', steps: [...up, ...air, GB, ...two, PZ(P)] },
+      buff ? { name: N[5], stars: 3, note: sp.name.toUpperCase() + ' first, then the whole combo.', steps: [SPC(S.special, 1), ...str, ...upFin] }
+        : Pm.crumple ? { name: N[5], stars: 4, note: nm(P) + ' (pause after ' + nm(g[1]) + ') folds them up; two hits, then ' + sp.name.toUpperCase() + ' straight out of the string.', steps: [...two, PZ(P), ...two, SPC(S.special)] }
+        : { name: N[5], stars: 4, note: 'Up and down for the bounce, two hits, then ' + sp.name.toUpperCase() + ' straight out of the string.', steps: [...up, ...air, GB, ...two, SPC(S.special)] },
+      { name: N[6], stars: 4, note: 'The second ' + nm(S.airHeavy) + ' can’t bounce them: ' + nm(S.dashAtk) + ' them off the floor (Dodge, then Light).', steps: [...spike, ...up, A(a[0]), AH(S.airHeavy), otg] },
+    ];
+    const shot = MV(S.heavy).type === 'proj';   // (a thrown KNOCK at someone in the air won't wall-bounce them: it goes in first)
+    const pro = [
+      shot ? { name: N[7], wall: true, note: nm(S.heavy) + ' into the wall, up off the rebound and the bounce, a Part Toss, then ' + nm(S.super).toUpperCase() + ' and ' + nm(S.dashAtk) + ' on the knockdown.', steps: [...two, TW(S.heavy), WB, ...up, ...air, GB, ...two, PT, ...two, ...ART, otg] }
+        : { name: N[7], wall: true, note: 'Up, the bounce, ' + nm(S.heavy) + ' into the wall, a Part Toss, then ' + nm(S.super).toUpperCase() + ' and ' + nm(S.dashAtk) + ' on the knockdown.', steps: [...up, ...air, GB, ...two, TW(S.heavy), WB, ...two, PT, ...two, ...ART, otg] },
+      { name: N[8], note: nm(S.airHeavy) + ', a Part Toss (a fresh ground bounce), and the whole string' + (fin.launcher ? ' into the air string.' : '.'), steps: [...spike, ...two, PT, ...str, ...upFin] },
+      shot ? { name: N[9], wall: true, note: nm(S.heavy) + ' into the wall, ' + nm(S.launch) + ' off the rebound, ' + nm(S.airHeavy) + ' for the bounce, and the whole string.', steps: [...two, TW(S.heavy), WB, ...spike, ...str] }
+        : { name: N[9], wall: true, note: 'The bounce, ' + nm(S.heavy) + ' into the wall off it, and the whole string off the rebound.', steps: [...spike, ...two, TW(S.heavy), WB, ...str] },
+      slam ? { name: N[10], note: 'Open with ' + nm(S.super).toUpperCase() + ' (a raw Art bounces them off the floor), ' + nm(S.launch) + ', ' + nm(S.airHeavy) + ' (the bounce is spent: ' + nm(S.dashAtk) + ' them off the floor), a Part Toss and the string.', steps: [...ART, GB, ...up, A(a[0]), AH(S.airHeavy), otg, ...two, PT, ...str] }
+        : { name: N[10], wall: true, note: 'Open with ' + nm(S.super).toUpperCase() + ' (a raw Art bounces them off the wall), two hits off the rebound, a Part Toss, and the whole string.', steps: [...ART, WB, ...two, PT, ...str] },
+      { name: N[11], note: nm(S.airHeavy) + ' for the bounce, a Part Toss, two more, then ' + nm(S.super).toUpperCase() + ' and ' + nm(S.dashAtk) + ' on the knockdown.', steps: [...spike, ...two, PT, ...two, ...ART, otg] },
+    ];
+    if (ROUTE_FIX[line]) ROUTE_FIX[line](adv, pro, { S, g, a, P, two, up, air, spike, str, otg });
+    return { adv, pro };
+  }
+  for (const l of Object.keys(NAMES)) { ADV[l] = () => genRoutes(l).adv; PRO[l] = () => genRoutes(l).pro; }
+  Object.assign(SIG, {
+    basketball: (S, g, a, air) => ({ name: 'Hang time', note: 'The whole string: Block Party sends them up. Jump after them: the air string is three hits, and every one keeps you up there.', steps: [...g.map(L), J, ...air] }),
+    ronin: (S, g, a, air) => ({ name: 'Battōjutsu', note: 'The first cut of every string comes straight out of the scabbard (+30%). The whole string, and up after them.', steps: [...g.map(L), J, ...air] }),
+    kunoichi: (S, g) => ({ name: 'Needle kiss', note: 'Pause after the Fan Sweep: a poisoned hairpin. Then the string: Lights hit anyone POISONED 20% harder.', steps: [L(g[0]), L(g[1]), PZ('kuP'), ...g.map(L)] }),
+    shogun: (S, g) => ({ name: 'Rebuke', note: 'Pause after the Return Cut: the war fan crumples them. Then the whole string, Verdict and all.', steps: [L(g[0]), L(g[1]), PZ('shP'), ...g.map(L)] }),
+    daimyo: (S, g) => ({ name: 'Shin reap', note: 'Pause after the Return Sweep: Sune-gari reaps their shins and pops them up.', steps: [L(g[0]), L(g[1]), PZ('daP')] }),
+    templar: (S, g) => ({ name: 'Mordhau', note: 'Pause after the Zwerchhau: grip the blade and strike with the hilt (they crumple). Then the whole string.', steps: [L(g[0]), L(g[1]), PZ('teP'), ...g.map(L)] }),
+    crusader: (S, g, a, air) => ({ name: 'Shield hook', note: 'Pause after the Backhand: the shield hooks them up. Jump after them.', steps: [L(g[0]), L(g[1]), PZ('crP'), J, ...air] }),
+    lancer: (S, g) => ({ name: 'Trample', note: 'Pause after the Lance Sweep: the horse runs them down.', steps: [L(g[0]), L(g[1]), PZ('lnP')] }),
   });
   const all = () => { if (!TRIALS.samurai) for (const l of KB.LINE_ORDER) TRIALS[l] = build(l); return TRIALS; };
   const allAdv = () => { if (!TRIALS_ADV.samurai) for (const l of KB.LINE_ORDER) TRIALS_ADV[l] = ADV[l] ? ADV[l]().map(t => Object.assign({ adv: true }, t)) : []; return TRIALS_ADV; };

@@ -316,22 +316,38 @@
       soccer: { speed: 36, trail: 1.0, tw: 0.12, tcol: 0xffffff, w: 0.66, spin: 22 },
       arrow: { speed: 52, trail: 1.6, tw: 0.035, tcol: 0xfff07a, w: 0.48 },
       bowling: { speed: 21, trail: 0.6, tw: 0.16, tcol: 0x6affe8, w: 0.72, spin: 16 },
+      basketball: { speed: 30, trail: 0.9, tw: 0.14, tcol: 0xffc080, w: 0.7, spin: 14 },
+      // EDO JAPAN: the Ronin's straw hat, the Kunoichi's hairpins
+      kasa: { speed: 22, trail: 0.4, tw: 0.22, tcol: 0xe8c878, w: 0.75, flat: 16 },
+      needle: { speed: 40, trail: 1.0, tw: 0.025, tcol: 0xff9ad0, w: 0.5 },
       plate: { speed: 28, trail: 0.7, tw: 0.1, tcol: 0xc8ccd4, w: 0.7, spin: 18 },
     };
     /* MODERN SPORTS shots: where each comes from (a hand, the feet, or rolled along the floor), its look, a spread, aimed down */
     const SPORT = {
-      pitch: { look: 'baseball', from: 'wL' }, pitchDown: { look: 'baseball', from: 'wL', down: 1 }, pass: { look: 'football', from: 'wL' },
-      soccer: { look: 'soccer', from: 'feet' }, soccerCurl: { look: 'soccer', from: 'feet' },
+      pitch: { look: 'baseball', from: 'wL', ball: 'baseball' }, pitchDown: { look: 'baseball', from: 'wL', down: 1, ball: 'baseball' }, pass: { look: 'football', from: 'wL', ball: 'football' },
+      soccer: { look: 'soccer', from: 'feet', ball: 'soccer' }, soccerCurl: { look: 'soccer', from: 'feet', ball: 'soccer' },
+      chest: { look: 'basketball', from: 'wL', ball: 'basketball' },
       arrow: { look: 'arrow', from: 'wR' }, arrowBig: { look: 'arrow', from: 'wR' }, arrows: { look: 'arrow', from: 'wR', spread: [-0.16, 0, 0.16] }, arrowDown: { look: 'arrow', from: 'wR', down: 1 },
-      roll: { look: 'bowling', roll: 1 }, roll2: { look: 'bowling', roll: 1, spread: [-0.32, 0.32] }, rollDown: { look: 'bowling', from: 'wR', down: 1 },
+      roll: { look: 'bowling', roll: 1, ball: 'bowling' }, hook: { look: 'bowling', roll: 1, hook: 1, ball: 'bowling' }, rollDown: { look: 'bowling', from: 'wR', down: 1, ball: 'bowling' },
       plate: { look: 'plate', from: 'wR' },
+      kasa: { look: 'kasa', from: 'head' },
+      pin: { look: 'needle', from: 'wL' }, pins: { look: 'needle', from: 'wL', spread: [-0.14, 0, 0.14] }, pinsDown: { look: 'needle', from: 'wL', down: 1, spread: [-0.14, 0, 0.14] },
     };
+    /* the real balls, in voxels like the figures: built once, cloned for every throw (so never disposed) */
+    const ICO = (() => { const t = (1 + Math.sqrt(5)) / 2, v = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]]; return v.map(a => { const l = Math.hypot(a[0], a[1], a[2]); return a.map(x => x / l); }); })();
+    const BALL_MAKE = {
+      baseball: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 3.4, 3.4, 3.4, (x, y, z) => Math.abs(y - 1.6 * Math.cos(Math.atan2(z, x) * 2)) < 0.55 ? 0xd8323a : 0xf6f4ee); return VX.object(g, 0.032); },
+      football: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 2.7, 2.7, 4.6, (x, y, z) => (y >= 2 && Math.abs(x) < 0.6 && Math.abs(z) < 2.2) || (y >= 2 && Math.abs(x) < 1.6 && Math.abs(z) < 2 && (z & 1)) || (Math.abs(Math.abs(z) - 3.4) < 0.5 && y > -1) ? 0xf4f4f0 : 0x8a4a22); return VX.object(g, 0.03); },
+      soccer: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 5, 5, 5, (x, y, z) => { const l = Math.hypot(x, y, z) || 1; return ICO.some(a => (a[0] * x + a[1] * y + a[2] * z) / l > 0.93) ? 0x1c1c22 : 0xf4f4f0; }); return VX.object(g, 0.034); },
+      bowling: () => { const M2 = 0x2a1c40, g = new VX.Grid(); g.ell(0, 0, 0, 6.2, 6.2, 6.2, (x, y, z) => Math.sin(x * 1.3 + z * 0.9) > 0.6 ? M2 : Models.H.shade(M2, 1.6)); [[-1, 5, 3], [1, 5, 3], [0, 4, 4]].forEach(([x, y, z]) => g.set(x, y, z + 1, 0x0a0a0e)); return VX.object(g, 0.035); },
+      kasa: () => { const g = new VX.Grid(); for (let y = 0; y <= 3; y++) { const r = 6 - y * 1.6; g.ell(0, y, 0, r, 0.6, r, (x, yy, z) => (Math.round(x + z) & 1) ? 0xd8b060 : 0xc89a48); } g.box(-1, -1, -1, 1, -1, 1, 0x6a4a2a); return VX.object(g, 0.045); },
+      needle: () => { const g = new VX.Grid(); g.box(0, 0, -6, 0, 0, 5, 0xd8dde6); g.box(-1, -1, -8, 1, 1, -7, 0xff6ab0); g.set(0, 2, -8, 0xe8b84a); return VX.object(g, 0.03); },
+      basketball: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 6.2, 6.2, 6.2, (x, y, z) => Math.abs(x) < 0.5 || Math.abs(y) < 0.5 || Math.abs(Math.hypot(x, y) - 4.6) < 0.5 ? 0x2a1a10 : 0xe8681a); return VX.object(g, 0.035); },
+    };
+    const ballSrc = {};
+    const ballMesh = look => (ballSrc[look] || (ballSrc[look] = BALL_MAKE[look]())).clone();
     const SPORT_MESH = {
-      baseball: () => new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf6f4ee })),
-      football: () => { const g = new THREE.SphereGeometry(0.13, 10, 8); g.scale(1, 1, 1.75); return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8a4a22 })); },
-      soccer: () => new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 1), new THREE.MeshLambertMaterial({ color: 0xf4f4f0, flatShading: true })),
       arrow: () => new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.72), new THREE.MeshLambertMaterial({ color: 0xd8c08a })),
-      bowling: () => new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), new THREE.MeshPhongMaterial({ color: 0x3a1c6a, shininess: 80, specular: 0x8a7aaa })),
       plate: () => { const g = new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16); g.rotateX(Math.PI / 2); return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x3a3e48 })); },
     };
     let kunaiSrc = null, weightSrc = null;
@@ -376,6 +392,7 @@
       let mesh, own = true;
       if (look === 'kunai') { mesh = kunaiMesh(); own = false; }
       else if (look === 'bolt') mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), glowMat(opt.col || 0xffffff, 0.95));
+      else if (BALL_MAKE[look]) { mesh = ballMesh(look); own = false; }
       else if (SPORT_MESH[look]) { mesh = SPORT_MESH[look](); mesh.castShadow = true; }
       else mesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.24), glowMat(0xfff4d0, 1));
       mesh.position.copy(from); mesh.lookAt(from.clone().add(dir)); scene.add(mesh);
@@ -524,11 +541,25 @@
           dart(f, mv, S.look, from, dir, from.distanceTo(end), { visual: true }); SFX.play('whoosh');
           if (hit && o.inv <= 0 && !['ko', 'out', 'down'].includes(o.state)) f.superCaught = true;
           M.after(0.6, () => { f.superCaught = false; });
+        } else if (S.ball) {
+          if (f.balls[S.ball]) return;   // (it's on the floor: startMove swapped the move, so this is only a safety net)
+          if (S.roll) from.y = BALL[S.ball].r;
+          throwBall(f, mv, S, from, dir, range, charge);
+          SFX.play('whoosh'); if (S.from === 'feet') FX.burst(from, { n: 6, color: arena.dust, speed: 2, size: 0.07, life: 0.4 });
         } else {
           const grp = { done: false };
           for (const a of S.spread || [0]) dart(f, mv, S.look, from, dir.clone().applyAxisAngle(UP, a), range, { grp, charge });
           SFX.play(S.look === 'arrow' ? 'whoosh' : 'whoosh'); if (S.from === 'feet') FX.burst(from, { n: 6, color: arena.dust, speed: 2, size: 0.07, life: 0.4 });
         }
+      } else if (mv.proj === 'volley') {
+        // SHOGUN: the war fan comes down and the musket line behind him fires (three muskets, one hit between them)
+        const side = new V3(F.z, 0, -F.x), grp = { done: false };
+        for (const k of [-1, 0, 1]) {
+          const from = inside(_v.copy(f.pos).addScaledVector(F, -1.3).addScaledVector(side, k * 0.9).setY(f.pos.y + 1.15).clone());
+          const dir = aimDir(f, o, from, F.clone(), mv.range, 0.35, false, LOOK.bullet.speed);
+          dart(f, mv, 'bullet', from, dir, mv.range + 1.5, { grp }); muzzleFlash(from, dir);
+        }
+        SFX.play('shot'); FX.addShake(0.3); M.call(f, 'FIRE!', 'small');
       } else if (mv.proj === 'breath') {
         M.projs.push({ kind: 'breath', f, mv, k: f.kind, t: 0, n: 0, id: 's' + (++M.shotId) }); SFX.play('boom');
       } else if (mv.proj === 'wave') {
@@ -787,11 +818,137 @@
       updCamera(rawDt); FX.update(dt);
       if (!M.attract) HUD.update(M);
     };
+
+    /* ---------------------------------------------------- MODERN SPORTS: the real balls
+       A pitched baseball, a passed football, a kicked soccer ball, a rolled bowling ball, a chest-passed basketball. Thrown,
+       it flies like a shot (straight, no drop) to its range; then it's a ball: it drops, bounces off the floor and the
+       walls, rolls and stops, and stays on the floor until its owner walks over it. There's one of each: no ball, no
+       throw (Fighter.startMove swaps in the move you make without it). The soccer ball stays live while it's moving fast,
+       and every wall it comes off adds 15% to its hit until it's picked up; a bowling ball lying on the floor trips anyone
+       who runs into it (a knockdown); a basketball comes off the walls so lively it's easy to catch the rebound.
+       Everything here is sim (the fight's own state, rewound online): the balls live in M.projs, the owner's f.balls
+       points at its ball. */
+    const BALL = {
+      baseball: { r: 0.11, g: 26, eF: 0.45, eW: 0.45, fric: 7, pick: 5, call: 'BALL!' },
+      football: { r: 0.14, g: 24, eF: 0.42, eW: 0.4, fric: 8, pick: 5, call: 'BALL!' },
+      soccer: { r: 0.17, g: 20, eF: 0.62, eW: 0.8, fric: 3, live: 10, bank: 0.15, pick: 13, call: 'TRAPPED!' },
+      bowling: { r: 0.22, g: 30, eF: 0.12, eW: 0.15, fric: 14, brake: 1, live: 6, trip: 1, pick: 8, call: 'BALL!' },
+      basketball: { r: 0.22, g: 22, eF: 0.8, eW: 0.72, fric: 2, pick: 15, call: 'REBOUND!' },
+    };
+    M.BALL = BALL;
+    function throwBall(f, mv, S, from, dir, range, charge) {
+      const L = LOOK[S.look], mesh = ballMesh(S.look);
+      mesh.position.copy(from); scene.add(mesh);
+      const trail = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(L.tcol, 0.7)); trail.scale.set(L.tw, L.tw, 0.001); trail.visible = false; scene.add(trail);
+      const vel = dir.clone().normalize().multiplyScalar(L.speed);
+      if (S.hook) { const o = M.opp(f), d = o ? Math.hypot(o.pos.x - from.x, o.pos.z - from.z) : 6; vel.applyAxisAngle(UP, (f.idx ? -1 : 1) * U.clamp(0.08 * d, 0.1, 0.5)); }   // a hook: out to one side, curling back in (tighter up close)
+      const p = { kind: 'sball', ball: S.ball, look: S.look, f, mv, k: f.kind, charge: charge || 0, pos: from.clone(), from: from.clone(), vel, ph: 'fly', dist: 0, range, n: 0, t: 0,
+        hitCd: 0, tripCd: 0, hook: S.hook ? 3.2 : 0, spinA: 0, mesh, trail, id: 's' + (++M.shotId), done: false };
+      M.projs.push(p); f.balls[S.ball] = p;
+    }
+    /* the ball back in its owner's hands: picked up (loud), or called back (a new round, a Legend Art, lost off the edge) */
+    function pickBall(p, how) {
+      const f = p.f, i = M.projs.indexOf(p); if (i >= 0) M.projs.splice(i, 1);
+      dropProj(p); if (f.balls[p.ball] === p) f.balls[p.ball] = null;
+      if (how === 'pick') { SFX.play('snapon'); M.call(f, BALL[p.ball].call, 'heal'); M.event('ball', { f, ball: p.ball }); FX.burst(_q2.copy(p.pos), { n: 8, color: [0xffffff, LOOK[p.look].tcol], glow: true, speed: 2, size: 0.06, life: 0.3 }); }
+      else if (how === 'lost') M.call(f, 'BALL RETURN', 'small');
+    }
+    M.recallBalls = f => { for (const k in f.balls) if (f.balls[k]) pickBall(f.balls[k], 'quiet'); };
+    function bean(o) {
+      // BASEBALL: one pitch in four that lands leaves them seeing stars for a couple of seconds (now, if they're on their
+      // feet; else the moment they're back on them)
+      M.call(o, 'BEANED!', 'counter');
+      if (o.state === 'hit' && o.grounded) { o.dizzy = true; o.crumpled = false; o.hitstun = Math.max(o.hitstun, o.stateT + 2.2); o.vel.set(0, 0, 0); }
+      else { o.beanT = 2.2; o.beanWin = 5; }
+    }
+    const _bh = new V3(), _ba = new V3(), _hA = new V3(), _hB = new V3();
+    function updBall(p, dt) {
+      const B = BALL[p.ball], f = p.f, o = M.opp(f), r = B.r, A = arena;
+      p.t += dt; p.hitCd = Math.max(0, p.hitCd - dt); p.tripCd = Math.max(0, p.tripCd - dt);
+      const a = _ba.copy(p.pos);
+      const inArena = Math.abs(p.pos.x) < A.W && Math.abs(p.pos.z) < A.D;
+      if (p.ph === 'fly') {
+        if (p.hook && o) {   // the hook curls in toward them along the floor
+          const want = Math.atan2(o.pos.x - p.pos.x, o.pos.z - p.pos.z), cur = Math.atan2(p.vel.x, p.vel.z), d = U.wrap(want - cur), turn = U.clamp(d, -p.hook * dt, p.hook * dt);
+          if (Math.abs(d) < 2.2) p.vel.applyAxisAngle(UP, turn);
+        }
+        const sp = p.vel.length(); p.pos.addScaledVector(p.vel, dt); p.dist += sp * dt;
+        if (B.brake) {   // a rolled ball runs out of steam over the second half of its range
+          if (p.dist > p.range * 0.5) { const rem = Math.max(0.4, p.range + 0.5 - p.dist), k = Math.max(0, sp - sp * sp / (2 * rem) * dt) / Math.max(sp, 1e-3); p.vel.multiplyScalar(k); if (sp * k < B.live) p.ph = 'free'; }
+        } else if (p.dist >= p.range) p.ph = 'free';
+      } else if (p.ph === 'free') {
+        p.vel.y -= B.g * dt; p.pos.addScaledVector(p.vel, dt);
+      }
+      if (p.ph !== 'rest') {
+        // the floor (there's none past a broken wall)
+        if (inArena && p.pos.y < r) {
+          p.pos.y = r;
+          if (p.vel.y < -2.5) { const vy = -p.vel.y; p.vel.y = vy * B.eF; if (p.ph === 'fly') p.ph = 'free'; if (vy > 5) { SFX.play('land'); FX.burst(_q2.copy(p.pos).setY(0.05), { n: 4, color: A.dust, speed: 1.5, size: 0.06, life: 0.3 }); } }
+          else p.vel.y = 0;
+        }
+        const hs = Math.hypot(p.vel.x, p.vel.z);
+        if (p.ph === 'free' && p.pos.y <= r + 0.02 && hs > 0) { const k = Math.max(0, hs - B.fric * dt) / hs; p.vel.x *= k; p.vel.z *= k; }
+        // the walls
+        for (const w of A.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - r) {
+          const vin = p.vel[w.axis] * w.sign; p.pos[w.axis] = w.sign * (w.lim - r);
+          if (vin <= 0) continue;
+          p.vel[w.axis] = -p.vel[w.axis] * B.eW; const tk = B.eW > 0.5 ? 0.92 : 0.5, ax = w.axis === 'x' ? 'z' : 'x'; p.vel[ax] *= tk;
+          if (p.ph === 'fly') p.ph = 'free';
+          if (vin > 2) { SFX.play(p.ball === 'bowling' ? 'thud' : 'land'); FX.spark(_q2.copy(p.pos), { color: LOOK[p.look].tcol, size: 0.5 }); }
+          if (B.bank && !p.done && p.vel.length() >= B.live) {   // (a bank only counts while the ball is still live)
+            p.n++; M.call(f, 'BANK +' + Math.round((Math.pow(1 + B.bank, p.n) - 1) * 100) + '%', 'buff'); SFX.play('bumper'); }
+        }
+        if (p.ph === 'free' && inArena && p.pos.y <= r + 0.001 && Math.abs(p.vel.y) < 0.05 && Math.hypot(p.vel.x, p.vel.z) < 0.2) { p.ph = 'rest'; p.vel.set(0, 0, 0); }
+      }
+      const hs = Math.hypot(p.vel.x, p.vel.z), sp = p.vel.length();
+      // lost off the edge: it comes back to them
+      if (!inArena && p.pos.y < A.outY + 1) { pickBall(p, 'lost'); return; }
+      // a hit: in flight, or (the soccer ball, a rolled bowling ball) while it's still moving fast
+      const live = p.ph === 'fly' || (B.live && sp >= B.live && !p.done);
+      if (live && p.hitCd <= 0 && o) {
+        const q = bodyHit(f, o, _hA.copy(a).setY(a.y + r), _hB.copy(p.pos).setY(p.pos.y + r), LOOK[p.look].w, p.mv, p.k);   // (by the top of the ball: a rolled one still catches feet just off the floor)
+        M.hitMinionsSeg(f, a, p.pos, r, p.id);
+        if (q) {
+          const mult = B.bank ? Math.pow(1 + B.bank, p.n) : 1, mv = mult > 1 ? Object.assign({}, p.mv, { dmg: p.mv.dmg * mult }) : p.mv;
+          const dir = p.n ? _bh.set(p.vel.x, 0, p.vel.z).normalize().clone() : shotDir(f, o, _bh.set(p.vel.x, 0, p.vel.z).normalize());
+          const res = Combat.hit(f, o, mv, { kind: p.k, charge: p.charge, at: q.clone(), from: p.n ? p.pos.clone() : f.pos.clone(), dir, proj: true, otg: o.state === 'down' });
+          if (res !== 'miss') {
+            p.hitCd = 0.6; p.done = !!B.live;
+            const hx = hs > 0.01 ? p.vel.x / hs : 0, hz = hs > 0.01 ? p.vel.z / hs : 0, back = p.ball === 'bowling' ? 1.2 : 2.5;
+            p.vel.set(-hx * back, p.ball === 'bowling' ? 0 : 4.5, -hz * back); p.ph = 'free';
+            if (p.ball === 'baseball' && res === 'hit' && o.hp > 0 && U.rand() < 0.25) bean(o);
+          }
+        }
+      }
+      // BOWLER: a ball on the floor trips anyone who runs into it
+      if (B.trip && p.ph !== 'fly' && o && p.tripCd <= 0 && hs < 3 && p.t > 0.25 && p.pos.y < r + 0.1) {
+        const dx = p.pos.x - o.pos.x, dz = p.pos.z - o.pos.z, ov = Math.hypot(o.vel.x, o.vel.z);
+        if (Math.hypot(dx, dz) < 0.62 && o.grounded && ov > 2 && o.vel.x * dx + o.vel.z * dz > 0 && o.inv <= 0 && (o.state === 'run' || o.state === 'idle' || (o.state === 'attack' && o.move && o.move.type !== 'super'))) {
+          const d = new V3(o.vel.x / ov, 0, o.vel.z / ov);
+          const res = Combat.hit(f, o, KB.MOVES.bowlTrip, { kind: 'trip', dir: d.clone(), at: _q2.copy(p.pos).setY(0.3).clone(), from: p.pos.clone(), proj: true });
+          if (res === 'hit' && o.state === 'tumble') { o.hardKD = true; M.call(o, 'TRIPPED!', 'counter'); M.event('trip', { f, vic: o }); }
+          p.vel.set(d.x * 3, 0, d.z * 3); p.ph = 'free'; p.tripCd = 1.2;
+        }
+      }
+      // its owner walks over it: picked up (a fast soccer ball or basketball is trapped, caught off the rebound)
+      if (p.ph !== 'fly' && p.t > 0.3 && f.grounded && hs < B.pick && p.pos.y < 1.4 && !f.inHitstun && !['ko', 'out', 'held', 'down', 'getup', 'grab', 'dodge'].includes(f.state) && !(f.state === 'attack' && f.move && f.move.type === 'super')
+        && Math.hypot(f.pos.x - p.pos.x, f.pos.z - p.pos.z) < 0.9) { pickBall(p, 'pick'); return; }
+      // the look: rolling along the floor, a spiral in the air, a trail while it flies
+      const m = p.mesh; m.position.copy(p.pos);
+      if (p.ball === 'football' && p.ph === 'fly') { m.lookAt(_q2.copy(p.pos).add(p.vel)); m.rotateZ(p.t * 22); }
+      else if (hs > 0.05) { _bh.set(p.vel.z, 0, -p.vel.x).normalize(); m.rotateOnWorldAxis(_bh, hs / r * dt * (p.pos.y <= r + 0.02 ? 1 : 0.5)); }
+      if (p.trail) {
+        const tl = live ? Math.min(LOOK[p.look].trail, p.pos.distanceTo(p.from), sp * 0.05) : 0;
+        if (tl > 0.03) { p.trail.visible = true; _bh.copy(p.vel).normalize(); p.trail.position.copy(p.pos).addScaledVector(_bh, -tl / 2); p.trail.scale.z = tl; p.trail.lookAt(p.pos); } else p.trail.visible = false;
+      }
+      if (p.ball === 'bowling' && hs > 3 && U.vrand() < 0.4) FX.burst(_q2.copy(p.pos).setY(0.05), { n: 1, color: A.dust, speed: 1, size: 0.06, life: 0.3 });
+    }
     /* take something that's flying out of the scene (a new round, the end of the match) */
     function dropProj(p) {
       if (p.kind === 'dart') killDart(p); else if (p.kind === 'chain') endChain(p); else if (p.kind === 'hex') disposeGroup(p.mesh);
       else if (p.kind === 'wave') { disposeGroup(p.mesh); p.notes.forEach(n => scene.remove(n)); }
       else if (p.kind === 'part') { if (p.grp.parent) p.grp.parent.remove(p.grp); }
+      else if (p.kind === 'sball') { scene.remove(p.mesh); if (p.trail) { scene.remove(p.trail); p.trail.geometry.dispose(); p.trail.material.dispose(); p.trail = null; } }
       else if (p.mesh) scene.remove(p.mesh);
     }
     function updProjs(dt) {
@@ -836,7 +993,7 @@
           if (!end && p.pos.y <= 0.04) { p.pos.y = 0.04; end = p.pos.clone(); what = 'floor'; }
           if (!end && p.dist >= p.range) { end = p.pos.clone(); what = 'air'; }
           if (end) p.pos.copy(end);
-          p.mesh.position.copy(p.pos); if (p.look === 'kunai') p.mesh.rotateZ(dt * 25); else if (LOOK[p.look].spin) p.mesh.rotateX(dt * LOOK[p.look].spin);
+          p.mesh.position.copy(p.pos); if (p.look === 'kunai') p.mesh.rotateZ(dt * 25); else if (LOOK[p.look].flat) p.mesh.rotateOnWorldAxis(UP, dt * LOOK[p.look].flat); else if (LOOK[p.look].spin) p.mesh.rotateX(dt * LOOK[p.look].spin);
           if (p.look === 'bowling' && U.vrand() < 0.4) FX.burst(_q2.copy(p.pos).setY(0.05), { n: 1, color: arena.dust, speed: 1, size: 0.06, life: 0.3 });
           const tl = Math.min(LOOK[p.look].trail, p.pos.distanceTo(p.from));
           if (tl > 0.03) { p.trail.visible = true; p.trail.position.copy(p.pos).addScaledVector(p.dir, -tl / 2); p.trail.scale.z = tl; p.trail.lookAt(p.pos); }
@@ -846,6 +1003,8 @@
           dartImpact(p, end, what);
           if (p.look === 'kunai' && (what === 'wall' || what === 'floor')) { p.stuck = 0.9; if (p.trail) { M.fx.push({ m: p.trail, t: 0, life: 0.1 }); p.trail = null; } continue; }
           killDart(p); M.projs.splice(i, 1);
+        } else if (p.kind === 'sball') {
+          updBall(p, dt);
         } else if (p.kind === 'fnote') {
           p.t += 0; p.mesh.position.addScaledVector(p.vel, dt); p.vel.multiplyScalar(Math.exp(-2.5 * dt)); p.mesh.quaternion.copy(FACE_Q); p.mesh.rotateZ(Math.sin(p.t * 6) * 0.3 + p.spin * 0.05);
           const k = p.t / p.life; p.mesh.scale.setScalar(k < 0.15 ? k / 0.15 : k > 0.7 ? Math.max(0.01, (1 - k) / 0.3) : 1);

@@ -83,6 +83,7 @@
       const d = U.dist(f.pos, o.pos);
       if (this.underFire(dt)) return;
       if (m.haz && this.hazardThink()) return;
+      this.trapThink();
       if (f.state === 'grab') return this.grabThink(dt);
       if (f.state === 'attack') return this.ownMove(dt, d);
       if (f.state === 'air') return this.inAir(dt, d);
@@ -98,6 +99,15 @@
       if (!this.hazRoll) return false;
       if (d === 'jump') { if (f.grounded) this.press('jump'); return false; }   // (and carries on fighting in the air)
       this.guardT = 0; this.held.guard = false; this.stickTo(d.x, d.z, 1); return true;
+    }
+    /* ---- a BOWLER's ball lying in our path: hop over it rather than trip (the better the CPU, the more often) */
+    trapThink() {
+      const f = this.f, o = f.opp, b = o && o.balls && o.balls.bowling;
+      if (!b || b.ph === 'fly' || !f.grounded || (f.state !== 'idle' && f.state !== 'run')) { this.trapRoll = null; return; }
+      const dx = b.pos.x - f.pos.x, dz = b.pos.z - f.pos.z, d = Math.hypot(dx, dz), v = Math.hypot(f.vel.x, f.vel.z);
+      if (d > 1.5 || v < 1.5 || (f.vel.x * dx + f.vel.z * dz) / (d * v + 1e-6) < 0.6) { this.trapRoll = null; return; }
+      if (this.trapRoll == null) this.trapRoll = Math.random() < [0.3, 0.55, 0.8, 0.92][this.lv];
+      if (this.trapRoll) this.press('jump');
     }
     /* ---- being comboed: burst, tech the wall, get out */
     underFire(dt) {
@@ -262,6 +272,8 @@
 
       // ---- go get the lance (DRAGOON): it's on the floor and he fights with his fists until he has it
       if (f.spearOut && f.spear && f.spear.at && !(d < 2 && r() < 0.5)) { this.stickTo(f.spear.at.x - f.pos.x, f.spear.at.z - f.pos.z, 1, true); return; }
+      // ---- go get our ball (MODERN SPORTS): it's on the floor, and the throws wait on it
+      for (const k in f.balls) { const b = f.balls[k]; if (b && b.ph !== 'fly' && Math.abs(b.pos.x) < m.arena.W && Math.abs(b.pos.z) < m.arena.D && !(d < 2.2 && r() < 0.6)) { this.stickTo(b.pos.x - f.pos.x, b.pos.z - f.pos.z, 1, true); return; } }
       // ---- go get a part that fell off (it always rests inside the walls, so walk straight to it)
       const pick = m.picks.find(p => p.rest && f.broken[p.part]);
       if (pick && d > 2.6) { this.stickTo(pick.grp.position.x - f.pos.x, pick.grp.position.z - f.pos.z, 1, true); return; }
@@ -282,7 +294,7 @@
         if (ok) { this.press('special'); this.wait = 0.4; return; }
       }
       const heavy = KB.MOVES[f.st.heavy];
-      if (heavy.type === 'proj' && d > 2.5 && d < heavy.range + 1 && r() < 0.012 * (lv + 1)) { this.press('heavy'); this.wait = 0.5; return; }
+      if (heavy.type === 'proj' && !(heavy.ball && f.ballOut(heavy.ball)) && d > 2.5 && d < heavy.range + 1 && r() < 0.012 * (lv + 1)) { this.press('heavy'); this.wait = 0.5; return; }
       if (d > 3.2) {
         this.stickTo(o.pos.x - f.pos.x + this.strafe * 0.6, o.pos.z - f.pos.z);
         if (d < 4.6 && r() < 0.02 * (lv + 1)) { this.press('dodge'); this.dashing = 0.35; }

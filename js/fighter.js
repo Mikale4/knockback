@@ -70,6 +70,7 @@
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
+      this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
       Anim.set(this.fig, this.ready);
@@ -137,7 +138,7 @@
     /* PART TOSS (its own button, F by default): pull off a part of your own and throw it -- the head first, then the L-arm, then the R-arm.
        A hit extends the combo (twice a combo at most) */
     /* a Special is ready: uses left, a head to use it with, and (Shadow Step) its cooldown over */
-    canSpecial() { return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0); }
+    canSpecial() { const sp = KB.MOVES[this.st.special]; return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0) && !(sp && sp.ball && this.ballOut(sp.ball)); }
     tossable() { return ['head', 'armL', 'armR'].find(p => !this.broken[p] && !this.fig.detached[p]) || null; }
     canToss() { const o = this.opp; return !!(this.hasImp() || this.tossable()) && !(o && o.combo.by === this && o.comboing && o.combo.ext >= 2); }
     /* the SUMMONER carrying an imp throws it, not a part */
@@ -170,6 +171,11 @@
       if (S.sig === 'beat' && !this.broken.armR) { const b = Music.beat(this.m); if (b.n !== this.lastBeat) { this.lastBeat = b.n; if (this.state !== 'ko' && !this.m.cine) FX.ring(_c.copy(this.pos).setY(0.06), { r0: 0.3, r1: 1.0, life: 0.22, color: 0xff8ad8 }); } }
       if (this.m.training && this.m.training.meter) { this.hype = 100; this.burst = 100; this.uses = S.uses; }
       if (this.combo.hits && this.inHitstun) this.combo.t += dt;
+      if (this.beanT > 0) {   // BASEBALL: beaned, and seeing stars as soon as they're on their feet
+        this.beanWin -= dt;
+        if (this.beanWin <= 0 || this.state === 'ko' || this.state === 'out') this.beanT = 0;
+        else if (this.grounded && ['idle', 'run', 'guard'].includes(this.state) && !this.m.cine) { this.move = null; this.setState('hit'); this.hitstun = this.beanT; this.dizzy = true; this.vel.set(0, 0, 0); this.beanT = 0; this.m.call(this, 'DIZZY', 'counter'); }
+      }
 
       // the Snap button: Burst out of hitstun, or cancel a move with Hype
       if (I.peek('snap') && this.state !== 'ko' && !this.m.frozen) {
@@ -241,7 +247,7 @@
       if (this.m.frozen || this.m.phase !== 'fight') return false;
       if (I.take('super') && this.hype >= 100 && ground) { this.startSuper(); return true; }
       if (I.take('toss') && this.canToss()) { this.startMove(this.tossMove(), 'toss'); return true; }
-      if (I.take('special')) { if (this.canSpecial() && (ground || this.moveOk(S.special, 'air'))) { this.startMove(S.special, 'special'); return true; } else if (this.broken.head) this.m.call(this, 'NO HEAD!', 'bad'); }
+      if (I.take('special')) { if (this.canSpecial() && (ground || this.moveOk(S.special, 'air'))) { this.startMove(S.special, 'special'); return true; } else if (this.broken.head) this.m.call(this, 'NO HEAD!', 'bad'); else { const sp = KB.MOVES[S.special]; if (sp && sp.ball && this.ballOut(sp.ball) && this.m.time - this.noBallT > 0.8) { this.noBallT = this.m.time; this.m.call(this, 'NO BALL!', 'bad'); } } }
       if (ground) {
         if (I.held.guard && I.take('light')) { this.startMove(this.grabMove(), 'throw'); return true; }
         if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return true; }
@@ -331,14 +337,15 @@
       const b = this.burn;
       if (['ko', 'out'].includes(this.state) || this.m.phase !== 'fight') { this.burn = null; return; }
       b.t -= dt; b.tick += dt;
-      if (U.vrand() < 0.35) FX.burst(_c.copy(this.pos).set(this.pos.x + U.vrnd(-0.3, 0.3), this.pos.y + U.vrnd(0.3, 1.6), this.pos.z + U.vrnd(-0.3, 0.3)), { n: 1, color: [0xffd040, 0xff6a20, 0xff3010], glow: true, speed: 0.4, size: 0.09, gravity: -5, life: 0.35 });
+      const pz = b.poison, C3 = pz ? [0xb0ff6a, 0x5ad040, 0xd8ffb0] : [0xffd040, 0xff6a20, 0xff3010];   // (POISON, the KUNOICHI's: the same ticks, green)
+      if (U.vrand() < 0.35) FX.burst(_c.copy(this.pos).set(this.pos.x + U.vrnd(-0.3, 0.3), this.pos.y + U.vrnd(0.3, 1.6), this.pos.z + U.vrnd(-0.3, 0.3)), { n: 1, color: C3, glow: true, speed: 0.4, size: 0.09, gravity: pz ? -2 : -5, life: 0.35 });
       while (b.tick >= 0.5 && b.left > 0) {
         b.tick -= 0.5; b.left--;
         let d = Math.round(b.dps * 0.5 * (1 - this.st.def)); if (this.m.training && this.m.training.godP2 && this.idx === 1) d = 0;
         d = Math.min(d, Math.max(0, this.hp - 1)); this.hp -= d; if (b.by) b.by.records.dmg += d;
         if (this.comboing && this.combo.by === b.by) this.combo.dmg += d;
-        this.flash = Math.max(this.flash, 0.35); this.flashCol = 0xff7a20;
-        FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 5, color: [0xffd040, 0xff6a20], glow: true, speed: 2, size: 0.08, gravity: -4, life: 0.4 });
+        this.flash = Math.max(this.flash, 0.35); this.flashCol = pz ? 0x7aff5a : 0xff7a20;
+        FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 5, color: C3.slice(0, 2), glow: true, speed: 2, size: 0.08, gravity: -4, life: 0.4 });
       }
       if (b.t <= 0 || b.left <= 0) this.burn = null;
     }
@@ -365,8 +372,19 @@
     }
 
     /* --------------------------------------------------------------- attacks */
-    lightRoot() { return this.broken.armR ? 'stump1' : this.spearOut ? 'fistA' : this.broken.armL ? this.st.lightPure || this.st.light : this.st.light; }
-    airRoot() { return this.broken.armR ? 'stumpAir' : this.spearOut ? 'fistAir' : this.broken.armL ? this.st.airPure || this.st.air : this.st.air; }
+    lightRoot() { return this.broken.armR ? 'stump1' : this.spearOut ? 'fistA' : this.handEmpty() ? 'bareA' : this.broken.armL ? this.st.lightPure || this.st.light : this.st.light; }
+    airRoot() { return this.broken.armR ? 'stumpAir' : this.spearOut ? 'fistAir' : this.handEmpty() ? 'bareAir' : this.broken.armL ? this.st.airPure || this.st.air : this.st.air; }
+    /* MODERN SPORTS: a ball that's out on the floor. The BOWLER's ball is the one he swings, so until he picks it back
+       up he fights bare-handed; a move that needs a ball that's out is swapped (see startMove) */
+    ballOut(kind) { return !!(this.balls && this.balls[kind]); }
+    handEmpty() { return this.build.armR.line === 'bowler' && this.ballOut('bowling'); }
+    /* the ball in the hand, shown only while it's there (the FOOTBALL player's in his left, the BOWLER's in his right, the
+       BASKETBALL player's in his left) */
+    ballHands() {
+      const P = this.fig.parts, L = this.build.armL.line, R = this.build.armR.line;
+      if ((L === 'football' || L === 'basketball') && P.wL) P.wL.visible = !this.ballOut(L);
+      if (R === 'bowler' && P.wR) P.wR.visible = !this.ballOut('bowling');
+    }
     /* the L-arm's Heavy, launcher and air Heavy: a broken L-arm (or a two-handed lance move with the lance thrown) falls back to the body */
     leftMove(k) {
       const fb = { heavy: 'tackle', launch: 'headbutt', airHeavy: 'bodyDrop' }[k], id = this.st[k];
@@ -396,7 +414,14 @@
     grabMove() { return this.st.sig === 'grappler' ? 'wrGrab' : 'throw'; }
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
-      const mv = KB.MOVES[id]; if (!mv) return;
+      let mv = KB.MOVES[id]; if (!mv) return;
+      if (mv.ball && this.ballOut(mv.ball)) {
+        // its ball is on the floor: Heavy becomes the move you make without it (the FOOTBALL player's Full-Force
+        // Tackle; a plain Tackle or Body Drop for the rest), a Special waits
+        const alt = mv.noBall || { heavy: 'tackle', airHeavy: 'bodyDrop' }[kind];
+        if (!alt || !KB.MOVES[alt]) { if (this.m.time - this.noBallT > 0.8) { this.noBallT = this.m.time; this.m.call(this, 'NO BALL!', 'bad'); } return; }
+        id = alt; mv = KB.MOVES[alt];
+      }
       if (mv.limit && !this.useLimited(id, mv)) return;   // (a move with a limit: n uses in any t seconds)
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
       this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1;
@@ -405,7 +430,7 @@
       if (mv.armorSU) this.giveArmor(mv.su, mv.oneArmor);
       if (kind === 'special') { this.uses--; this.spReady = this.m.time + (this.st.spCd || 0); }
       this.setState('attack'); this.aim(mv); this.m.event('move', { f: this, id, kind });
-      if (kind === 'air' || kind === 'airHeavy') { this.vel.y = Math.max(this.vel.y, kind === 'air' ? 2.2 : 3); }
+      if (kind === 'air' || kind === 'airHeavy') { this.vel.y = Math.max(this.vel.y, kind === 'air' ? (this.st.sig === 'hangtime' ? 4.2 : 2.2) : 3); }   // (BASKETBALL: hang time)
       if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.giveArmor(mv.su + mv.ac, mv.oneArmor || this.st.perk === 'unstoppable');
       if (mv.inv) this.inv = Math.max(this.inv, mv.su + mv.ac + 0.04);
     }
@@ -436,6 +461,11 @@
       if (S.passive === 'slugger' && kind === 'heavy') m *= 1.15;
       if (S.passive === 'juggernaut' && (kind === 'dash' || kind === 'special')) m *= 1.2;
       if (S.passive === 'gains') m *= 1 + (this.gainsK || 0);
+      // EDO JAPAN, KNIGHTS OF THE REALM
+      if (this.buffs.sake) m *= 1.15; if (this.buffs.zeal) m *= 1.12;
+      if (S.passive === 'domain' && Math.hypot(this.pos.x, this.pos.z) < 4) m *= 1.12;
+      if (S.passive === 'charger') m *= 1 + Math.min(0.2, (this.runT || 0) * 0.1);
+      if (S.sig === 'mounted' && (kind === 'dash' || kind === 'special')) m *= 1.15;
       return m;
     }
     updAttack(dt) {
@@ -602,6 +632,10 @@
       if (b.id === 'fury') { this.buffs.fury = b.t; this.m.call(this, 'FURY', 'buff'); }
       if (b.id === 'chalk') { this.armorT = b.t; this.armorHits = 99; this.buffs.chalk = b.t; this.m.call(this, 'CHALK UP', 'buff'); FX.burst(_c.copy(this.pos).setY(1.3), { n: 24, color: [0xffffff, 0xe8e8e8], speed: 2.5, gravity: -1, life: 0.8, size: 0.1 }); }
       if (b.id === 'slip') { this.buffs.slip = b.t; this.m.call(this, 'BOB & WEAVE', 'buff'); }
+      if (b.id === 'sake') { const h = Math.round(this.maxHp * b.heal); this.hp = Math.min(this.maxHp, this.hp + h); this.buffs.sake = b.t; this.m.call(this, 'KANPAI! +' + h, 'heal'); FX.burst(this.fig.socket('head', [0, 2, 5]), { n: 8, color: [0xfff4d8, 0xffffff], speed: 1.5, size: 0.06, gravity: 3, life: 0.5 }); }
+      if (b.id === 'kawarimi') { this.buffs.kawarimi = b.t; this.m.call(this, 'KAWARIMI', 'buff'); }
+      if (b.id === 'vow') { this.buffs.vow = b.t; this.m.call(this, 'VOW OF THE TEMPLE', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, normal: new V3(0, 1, 0), color: 0xffffff }); }
+      if (b.id === 'zeal') { this.buffs.zeal = b.t; this.m.call(this, 'DEUS VULT!', 'buff'); }
       if (b.id === 'parry') { this.buffs.parry = b.t; this.m.call(this, 'EN GARDE', 'buff'); FX.spark(this.fig.socket('wR', [0, 0, 8]), { color: 0x9ad8ff, size: 1.2 }); }
       if (b.id === 'nova') { const heal = Math.round(this.maxHp * b.heal * this.st.healMult); this.hp = Math.min(this.maxHp, this.hp + heal); this.m.call(this, '+' + heal + ' HP', 'heal'); }
       if (b.id === 'valor') { this.buffs.valor = b.t; this.m.call(this, 'SONG OF VALOR', 'buff'); for (let i = 0; i < 3; i++) FX.ring(_c.copy(this.pos).setY(0.3 + i * 0.5), { r1: 1.4 + i * 0.3, life: 0.4 + i * 0.1, color: 0xff8ad8 }); }
@@ -635,6 +669,7 @@
       this.m.event('super', { f: this });
       const mv = KB.MOVES[this.st.super];
       if (this.spearOut) this.catchSpear(false);   // (the Art calls the lance back to his hand)
+      if (this.m.recallBalls) this.m.recallBalls(this);   // (and a sports figure's ball)
       this.hype -= 100; this.move = mv; this.kind = 'super'; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.superPhase = 'start';
       this.moveSerial = (this.moveSerial || 0) + 1;
       this.setState('attack'); this.aim(Object.assign({}, mv, { range: 12 })); this.inv = 0.9; this.vel.set(0, 0, 0);
@@ -654,12 +689,25 @@
       if (this.superPhase === 'catch') {
         this.catchT += dt;
         const r = this.updCatch(mv, o, dt);
+        if (r === true && this.swayOut(o)) return;
         if (r === true) this.beginSeq(o);
         else if (r === 'miss' || this.catchT > 2.2) this.superMiss();
         return;
       }
       if (this.superPhase === 'seq') return this.updSeq(dt);
       if (this.superPhase === 'miss') { this.missT += dt; this.physics(dt, 12); if (this.missT > 0.45 && this.grounded) { this.move = null; this.setState('idle'); } else if (this.missT > 1.6) { this.move = null; this.setState('air'); } }
+    }
+    /* BOXER (Killer Instinct): a Legend Art thrown raw -- not one that follows a combo -- misses him one time in five:
+       he bobs and sways out of it, a quick slip to the side */
+    swayOut(o) {
+      if (!o || o.st.passive !== 'killer' || o.comboing || o.combo.hits > 0 || !['idle', 'run', 'guard', 'guardstun', 'attack', 'air'].includes(o.state) || (o.state === 'attack' && o.move && o.move.type === 'super')) return false;
+      if (U.rand() >= 0.2) return false;
+      const d = _v.subVectors(o.pos, this.pos).setY(0); if (d.lengthSq() < 1e-4) fwd(this.yaw, d); d.normalize();
+      const side = o.idx ? 1 : -1;
+      o.move = null; o.dodgeDir = new V3(-d.z * side * 0.45, 0, d.x * side * 0.45); o.dodgeAir = !o.grounded; o.setState('dodge');
+      o.inv = Math.max(o.inv, 0.6); o.yaw = U.ang(o.pos, this.pos); o.swayT = 0.4; o.hype = Math.min(100, o.hype + 10);
+      this.m.call(o, 'SWAY!', 'tech'); SFX.play('dodge'); this.m.event('evade', { f: o, by: this }); this.m.event('sway', { f: o, by: this });
+      this.superMiss(); return true;
     }
     superMiss() {
       this.superPhase = 'miss'; this.missT = 0; this.obj.visible = true; this.inv = 0;
@@ -1049,10 +1097,12 @@
       else if (st !== 'tumble' && st !== 'out' && st !== 'ko') { this.spin.rotation.x = U.smooth(this.spin.rotation.x, st === 'dodge' && !this.grounded ? -Math.PI * 2 * U.clamp(this.stateT / 0.3, 0, 1) : 0, st === 'dodge' ? 40 : 14, dt); this.spin.position.y = U.smooth(this.spin.position.y, 0.95, 14, dt); }
       if (st === 'getup') this.spin.rotation.x = U.smooth(this.spin.rotation.x, 0, 16, dt);
       // short overrides laid over the move: a pistol's kick up the arm, a chain yanked back to the hip
+      if (this.swayT > 0) { this.swayT -= dt; pose = Anim.blend(R, Anim.P.weave.strike, 1, R); rate = 34; }
       if (this.kickT > 0) { this.kickT -= dt; const k = this.kickT / 0.14; pose.armL[0] -= 0.6 * k; pose.torso[0] -= 0.12 * k; rate = Math.max(rate, 50); }
       if (this.yankT > 0) { this.yankT -= dt; pose = Anim.blend(pose, Anim.P.chainYank.strike, U.clamp(this.yankT / 0.06, 0, 1), R); rate = Math.max(rate, 30); }
+      if (this.build.legs.line === 'lancer') pose = Anim.mounted(pose);   // (on horseback: the horse stays level under the rider)
       Anim.drive(this.fig, pose, dt, rate);
-      this.holster(dt);
+      this.holster(dt); this.ballHands();
       // the hit flash and status glows
       this.flash = Math.max(0, this.flash - dt * 5);
       let e = this.flash, col = this.flashCol;
@@ -1120,8 +1170,18 @@
       dir.y = 0; if (dir.lengthSq() < 1e-4) dir.copy(fwd(att.yaw)); dir.normalize();
 
       // ---- BOB & WEAVE / PARRY (Specials): the next attack that would land is slipped, or turned aside with a riposte
-      if ((vic.buffs.slip || vic.buffs.parry) && !o.force && !o.remote && mv.type !== 'grab' && o.kind !== 'super' && !['held', 'tumble', 'down', 'ko', 'out', 'hit'].includes(vic.state)) {
+      if ((vic.buffs.slip || vic.buffs.parry || vic.buffs.kawarimi) && !o.force && !o.remote && mv.type !== 'grab' && o.kind !== 'super' && !['held', 'tumble', 'down', 'ko', 'out', 'hit'].includes(vic.state)) {
         const side = new V3(-dir.z, 0, dir.x);
+        if (vic.buffs.kawarimi) {
+          // KUNOICHI: the hit lands on a log in her clothes; she's behind them, and they're left standing there
+          delete vic.buffs.kawarimi; const was = _c.copy(vic.pos).setY(vic.pos.y + 0.9).clone();
+          FX.burst(was, { n: 16, color: [0xd8d0c0, 0xa8a090, 0x8a6a4a], speed: 2.5, size: 0.14, gravity: -1, life: 0.6 }); FX.burst(was, { n: 6, color: [0x8a5a2a, 0x6a4020], speed: 4, size: 0.12, gravity: 9, life: 0.7 });
+          const af = fwd(att.yaw); vic.pos.set(att.pos.x - af.x * 1.0, Math.max(0, att.pos.y), att.pos.z - af.z * 1.0); vic.clampInside();
+          vic.move = null; vic.setState(vic.grounded ? 'idle' : 'air'); vic.inv = Math.max(vic.inv, 0.35); vic.yaw = U.ang(vic.pos, att.pos); vic.hype = Math.min(100, vic.hype + 8);
+          att.hitstop = Math.max(att.hitstop, 0.3); m.call(vic, 'KAWARIMI!', 'tech'); SFX.play('dodge'); m.event('evade', { f: vic, by: att });
+          FX.burst(_c.copy(vic.pos).setY(vic.pos.y + 0.9), { n: 10, color: [0xd8d0c0, 0xffffff], speed: 2, size: 0.12, gravity: -1, life: 0.4 });
+          return 'miss';
+        }
         if (vic.buffs.slip) {
           delete vic.buffs.slip; vic.inv = Math.max(vic.inv, 0.3); vic.move = null; vic.setState('idle');
           vic.pos.addScaledVector(side, 0.9); vic.clampInside(); vic.yaw = U.ang(vic.pos, att.pos); vic.hype = Math.min(100, vic.hype + 8);
@@ -1136,6 +1196,8 @@
       const guarding = (vic.state === 'guard' || vic.state === 'guardstun') && !o.force && Combat.facing(vic, o.from || att.pos);
       if (guarding && mv.type !== 'grab') {
         let just = vic.state === 'guard' && m.time - (vic.guardStart || -9) < 0.12;
+        const overShield = att.st.sig === 'flail' && (o.kind === 'light' || o.kind === 'air');   // (CRUSADER: no Just Guard, twice the guard)
+        if (overShield) just = false;
         const cpu = vic.input.cpu; if (just && cpu && cpu.lv != null && !cpu.dummy && U.rand() > [0.1, 0.22, 0.35, 0.5][cpu.lv]) just = false;
         const raw = mv.dmg * att.dmgMult(o.kind);
         if (just) {
@@ -1147,7 +1209,7 @@
           return 'jguard';
         }
         const chip = Math.round(raw * 0.12 * vic.st.chip);
-        vic.hp = Math.max(1, vic.hp - chip); vic.guardHp -= raw * (mv.launch ? 1.0 : 0.7); vic.guardIdle = 0;
+        vic.hp = Math.max(1, vic.hp - chip); vic.guardHp -= raw * (mv.launch ? 1.0 : 0.7) * (overShield ? 2 : 1); vic.guardIdle = 0;
         if (vic.broken.armL === false) vic.armor.armL = Math.max(1, vic.armor.armL - raw * 0.25);
         att.hype = Math.min(100, att.hype + raw * 0.04 * att.st.hypeGain);
         if (vic.guardHp <= 0) {
@@ -1168,16 +1230,34 @@
       // MODERN SPORTS passives that need the target
       { const P = att.st.passive; if (P === 'hattrick' && vic.combo.hits >= 2) dmg *= 1.12; else if (P === 'killer' && vic.hp < vic.maxHp * 0.5) dmg *= 1.15; else if (P === 'precision' && !vic.combo.hits) dmg *= 1.25;
         else if (P === 'hookspin' && mv.type === 'proj') dmg *= 1.18; else if (P === 'eagle' && Math.hypot(att.pos.x - vic.pos.x, att.pos.z - vic.pos.z) >= 5) dmg *= 1.18; }
+      // EDO JAPAN, KNIGHTS OF THE REALM, and the BASKETBALL player: the ones that need the target too
+      { const P = att.st.passive, G = att.st.sig, lite = o.kind === 'light' || o.kind === 'air', dist = Math.hypot(att.pos.x - vic.pos.x, att.pos.z - vic.pos.z);
+        if (P === 'nothing' && att.hp < vic.hp) dmg *= 1.18;
+        if (P === 'unseen' && !Combat.facing(vic, att.pos)) dmg *= 1.2;
+        if (P === 'rim' && !vic.grounded) dmg *= 1.15;
+        if (P === 'firstblood' && !att.firstBlood && !o.noCombo) { dmg *= 1.4; att.firstBlood = true; m.call(att, 'FIRST BLOOD', 'buff'); }
+        if (P === 'penance' && att.penance > 0) { dmg *= 1 + att.penance; att.penance = 0; }
+        if (G === 'battojutsu' && o.kind === 'light' && mv.id === att.st.light) dmg *= 1.3;
+        if (G === 'toxin' && lite && vic.burn && vic.burn.poison) dmg *= 1.2;
+        if (G === 'halfsword' && lite && dist < 1.1) dmg *= 1.2;
+        if (G === 'reach' && lite && dist >= 1.6) dmg *= 1.15;
+        if (vic.st.passive === 'ironrule' && lite) dmg *= 0.85;
+        if (vic.buffs.vow) dmg *= 0.8;
+        if (vic.st.passive === 'penance') vic.penance = Math.min(0.3, (vic.penance || 0) + 0.02); }
       if (vic.buffs.bulwark) dmg *= 0.75;
       if (vic.st.perk === 'resolve' && vic.hp < vic.maxHp * 0.3) dmg *= 0.85;
       dmg = Math.round(dmg);
       if (m.training && m.training.godP2 && vic.idx === 1) dmg = 0;
       vic.hp -= dmg; att.records.dmg += dmg;
       if (!o.noCombo) { vic.combo.hits++; vic.combo.dmg += dmg; vic.combo.by = att; }
-      if (mv.burn && vic.hp > 0) {
-        if (!vic.burn) { m.call(vic, 'BURNING', 'bad'); m.event('burn', { att, vic }); }
-        vic.burn = { t: mv.burn[1], left: Math.round(mv.burn[1] / 0.5), tick: 0, dps: mv.burn[0] * att.dmgMult(o.kind), by: att };
+      const bn = mv.burn || mv.poison;   // (BURNING, the Dragoon's; POISON, the Kunoichi's)
+      if (bn && vic.hp > 0) {
+        const pz = !mv.burn;
+        if (!vic.burn || !!vic.burn.poison !== pz) { m.call(vic, pz ? 'POISONED' : 'BURNING', 'bad'); m.event('burn', { att, vic, poison: pz }); }
+        vic.burn = { t: bn[1], left: Math.round(bn[1] / 0.5), tick: 0, dps: bn[0] * att.dmgMult(o.kind), by: att, poison: pz };
       }
+      // DAIMYO: Tribute levies their Hype
+      if (mv.steal && vic.hp > 0) { const st = Math.min(Math.round(vic.hype), mv.steal); if (st > 0) { vic.hype -= st; att.hype = Math.min(100, att.hype + st); m.call(att, 'TRIBUTE +' + st, 'buff'); } }
       // PART TOSS: the combo is extended -- its clock starts over, with a fresh OTG and ground bounce (twice a combo)
       if (o.ext && !o.noCombo && vic.combo.ext < 2) { const n = ++vic.combo.ext; vic.combo.t = 0; vic.combo.dh = vic.combo.hits; vic.combo.otg = 0; vic.combo.gb = false; vic.floatT = 0.35;   /* (they hang a moment: time to follow the throw) */ m.call(att, 'EXTEND ' + n + '/2', 'buff'); m.event('extend', { att, vic, n }); }
       if (!o.remote) att.moveHit = true;
@@ -1186,7 +1266,7 @@
       if (onBeat && !att.beatShown) { att.beatShown = true; m.call(att, '♪ ON THE BEAT', 'buff'); }
       // PALADIN: the warhammer heals her
       if (mv.heal && dmg > 0 && att.hp > 0) { const h = Math.max(1, Math.round(dmg * mv.heal * att.st.healMult)); att.hp = Math.min(att.maxHp, att.hp + h); if (h >= 8) m.call(att, '+' + h, 'heal'); FX.burst(_c.copy(att.pos).setY(1.2), { n: 4, color: [0xfff07a, 0x9dff9a], glow: true, speed: 1.2, gravity: -3, size: 0.06, life: 0.5 }); }
-      vic.hype = Math.min(100, vic.hype + dmg * 0.05);
+      vic.hype = Math.min(100, vic.hype + dmg * 0.05 * (vic.buffs.vow ? 2 : 1));
       vic.burst = Math.min(100, vic.burst + dmg * 0.055 * vic.st.burstRate);
       // part armour
       const part = mv.zone ? Combat.zonePart(att, vic, mv.zone) : null;
@@ -1321,7 +1401,7 @@
       }
       // mashing Dodge early gets you locked out of the tech for a moment
       if (vic.input.peek('dodge', 0.8) && !vic.input.peek('dodge', 0.32)) vic.techLock = 0.5;
-      const add = speedIn * 2.3;
+      const add = speedIn * 2.3 * (c.by && c.by.st.sig === 'warlord' ? 1.4 : 1);   // (SHOGUN: Warlord)
       const breaks = (w.stress + add >= 100 || c.bounces >= 3) && vic.state !== 'ko';
       if (breaks) return Combat.wallBreak(vic, w, speedIn, contact);
       // 2. KNOCK//BACK: off the wall, still tumbling
