@@ -97,6 +97,8 @@
   mv('ragnarok', { name: 'Ragnarök', type: 'super', pose: 'slam', su: 0.12, catchType: 'leap', flight: 0.55, rad: 4, fated: 1, seq: 'quake', dmg: 270, kb: [8, 16], zone: 'high' });
 
   // NINJA
+  // the SUMMONER with an imp in hand throws it instead (match.js): the same button, the same extension
+  mv('impToss', { name: 'Imp Toss', type: 'proj', proj: 'imp', pose: 'toss', su: 0.1, rc: 0.22, dmg: 28, kb: [2, 8], launch: 1, range: 7.5, lunge: 0, hype: 0.6, trail: 0, sfx: 'whoosh' });
   mv('partToss', { name: 'Part Toss', type: 'proj', proj: 'part', pose: 'toss', su: 0.12, rc: 0.24, dmg: 24, kb: [2, 8], launch: 1, range: 7.5, lunge: 0, hype: 0.6, trail: 0, sfx: 'whoosh' });
   mv('chainHook', { name: 'Chain Hook', type: 'proj', proj: 'chain', pose: 'chainThrow', su: 0.17, rc: 0.3, dmg: 48, kb: [0, 3], pull: 1, stun: 0.6, range: 5, charge: 1, trail: 0, sfx: 'whoosh', limit: { n: 2, t: 5 } });   // twice in any 5 s
   mv('sickleRise', { name: 'Sickle Rise', pose: 'upslash', su: 0.09, ac: 0.08, rc: 0.26, dmg: 36, kb: [1.4, 13], launch: 1, launcher: 1 });

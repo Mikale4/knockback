@@ -140,7 +140,7 @@
       const ender = () => {
         if (canSuper && r() < L.ender[lv]) return { btn: 'super' };
         // throw a part (never the sword arm) to extend it, twice a combo
-        if (lv >= 2 && f.canToss() && f.tossable() !== 'armR' && o.combo.ext < 2 && r() < 0.5) return { btn: 'toss' };
+        if (lv >= 2 && f.canToss() && (f.hasImp() || f.tossable() !== 'armR') && o.combo.ext < 2 && r() < 0.5) return { btn: 'toss' };
         if (aim && f.hype >= 50 && lv >= 2 && r() < 0.35) return { btn: 'snap' };   // cancel the finisher's recovery and chase the rebound
         return {};
       };
@@ -214,6 +214,8 @@
     neutral(dt, d) {
       const f = this.f, o = f.opp, m = this.m, lv = this.lv, r = Math.random, R = this.range();
       const toward = (k) => this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, k);
+      // the Summoner throws an imp she's carrying from range now and then
+      if (lv >= 1 && f.hasImp() && d > 2.5 && d < 7 && o.state !== 'down' && r() < dt * (0.4 + lv * 0.3)) { this.stop(); this.press('toss'); return; }
       // a pause combo, timed: the string move ended, the window is open
       if (this.wantPause) {
         if (f.pauseWin && f.pauseWin.id === this.wantPause.id) { this.stop(); if (m.time >= f.pauseWin.from + 0.02) { this.press('light'); this.wantPause = null; } return; }

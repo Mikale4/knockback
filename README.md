@@ -121,7 +121,9 @@ open.
 gravity lightened, fast enough to bounce), and the ones that slam them down (Pirate, Viking, Summoner, Paladin, Dragoon,
 Bard) **ground bounce** them. An Art that **ends a combo** (it caught them after hits, a bounce or an OTG) puts them down
 with a **HARD KNOCKDOWN** instead: on the floor longer (1.15 s), no quick rise, and an **OTG** can always pick them up
-again (one is kept free for it). The Summoner's imps leave a figure alone while it flies into a bounce.
+again (one is kept free for it). The Summoner's imps leave a figure alone while it flies into a bounce. A raw Art's
+ground bounce comes up about chest high, with no air recovery, and your recovery after a raw Art is half as long, so the
+bounce is there to catch.
 
 | Art | Catches by | The cinematic |
 |---|---|---|
@@ -164,7 +166,11 @@ Dragon Breath sets them BURNING**: a tick of damage every half second for 3 s (i
 at the start of every round). They walk in and bite, pounce on whatever she hits, and all go in at once on Sic 'Em.
 She keeps **two at most** (a new one replaces the oldest). Any attack that touches one hurts it: **two hits** pop it,
 and otherwise each one **leaves after 5 seconds** (it blinks in its last second). The LEGION card makes them bite 30%
-harder.
+harder. **She can pick them up:** run into one of your own imps on the floor and she lifts it (two at most: one rides
+on her head, one on her shoulder). Carried imps **don't run out** and can't be swatted; the **Part Toss** button then
+throws an imp instead of one of her parts, homing in like a tossed part, one at a time. Mid-combo each thrown imp is an
+**extension** (twice a combo, like a Part Toss), and a thrown imp lands and fights on (it can't be caught again for a
+second). If she's hit, the imps she carries hop off. The CPU throws them too.
 
 **Projectiles** fly as real things you can see: the Pirate's pistol ball (with a muzzle flash and a kick up the arm),
 the Ninja's kunai (they stick in walls), the Summoner's spirit bolts and her Hex glyph, the Bard's sound waves with
@@ -323,6 +329,15 @@ Shadow Dash, the Summoner's Sic 'Em, the Paladin's crumple, the Dragoon's Vault,
 finish. A panel lists the steps in your own keys; each ticks off as it lands, and the trial resets (with why) if the
 combo drops or a wrong move comes out. **DEMO** plays it for you, and the same bot proves every one of the seventy
 can be done. Clears are saved per collector and count toward REWARDS (*Combo scholar*, *Mastered*, *Professor*).
+
+**ADVANCED** (the second tab): each fighter's own long routes, built on what only it has, forty-two in all (four each,
+six for the Summoner). They use ground bounces, wall bounces, OTGs, Special cancels and the Legend Arts' two
+endings: a raw Art that opens with a bounce, or one that ends a combo in a hard knockdown to OTG. A few examples:
+the Pirate's **Pistols and powder** (Point Blank into the wall, BROADSIDE off it: nothing but the gun and the cannons)
+and **Keelhaul**; the Ninja's **Hook and blade** (Chain Hook them in, Shadow Slash them away, hook them back);
+the Summoner's **Fetch!** and **Imp juggler** (two imps in hand, two throws, two extensions); the Viking's
+**Berserker** wind-up; the Bard's **Lullaby**. A trial can start you at range, by a wall, or with imps in hand. The
+same DEMO bot proves every one.
 
 ## Training lab
 

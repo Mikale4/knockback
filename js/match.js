@@ -65,7 +65,7 @@
     M.summon = (f, n, quiet) => {
       for (let i = 0; i < n; i++) {
         const mine = M.minions.filter(mn => mn.owner === f);
-        if (mine.length >= f.st.minions) poof(mine[0]);   // the oldest makes room
+        if (mine.length >= f.st.minions) poof(mine.find(mn => !mn.carried) || mine[0]);   // the oldest makes room (one on the floor first)
         const F = f.forward, side = (mine.length % 2 ? 1 : -1) * (0.8 + (i >> 1) * 0.5);
         const pos = new V3(U.clamp(f.pos.x + F.x * 0.7 + F.z * side, -arena.W + 0.4, arena.W - 0.4), 0, U.clamp(f.pos.z + F.z * 0.7 - F.x * side, -arena.D + 0.4, arena.D - 0.4));
         const obj = Models.imp('summoner', impR(f)); obj.position.copy(pos); obj.rotation.y = f.yaw; scene.add(obj);
@@ -79,10 +79,21 @@
       mn.atk = T + 0.12; mn.hitDone = false; mn.cd = U.rnd(1.0, 1.5); mn.mv = mv || 'impBite';
       mn.vel.set(dx / d * Math.max(0, d - 0.6) / T, 4.5, dz / d * Math.max(0, d - 0.6) / T); mn.air = true; mn.yaw = Math.atan2(dx, dz);
     }
+    /* IMPS IN HAND: she picks her own imps up by running into them (two at most: one rides on her head, one on her
+       shoulder). Carried, they don't run out; the Part Toss button throws one (not a part) at them, one at a time, and
+       like a Part Toss each one EXTENDS a combo (twice a combo). A thrown imp lands and fights on; if she's hit, the
+       ones she carries hop off */
+    M.carried = f => M.minions.filter(mn => mn.owner === f && mn.carried);
+    const carryOk = f => (f.state === 'idle' || f.state === 'run') && f.grounded;
+    function carryAt(mn, k, f) {
+      const F = f.forward;
+      if (k === 0) mn.pos.set(f.pos.x - F.x * 0.05, f.pos.y + 2.0, f.pos.z - F.z * 0.05);
+      else mn.pos.set(f.pos.x - F.z * 0.46, f.pos.y + 1.56, f.pos.z + F.x * 0.46);
+    }
     /* her imps go for whoever she points at (all: every imp; otherwise only the ones close and ready) */
     M.minionsPounce = (f, o, all) => {
       for (const mn of M.minions) {
-        if (mn.owner !== f || mn.hurt > 0) continue;
+        if (mn.owner !== f || mn.hurt > 0 || mn.carried || mn.thrown) continue;
         const d = Math.hypot(o.pos.x - mn.pos.x, o.pos.z - mn.pos.z);
         if (!all && (d > 4.5 || mn.cd > 0.35 || mn.atk > 0)) continue;
         lunge(mn, o, all ? 0.55 : 0.32, 'impPounce');
@@ -97,11 +108,11 @@
       if (mn.hp <= 0) { M.call(mn.owner, 'IMP POPPED', 'small', mn.pos.clone().setY(mn.pos.y + 1)); poof(mn); }
     }
     /* any attack that reaches an imp hurts it (id: one hit per swing) */
-    M.hitMinions = (att, c, r, id) => { for (const mn of M.minions.slice()) { if (mn.owner === att || mn.hitBy === id) continue; if (_v.copy(mn.pos).setY(mn.pos.y + 0.45).distanceTo(c) < r + 0.55) hurtMinion(mn, att, id); } };
-    M.hitMinionsSeg = (att, a, b, r, id) => { for (const mn of M.minions.slice()) { if (mn.owner === att || mn.hitBy === id) continue; const p = Combat.closestOnSeg(a, b, mn.pos); if (Math.hypot(p.x - mn.pos.x, p.z - mn.pos.z) < r + 0.55 && Math.abs(mn.pos.y - a.y) < 1.7) hurtMinion(mn, att, id); } };
+    M.hitMinions = (att, c, r, id) => { for (const mn of M.minions.slice()) { if (mn.owner === att || mn.hitBy === id || mn.carried || mn.thrown) continue; if (_v.copy(mn.pos).setY(mn.pos.y + 0.45).distanceTo(c) < r + 0.55) hurtMinion(mn, att, id); } };
+    M.hitMinionsSeg = (att, a, b, r, id) => { for (const mn of M.minions.slice()) { if (mn.owner === att || mn.hitBy === id || mn.carried || mn.thrown) continue; const p = Combat.closestOnSeg(a, b, mn.pos); if (Math.hypot(p.x - mn.pos.x, p.z - mn.pos.z) < r + 0.55 && Math.abs(mn.pos.y - a.y) < 1.7) hurtMinion(mn, att, id); } };
     M.hitMinionsRay = (att, from, dir, range, w, id) => {
       for (const mn of M.minions.slice()) {
-        if (mn.owner === att) continue;
+        if (mn.owner === att || mn.carried || mn.thrown) continue;
         const c = _w.copy(mn.pos).setY(mn.pos.y + 0.45), t = _v.subVectors(c, from).dot(dir);
         if (t < 0 || t > range) continue;
         if (from.clone().addScaledVector(dir, t).distanceTo(c) < w + 0.45) hurtMinion(mn, att, id);
@@ -110,13 +121,46 @@
     function updMinions(dt) {
       for (let i = M.minions.length - 1; i >= 0; i--) {
         const mn = M.minions[i], f = mn.owner, o = M.opp(f);
-        mn.t += dt; mn.cd -= dt; mn.hurt = Math.max(0, mn.hurt - dt);
+        if (mn.carried && ['hit', 'tumble', 'held', 'down', 'getup', 'gbreak', 'out'].includes(f.state)) { mn.carried = false; mn.air = true; mn.vel.set(U.rnd(-2.5, 2.5), 4.5, U.rnd(-2.5, 2.5)); }   // she's hit: it hops off
+        if (!mn.carried) mn.t += dt;   // (carried, it doesn't run out)
+        mn.cd -= dt; mn.hurt = Math.max(0, mn.hurt - dt);
         if (mn.t > mn.life || f.state === 'ko' || !o) { poof(mn); continue; }
+        if (mn.carried) {
+          carryAt(mn, M.carried(f).indexOf(mn), f); mn.vel.set(0, 0, 0); mn.yaw = f.yaw;
+          const ob = mn.obj; ob.rotation.set(0, f.yaw, 0); ob.scale.setScalar(1); ob.visible = true;
+          continue;
+        }
+        if (mn.thrown) {
+          // thrown: it homes in like a tossed part; a hit extends the combo, then it drops and fights on
+          const T = mn.thrown, a = _q.copy(mn.pos).clone(); T.t += dt;
+          if (T.homing && !T.done && T.t < 1.1) {
+            const tgt = predict(o, Math.min(0.3, o.pos.distanceTo(mn.pos) / 18), new V3()), want = tgt.sub(mn.pos);
+            if (want.dot(mn.vel) <= 0 || ['out', 'ko', 'getup'].includes(o.state)) T.homing = false;
+            else { const sp = mn.vel.length(), cur = mn.vel.clone().normalize(), w = want.normalize(), ang = cur.angleTo(w), k = ang > 1e-4 ? Math.min(1, 9 * dt / ang) : 1; mn.vel.copy(cur.lerp(w, k).normalize().multiplyScalar(sp)); }
+          } else mn.vel.y -= 18 * dt;
+          mn.pos.addScaledVector(mn.vel, dt);
+          let land = T.t > 1.6 || (mn.pos.y <= 0.05 && mn.vel.y < 0);
+          const q = !T.done ? bodyHit(f, o, a, mn.pos, 0.75, T.mv, T.k) : null;
+          if (q) {
+            T.done = true; land = true;
+            Combat.hit(f, o, T.mv, { kind: T.k, at: q.clone(), from: f.pos.clone(), dir: _v.copy(mn.vel).setY(0).normalize().clone(), proj: true, ext: true, otg: o.state === 'down' });
+            mn.vel.set(-mn.vel.x * 0.2, 4.5, -mn.vel.z * 0.2);
+          }
+          for (const w of arena.walls) if (!w.broken && w.sign * mn.pos[w.axis] > w.lim - 0.3) { mn.pos[w.axis] = w.sign * (w.lim - 0.3); mn.vel[w.axis] *= -0.4; land = true; }
+          if (land) { mn.thrown = null; mn.air = true; mn.atk = 0; mn.cd = 0.6; mn.pos.y = Math.max(0, mn.pos.y); }
+          const ob = mn.obj; ob.rotation.x += dt * 16; ob.visible = true;
+          continue;
+        }
+        // run into one of your own on the floor: you pick it up (two at most)
+        if (!mn.air && mn.atk <= 0 && mn.hurt <= 0 && mn.t > (mn.pickT || 0.35) && carryOk(f) && M.phase === 'fight' && Math.hypot(f.pos.x - mn.pos.x, f.pos.z - mn.pos.z) < 0.8 && M.carried(f).length < 2) {
+          mn.carried = true; mn.obj.rotation.x = 0; M.call(f, 'IMP!', 'small'); SFX.play('pop'); M.event('pickup', { f });
+          continue;
+        }
         const dx = o.pos.x - mn.pos.x, dz = o.pos.z - mn.pos.z, d = Math.hypot(dx, dz) || 1;
         if (mn.atk > 0) {
           mn.atk -= dt;
-          // (not someone flying into a bounce: a spike's or a Legend Art's, it would knock them off course)
-          if (!mn.hitDone && !['held', 'out', 'ko'].includes(o.state) && !o.spiked && !o.artFly && M.phase === 'fight' && Combat.overlap(_v.copy(mn.pos).setY(mn.pos.y + 0.45), 0.5, o)) {
+          // (not someone flying into a bounce, a spike's or a Legend Art's, or put down by an Art's hard knockdown: it would knock them off course)
+          if (!mn.hitDone && !['held', 'out', 'ko'].includes(o.state) && !o.spiked && !o.artFly && !o.kdT && M.phase === 'fight' && Combat.overlap(_v.copy(mn.pos).setY(mn.pos.y + 0.45), 0.5, o)) {
             mn.hitDone = true; mn.vel.x *= -0.3; mn.vel.z *= -0.3;
             Combat.hit(f, o, KB.MOVES[mn.mv], { kind: 'minion', remote: true, from: mn.pos.clone(), dir: new V3(dx / d, 0, dz / d), at: _v.copy(mn.pos).setY(mn.pos.y + 0.45).clone() });
           }
@@ -356,6 +400,17 @@
         links.count = 0; links.frustumCulled = false; links.castShadow = true; scene.add(links);
         M.projs.push({ kind: 'chain', f, mv, k: f.kind, charge, ph: 'out', pos: hand.clone(), dir, range, dist: 0, T: 0, t: 0, weight, links, id: 's' + (++M.shotId), vic: null });
         SFX.play('whoosh');
+      } else if (mv.proj === 'imp') {
+        // IMP TOSS: the first imp she's carrying, at them (homing like a tossed part)
+        const mn = M.carried(f)[0]; if (!mn) return;
+        mn.carried = false; const from = mn.pos.clone(), SPD = 18;
+        let vel = new V3(F.x * SPD, 2, F.z * SPD), homing = false;
+        if (o && !['out', 'ko', 'getup'].includes(o.state) && U.dist(f.pos, o.pos) < mv.range + 2) {
+          const tgt = predict(o, 0, new V3()); for (let k = 0; k < 3; k++) predict(o, tgt.distanceTo(from) / SPD, tgt);
+          vel = tgt.sub(from).normalize().multiplyScalar(SPD); homing = true; f.yaw = Math.atan2(vel.x, vel.z);
+        }
+        mn.vel.copy(vel); mn.air = true; mn.atk = 0; mn.thrown = { mv, k: f.kind, homing, done: false, t: 0 }; mn.pickT = mn.t + 1.0;   // (a second before it can be caught again)
+        M.call(f, 'IMP TOSS!', 'part'); SFX.play('whoosh'); FX.burst(from, { n: 8, color: [impCol(), 0xffffff], glow: true, speed: 3, size: 0.06 });
       } else if (mv.proj === 'part') {
         // PART TOSS: pull off a part of your own figure and throw it at them
         const part = f.tossable(); if (!part) return;

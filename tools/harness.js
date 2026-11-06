@@ -111,16 +111,16 @@ window.__wallPush = (l1, l2, lv, secs, arena) => {
   return st.map(s => ({ pushPct: +(100 * s.push / s.n).toFixed(1), why: Object.entries(s.why).sort((a, b) => b[1] - a[1]).slice(0, 4) }));
 };
 /* COMBO TRIALS: play trial i of a line with its DEMO bot; OK and the time, or where it stopped and why */
-window.__trialRun = async (line, i) => {
-  Trials.start(line, i); __step(2.0); await new Promise(r => setTimeout(r, 160));
+window.__trialRun = async (line, i, tier) => {
+  Trials.start(line, i, tier); __step(2.0); await new Promise(r => setTimeout(r, 160));
   const pd = document.querySelector('#pause'); if (pd) pd.remove(); App.view.paused = false;
   const demo = [...document.querySelectorAll('.trow button')].find(b => b.textContent === 'DEMO'); if (!demo) return { ok: false, err: 'no demo button' };
   demo.click(); let k = 0, last = '';
-  while (k < 420) { __step(1 / 60); k++; const p = document.querySelector('.trialp'); if (!p) break; if (p.classList.contains('ok')) return { ok: true, t: (k / 60).toFixed(1) }; const msg = (p.querySelector('.tmsg.bad') || {}).textContent; if (msg) last = msg; }
+  while (k < 900) { __step(1 / 60); k++; const p = document.querySelector('.trialp'); if (!p) break; if (p.classList.contains('ok')) return { ok: true, t: (k / 60).toFixed(1) }; const msg = (p.querySelector('.tmsg.bad') || {}).textContent; if (msg) last = msg; }
   const p = document.querySelector('.trialp');
   return { ok: false, at: p ? p.querySelectorAll('.tsteps li.done').length + '/' + p.querySelectorAll('.tsteps li').length : '?', now: p && (p.querySelector('.tsteps li.now b') || {}).textContent, last };
 };
-window.__trialLine = async line => { const out = []; const list = Trials.list(line); for (let i = 0; i < list.length; i++) { const r = await __trialRun(line, i); out.push(line + ' ' + i + ' ' + list[i].name + ': ' + (r.ok ? 'OK ' + r.t + 's' : 'FAIL ' + JSON.stringify(r))); } return out; };
+window.__trialLine = async (line, tier) => { const out = []; const list = Trials.list(line, tier); for (let i = 0; i < list.length; i++) { const r = await __trialRun(line, i, tier); out.push(line + ' ' + i + ' ' + list[i].name + ': ' + (r.ok ? 'OK ' + r.t + 's' : 'FAIL ' + JSON.stringify(r))); } return out; };
 window.__load = () => 'harness ok';
 /* the wall loop: Light x3, then toward + Heavy (the KNOCK cancel) into the E wall, over and over */
 window.__loopTest = (l1, l2, secs, opt) => {

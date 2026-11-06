@@ -67,7 +67,7 @@
       this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0; this.armorHits = 0; this.armorCd = 0; this.limits = {};
       this.buffs = {}; this.burn = null; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
-      this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false;
+      this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0;
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -114,14 +114,17 @@
     /* a Special is ready: uses left, a head to use it with, and (Shadow Step) its cooldown over */
     canSpecial() { return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0); }
     tossable() { return ['head', 'armL', 'armR'].find(p => !this.broken[p] && !this.fig.detached[p]) || null; }
-    canToss() { const o = this.opp; return !!this.tossable() && !(o && o.combo.by === this && o.comboing && o.combo.ext >= 2); }
+    canToss() { const o = this.opp; return !!(this.hasImp() || this.tossable()) && !(o && o.combo.by === this && o.comboing && o.combo.ext >= 2); }
+    /* the SUMMONER carrying an imp throws it, not a part */
+    hasImp() { return !!(this.m.carried && this.m.carried(this).length); }
+    tossMove() { return this.hasImp() ? 'impToss' : 'partToss'; }
     setLegMat(broken) { for (const n of ['legL', 'legR']) this.fig.parts[n].children.forEach(c => { if (c.isMesh && c.material !== VX.glowMat()) c.material = broken ? this.brokenMat : this.fig.mat; }); }
     get opp() { return this.m.opp(this); }
     get forward() { return fwd(this.yaw); }
     get airborne() { return !this.grounded; }
     get inHitstun() { return this.state === 'hit' || this.state === 'tumble' || this.state === 'guardstun' || this.state === 'gbreak'; }
     get comboing() { return this.combo.hits > 0 && (this.state === 'hit' || this.state === 'tumble' || this.state === 'held' || this.state === 'down'); }
-    setState(s) { this.state = s; this.stateT = 0; this.artFly = false; }
+    setState(s) { this.state = s; this.stateT = 0; this.artFly = false; this.artBounce = false; }
 
     /* ---------------------------------------------------------------- main */
     update(dt) {
@@ -212,7 +215,7 @@
       const I = this.input, S = this.st;
       if (this.m.frozen || this.m.phase !== 'fight') return false;
       if (I.take('super') && this.hype >= 100 && ground) { this.startSuper(); return true; }
-      if (I.take('toss') && this.canToss()) { this.startMove('partToss', 'toss'); return true; }
+      if (I.take('toss') && this.canToss()) { this.startMove(this.tossMove(), 'toss'); return true; }
       if (I.take('special')) { if (this.canSpecial() && (ground || this.moveOk(S.special, 'air'))) { this.startMove(S.special, 'special'); return true; } else if (this.broken.head) this.m.call(this, 'NO HEAD!', 'bad'); }
       if (ground) {
         if (I.held.guard && I.take('light')) { this.startMove('throw', 'throw'); return true; }
@@ -324,7 +327,7 @@
       this.faceOpp(1 - Math.exp(-10 * dt));
       this.physics(dt, 0);
       if (I.take('light')) { this.startMove('throw', 'throw'); return; }
-      if (I.take('toss') && this.canToss()) { this.startMove('partToss', 'toss'); return; }
+      if (I.take('toss') && this.canToss()) { this.startMove(this.tossMove(), 'toss'); return; }
       if (this.canSpear() && I.take('heavy')) { this.startMove('spearThrow', 'spear'); return; }
       if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return; }
       if (I.take('jump')) { this.jump(1); return; }
@@ -416,7 +419,7 @@
       const t0 = this.moveT; this.moveT += dt * flow; const t = this.moveT;
       // mash Light during a rapid move to keep it going
       if (mv.rapid && t >= mv.su && t < mv.su + mv.ac + this.acExt && this.rapidUsed < mv.rapid && I.take('light', 0.12)) { this.rapidUsed++; this.acExt += 0.18; this.extraHits += 3; }
-      const su = mv.su, ac = mv.ac + this.acExt, end = su + ac + mv.rc; this.curAc = ac;
+      const su = mv.su, ac = mv.ac + (this.acExt || 0), end = su + ac + mv.rc; this.curAc = ac;   // (acExt: unset until a first move; a Legend Art as your first move never ended)
       const F = this.forward;
       // movement through the move
       if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; this.vel.z = F.z * sp; if (!this.grounded) this.vel.y = 0; }
@@ -481,7 +484,7 @@
         SFX.play('jump'); this.m.event('jump', { f: this, follow: true }); return true;
       }
       if (hit && after && ['light', 'heavy', 'launch', 'air', 'dash', 'gun'].includes(k)) {
-        if (I.peek('toss', 0.2) && this.canToss()) { I.take('toss'); this.startMove('partToss', 'toss'); return true; }
+        if (I.peek('toss', 0.2) && this.canToss()) { I.take('toss'); this.startMove(this.tossMove(), 'toss'); return true; }
         if (I.peek('special', 0.2) && this.canSpecial() && (this.grounded || this.moveOk(this.st.special, 'air'))) { I.take('special'); this.startMove(this.st.special, 'special'); return true; }
         if (I.peek('super', 0.2) && this.hype >= 100 && this.grounded) { I.take('super'); this.startSuper(); return true; }
       }
@@ -762,7 +765,7 @@
         if (inCombo) {
           o.vel.set(dir.x * 2.5, -12, dir.z * 2.5); o.hardKD = true; o.kdT = 1.15; o.combo.otg = Math.min(o.combo.otg || 0, 1);
           this.m.call(o, 'HARD KNOCKDOWN', 'counter');
-        } else if (slam) o.vel.set(dir.x * 1.5, -10, dir.z * 1.5);
+        } else if (slam) { o.vel.set(dir.x * 1.5, -10, dir.z * 1.5); o.artBounce = true; }
         else {
           // off to the wall: up a little, gravity lightened and no drag till it hits, fast enough to get there and bounce
           const A = this.m.arena; let d = 40, k = 1;
@@ -775,7 +778,7 @@
       }
       Arts.finish(c);
       if (this.st.passive === 'encore') { this.hype = Math.min(100, this.hype + 35); this.m.call(this, 'ENCORE!', 'buff'); }
-      this.inv = 0.25; this.superPhase = 'end'; this.move = Object.assign({}, mv, { type: 'melee', su: 0, ac: 0, rc: 0.4 }); this.kind = 'super-end'; this.moveT = 0;
+      this.inv = 0.25; this.superPhase = 'end'; this.move = Object.assign({}, mv, { type: 'melee', su: 0, ac: 0, rc: inCombo ? 0.4 : 0.2 }); this.kind = 'super-end'; this.moveT = 0; this.acExt = 0;
       this.setState('attack');
     }
 
@@ -854,7 +857,7 @@
       this.hype -= 50; this.move = null; this.setState(this.grounded ? 'idle' : 'air');
       if (!this.grounded) this.vel.y = Math.max(this.vel.y, 2);
       const o = this.opp; if (o && U.dist(this.pos, o.pos) < 5) o.slowT = 0.5;
-      SFX.play('snap'); this.m.call(this, 'SNAP!', 'snap'); this.m.hitstopAll(0.06);
+      SFX.play('snap'); this.m.call(this, 'SNAP!', 'snap'); this.m.hitstopAll(0.06); this.m.event('snap', { f: this });
       FX.ring(_c.copy(this.pos).setY(1), { r1: 2.6, life: 0.3, normal: this.m.camDir(), color: 0x7cf9ff });
       this.flash = 0.25; this.flashCol = 0x7cf9ff;
     }
@@ -900,9 +903,10 @@
         if (this.spiked && !this.combo.gb) {
           this.combo.gb = true; this.spiked = false; this.grounded = false; this.pos.y = 0.01;
           this.vel.y = 8.5; this.vel.x *= 0.5; this.vel.z *= 0.5; this.hitstun = 0.55 * Combat.decay(this);
+          if (this.artBounce) { this.artBounce = false; this.vel.y = 8; this.hitstun = Math.max(this.hitstun, 0.8); }   // (a raw Legend Art's: chest high as you recover, no air recovery)
           Combat.bounceDamage(this, 12); SFX.play('heavy'); FX.addShake(0.35);
           FX.burst(_c.copy(this.pos).setY(0.05), { n: 14, color: this.m.arena.dust, speed: 4, size: 0.1 }); FX.ring(_c.copy(this.pos).setY(0.06), { r1: 1.8, life: 0.3 });
-          this.m.call(this, 'GROUND BOUNCE', 'bounce');
+          this.m.call(this, 'GROUND BOUNCE', 'bounce'); this.m.event('gbounce', { vic: this, by: this.combo.by });
           return;
         }
         this.spin.rotation.x = 0;
