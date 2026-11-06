@@ -848,6 +848,7 @@
       for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); f.trailR.pts.length = 0; f.trailL.pts.length = 0; f.trainCombo = false; }
       if (T.spot === 'wall') { const [a, b] = M.fighters, W = arena.W; a.pos.set(W - 3.4, 0, 0.6); b.pos.set(W - 2.0, 0, 0.6); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2; }
       else if (T.spot === 'saved' && T.saved) M.fighters.forEach((f, i) => { const s = T.saved[i]; f.pos.set(s.x, 0, s.z); f.yaw = s.yaw; f.obj.rotation.y = s.yaw; });
+      if (M.lab) Lab.reset(M);   // (a playback starts over)
     };
     /* SAVE POSITION: where both stand now becomes the start a RESET goes back to */
     M.trainSave = () => {
@@ -876,6 +877,12 @@
       if (back) { T.backT = (T.backT || 0) + dt; if (T.backT > 0.8 && !T.backSaved) { T.backSaved = true; M.trainSave(); } }
       else { if (T.backT > 0 && !T.backSaved) M.trainReset(); T.backT = 0; T.backSaved = false; }
       if (T.spot !== T.lastSpot) { T.lastSpot = T.spot; if (M.phase === 'fight' && T.spot) M.trainReset(); }
+      // the lab: Y records the dummy (Y again stops), U plays it back
+      if (M.lab) {
+        if (Input.keyDown('KeyY')) { if (!T.recHeld) { T.recHeld = true; Lab.record(M); } } else T.recHeld = false;
+        if (Input.keyDown('KeyU')) { if (!T.playHeld) { T.playHeld = true; Lab.play(M); } } else T.playHeld = false;
+        Lab.tick(M, dt);
+      }
     }
     M.dispose = () => {
       M.disposed = true; if (M.cine) Arts.end(M.cine);
@@ -885,6 +892,7 @@
       for (const p of Input.players) if (p.cpu && M.ai.includes(p.cpu)) p.cpu = null;
     };
     M.resize = (w, h) => { camera.aspect = w / h; camera.updateProjectionMatrix(); };
+    if (M.training && !opts.tutorial && !opts.trials && window.Lab) Lab.attach(M);   // the lab: inputs, frame data, recording
     if (!M.attract) { HUD.build(M); Touch.show(opts.mode === 'watch'); }
     camera.position.set(0, 9, 14); camera.lookAt(0, 0.6, 0);
     return M;

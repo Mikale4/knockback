@@ -42,7 +42,7 @@
         refs.banner = el('div', { class: 'banner' }), refs.cut = el('div', { class: 'supercut' }),
         refs.cine = el('div', { class: 'cine' }, refs.cTint = el('div', { class: 'ctint' }), el('i', { class: 'cbar t' }), el('i', { class: 'cbar b' }), refs.cFlash = el('div', { class: 'cflash' }), refs.cTitle = el('div', { class: 'ctitle' })));
       root.classList.remove('cinema');
-      if (M.training && !M.opts.tutorial && !M.opts.trials) root.append(HUD.trainingPanel());
+      if (M.training && !M.opts.tutorial && !M.opts.trials) { root.append(HUD.trainingPanel()); if (M.lab) root.append(...Lab.build(refs)); }
       comboT = [0, 0];
     },
     hide(match) { if (match && match !== M) return; if (root) { root.hidden = true; root.innerHTML = ''; root.classList.remove('cinema'); } const p = $('pause'); if (p) p.remove(); M = null; },
@@ -76,6 +76,7 @@
       const c = Math.ceil(M.clock); refs.timer.textContent = M.training ? '∞' : c; refs.timer.classList.toggle('low', c <= 10 && !M.training);
       for (const w of M.arena.walls) { const e = refs.walls.querySelector('.w' + w.id); e.style.setProperty('--s', (w.broken ? 100 : w.stress) + '%'); e.classList.toggle('broken', w.broken); e.classList.toggle('hot', w.stress > 65); }
       const A = M.arena; M.fighters.forEach((f, i) => { const d = refs.dots.children[i]; d.style.left = (50 + f.pos.x / A.W * 50) + '%'; d.style.top = (50 + f.pos.z / A.D * 50) + '%'; });
+      if (M.lab) Lab.draw(M, refs);
       if (M.training && refs.tr) { const v = M.fighters[1].combo, p = M.fighters[0].combo; const c2 = v.hits ? v : refs.lastC || v; if (v.hits) refs.lastC = { hits: v.hits, dmg: v.dmg, bounces: v.bounces }; refs.tr.textContent = 'LAST COMBO  ' + (c2.hits || 0) + ' hits · ' + Math.round(c2.dmg || 0) + ' dmg · ' + (c2.bounces || 0) + ' bounces'; }
     },
     combo(attIdx, c) {
@@ -104,14 +105,18 @@
     /* the Start choice follows a SAVE POSITION */
     trainingSpot() { const s = refs && refs.spot && refs.spot.querySelector('select'); if (s && M && M.training) s.value = M.training.spot; },
     trainingPanel() {
-      const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
+      const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); if (key === 'inputs' || key === 'frames') U.write('kb.lab', { inputs: T.inputs, frames: T.frames }); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
+      const tb = (label, fn, cls) => el('button', { class: 'btn small' + (cls ? ' ' + cls : ''), onclick: e => { e.currentTarget.blur(); fn(); } }, label);
       const panel = el('div', { class: 'trainpanel' + (U.touch ? ' min' : '') },
         el('b', { onclick: () => panel.classList.toggle('min') }, 'TRAINING ', el('i', null, '▾')),
-        sel('Dummy', 'dummy', [['stand', 'Stand'], ['guard', 'Guard'], ['jump', 'Jump'], ['tech', 'Tech + Burst'], ['cpu', 'CPU']]),
+        sel('Dummy', 'dummy', [['stand', 'Stand'], ['guard', 'Guard'], ['jump', 'Jump'], ['tech', 'Tech + Burst'], ['cpu', 'CPU'], ['play', 'Playback (loop)']]),
         sel('Meters', 'meter', [['true', 'Always full'], ['false', 'Normal']]),
         refs.spot = sel('Start', 'spot', [['centre', 'Centre'], ['wall', 'By a wall'], ['saved', 'Saved position']]),
-        el('div', { class: 'trbtns' }, el('button', { class: 'btn small', onclick: e => { e.currentTarget.blur(); M.trainSave(); } }, 'SAVE POSITION'), el('button', { class: 'btn small ghost', onclick: e => { e.currentTarget.blur(); M.trainReset(); } }, 'RESET')),
-        el('span', { class: 'hint' }, U.touch ? 'Pause button: move list' : 'R: reset · T: save the position · pad: tap Back to reset, hold it to save · Esc: pause'),
+        el('div', { class: 'trbtns' }, tb('SAVE POSITION', () => M.trainSave()), tb('RESET', () => M.trainReset(), 'ghost')),
+        M.lab ? el('div', { class: 'trbtns' }, tb('● RECORD', () => Lab.record(M), 'rec'), tb('▶ PLAY', () => Lab.play(M), 'ghost')) : null,
+        M.lab ? sel('Inputs', 'inputs', [['true', 'Show'], ['false', 'Hide']]) : null,
+        M.lab ? sel('Frame data', 'frames', [['true', 'Show'], ['false', 'Hide']]) : null,
+        el('span', { class: 'hint' }, U.touch ? 'Pause button: move list, record and play' : 'R: reset · T: save the position · Y: record the dummy (you play it) · U: play it back · pad: tap Back to reset, hold it to save; record and play are in the pause menu · Esc: pause'),
         refs.tr = el('div', { class: 'trread' }, 'LAST COMBO'));
       return panel;
     },
@@ -128,6 +133,8 @@
               el('button', { class: 'btn big', onclick: close }, 'RESUME'),
               el('button', { class: 'btn', onclick: () => { close(); match.restart(); } }, 'RESTART'),
               match.training && !match.opts.tutorial && !match.opts.trials ? el('button', { class: 'btn', onclick: () => { close(); App.setView(null); Menu.training(); } }, 'CHARACTER SELECT') : null,
+              match.lab ? el('button', { class: 'btn', onclick: () => { close(); Lab.record(match); } }, match.lab.rec ? 'STOP RECORDING' : 'RECORD THE DUMMY') : null,
+              match.lab ? el('button', { class: 'btn', onclick: () => { close(); Lab.play(match); } }, match.ai[1] && match.ai[1].play && !match.ai[1].play.loop ? 'STOP PLAYBACK' : 'PLAY THE RECORDING') : null,
               el('button', { class: 'btn ghost', onclick: () => { close(); App.quitMatch(); } }, 'QUIT TO MENU'),
               ...['sfx', 'music'].map(k => el('label', { class: 'vol pvol' }, k.toUpperCase(), el('input', { type: 'range', min: 0, max: 1, step: 0.05, value: SFX.vol[k], oninput: e => SFX.setVol(k, +e.target.value) })))),
             el('div', { class: 'col wide' }, HUD.moveList(match.fighters[0].build, 0)))));

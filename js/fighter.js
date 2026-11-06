@@ -125,7 +125,8 @@
 
     /* ---------------------------------------------------------------- main */
     update(dt) {
-      if (this.hitstop > 0) { this.hitstop -= dt; this.shakeFig(); return; }
+      if (this.hitstop > 0) { this.hitstop -= dt; this.shakeFig(); this.stopped = true; return; }
+      this.stopped = false;   // (Training's frame meter skips the frames a figure stands frozen in a hit's hitstop)
       if (this.slowT > 0) { this.slowT -= dt; dt *= 0.45; }
       this.stateT += dt;
       const S = this.st, I = this.input;

@@ -316,6 +316,24 @@ finish. A panel lists the steps in your own keys; each ticks off as it lands, an
 combo drops or a wrong move comes out. **DEMO** plays it for you, and the same bot proves every one of the seventy
 can be done. Clears are saved per collector and count toward REWARDS (*Combo scholar*, *Mastered*, *Professor*).
 
+## Training lab
+
+Plain Training (`js/lab.js`) has a fighting game's practice tools, each shown or hidden in the TRAINING panel (on by
+default on a computer, off on a phone):
+
+- **Inputs:** your button history on the left, one row each time what you hold changes: how many frames you held it,
+  the stick as an arrow (as it sits on screen) and the buttons (L, H, G, SP, SN, SU, T, J, D).
+- **Frame data:** a frame meter, one cell a frame for both of you: STARTUP (green), ACTIVE (red), RECOVERY (blue), hit
+  or block stun (yellow), dodging (purple). A hit's hitstop isn't counted, as on a fighting game's own meter. Under it,
+  your last move's startup (the frame it first hits on), active and recovery frames, and the **frame advantage** once
+  you can both act again: *ON BLOCK −2* means the dummy can act two frames before you. When the dummy hits you it
+  reads *YOU BLOCKED · YOU +6* (a move of 6 frames or faster punishes it).
+- **Record and play:** **Y** (or RECORD) hands you the dummy while your own figure stands still; the recording starts
+  on your first input and runs up to 10 s (Y again stops it, and it's kept for next time). **U** (or PLAY) has the
+  dummy do it once; **Dummy: Playback (loop)** has it do it again and again, each time it can act. The stick is kept
+  relative to the dummy's line to you, so "walk at them and swing" still comes at you from anywhere in the arena, and R
+  starts a playback over. On a pad, RECORD and PLAY are in the pause menu.
+
 ## Rewards
 
 **REWARDS** in the hub (`js/rewards.js`, after the design of Post Parade's quests): everything you do is counted three
@@ -339,7 +357,7 @@ Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CP
 **CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that
 ignores rarity bonuses; it remembers your setup) · Training (pick yourself from your figures or any base fighter, the dummy and the arena; dummy settings, full meters, a
 combo readout, health back the moment a combo ends, a start by a wall or a SAVED POSITION; R resets and T saves, or tap /
-hold a pad's Back button) ·
+hold a pad's Back button; and the **lab**: inputs, frame data, record and play) ·
 Workshop (your custom slots: Custom A and B free, Custom C to F unlocked with tokens for 1,000 / 2,000 / 3,000 /
 5,000; your starter figure stays its Standard set; the hub's ACTIVE FIGURE plate picks which one you fight with) ·
 Shelf (collection and records).
@@ -370,6 +388,7 @@ shake** setting (Full, Reduced, Off).
 | `js/arts.js` | Each Legend Art's cinematic: its choreography, camera shots, props, lighting |
 | `js/match.js` | Rounds, camera, projectiles, the Summoner's imps, dropped parts, ring outs, training |
 | `js/arena.js` | The three arenas and wall stress/cracks/breaks |
+| `js/lab.js` | Training's lab: the input history, the frame meter and frame advantage, the dummy recording |
 | `js/ai.js` | The CPU (plays through the same inputs as a human; picks a combo route and plays it out, takes OTGs and rebounds, steers along walls) |
 | `js/gacha.js` | Capsule rates, pity, the 3D machine and reveal |
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |

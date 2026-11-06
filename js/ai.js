@@ -22,7 +22,7 @@
     constructor(m, f, level) {
       this.m = m; this.f = f; this.lv = U.clamp(level == null ? 1 : level, 0, 3);
       this.held = {}; this.move = { x: 0, y: 0 }; this.pulse = new Set(); this.wait = 0; this.guardT = 0; this.plan = null; this.planT = 0;
-      this.strafe = Math.random() < 0.5 ? 1 : -1; this.flipT = 0; this.burstAt = U.rndi(3, 7); this.techRoll = null; this.dummy = null;
+      this.strafe = Math.random() < 0.5 ? 1 : -1; this.flipT = 0; this.burstAt = U.rndi(3, 7); this.techRoll = null; this.dummy = null; this.play = null;
       this.moveSer = -1; this.next = null; this.cmb = null; this.wantPause = null; this.oppSer = -1; this.punished = null;
     }
     /* a press is a fresh edge: a button already down this frame is let go first, so mashing taps instead of holding */
@@ -75,6 +75,7 @@
       for (const a of this.pulse) this.held[a] = true; this.pulse.clear();
       const f = this.f, o = f.opp, m = this.m; if (!o) return;
       if (m.cine) { this.stop(); this.guardT = 0; return; }
+      if (this.play) return this.playThink(dt);   // TRAINING: the dummy plays your recording (lab.js)
       if (this.guardT > 0) { this.guardT -= dt; this.held.guard = true; }
       if (this.dummy && this.dummy !== 'cpu') return this.dummyThink(dt);
       if (m.phase !== 'fight') { this.stop(); return; }
@@ -356,6 +357,21 @@
       if (armL && H.type === 'melee') { if (d > R + 0.1) { toward(); return true; } this.stop(); this.press('heavy'); this.wait = 0.3; return true; }
       if (d > 1.1 && d < 3.4 && f.dodgeCd <= 0) { toward(1, true); this.press('dodge'); return true; }   // no swinging Heavy: dash in and dash-attack
       toward(); return true;
+    }
+    /* TRAINING's playback: the recorded buttons, frame by frame on the fight's clock; the stick turned from the line the
+       dummy had to you when it was recorded onto the line it has now. A press too short for this frame still lands */
+    playThink(dt) {
+      const P = this.play, f = this.f, o = f.opp, s = P.s;
+      for (const a of Input.ACTIONS) this.held[a] = false; this.stop();
+      if (P.wait) { if (!['idle', 'run', 'guard', 'air'].includes(f.state) || this.m.phase !== 'fight') return; P.wait = false; P.i = 0; P.el = 0; }
+      const now = P.el * 1000 + 0.5; let i = P.i, rise = 0;
+      while (i + 1 < s.length && s[i + 1][0] <= now) { i++; rise |= s[i][1] & ~s[i - 1][1]; }
+      P.i = i; const [, b0, a, b] = s[i], bits = b0 | rise;
+      Input.ACTIONS.forEach((k, j) => { this.held[k] = !!(bits & (1 << j)); });
+      let fx = o.pos.x - f.pos.x, fz = o.pos.z - f.pos.z, l = Math.hypot(fx, fz); if (l < 0.3) { fx = Math.sin(f.yaw); fz = Math.cos(f.yaw); l = 1; } fx /= l; fz /= l;
+      this.move.x = (a * fx - b * fz) / 100; this.move.y = -(a * fz + b * fx) / 100;
+      P.el += dt;
+      if (now > s[s.length - 1][0] + 17) { if (P.loop) P.wait = true; else this.play = null; }
     }
     dummyThink(dt) {
       const f = this.f; this.stop();
