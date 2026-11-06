@@ -294,7 +294,7 @@
         if (ok) { this.press('special'); this.wait = 0.4; return; }
       }
       const heavy = KB.MOVES[f.st.heavy];
-      if (heavy.type === 'proj' && !(heavy.ball && f.ballOut(heavy.ball)) && d > 2.5 && d < heavy.range + 1 && r() < 0.012 * (lv + 1)) { this.press('heavy'); this.wait = 0.5; return; }
+      if (heavy.type === 'proj' && !(heavy.ball && f.ballOut(heavy.ball)) && !(heavy.round && !f.gunReady()) && d > 2.5 && d < heavy.range + 1 && r() < 0.012 * (lv + 1)) { this.press('heavy'); this.wait = 0.5; return; }
       if (d > 3.2) {
         this.stickTo(o.pos.x - f.pos.x + this.strafe * 0.6, o.pos.z - f.pos.z);
         if (d < 4.6 && r() < 0.02 * (lv + 1)) { this.press('dodge'); this.dashing = 0.35; }

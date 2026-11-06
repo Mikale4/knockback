@@ -70,6 +70,7 @@
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
+      this.rounds = this.st.rounds; this.reloadT = 0;   // (the FLINTLOCK's chamber)
       this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false; this.undyingUsed = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -172,6 +173,10 @@
       if (S.sig === 'beat' && !this.broken.armR) { const b = Music.beat(this.m); if (b.n !== this.lastBeat) { this.lastBeat = b.n; if (this.state !== 'ko' && !this.m.cine) FX.ring(_c.copy(this.pos).setY(0.06), { r0: 0.3, r1: 1.0, life: 0.22, color: 0xff8ad8 }); } }
       if (this.m.training && this.m.training.meter) { this.hype = 100; this.burst = 100; this.uses = S.uses; }
       if (this.combo.hits && this.inHitstun) this.combo.t += dt;
+      if (this.reloadT > 0) {   // FLINTLOCK: reloading, three rounds back in the chamber when it's done
+        this.reloadT -= dt;
+        if (this.reloadT <= 0) { this.reloadT = 0; this.rounds = S.rounds; if (this.state !== 'ko' && this.state !== 'out') { this.m.call(this, 'RELOADED', 'buff'); SFX.play('snapon'); } }
+      }
       if (this.beanT > 0) {   // BASEBALL: beaned, and seeing stars as soon as they're on their feet
         this.beanWin -= dt;
         if (this.beanWin <= 0 || this.state === 'ko' || this.state === 'out') this.beanT = 0;
@@ -412,6 +417,13 @@
       this.spearOut = false; this.spearGrp = null; this.spear = null;
       if (!quiet) { SFX.play('snapon'); FX.burst(F.socket('wR', [0, 0, 8]), { n: 10, color: [0xffffff, 0xffc890], glow: true, speed: 2.5, size: 0.06, life: 0.35 }); }
     }
+    /* FLINTLOCK: three rounds; a shot spends one when it goes off, and the last one starts the reload */
+    gunReady() { return !this.st.rounds || this.rounds > 0; }
+    spendRound() {
+      this.rounds = Math.max(0, this.rounds - 1);
+      if (this.rounds <= 0) { this.reloadT = this.st.reload; this.reloadCall(true); }
+    }
+    reloadCall(force) { if (!force && this.m.time - (this.reloadCallT || -9) < 0.8) return; this.reloadCallT = this.m.time; this.m.call(this, this.reloadT > 0 && !force ? 'RELOADING: ' + this.reloadT.toFixed(1) + ' s' : 'RELOADING', 'bad'); }
     grabMove() { return this.st.sig === 'grappler' ? 'wrGrab' : 'throw'; }
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
@@ -421,6 +433,12 @@
         // Tackle; a plain Tackle or Body Drop for the rest), a Special waits
         const alt = mv.noBall || { heavy: 'tackle', airHeavy: 'bodyDrop' }[kind];
         if (!alt || !KB.MOVES[alt]) { if (this.m.time - this.noBallT > 0.8) { this.noBallT = this.m.time; this.m.call(this, 'NO BALL!', 'bad'); } return; }
+        id = alt; mv = KB.MOVES[alt];
+      }
+      if (mv.round && this.st.rounds && this.rounds <= 0) {
+        // FLINTLOCK: the chamber's empty while he reloads: Heavy clubs them with the butt, the air Heavy brings it down on them
+        const alt = { heavy: 'pistolButt', airHeavy: 'pistolClub' }[kind];
+        if (!alt) { this.reloadCall(); return; }
         id = alt; mv = KB.MOVES[alt];
       }
       if (mv.limit && !this.useLimited(id, mv)) return;   // (a move with a limit: n uses in any t seconds)
@@ -525,7 +543,8 @@
           const s = this.stick(), d0 = I.dirAt.heavy, s0 = d0 && Math.hypot(d0.x, d0.y) > 0.3 ? new V3(d0.x, 0, -d0.y).normalize() : null, o = this.opp;
           if ((s && s.dot(this.forward) > 0.5) || (s0 && s0.dot(this.forward) > 0.5)) this.startMove(this.leftMove('heavy'), 'heavy');
           // PIRATE with the Flintlock: a Quick Shot gun cancel instead, once a combo, then the string starts over
-          else if (this.st.gunCancel && !this.broken.armL && o && !o.combo.gun) { o.combo.gun = true; this.startMove(this.st.gunCancel, 'gun'); }
+          else if (this.st.gunCancel && !this.broken.armL && this.gunReady() && o && !o.combo.gun) {   // (an empty chamber: the launcher)
+          o.combo.gun = true; this.startMove(this.st.gunCancel, 'gun'); }
           else this.startMove(this.leftMove('launch'), 'launch');
           return true;
         }
@@ -563,7 +582,7 @@
       const F = this.forward, o = this.opp;
       if (mv.sfx) SFX.play(mv.sfx === 'shot' ? 'whoosh' : mv.sfx === 'heavy' ? 'whoosh' : mv.sfx);
       this.activeOn = true;
-      if (mv.type === 'proj') this.m.fire(this, mv, this.charge);
+      if (mv.type === 'proj') { this.m.fire(this, mv, this.charge); if (mv.round && this.st.rounds) this.spendRound(); }
       else if (mv.type === 'radial') {
         FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.1, life: 0.35, color: 0xffe0a0 });
         this.m.hitMinions(this, _c.copy(this.pos).setY(this.pos.y + 0.5), mv.rad, this.moveSerial * 10);

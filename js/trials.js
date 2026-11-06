@@ -648,7 +648,7 @@
   const me = () => R.m.fighters[0], dummy = () => R.m.fighters[1];
   function reset(why) {
     R.at = 0; R.combo = null; R.state = 'go'; R.started = {};
-    const a = me(); a.spReady = 0; a.uses = a.st.uses; a.hype = 100; a.burst = 100;
+    const a = me(); a.spReady = 0; a.uses = a.st.uses; a.hype = 100; a.burst = 100; a.rounds = a.st.rounds; a.reloadT = 0; a.limits = {};
     R.m.training.spot = R.trial.wall ? 'wall' : 'centre'; R.m.training.lastSpot = R.m.training.spot; R.m.trainReset();
     if (!R.trial.wall) { const [p, d] = R.m.fighters; p.pos.set(-(R.trial.gap || 1.3), 0, 0.6); d.pos.set(0, 0, 0.6); p.yaw = Math.PI / 2; d.yaw = -Math.PI / 2; }
     for (const mn of R.m.minions.slice()) { if (mn.obj.parent) mn.obj.parent.remove(mn.obj); } R.m.minions.length = 0;

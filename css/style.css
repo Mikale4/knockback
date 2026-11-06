@@ -300,6 +300,8 @@ label.check { display: flex; align-items: center; gap: 8px; letter-spacing: 0; f
 .hypen { font: 900 16px var(--body); width: 30px; text-shadow: 0 2px 0 #000; }
 .uses { font: 900 11px var(--body); letter-spacing: 1px; color: var(--dim); margin-top: 4px; text-shadow: 0 1px 0 #000; }
 .usepips { color: var(--cyan); margin-left: 6px; letter-spacing: 2px; font-size: 13px; }
+.rounds { font: 900 11px var(--body); letter-spacing: 1px; color: var(--dim); margin-top: 2px; text-shadow: 0 1px 0 #000; }
+.rounds .usepips { color: #ffd28a; } .rounds.empty .usepips { color: #ff7a4a; letter-spacing: 1px; font-size: 11px; }
 .combo { position: absolute; bottom: 120px; opacity: 0; transition: opacity .2s; text-shadow: 0 3px 0 #000; }
 .plow.p1 .combo { left: 0; } .plow.p2 .combo { right: 0; text-align: right; }
 .combo.on { opacity: 1; }
