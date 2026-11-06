@@ -115,6 +115,14 @@ its name. The clock and the CPUs wait while it plays. Its camera never looks thr
 just inside it (or swings round to the side with room), and the flash's close-up picks the side of the figure that's
 open.
 
+**The last blow depends on whether a combo was already running.** A **raw** Art (it caught them with no combo going)
+**bounces** them the way that blow goes, and your combo carries on: the Arts whose last blow knocks them back
+(Samurai, Knight, Monk, Ninja) send them flying off the **wall** (a KNOCK//BACK: they're carried all the way there,
+gravity lightened, fast enough to bounce), and the ones that slam them down (Pirate, Viking, Summoner, Paladin, Dragoon,
+Bard) **ground bounce** them. An Art that **ends a combo** (it caught them after hits, a bounce or an OTG) puts them down
+with a **HARD KNOCKDOWN** instead: on the floor longer (1.15 s), no quick rise, and an **OTG** can always pick them up
+again (one is kept free for it). The Summoner's imps leave a figure alone while it flies into a bounce.
+
 | Art | Catches by | The cinematic |
 |---|---|---|
 | Thousand Cuts (Samurai) | a dash through them | ten blinks around them, a turn of the back, the blade slides home and every cut lands at once |
@@ -352,6 +360,12 @@ Tickets** (a free ×1 capsule: the CAPSULES screen shows a TICKET button when yo
 parts. After a fight, the results list the awards it unlocked and a button to the rewards waiting.
 
 ## Modes
+
+**The hub** fits on one screen: five buttons, three of which open a short list of their own. **FIGHT** (Arcade,
+Versus, Online, Replays), **PRACTICE** (Tutorial, Training, Combo Trials, How to Play; marked NEW until you've done
+the tutorial), **COLLECTION** (Workshop, Capsules, Shelf), then **REWARDS** (with its count of rewards ready) and
+**OPTIONS**. BACK, Esc or a pad's back button closes a list, and coming back from a mode returns you to the list you
+left from.
 
 Arcade (six figures from the ten lines, the last one a Chase boss) · Versus (CPU at four levels, two players on one keyboard / two pads, or
 **CPU vs CPU** to watch, with your own builds, any line's figure or random ones; plus an optional fair mode that

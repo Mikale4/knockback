@@ -183,23 +183,44 @@
       Music.play('menu'); useRoom(activeBuild(), -1);
       const b = activeBuild(), st = KB.stats(b);
       const item = (label, sub, fn, cls) => el('button', { class: 'hubbtn ' + (cls || ''), onclick: () => { SFX.play('ok'); fn(); } }, el('b', null, label), el('small', null, sub));
-      App.screen(el('div', { class: 'screen hub' },
-        el('div', { class: 'topbar' }, logo('l-small'), el('div', { class: 'grow' }), el('div', { class: 'tokens', id: 'tok' }, el('i', { class: 'coin' }), U.fmt(S().tokens)),
-          el('div', { class: 'who' }, Auth.user.user), btn('LOG OUT', () => { Auth.logout(); Menu.login('in'); }, 'ghost small')),
-        el('div', { class: 'hubmenu' },
+      // the hub in a few groups, so it all fits on the screen: FIGHT, PRACTICE and COLLECTION open their own short list
+      // (BACK, Esc or a pad's back button return); REWARDS and OPTIONS go straight there. It remembers the open group,
+      // so a fight's MENU button comes back to the list you left from
+      const tutDone = Tutorial.done(), nRw = Rewards.ready();
+      const GROUPS = [
+        { id: 'fight', label: 'FIGHT', sub: 'Arcade, Versus, Online and your Replays.', cls: 'hot', items: () => [
           item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
           item('VERSUS', 'Against the CPU, a friend on one keyboard / two pads, or watch CPU vs CPU.', () => Menu.versus()),
           item('ONLINE', 'Rooms of up to six, public or private: fight, watch, wait your turn.', () => Online.open(), 'hot'),
-          item('REPLAYS', 'Your online fights and the ones you watched: watch again, keep, share.', () => Online.replays()),
-          item('TUTORIAL', Tutorial.done() ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +900 tokens.', () => Tutorial.start(), Tutorial.done() ? '' : 'hot'),
-          item('TRAINING', 'A dummy, full meters, every system to practise.', () => Menu.training()),
+          item('REPLAYS', 'Your online fights and the ones you watched: watch again, keep, share.', () => Online.replays())] },
+        { id: 'practice', label: 'PRACTICE', sub: tutDone ? 'Training, Combo Trials, the Tutorial and How to Play.' : 'New here? The TUTORIAL is in here (+900 tokens).', cls: tutDone ? '' : 'hot', items: () => [
+          item('TUTORIAL', tutDone ? 'Fourteen lessons, played for real. Again any time.' : 'New here? Fourteen lessons, played for real. +900 tokens.', () => Tutorial.start(), tutDone ? '' : 'hot'),
+          item('TRAINING', 'A dummy, full meters, frame data, record and play back.', () => Menu.training()),
           item('COMBO TRIALS', 'Every fighter\'s combos, step by step, with a demo.', () => Trials.open()),
+          item('HOW TO PLAY', 'The wall bounce, and how to get out of it.', () => Menu.howto())] },
+        { id: 'collect', label: 'COLLECTION', sub: 'The Workshop, the Capsule machine and your Shelf.', cls: 'gold', items: () => [
           item('WORKSHOP', 'Snap parts together on your custom slots: A and B, and four more to unlock.', () => Menu.workshop()),
-          (() => { const n = Rewards.ready(); const b = item('REWARDS', n ? n + ' ready to claim · daily and weekly jobs, fighter mastery, milestones, awards' : 'Daily and weekly jobs, fighter mastery, milestones and awards.', () => Rewards.screen(), n ? 'gold' : ''); if (n) b.append(el('em', { class: 'badge' }, n)); return b; })(),
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),
-          item('SHELF', 'Your collection and records.', () => Menu.shelf()),
-          item('HOW TO PLAY', 'The wall bounce, and how to get out of it.', () => Menu.howto()),
-          item('OPTIONS', 'Sound, controls, graphics, install the app.', () => Menu.options())),
+          item('SHELF', 'Your collection and records.', () => Menu.shelf())] },
+      ];
+      const menu = el('div', { class: 'hubmenu' });
+      const draw = () => {
+        menu.innerHTML = ''; const g = GROUPS.find(x => x.id === Menu._hubTab);
+        if (g) {
+          menu.className = 'hubmenu open';
+          menu.append(el('div', { class: 'hubhead' }, el('button', { class: 'hubback backbtn', onclick: () => { SFX.play('ui'); Menu._hubTab = null; draw(); } }, '‹ BACK'), el('b', null, g.label)), ...g.items());
+        } else {
+          menu.className = 'hubmenu';
+          menu.append(...GROUPS.map(G => { const b = item(G.label, G.sub, () => { Menu._hubTab = G.id; draw(); }, 'grp ' + G.cls); if (G.id === 'practice' && !tutDone) b.append(el('em', { class: 'badge' }, 'NEW')); return b; }),
+            (() => { const b = item('REWARDS', nRw ? nRw + ' ready to claim · daily and weekly jobs, mastery, milestones, awards' : 'Daily and weekly jobs, fighter mastery, milestones and awards.', () => Rewards.screen(), nRw ? 'gold' : ''); if (nRw) b.append(el('em', { class: 'badge' }, nRw)); return b; })(),
+            item('OPTIONS', 'Sound, controls, graphics, install the app.', () => Menu.options()));
+        }
+      };
+      draw();
+      App.screen(el('div', { class: 'screen hub' },
+        el('div', { class: 'topbar' }, logo('l-small'), el('div', { class: 'grow' }), el('div', { class: 'tokens', id: 'tok' }, el('i', { class: 'coin' }), U.fmt(S().tokens)),
+          el('div', { class: 'who' }, Auth.user.user), btn('LOG OUT', () => { Menu._hubTab = null; Auth.logout(); Menu.login('in'); }, 'ghost small')),
+        menu,
         el('button', { class: 'plate', title: 'Change your figure', onclick: () => { SFX.play('ok'); Menu.pickActive(); } }, el('small', null, 'ACTIVE FIGURE · CHANGE ▸'), el('b', null, b.name), el('span', null, 'HP ' + st.hp + ' · ' + KB.LINES[b.core.line].name + ' core' + (st.set === 2 ? ' · MINT SET' : '')))));
     },
     /* ---------------------------------------------------------- workshop */

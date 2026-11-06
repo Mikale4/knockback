@@ -8,6 +8,8 @@
      ticks: how many small hits it deals before the finisher (they share 48%
             of the damage; the finisher is the other 52%)
      fin:   the time the finisher lands
+     slam:  the last hit drives them DOWN into the floor (a raw Art ground-bounces them); without it, the last hit knocks
+            them back (a raw Art wall-bounces them)
    c (the cinematic) = { f attacker, o victim, m match, mv, D forward, S side
                          (toward the camera), O where it caught, t, props[] }
    ========================================================================== */
@@ -155,7 +157,7 @@
 
     /* PIRATE: "FIRE!" and the sky rains cannonballs, then one the size of a barrel */
     cannon: {
-      ticks: 7, fin: 2.0,
+      ticks: 7, fin: 2.0, slam: 1,
       step(c, t, dt) {
         const f = c.f, o = c.o, s = c.s;
         s.vy = (s.vy || 0) - 18 * dt; o.pos.y = Math.max(0.2, o.pos.y + s.vy * dt); if (o.pos.y <= 0.2) s.vy = Math.max(0, s.vy);
@@ -212,7 +214,7 @@
 
     /* VIKING: the sky goes red, lightning, the leap, and the world-ending slam */
     quake: {
-      ticks: 7, fin: 1.62,
+      ticks: 7, fin: 1.62, slam: 1,
       step(c, t, dt) {
         const f = c.f, o = c.o, s = c.s;
         if (beat(c, 'q', 2, 0.0, 0.2)) { FX.ring(_v.copy(f.pos).setY(0.1), { r1: 5, life: 0.5, color: 0xffd080 }); FX.addShake(0.6); tick(c); }
@@ -290,7 +292,7 @@
 
     /* SUMMONER: chains of light, her imps pile on, and a giant imp rises behind her and belly-flops them */
     golem: {
-      ticks: 8, fin: 2.2,
+      ticks: 8, fin: 2.2, slam: 1,
       step(c, t, dt) {
         const f = c.f, o = c.o, s = c.s, line = f.build.card.line === 'summoner' ? 'summoner' : f.build.head.line === 'summoner' ? 'summoner' : 'summoner';
         const col = KB.LINES.summoner.pal.glow;
@@ -341,7 +343,7 @@
 
     /* PALADIN: a beam lifts them, wings of light unfold, and the hammer comes down like the dawn */
     dawn: {
-      ticks: 6, fin: 1.78,
+      ticks: 6, fin: 1.78, slam: 1,
       step(c, t, dt) {
         const f = c.f, o = c.o, s = c.s, col = 0xfff07a;
         if (once(c, 'beam', 0.02)) { s.beam = prop(c, Prop.beam(col, 0.1, 16), (p, dt2) => { const k = Math.min(1, p.t / 0.25); p.obj.position.set(c.O.x, 0, c.O.z); p.obj.scale.set(1 + k * 8, 1, 1 + k * 8); p.obj.rotation.y += dt2; }); SFX.play('jguard'); lit(c, 0.6); }
@@ -381,7 +383,7 @@
 
     /* DRAGOON: skewered, carried up, three dives from three sides, and the dragon's own */
     skewer: {
-      ticks: 7, fin: 2.25,
+      ticks: 7, fin: 2.25, slam: 1,
       step(c, t, dt) {
         const f = c.f, o = c.o, s = c.s, col = KB.LINES.dragoon.pal.glow;
         if (once(c, 'dragon', 0.15)) {
@@ -424,7 +426,7 @@
 
     /* BARD: the house lights drop, two spotlights, they dance to every beat, and the lute comes down for the encore */
     concert: {
-      ticks: 8, fin: 2.3,
+      ticks: 8, fin: 2.3, slam: 1,
       step(c, t, dt) {
         const f = c.f, o = c.o, s = c.s, col = KB.LINES.bard.pal.glow;
         if (once(c, 'lights', 0.02)) {

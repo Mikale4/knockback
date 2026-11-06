@@ -67,7 +67,7 @@
       this.state = 'idle'; this.stateT = 0; this.move = null; this.hitstop = 0; this.inv = 0; this.armorT = 0; this.armorHits = 0; this.armorCd = 0; this.limits = {};
       this.buffs = {}; this.burn = null; this.slowT = 0; this.dodgeCd = 0; this.airJumps = S.airJumps; this.airDodges = S.airDodges; this.airStr = 0; this.airDashes = 0; this.pauseWin = null; this.riposteT = 0; this.crumpled = this.dizzy = false;
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
-      this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false;
+      this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0;
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -121,7 +121,7 @@
     get airborne() { return !this.grounded; }
     get inHitstun() { return this.state === 'hit' || this.state === 'tumble' || this.state === 'guardstun' || this.state === 'gbreak'; }
     get comboing() { return this.combo.hits > 0 && (this.state === 'hit' || this.state === 'tumble' || this.state === 'held' || this.state === 'down'); }
-    setState(s) { this.state = s; this.stateT = 0; }
+    setState(s) { this.state = s; this.stateT = 0; this.artFly = false; }
 
     /* ---------------------------------------------------------------- main */
     update(dt) {
@@ -160,7 +160,7 @@
         case 'ddash': this.updDownDash(dt); break;
         case 'hit': this.physics(dt, 9); if (this.stateT > this.hitstun) { if (this.crumpled && this.grounded) { this.crumpled = false; this.hardKD = false; this.setState('down'); } else { this.endCombo(); this.crumpled = this.dizzy = false; this.setState(this.grounded ? 'idle' : 'air'); } } break;
         case 'tumble': this.updTumble(dt); break;
-        case 'down': this.physics(dt, 12); if (this.stateT > (this.hardKD ? 0.85 : 0.6)) { this.setState('getup'); this.inv = 0.45; this.endCombo(); } break;
+        case 'down': this.physics(dt, 12); if (this.stateT > (this.kdT || (this.hardKD ? 0.85 : 0.6))) { this.kdT = 0; this.setState('getup'); this.inv = 0.45; this.endCombo(); } break;
         case 'getup': this.physics(dt, 12); if (this.stateT > 0.32) this.setState('idle'); break;
         case 'held': this.updHeld(dt); break;
         case 'grab': this.updGrab(dt); break;
@@ -734,6 +734,7 @@
     beginSeq(o) {
       // guarding doesn't stop a Legend Art that has caught you
       const otg = o.state === 'down' || o.state === 'getup';
+      this.artCombo = o.comboing && o.combo.by === this;   // (a combo already going: hits, a bounce, an OTG)
       o.move = null; o.setState('held'); o.held = { by: this, kind: 'super' }; o.heldBySuper = true; o.vel.set(0, 0, 0); o.dizzy = o.crumpled = o.asleep = false; o.hardKD = false;
       if (!o.comboing) o.combo = o.freshCombo();
       this.m.event('art', { f: this, vic: o });
@@ -749,8 +750,29 @@
       if (!Arts.step(c, dt)) return;
       // the finisher
       o.held = null; o.heldBySuper = false; this.pose2 = null; this.obj.visible = true;
-      const fin = Object.assign({}, mv, { dmg: mv.dmg * 0.52, type: 'melee' });
-      Combat.hit(this, o, fin, { kind: 'super', dir: c.D.clone(), force: true, at: _c.copy(o.pos).setY(o.pos.y + 1).clone() });
+      // In a combo already (the Art followed hits, a bounce or an OTG), the last hit is a HARD KNOCKDOWN: they're put on
+      // the floor, longer than usual and with no quick rise, and an OTG can scoop them up again. A raw Art (no combo yet)
+      // BOUNCES them the way its last hit goes, and the combo carries on: slammed down, off the FLOOR; knocked back
+      // (away from you), off the WALL
+      const slam = !!c.art.slam, inCombo = !!this.artCombo;
+      const dir = new V3().subVectors(o.pos, this.pos).setY(0); if (slam || dir.lengthSq() < 0.09) dir.copy(c.D).setY(0); dir.normalize();
+      const fin = Object.assign({}, mv, { dmg: mv.dmg * 0.52, type: 'melee', launch: 1, spike: !inCombo && slam ? 1 : 0, kb: [0, inCombo ? -12 : slam ? -10 : 5.5] });
+      const r = Combat.hit(this, o, fin, { kind: 'super', dir: dir.clone(), force: true, at: _c.copy(o.pos).setY(o.pos.y + 1).clone() });
+      if (r === 'hit' && o.state === 'tumble') {
+        if (inCombo) {
+          o.vel.set(dir.x * 2.5, -12, dir.z * 2.5); o.hardKD = true; o.kdT = 1.15; o.combo.otg = Math.min(o.combo.otg || 0, 1);
+          this.m.call(o, 'HARD KNOCKDOWN', 'counter');
+        } else if (slam) o.vel.set(dir.x * 1.5, -10, dir.z * 1.5);
+        else {
+          // off to the wall: up a little, gravity lightened and no drag till it hits, fast enough to get there and bounce
+          const A = this.m.arena; let d = 40, k = 1;
+          for (const w of A.walls) { const a = dir[w.axis] * w.sign; if (a > 0.05) { const dd = (w.lim - BODY - w.sign * o.pos[w.axis]) / a; if (dd < d) { d = dd; k = a; } } }
+          const g = GRAV * (0.68 + Math.min(0.7, o.combo.hits * 0.03 + o.combo.t * 0.05)) * 0.45, v = 5.5;
+          const T = (v + Math.sqrt(v * v + 2 * g * Math.max(0, o.pos.y))) / g, h = U.clamp(Math.max(13, Math.max(0, d) / T + 1, 7.5 / k), 13, 30);
+          o.vel.set(dir.x * h, v, dir.z * h); o.artFly = true; o.floatT = T + 0.1; o.hardKD = false;
+          o.hitstun = Math.max(o.hitstun, Math.min(T, Math.max(0, d) / h) + 0.25);
+        }
+      }
       Arts.finish(c);
       if (this.st.passive === 'encore') { this.hype = Math.min(100, this.hype + 35); this.m.call(this, 'ENCORE!', 'buff'); }
       this.inv = 0.25; this.superPhase = 'end'; this.move = Object.assign({}, mv, { type: 'melee', su: 0, ac: 0, rc: 0.4 }); this.kind = 'super-end'; this.moveT = 0;
@@ -863,7 +885,7 @@
     updTumble(dt) {
       this.hitstun -= dt; this.floatT = Math.max(0, (this.floatT || 0) - dt);
       const g = GRAV * (0.68 + Math.min(0.7, this.combo.hits * 0.03 + this.combo.t * 0.05)) * (this.floatT > 0 ? 0.45 : 1);
-      this.physics(dt, 0, 1, g);
+      this.physics(dt, 0, this.artFly ? 0 : 1, g);
       if (!this.spiked && this.vel.y < -11) this.vel.y = -11;
       const sp = Math.hypot(this.vel.x, this.vel.z);
       this.spin.rotation.x -= dt * (4 + sp * 0.7);
@@ -1139,7 +1161,7 @@
         // OFF THE GROUND: scooped back up off the floor, twice a combo, and the combo carries on; the second pop is a
         // little lower and shorter, so it buys a hit or two, not a whole new combo
         const n = vic.combo.otg = (vic.combo.otg || 0) + 1, again = n > 1;
-        vic.hardKD = false; vic.spiked = false; vic.chained = null;
+        vic.hardKD = false; vic.kdT = 0; vic.spiked = false; vic.chained = null;
         vic.vel.set(dir.x * (again ? 2 : 2.5), again ? 6.2 : 8, dir.z * (again ? 2 : 2.5)); vic.pos.y = Math.max(vic.pos.y, 0.05); vic.grounded = false;
         vic.setState('tumble'); vic.hitstun = (again ? 0.42 : 0.55) * Math.max(0.6, decay); vic.yaw = Math.atan2(-dir.x, -dir.z); vic.spin.position.y = 0.95;
         m.call(vic, again ? 'OTG 2!' : 'OTG!', 'bounce'); m.event('otg', { att, vic, n }); FX.ring(_c.copy(vic.pos).setY(0.06), { r1: 1.5, life: 0.3 }); FX.burst(_c.copy(vic.pos).setY(0.1), { n: 12, color: m.arena.dust, speed: 3.5, size: 0.09 });
@@ -1159,7 +1181,7 @@
         vic.vel.set(dir.x * h, v * (v > 0 ? Math.min(1.15, kbk) : 1), dir.z * h);
         vic.setState('tumble'); vic.grounded = v <= 0 && vic.pos.y <= 0.01; if (v > 0) vic.pos.y = Math.max(vic.pos.y, 0.02), vic.grounded = false;
         vic.hitstun = (0.26 + 0.026 * Math.hypot(h, v)) * decay;
-        vic.hardKD = !!(mv.spike || o.kind === 'super' || o.kind === 'throw');
+        vic.hardKD = !!(mv.spike || o.kind === 'super' || o.kind === 'throw'); vic.kdT = 0;
         vic.yaw = Math.atan2(-dir.x, -dir.z);
       } else {
         vic.setState('hit'); vic.hitstun = (mv.stun || 0.3) * (counter ? 1.3 : 1) * Math.max(0.6, decay);
@@ -1194,7 +1216,7 @@
     wallImpact(vic, w, speedIn) {
       const m = vic.m, A = m.arena, n = w.n, c = vic.combo;
       const contact = _c.copy(vic.pos); contact[w.axis] = w.sign * w.lim; contact.y = vic.pos.y + 0.9;
-      vic.pos[w.axis] = w.sign * (w.lim - BODY);
+      vic.pos[w.axis] = w.sign * (w.lim - BODY); vic.artFly = false;
       // 1. a wall tech (not on the first bounce of a combo)
       const techOk = c.bounces >= 1 && vic.state === 'tumble' && vic.techLock <= 0 && vic.hp > 0;
       if (techOk && vic.input.take('dodge', 0.32)) {

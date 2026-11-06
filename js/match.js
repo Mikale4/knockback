@@ -115,7 +115,8 @@
         const dx = o.pos.x - mn.pos.x, dz = o.pos.z - mn.pos.z, d = Math.hypot(dx, dz) || 1;
         if (mn.atk > 0) {
           mn.atk -= dt;
-          if (!mn.hitDone && !['held', 'out', 'ko'].includes(o.state) && M.phase === 'fight' && Combat.overlap(_v.copy(mn.pos).setY(mn.pos.y + 0.45), 0.5, o)) {
+          // (not someone flying into a bounce: a spike's or a Legend Art's, it would knock them off course)
+          if (!mn.hitDone && !['held', 'out', 'ko'].includes(o.state) && !o.spiked && !o.artFly && M.phase === 'fight' && Combat.overlap(_v.copy(mn.pos).setY(mn.pos.y + 0.45), 0.5, o)) {
             mn.hitDone = true; mn.vel.x *= -0.3; mn.vel.z *= -0.3;
             Combat.hit(f, o, KB.MOVES[mn.mv], { kind: 'minion', remote: true, from: mn.pos.clone(), dir: new V3(dx / d, 0, dz / d), at: _v.copy(mn.pos).setY(mn.pos.y + 0.45).clone() });
           }
