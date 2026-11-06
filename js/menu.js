@@ -137,8 +137,9 @@
     },
     afterLogin(fresh) {
       if (!S().starter) return Menu.starter();
-      const bonus = Auth.daily();
+      const bonus = Auth.daily(), sel = Rewards.selBackfill();
       Menu.hub(); if (bonus) toast('DAILY BONUS  +' + bonus + ' TOKENS', 'gold');
+      if (sel) setTimeout(() => toast('🎫 A SELECTION TICKET for your Arcade clear! Pick a fighter in COLLECTION.', 'gold'), bonus ? 2900 : 300);
     },
     /* -------------------------------------------------- pick a starter */
     starter() {
@@ -186,7 +187,7 @@
       // the hub in a few groups, so it all fits on the screen: FIGHT, PRACTICE and COLLECTION open their own short list
       // (BACK, Esc or a pad's back button return); REWARDS and OPTIONS go straight there. It remembers the open group,
       // so a fight's MENU button comes back to the list you left from
-      const tutDone = Tutorial.done(), nRw = Rewards.ready();
+      const tutDone = Tutorial.done(), nRw = Rewards.ready(), nSel = S().selTickets | 0;
       const GROUPS = [
         { id: 'fight', label: 'FIGHT', sub: 'Arcade, Versus, Online and your Replays.', cls: 'hot', items: () => [
           item('ARCADE', 'Six figures in a row. Big token rewards.', () => Menu.arcade(), 'hot'),
@@ -198,7 +199,8 @@
           item('TRAINING', 'A dummy, full meters, frame data, record and play back.', () => Menu.training()),
           item('COMBO TRIALS', 'Every fighter\'s combos, step by step, with a demo.', () => Trials.open()),
           item('HOW TO PLAY', 'The wall bounce, and how to get out of it.', () => Menu.howto())] },
-        { id: 'collect', label: 'COLLECTION', sub: 'The Workshop, the Capsule machine and your Shelf.', cls: 'gold', items: () => [
+        { id: 'collect', label: 'COLLECTION', sub: nSel ? '🎫 Selection Ticket ready · pick a fighter you don\'t have.' : 'The Workshop, the Capsule machine and your Shelf.', cls: 'gold', items: () => [
+          nSel ? item('SELECTION TICKET' + (nSel > 1 ? 'S ×' + nSel : ''), 'Pick any fighter you don\'t have yet: its whole set is yours.', () => Menu.selection(), 'hot') : null,
           item('WORKSHOP', 'Snap parts together on your custom slots: A and B, and four more to unlock.', () => Menu.workshop()),
           item('CAPSULES', 'Spend tokens on blind capsules of parts and cards.', () => Menu.capsules(), 'gold'),
           item('SHELF', 'Your collection and records.', () => Menu.shelf())] },
@@ -208,10 +210,10 @@
         menu.innerHTML = ''; const g = GROUPS.find(x => x.id === Menu._hubTab);
         if (g) {
           menu.className = 'hubmenu open';
-          menu.append(el('div', { class: 'hubhead' }, el('button', { class: 'hubback backbtn', onclick: () => { SFX.play('ui'); Menu._hubTab = null; draw(); } }, '‹ BACK'), el('b', null, g.label)), ...g.items());
+          menu.append(el('div', { class: 'hubhead' }, el('button', { class: 'hubback backbtn', onclick: () => { SFX.play('ui'); Menu._hubTab = null; draw(); } }, '‹ BACK'), el('b', null, g.label)), ...g.items().filter(Boolean));
         } else {
           menu.className = 'hubmenu';
-          menu.append(...GROUPS.map(G => { const b = item(G.label, G.sub, () => { Menu._hubTab = G.id; draw(); }, 'grp ' + G.cls); if (G.id === 'practice' && !tutDone) b.append(el('em', { class: 'badge' }, 'NEW')); return b; }),
+          menu.append(...GROUPS.map(G => { const b = item(G.label, G.sub, () => { Menu._hubTab = G.id; draw(); }, 'grp ' + G.cls); if (G.id === 'practice' && !tutDone) b.append(el('em', { class: 'badge' }, 'NEW')); if (G.id === 'collect' && nSel) b.append(el('em', { class: 'badge' }, '🎫' + (nSel > 1 ? nSel : ''))); return b; }),
             (() => { const b = item('REWARDS', nRw ? nRw + ' ready to claim · daily and weekly jobs, mastery, milestones, awards' : 'Daily and weekly jobs, fighter mastery, milestones and awards.', () => Rewards.screen(), nRw ? 'gold' : ''); if (nRw) b.append(el('em', { class: 'badge' }, nRw)); return b; })(),
             item('OPTIONS', 'Sound, controls, graphics, install the app.', () => Menu.options()));
         }
@@ -286,12 +288,72 @@
         }, 'big' + (can ? '' : ' off')))]);
     },
     /* the figure you fight with (the hub's plate): your starter or any custom slot */
+    /* FIGURES are the fighters you have (whole Standard sets: your starter, Selection Ticket picks, ...); the one you
+       choose sits in builds[0], so everything that reads your builds sees it. Then your custom slots */
     pickActive() {
-      const Sv = S();
+      const Sv = S(), cur = Sv.builds[0].core.line, figs = Inv.figures();
+      if (!figs.includes(cur)) figs.unshift(cur);
+      const tile = (lb, on, sub, fn) => el('button', { class: 'actfig' + (on ? ' on' : ''), style: { '--lc': KB.LINES[lb.core.line].css }, onclick: () => { fn(); Auth.save(); close(); Menu.hub(); } },
+        el('img', { src: Models.figIcon(lb), alt: '' }), el('b', null, lb.name), el('small', null, sub));
       const close = modal([el('h2', null, 'YOUR FIGURE'), el('p', { class: 'note' }, 'The figure you take into Arcade, Versus and Training. Build your custom slots in the Workshop.'),
-        el('div', { class: 'actpick' }, ...Sv.builds.map((x, i) => { const lb = Inv.levelled(x);
-          return el('button', { class: 'actfig' + (i === (Sv.active || 0) ? ' on' : ''), style: { '--lc': KB.LINES[lb.core.line].css }, onclick: () => { Sv.active = i; Auth.save(); close(); Menu.hub(); } },
-            el('img', { src: Models.figIcon(lb), alt: '' }), el('b', null, lb.name), el('small', null, i === 0 ? 'Starter · ' + KB.LINES[lb.core.line].name + ' set' : 'Custom · ' + KB.LINES[lb.core.line].name + ' core')); }))]);
+        el('h3', { class: 'acthead' }, 'FIGURES (' + figs.length + ' / ' + KB.LINE_ORDER.length + ')'),
+        el('div', { class: 'actpick' }, ...figs.map(line => tile(Inv.levelled(KB.mintBuild(line, 0)), !(Sv.active > 0) && cur === line, KB.LINES[line].name + ' set' + (line === Menu.starterLine() ? ' · starter' : ''), () => { Menu.useFigure(line); Sv.active = 0; }))),
+        el('h3', { class: 'acthead' }, 'CUSTOM SLOTS'),
+        el('div', { class: 'actpick' }, ...Sv.builds.slice(1).map((x, k) => { const lb = Inv.levelled(x); return tile(lb, Sv.active === k + 1, 'Custom · ' + KB.LINES[lb.core.line].name + ' core', () => { Sv.active = k + 1; }); }))]);
+    },
+    starterLine: () => starterLine(),
+    /* put one of your figures in builds[0] (the Workshop never edits that slot, so swapping it loses nothing) */
+    useFigure(line) { const Sv = S(); if (Sv.builds[0].core.line !== line) Sv.builds[0] = KB.mintBuild(line, 0); },
+    /* --------------------------------------------------- selection ticket
+       Pick any fighter you don't have yet (Inv.hasFigure: its whole Standard set) and the ticket opens its box: all six
+       parts, Standard, and any of them you already had level up */
+    selection() {
+      Music.play('menu'); useRoom(activeBuild());
+      const Sv = S(), n = Sv.selTickets | 0;
+      const packs = KB.LINE_ORDER.map(line => {
+        const L = KB.LINES[line], have = Inv.hasFigure(line), got = KB.SLOTS.filter(s => Inv.has(line, s, 0)).length;
+        return el('button', { class: 'blister' + (have ? ' owned' : ''), title: L.blurb, style: { '--lc': L.css }, onclick: () => { if (have) { SFX.play('back'); toast('The ' + L.figure + ' is already in your collection.'); } else pick(line, got); } },
+          el('div', { class: 'bl-top' }, logo('l-tiny'), el('span', null, L.name)),
+          el('div', { class: 'bl-bubble' }, el('img', { src: Models.figIcon(KB.mintBuild(line, 0)), alt: L.figure })),
+          el('div', { class: 'bl-name' }, L.figure),
+          el('div', { class: 'bl-blurb' + (have || got ? ' st' : '') }, have ? '✓ ALREADY YOURS' : got ? 'You have ' + got + ' of its 6 parts: those level up.' : L.blurb));
+      });
+      const pick = (line, got) => {
+        if (!(S().selTickets > 0)) { SFX.play('back'); toast('No Selection Ticket. Clear the Arcade for one.', 'bad'); return; }
+        const L = KB.LINES[line];
+        const close = modal(el('div', { class: 'confirm' }, el('h2', null, 'Collect the ' + L.figure + '?'),
+          el('p', null, 'Your Selection Ticket opens the full ', el('b', null, L.name), ' set: all six parts, Standard.' + (got ? ' The ' + got + ' you already have level up.' : '')),
+          btn('USE THE TICKET', () => { close(); Menu.collect(line); }, 'big')));
+      };
+      const all = Inv.figures().length >= KB.LINE_ORDER.length;
+      App.screen(el('div', { class: 'screen starter selection' }, topbar('CHOOSE A FIGHTER', () => Menu.hub()),
+        el('p', { class: 'sub' }, el('b', null, '🎫 SELECTION TICKET ×' + n), ' · ', !n ? 'No ticket to use right now. Your first Arcade clear gives one.'
+          : all ? 'You have every fighter already. Keep the ticket: it waits for the next one.'
+            : 'Pick any fighter you don\'t have yet: you get its whole set, ready to fight as.'),
+        el('div', { class: 'packs' }, ...packs)));
+    },
+    collect(line) {
+      const Sv = S(); if (!(Sv.selTickets > 0) || Inv.hasFigure(line)) return;
+      Sv.selTickets--;
+      const res = KB.SLOTS.map(slot => Object.assign({ slot }, Inv.add(line, slot, 0)));
+      Sv.selUsed = (Sv.selUsed || []).concat([line]); Auth.save();
+      SFX.play('reveal', { r: 2 });
+      Menu.newFigure(line, res);
+    },
+    /* the box is open: the figure on the turntable, its six parts, and make it yours */
+    newFigure(line, res) {
+      const L = KB.LINES[line], b = Inv.levelled(KB.mintBuild(line, 0)), Sv = S();
+      useRoom(b);
+      App.screen(el('div', { class: 'screen arcade newfig' }, topbar('NEW FIGURE', () => Menu.hub()),
+        el('div', { class: 'panel arcp nfp', style: { '--lc': L.css } },
+          el('small', { class: 'nfk' }, 'SELECTION TICKET'),
+          el('h2', null, L.figure), el('p', { class: 'note' }, L.blurb),
+          el('div', { class: 'nfparts' }, ...res.map(it => el('div', { class: 'nfpart' }, el('img', { src: Models.icon(line, it.slot, 0), alt: '' }),
+            el('b', null, KB.itemName(line, it.slot)), el('small', null, KB.SLOT_NAME[it.slot]), el('em', null, it.isNew ? 'NEW' : it.lvUp ? 'LEVEL +' + it.lv : it.refund ? '+' + it.refund + ' TOKENS' : '')))),
+          el('div', { class: 'row' },
+            btn('MAKE IT MY FIGURE', () => { Menu.useFigure(line); Sv.active = 0; Auth.save(); toast(L.figure + ' is your figure now.', 'gold'); Menu.hub(); }, 'big fight'),
+            Sv.selTickets > 0 ? btn('NEXT TICKET (' + Sv.selTickets + ')', () => Menu.selection(), 'ghost') : btn('DONE', () => Menu.hub(), 'ghost')),
+          el('p', { class: 'fine' }, 'Change figures any time from the hub (ACTIVE FIGURE), or snap these parts onto a custom slot in the Workshop.'))));
     },
     /* ---------------------------------------------------------- capsules */
     capsules(bannerIdx) {
@@ -320,7 +382,8 @@
             el('div', { class: 'pullrow' },
               el('button', { class: 'pullbtn' + (canPay(1) ? '' : ' off'), onclick: () => pull(1) }, el('b', null, 'PULL ×1'), el('span', null, el('i', { class: 'coin' }), Gacha.COST[1])),
               el('button', { class: 'pullbtn ten' + (canPay(10) ? '' : ' off'), onclick: () => pull(10) }, el('b', null, 'PULL ×10'), el('span', null, el('i', { class: 'coin' }), Gacha.COST[10]), el('small', null, 'LIMITED+ guaranteed')),
-              S().tickets > 0 ? el('button', { class: 'pullbtn tix', onclick: () => ticket() }, el('b', null, 'TICKET ×1'), el('span', null, '🎟 ' + S().tickets + ' left'), el('small', null, 'a free capsule')) : null),
+              S().tickets > 0 ? el('button', { class: 'pullbtn tix', onclick: () => ticket() }, el('b', null, 'TICKET ×1'), el('span', null, '🎟 ' + S().tickets + ' left'), el('small', null, 'a free capsule')) : null,
+              S().selTickets > 0 ? el('button', { class: 'pullbtn seltix', onclick: () => { App.setView(null); Menu.selection(); } }, el('b', null, 'SELECTION'), el('span', null, '🎫 ' + S().selTickets), el('small', null, 'pick a fighter')) : null),
             el('div', { class: 'pity' }, 'CHASE pity ', el('b', null, P.sinceChase + ' / ' + Gacha.PITY), ' · total pulls ' + P.total, ' · ', el('a', { href: '#', onclick: e => { e.preventDefault(); rates(); } }, 'rates')),
             el('div', { class: 'collected' }, 'Collection ' + Inv.count() + ' / ' + Inv.total())))));
     },
@@ -359,7 +422,7 @@
           })]));
       App.screen(el('div', { class: 'screen shelf' }, topbar('SHELF', () => Menu.hub()),
         el('div', { class: 'panel shelfp' },
-          el('div', { class: 'recs' }, ...[['WINS', R.wins], ['LOSSES', R.losses], ['ARCADE CLEARS', R.arcadeClears], ['BEST COMBO', R.bestCombo], ['MOST BOUNCES', R.maxBounces], ['WALL BREAKS', R.wallBreaks], ['COLLECTION', Inv.count() + '/' + Inv.total()]].map(([k, v]) => el('div', null, el('small', null, k), el('b', null, v)))),
+          el('div', { class: 'recs' }, ...[['WINS', R.wins], ['LOSSES', R.losses], ['ARCADE CLEARS', R.arcadeClears], ['BEST COMBO', R.bestCombo], ['MOST BOUNCES', R.maxBounces], ['WALL BREAKS', R.wallBreaks], ['FIGURES', Inv.figures().length + '/' + KB.LINE_ORDER.length], ['COLLECTION', Inv.count() + '/' + Inv.total()]].map(([k, v]) => el('div', null, el('small', null, k), el('b', null, v)))),
           grid)));
     },
     /* ----------------------------------------------------------- versus
@@ -551,12 +614,12 @@
       Music.play('menu'); const hud = U.$('hud'); if (hud) hud.hidden = true;
       const watch = opts.mode === 'watch';
       const win = res.winner === 0, me = res.records[watch ? res.winner : 0];
-      let reward = 0, extra = null;
+      let reward = 0, extra = null, sel = false;
       if (opts.mode === 'cpu') reward = win ? 80 + 40 * (opts.lvl || 0) : 30;
       if (opts.mode === 'versus') reward = 40;
       if (opts.mode === 'arcade') {
         const L = Menu.ladder()[opts.stage];
-        if (win) { reward = L.reward; Menu._arc.stage++; if (Menu._arc.stage >= 6) { reward += 600; extra = 'ARCADE CLEAR!  +600'; S().records.arcadeClears++; Menu._arc = null; Menu._ladder = null; } }
+        if (win) { reward = L.reward; Menu._arc.stage++; if (Menu._arc.stage >= 6) { reward += 600; extra = 'ARCADE CLEAR!  +600'; S().records.arcadeClears++; Menu._arc = null; Menu._ladder = null; sel = Rewards.selGrant('arcade'); } }
         else reward = 20;
       }
       if (!watch) Auth.record(res, opts.mode, reward);
@@ -571,6 +634,8 @@
           el('div', { class: 'recs' }, stat('BEST COMBO', me.maxCombo), stat('MOST BOUNCES', me.maxBounces), stat('WALL BREAKS', me.breaks), stat('DAMAGE', Math.round(me.dmg))),
           reward ? el('div', { class: 'reward' }, el('i', { class: 'coin' }), '+' + reward + ' TOKENS') : null,
           extra ? el('div', { class: 'reward gold' }, extra) : null,
+          sel ? el('div', { class: 'reward gold selwon' }, '🎫 SELECTION TICKET!', el('small', null, 'Your first Arcade clear: pick any fighter you don\'t have yet and its whole set is yours.'),
+            el('button', { class: 'rwready', onclick: () => { App.setView(null); Menu.selection(); } }, 'CHOOSE A FIGHTER ▸')) : null,
           ...awards.map(a => el('div', { class: 'reward gold' }, '★ AWARD: ' + a.name + (a.pay ? '  +' + a.pay : ''))),
           ready ? el('button', { class: 'rwready', onclick: () => { App.setView(null); Rewards.screen(); } }, '🎁 ' + ready + ' REWARD' + (ready > 1 ? 'S' : '') + ' READY TO CLAIM ▸') : null,
           el('div', { class: 'row' }, next,

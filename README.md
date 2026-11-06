@@ -387,11 +387,19 @@ Quests and tiers are **claimed** (one at a time or CLAIM ALL); awards pay at onc
 Tickets** (a free ×1 capsule: the CAPSULES screen shows a TICKET button when you have one) and, on the fighter tracks,
 parts. After a fight, the results list the awards it unlocked and a button to the rewards waiting.
 
+**Selection Tickets:** your **first Arcade clear** pays one (a collector who cleared it before tickets existed gets
+theirs at their next log-in). A ticket picks any **fighter you don't have yet**: a fighter is yours when you own its
+whole Standard set, so your starter is, and so is any line whose six Standard parts you pulled. The ticket opens that
+fighter's box: all six parts, Standard (any you already had level up), and the figure is ready to fight as at once.
+Use it from COLLECTION (SELECTION TICKET, marked 🎫 in the hub), the CAPSULES screen, REWARDS, or straight from the
+results of that Arcade clear. The picker shows all ten fighters on one screen, the ones you have greyed out. The hub's
+**ACTIVE FIGURE** plate lists your **figures** (every fighter you have) and then your custom slots.
+
 ## Modes
 
 **The hub** fits on one screen: five buttons, three of which open a short list of their own. **FIGHT** (Arcade,
 Versus, Online, Replays), **PRACTICE** (Tutorial, Training, Combo Trials, How to Play; marked NEW until you've done
-the tutorial), **COLLECTION** (Workshop, Capsules, Shelf), then **REWARDS** (with its count of rewards ready) and
+the tutorial), **COLLECTION** (Workshop, Capsules, Shelf), then **REWARDS** (with its count of rewards ready; COLLECTION also holds a SELECTION TICKET when you have one) and
 **OPTIONS**. BACK, Esc or a pad's back button closes a list, and coming back from a mode returns you to the list you
 left from.
 
@@ -401,7 +409,7 @@ ignores rarity bonuses; it remembers your setup) · Training (pick yourself from
 combo readout, health back the moment a combo ends, a start by a wall or a SAVED POSITION; R resets and T saves, or tap /
 hold a pad's Back button; and the **lab**: inputs, frame data, record and play) ·
 Workshop (your custom slots: Custom A and B free, Custom C to F unlocked with tokens for 1,000 / 2,000 / 3,000 /
-5,000; your starter figure stays its Standard set; the hub's ACTIVE FIGURE plate picks which one you fight with) ·
+5,000; your figures, the fighters you have, stay their Standard sets; the hub's ACTIVE FIGURE plate picks which one you fight with) ·
 Shelf (collection and records).
 
 **Colours:** every figure comes in seven palettes, chosen on the Versus (P1 and P2), Training and Online fighter

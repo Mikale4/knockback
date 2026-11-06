@@ -337,8 +337,8 @@
          queue: [ids], fight: { fid, ids, names, lines, state } | null, cd, last } */
   const memberOf = id => N && N.room ? N.room.members.find(m => m.id === id) || null : null;
   const roomKey = R => JSON.stringify(R, (k, v) => (k === 'rtt' ? undefined : v));
-  /* the fighter you bring by default: your figure if it's a custom slot, else your starter's base character */
-  const defaultPick = () => { const S = Auth.S; return S.active >= 1 && S.builds[S.active] ? 'mine:' + S.active : 'mint:' + (S.starter || S.builds[0].core.line); };
+  /* the fighter you bring by default: your figure if it's a custom slot, else that figure's base character */
+  const defaultPick = () => { const S = Auth.S; return S.active >= 1 && S.builds[S.active] ? 'mine:' + S.active : 'mint:' + ((S.builds[0] && S.builds[0].core.line) || S.starter); };
   function freshN(pick) { return { sid: rid(), stage: 'menu', status: '', host: false, pick: pick || defaultPick(), autoWatch: N ? N.autoWatch !== false : true, chat: [], form: N && N.form }; }
   function toMember(id, msg) { if (!N || !N.host || id === N.myId) return; const M = N.mem.get(id); if (M && M.conn && M.conn.open) { try { M.conn.send(msg); } catch (e) { /* closed */ } } }
   function toAll(msg, except) { if (!N || !N.host) return; for (const m of N.room.members) if (!except || !except.includes(m.id)) toMember(m.id, msg); }

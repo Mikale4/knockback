@@ -330,10 +330,21 @@
     App.screen(el('div', { class: 'screen rewards' }, topbar('REWARDS', () => Menu.hub()),
       el('div', { class: 'panel rwpanel' },
         el('div', { class: 'tabs rwtabs' }, ...TABS.map(([k, t]) => el('button', { class: k === tab ? 'on' : '', onclick: () => { SFX.play('ui'); Rewards.screen(k); } }, t, cnt(k) ? el('em', { class: 'badge' }, cnt(k)) : null))),
-        el('div', { class: 'rwhead' }, el('span', null, el('i', { class: 'coin' }), U.fmt(Auth.S.tokens), '  ·  🎟 ', String(Auth.S.tickets), ' capsule ticket' + (Auth.S.tickets === 1 ? '' : 's')),
+        el('div', { class: 'rwhead' }, el('span', null, el('i', { class: 'coin' }), U.fmt(Auth.S.tokens), '  ·  🎟 ', String(Auth.S.tickets), ' capsule ticket' + (Auth.S.tickets === 1 ? '' : 's'),
+            Auth.S.selTickets > 0 ? el('button', { class: 'chip seltix', onclick: () => { SFX.play('ok'); Menu.selection(); } }, '🎫 ' + Auth.S.selTickets + ' SELECTION TICKET' + (Auth.S.selTickets > 1 ? 'S' : '') + ' ▸') : null),
           total ? btn('CLAIM ALL (' + total + ')', () => { let n = 0; for (const r of [...items().daily, ...items().weekly, ...items().fighters, ...items().milestones]) if (r.ready && claim(r.key)) n++; if (n) { SFX.play('coin'); say('Claimed ' + n + ' reward' + (n > 1 ? 's' : ''), 'gold'); } Rewards.screen(tab); }, 'small claim') : null),
         el('div', { class: 'rwlist' }, ...body))));
   };
+  /* ---------------------------------------------------- selection tickets
+     A Selection Ticket picks any fighter you don't have yet (Menu.selection): its whole Standard set. Each source pays
+     one ticket, once ever (S.selGot remembers which): your first Arcade clear, also for a collector who cleared it
+     before tickets existed (selBackfill, at log-in) */
+  Rewards.selGrant = src => {
+    const S = Auth.S; if (!S) return false;
+    S.selGot = S.selGot || {}; if (S.selGot[src]) return false;
+    S.selGot[src] = Date.now(); S.selTickets = (S.selTickets | 0) + 1; Auth.save(); return true;
+  };
+  Rewards.selBackfill = () => !!(Auth.S && Auth.S.records && Auth.S.records.arcadeClears >= 1) && Rewards.selGrant('arcade');
   Rewards.items = items; Rewards.claim = claim;
   window.Rewards = Rewards;
 })();

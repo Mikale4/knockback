@@ -95,6 +95,10 @@
       for (const line of KB.LINE_ORDER) for (let r = 3; r >= 0; r--) { const it = Inv.get(line, slot, r); if (it) out.push({ line, slot, r, lv: it.lv, n: it.n }); }
       return out.sort((a, b) => b.r - a.r || KB.LINE_ORDER.indexOf(a.line) - KB.LINE_ORDER.indexOf(b.line));
     },
+    /* a fighter is yours when you own its whole Standard set (all six parts): your starter, a Selection Ticket's
+       pick, or six capsules' worth. Your figures are those, ready to fight as */
+    hasFigure: line => KB.SLOTS.every(s => Inv.has(line, s, 0)),
+    figures: () => KB.LINE_ORDER.filter(l => Inv.hasFigure(l)),
     count() { return Object.keys(Auth.S.inv).length; },
     total: () => KB.LINE_ORDER.length * KB.SLOTS.length * 4,
     /* a build's parts carry their current levels */
