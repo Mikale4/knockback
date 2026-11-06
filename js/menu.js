@@ -666,6 +666,7 @@
           el('div', { class: 'row' },
             watch ? btn('NEXT FIGHT', () => Menu.versusStart(opts.cfg), 'big fight') : null,
             btn('REMATCH', () => App.startMatch(opts), watch ? 'ghost' : 'big'),
+            btn('CHARACTER SELECT', () => { App.setView(null); Menu.versus(opts.cfg || Menu._vs); }, 'ghost'),   // (back to the Versus screen, everything as it was)
             btn('MENU', () => { App.setView(null); Menu.hub(); }, 'ghost')))));
     },
   };
