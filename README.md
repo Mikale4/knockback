@@ -222,6 +222,11 @@ is missing something from it (a tag-team partner, a lucky ball, a playbook, a go
 weight plate, a tenth pin, a golden arrow, a wheel); their rivals are each other: Wrestler and Boxer, Baseball and
 Archer, Football and Soccer, Fencer and Weightlifter, Bowler and Skateboarder.
 
+Their **Combo Trials** match the first series: ten Basic, seven Advanced and five Professional each (220 more, 440
+in all), every one proven by the DEMO bot at 60 Hz, 144 Hz and on uneven frames: the Wrestler's Body Slam chains,
+the Baseball player's Clutch Home Run into the wall, the Football player's Blitz, the Boxer's Bob & Weave openers, the
+Weightlifter's Chalk Up and Max Effort, the Bowler's Split Shot, the Skateboarder's Grind Rush, and every Legend Art.
+
 ## Mixed strings (every pair of arms has its own)
 
 Put an R-arm and an L-arm from **different lines** on one figure and they make a string of their own. The R-arm
@@ -365,17 +370,19 @@ swings when a lesson wants it to and nobody can lose. Finishing it the first tim
 ## Combo Trials
 
 **COMBO TRIALS** in the hub (`js/trials.js`): every fighter's combos on its own **base** move list (a figure of that
-line, never a mixed string), ten trials each, a hundred in all: the string, the pause combo, the Launcher into an air
+line, never a mixed string), ten trials each, two hundred in all (both series): the string, the pause combo, the Launcher into an air
 combo, the KNOCK//BACK with the rebound catch, a Special cancel, the line's signature trick (the Samurai's Rising Cut
 into Tsubame Gaeshi, the Pirate's sand and Quick Shot, the Monk's mashed Flurry, the Viking's full wind-up, the Ninja's
-Shadow Dash, the Summoner's Sic 'Em, the Paladin's crumple, the Dragoon's Vault, the Bard on the beat), a Legend Art
+Shadow Dash, the Summoner's Sic 'Em, the Paladin's crumple, the Dragoon's Vault, the Bard on the beat; the Wrestler's eye
+rake, the Baseball player's wind-up Home Run, the Pancake Block, the Bicycle Kick, the Boxer's Body Blows, the Flèche,
+the Weightlifter's Max Effort, the Gutter Ball, the Volley, the Skateboarder's Kickflip), a Legend Art
 finish, the air Heavy SPIKE into a ground bounce, an OTG off the floor, and a Part Toss extension. A panel lists the
 steps in your own keys; each ticks off as it lands, and the trial resets (with why) if the combo drops or a wrong move
 comes out. **DEMO** plays it for you, and the same bot proves every one can be done, at 60 and 144 frames a second and
 on uneven frames. Clears are saved per collector and count toward REWARDS (*Combo scholar* counts every tier;
 *Mastered* and *Professor* count a fighter's basic trials).
 
-**ADVANCED** (the second tab): each fighter's own routes, built on what only it has, seven each, seventy in all. They
+**ADVANCED** (the second tab): each fighter's own routes, built on what only it has, seven each, 140 in all. They
 use ground bounces, wall bounces, OTGs, Special cancels, Snap Cancels, Part Tosses and the Legend Arts' two
 endings: a raw Art that opens with a bounce, or one that ends a combo in a hard knockdown to OTG. A few examples:
 the Pirate's **Pistols and powder** (Point Blank into the wall, BROADSIDE off it: nothing but the gun and the cannons)
@@ -384,8 +391,8 @@ the Summoner's **Fetch!** and **Imp juggler** (two imps in hand, two throws, two
 **Berserker** wind-up; the Bard's **Lullaby**. A trial can start you at range, by a wall, or with imps in hand. The
 same DEMO bot proves every one.
 
-**PROFESSIONAL** (the third tab): the longest and hardest-hitting routes in the game, five for every fighter, fifty in
-all, 12 to 22 steps each, using everything at once: a KNOCK//BACK and its rebound, the launcher and an air SPIKE for the
+**PROFESSIONAL** (the third tab): the longest and hardest-hitting routes in the game, five for every fighter, a hundred
+in all, 12 to 22 steps each, using everything at once: a KNOCK//BACK and its rebound, the launcher and an air SPIKE for the
 ground bounce, Special cancels, Snap Cancels, Part Tosses (or the Summoner's imps) for extensions (each one gives back a
 ground bounce and the OTGs), each fighter's own tricks, and the Legend Arts, raw to open or to end it in a hard
 knockdown with an OTG after. They're built the way the game wants: the air part early (the longer a combo runs, the
@@ -514,7 +521,7 @@ shake** setting (Full, Reduced, Off).
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
 | `js/menu.js`, `js/hud.js` | Every screen, and the in-fight HUD |
 | `js/online.js` | ONLINE: the room list (MQTT), rooms of six over PeerJS (host controls, queue, fighter select, chat), fights between any two members, spectating, rollback netcode (the fight's save/restore, time sync), fingerprints and resync |
-| `js/trials.js` | COMBO TRIALS: the seventy trials, the step checker, the DEMO bot, and the screens |
+| `js/trials.js` | COMBO TRIALS: all 440 trials (Basic, Advanced, Professional for twenty fighters), the step checker, the DEMO bot, and the screens |
 | `js/rewards.js` | REWARDS: the counters, the five boards, claiming, and the screen |
 | `js/sports.js` | MODERN SPORTS: the ten lines, their parts, moves, passives and mixed-string entries |
 | `js/sports_look.js` | Their voxel parts, ready stances and attack poses |

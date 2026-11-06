@@ -51,10 +51,10 @@
   mv('wrD', { name: 'Lariat', pose: 'lariat', su: 0.11, ac: 0.09, rc: 0.26, dmg: 48, reach: 1.2, rad: 1.0, kb: [14, 5], launch: 1, lunge: 6, finisher: 1, trail: 0, sfx: 'heavy' });
   mv('wrP', { name: 'Eye Rake', pose: 'sandToss', su: 0.07, ac: 0.08, rc: 0.28, dmg: 10, reach: 1.1, dizzy: 1.1, trail: 0, sfx: 'whoosh', zone: 'high' });
   mv('wrAirA', { name: 'Flying Forearm', pose: 'jabR', su: 0.07, dmg: 26, kb: [3, 4.5], air: 1, h: 1, trail: 0, sfx: 'whoosh', nx: { l: 'wrAirB' } });
-  mv('wrAirB', { name: 'Elbow Drop', pose: 'elbowDrop', su: 0.1, ac: 0.3, rc: 0.24, dmg: 46, kb: [2, -13], launch: 1, spike: 1, dive: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
+  mv('wrAirB', { name: 'Elbow Drop', pose: 'elbowDrop', su: 0.09, ac: 0.12, rc: 0.24, dmg: 46, kb: [2, -13], launch: 1, spike: 1, air: 1, h: 0.8, rad: 0.95, trail: 0, sfx: 'heavy' });
   mv('spearTackle', { name: 'Spear', pose: 'tackle', su: 0.18, ac: 0.1, rc: 0.3, dmg: 82, reach: 1.1, rad: 0.95, kb: [18, 5], launch: 1, lunge: 10, armor: 1, oneArmor: 1, charge: 1, trail: 0, sfx: 'heavy' });
   mv('euroUpper', { name: 'European Uppercut', pose: 'uppercutL', su: 0.1, ac: 0.08, rc: 0.27, dmg: 40, kb: [1, 13], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
-  mv('legDrop', { name: 'Leg Drop', pose: 'legDrop', su: 0.13, ac: 0.12, rc: 0.25, dmg: 56, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.4, trail: 0, sfx: 'heavy' });
+  mv('legDrop', { name: 'Leg Drop', pose: 'legDrop', su: 0.12, ac: 0.12, rc: 0.25, dmg: 56, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.8, rad: 0.95, trail: 0, sfx: 'heavy' });
   mv('bodySlam', { name: 'Body Slam', type: 'grab', pose: 'grab', su: 0.12, ac: 0.08, rc: 0.4, dmg: 70, reach: 1.15, rad: 0.85, cmd: 'd', throwMv: 'wrSlam', kb: [17, 6], launch: 1, trail: 0, sfx: 'whoosh', zone: 'mid' });
   mv('dropkick', { name: 'Dropkick', pose: 'dropkick', su: 0.09, ac: 0.1, rc: 0.3, dmg: 46, kb: [13, 6], launch: 1, lunge: 8, trail: 0, sfx: 'heavy' });
   mv('mainEvent', { name: 'Main Event', type: 'super', pose: 'grab', su: 0.12, catchType: 'melee', lunge: 7, reach: 1.15, rad: 1.1, close: 5, seq: 'powerbomb', dmg: 300, kb: [6, -14], zone: 'mid' });
@@ -74,7 +74,7 @@
   mv('bbD', { name: 'Home Run Swing', pose: 'homerun', twoHand: 1, su: 0.13, ac: 0.08, rc: 0.28, dmg: 50, reach: 1.45, rad: 1.0, kb: [16, 6], launch: 1, lunge: 3, chargeL: 1, finisher: 1, sfx: 'heavy' });
   mv('bbP', { name: 'Bunt', pose: 'thrust', su: 0.07, ac: 0.08, rc: 0.26, dmg: 22, reach: 1.3, kb: [1.2, 12], launch: 1, launcher: 1, zone: 'low', h: 0.6, trail: 0, sfx: 'whoosh' });
   mv('bbAirA', { name: 'Air Swing', pose: 'slashA', su: 0.07, dmg: 26, kb: [3, 4.5], air: 1, h: 1, reach: 1.3, nx: { l: 'bbAirB' } });
-  mv('bbAirB', { name: 'Chopper', pose: 'overhead', su: 0.1, ac: 0.3, rc: 0.24, dmg: 46, kb: [2, -13], launch: 1, spike: 1, dive: 1, air: 1, reach: 1.3, h: 0.5, sfx: 'heavy' });
+  mv('bbAirB', { name: 'Chopper', pose: 'overhead', su: 0.09, ac: 0.12, rc: 0.24, dmg: 46, kb: [2, -13], launch: 1, spike: 1, air: 1, reach: 1.3, h: 0.8, sfx: 'heavy' });
   mv('fastball', { name: 'Fastball', type: 'proj', proj: 'pitch', pose: 'pitchL', su: 0.2, rc: 0.3, dmg: 72, kb: [15, 5], launch: 1, range: 9, charge: 1, trail: 0, sfx: 'whoosh' });
   mv('gloveUpper', { name: 'Glove Upper', pose: 'uppercutL', su: 0.1, ac: 0.08, rc: 0.27, dmg: 38, kb: [1.2, 13], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
   mv('sinker', { name: 'Sinker', type: 'proj', proj: 'pitchDown', pose: 'pitchL', su: 0.14, rc: 0.28, dmg: 50, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 7, trail: 0, sfx: 'whoosh' });
@@ -89,7 +89,7 @@
   mv('fbD', { name: 'Pancake Block', pose: 'tackle', su: 0.12, ac: 0.09, rc: 0.28, dmg: 50, reach: 1.15, rad: 0.95, kb: [2, -11], launch: 1, spike: 1, armorSU: 1, lunge: 5, finisher: 1, trail: 0, sfx: 'heavy' });
   mv('fbP', { name: 'Facemask!', pose: 'grab', su: 0.08, ac: 0.07, rc: 0.3, dmg: 30, reach: 1.05, crumple: 1.0, lunge: 3, trail: 0, sfx: 'heavy', zone: 'high' });
   mv('fbAirA', { name: 'Leaping Shove', pose: 'palm', su: 0.08, dmg: 28, kb: [3, 4.5], air: 1, h: 1, trail: 0, sfx: 'heavy', nx: { l: 'fbAirB' } });
-  mv('fbAirB', { name: 'Dogpile', pose: 'cannonball', su: 0.1, ac: 0.3, rc: 0.24, dmg: 46, kb: [6, -10], launch: 1, spike: 1, dive: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
+  mv('fbAirB', { name: 'Dogpile', pose: 'cannonball', su: 0.09, ac: 0.12, rc: 0.24, dmg: 46, kb: [4, -12], launch: 1, spike: 1, air: 1, h: 0.8, rad: 0.95, trail: 0, sfx: 'heavy' });
   mv('bulletPass', { name: 'Bullet Pass', type: 'proj', proj: 'pass', pose: 'pitchL', su: 0.19, rc: 0.3, dmg: 74, kb: [16, 5], launch: 1, range: 9.5, charge: 1, trail: 0, sfx: 'whoosh' });
   mv('liftBlock', { name: 'Lift Block', pose: 'bashUp', su: 0.11, ac: 0.08, rc: 0.28, dmg: 40, kb: [1, 12.5], launch: 1, launcher: 1, armorSU: 1, trail: 0, sfx: 'heavy' });
   mv('ballSpike', { name: 'Spike!', pose: 'bashDown', su: 0.13, ac: 0.1, rc: 0.25, dmg: 56, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
@@ -151,7 +151,7 @@
   mv('wlC', { name: 'Overhead Press', pose: 'press', su: 0.16, ac: 0.1, rc: 0.32, dmg: 62, around: 1, rad: 1.7, kb: [2, -11], launch: 1, spike: 1, chargeL: 1, armorSU: 1, finisher: 1, quake: 1, zone: 'high', sfx: 'heavy' });
   mv('wlP', { name: 'Plate Toss', type: 'proj', proj: 'plate', pose: 'toss', su: 0.14, rc: 0.3, dmg: 46, kb: [12, 5], launch: 1, range: 7, finisher: 1, trail: 0, sfx: 'whoosh' });
   mv('wlAirA', { name: 'Air Swing', pose: 'hack', su: 0.1, dmg: 38, kb: [3, 3.5], air: 1, reach: 1.2, h: 0.9, sfx: 'heavy', nx: { l: 'wlAirB' } });
-  mv('wlAirB', { name: 'Dumbbell Drop', pose: 'skullSplit', su: 0.11, ac: 0.3, rc: 0.25, dmg: 50, kb: [2, -13], launch: 1, spike: 1, dive: 1, air: 1, reach: 1.1, h: 0.5, sfx: 'heavy' });
+  mv('wlAirB', { name: 'Dumbbell Drop', pose: 'skullSplit', su: 0.1, ac: 0.12, rc: 0.25, dmg: 50, kb: [2, -13], launch: 1, spike: 1, air: 1, reach: 1.1, h: 0.8, rad: 0.95, sfx: 'heavy' });
   mv('kettleSwing', { name: 'Kettlebell Swing', pose: 'kettle', su: 0.2, ac: 0.1, rc: 0.32, dmg: 90, reach: 1.1, rad: 1.0, kb: [20, 4.5], launch: 1, lunge: 4, armor: 1, oneArmor: 1, charge: 1, trail: 0, sfx: 'heavy' });
   mv('cleanJerk', { name: 'Clean & Jerk', pose: 'press', su: 0.12, ac: 0.08, rc: 0.3, dmg: 42, kb: [1, 13.5], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
   mv('kettleDrop', { name: 'Kettle Drop', pose: 'bashDown', su: 0.14, ac: 0.1, rc: 0.26, dmg: 60, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, trail: 0, sfx: 'heavy' });
@@ -172,7 +172,7 @@
   mv('pinDrop', { name: 'Pin Drop', type: 'proj', proj: 'rollDown', pose: 'bashDown', su: 0.13, rc: 0.28, dmg: 52, kb: [2, -13], launch: 1, spike: 1, air: 1, range: 6, trail: 0, sfx: 'heavy' });
   mv('splitShot', { name: 'Split Shot', type: 'proj', proj: 'roll2', pose: 'bowl', su: 0.16, rc: 0.32, dmg: 44, kb: [3, 10], launch: 1, range: 9, zone: 'low', trail: 0, sfx: 'whoosh' });
   mv('approachSlide', { name: 'Approach Slide', pose: 'slide', su: 0.09, ac: 0.14, rc: 0.3, dmg: 38, kb: [3, 8.5], launch: 1, lunge: 9, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
-  mv('perfectGame', { name: 'Perfect Game', type: 'super', pose: 'bowl', su: 0.12, catchType: 'proj', range: 11, superLook: 'bowling', superFrom: 'feet', seq: 'perfect', dmg: 290, kb: [8, 15], zone: 'low' });
+  mv('perfectGame', { name: 'Perfect Game', type: 'super', pose: 'bowl', su: 0.12, catchType: 'proj', range: 11, superLook: 'bowling', superFrom: 'wR', seq: 'perfect', dmg: 290, kb: [8, 15], zone: 'low' });
 
   // ARCHER · Recurve Bow: bow strikes into an arrow at point blank; pause to loose a three-arrow volley
   mv('arA', { name: 'Bow Strike', pose: 'slashA', su: 0.06, dmg: 22, reach: 1.25, lunge: 3, nx: { l: 'arB' } });

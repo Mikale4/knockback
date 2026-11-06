@@ -502,7 +502,7 @@
       } else if (SPORT[mv.proj] || mv.proj === 'superShot') {
         // MODERN SPORTS: a pitch, a pass, a kicked ball, arrows, a rolled ball, a weight plate (darts with their own look);
         // a sports Legend Art's catch shot too (superLook / superFrom)
-        const S = mv.proj === 'superShot' ? { look: mv.superLook, from: mv.superFrom, roll: mv.superLook === 'bowling' } : SPORT[mv.proj], L = LOOK[S.look];
+        const S = mv.proj === 'superShot' ? { look: mv.superLook, from: mv.superFrom } : SPORT[mv.proj], L = LOOK[S.look];   // (an Art's catch shot is aimed, never rolled)
         const range = (mv.range || 6) + (charge || 0) * 3;
         const arm = S.from === 'wL' ? 'armL' : 'armR';
         const from = inside(S.roll ? _v.copy(f.pos).addScaledVector(F, 0.8).setY(f.pos.y + 0.3).clone()
