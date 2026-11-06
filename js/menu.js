@@ -560,6 +560,10 @@
       App.screen(el('div', { class: 'screen options' }, topbar('OPTIONS', () => { Input.cancelListen(); Menu.hub(); }),
         el('div', { class: 'panel optp' },
           el('div', { class: 'vols' }, vol('sfx'), vol('music')),
+          el('h2', { class: 'osec' }, 'GAMEPLAY'),
+          el('div', { class: 'seg' }, el('span', null, 'TARGET TRACKING'), el('div', null, ...[[false, 'Off'], [true, 'On']].map(([v, t]) =>
+            el('button', { class: !!Input.settings.track === v ? 'on' : '', onclick: () => { Input.setSetting('track', v); Menu.options(); } }, t)))),
+          el('p', { class: 'note' }, 'ON: every attack turns you to face your opponent first, whichever way you were facing or holding the stick, so it always aims at them. OFF: attacks go the way you face or hold the stick, and only snap onto someone close in front of you. It applies to everyone playing on this device; online, each player\'s own setting counts.'),
           el('h2', { class: 'osec' }, 'DISPLAY'),
           el('div', { class: 'seg' }, el('span', null, 'GRAPHICS'), el('div', null, ...[['auto', 'Auto'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([v, t]) =>
             el('button', { class: App.gfx.mode === v ? 'on' : '', onclick: () => { App.setGfx(v); Menu.options(); } }, t + (v === 'auto' && App.gfx.mode === 'auto' ? ' (' + App.gfx.level + ')' : ''))))),

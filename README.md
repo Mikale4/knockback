@@ -39,6 +39,12 @@ or lock in the middle of a fight.
 
 ## Controls
 
+**Target tracking (OPTIONS › GAMEPLAY, off by default):** on, every attack (strings, Heavies, air attacks, Specials,
+throws, dash attacks) first turns you to face your opponent, whichever way you were facing or holding the stick, so it
+always aims at them. Off, attacks go the way you face or hold the stick and only snap onto someone close in front of
+you. It applies to every person playing on this device (never to a CPU, nor to a combo trial's demo). Online, each
+player's own setting travels in the fight's setup (and its replay), so the two screens always agree.
+
 | Action | Keyboard P1 | Keyboard P2 | Xbox | PlayStation |
 |---|---|---|---|---|
 | Move | Arrow keys | I J K L | Left stick / d-pad | Left stick / d-pad |

@@ -407,10 +407,13 @@
       if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.giveArmor(mv.su + mv.ac, mv.oneArmor || this.st.perk === 'unstoppable');
       if (mv.inv) this.inv = Math.max(this.inv, mv.su + mv.ac + 0.04);
     }
-    /* turn toward the stick, then snap onto the opponent if they are in front and close */
+    /* turn toward the stick, then snap onto the opponent if they are in front and close. TARGET TRACKING (an option,
+       opts.track; off for a trial's demo): every attack turns you to face them, wherever you were facing or aiming */
     aim(mv) {
+      const o = this.opp;
+      if (o && this.opts.track && !this.noTrack) { this.yaw = U.ang(this.pos, o.pos); return; }
       const d = this.stick(); if (d) this.yaw = Math.atan2(d.x, d.z);
-      const o = this.opp; if (!o) return;
+      if (!o) return;
       const dist = U.dist(this.pos, o.pos), a = U.ang(this.pos, o.pos);
       const range = (mv.reach || 1.2) + (mv.lunge || 0) * 0.25 + 1.6 + (mv.range || 0) + (mv.dist || 0) * 0.6;
       if (dist < range && (!d || Math.abs(U.wrap(a - this.yaw)) < 0.95)) this.yaw = a;

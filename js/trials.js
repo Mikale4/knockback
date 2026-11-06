@@ -389,8 +389,8 @@
      a bot that plays the next step: walk in, press the step's button the way it
      wants (in time, toward them, held, on the beat...), then the next */
   let fake = null;
-  function startDemo() { if (!R) return; reset(); R.demo = true; R.wasDemo = true; R.dk = 0; fake = { held: {}, move: { x: 0, y: 0 } }; Input.players[0].cpu = fake; draw(); }
-  function stopDemo() { if (!R || !R.demo) return; R.demo = false; if (Input.players[0].cpu === fake) Input.players[0].cpu = null; fake = null; setTimeout(() => { if (R) R.wasDemo = false; }, 1900); }
+  function startDemo() { if (!R) return; reset(); R.demo = true; R.wasDemo = true; R.dk = 0; fake = { held: {}, move: { x: 0, y: 0 } }; Input.players[0].cpu = fake; R.m.fighters[0].noTrack = true; draw(); }   // (the demo plays it as written: no target tracking)
+  function stopDemo() { if (!R || !R.demo) return; R.demo = false; R.m.fighters[0].noTrack = false; if (Input.players[0].cpu === fake) Input.players[0].cpu = null; fake = null; setTimeout(() => { if (R) R.wasDemo = false; }, 1900); }
   function demo(dt) {
     const a = me(), d = dummy(), s = R.trial.steps[R.at], m = R.m; if (!s || !fake) return;
     for (const k in fake.held) fake.held[k] = false; fake.move.x = 0; fake.move.y = 0;

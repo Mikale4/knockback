@@ -318,14 +318,14 @@
   }
   function meInfo() {
     const b = Object.assign({}, buildOf(N && N.pick), { paint: Menu.myPaint() });
-    return { name: Auth.user.user, build: b, fig: b.name, line: b.core.line, pick: String(N && N.pick || '') };
+    return { name: Auth.user.user, build: b, fig: b.name, line: b.core.line, pick: String(N && N.pick || ''), track: !!Input.settings.track };
   }
   const goodBuild = b => !!b && typeof b === 'object' && KB.SLOTS.every(s => b[s] && KB.LINES[b[s].line] && Number.isInteger(b[s].r) && b[s].r >= 0 && b[s].r < KB.RARITY.length && (b[s].lv == null || typeof b[s].lv === 'number'));
   function cleanInfo(me) {
     if (!me || !goodBuild(me.build)) return null;
     const b = JSON.parse(JSON.stringify(me.build)); b.name = String(b.name || KB.LINES[b.core.line].figure).slice(0, 40);
     b.paint = Number.isInteger(b.paint) && b.paint >= 0 && b.paint < Models.PAINTS.length ? b.paint : 0; delete b.tint;
-    return { name: String(me.name || 'Player').slice(0, 24), build: b, fig: b.name, line: b.core.line, pick: String(me.pick || '').slice(0, 16) };
+    return { name: String(me.name || 'Player').slice(0, 24), build: b, fig: b.name, line: b.core.line, pick: String(me.pick || '').slice(0, 16), track: me.track === true };
   }
   const isBase = info => !!info && String(info.pick).startsWith('mint:');
   const lineName = info => info && info.build && info.build.core ? KB.LINES[info.build.core.line].name : '';
@@ -493,7 +493,7 @@
     const rules = R.rules, arena = rules.arena === 'random' ? U.pick(Arena.LIST) : rules.arena;
     const fid = 'f' + (N.fidN = (N.fidN || 0) + 1) + rid().slice(0, 4);
     const cfg = { fid, seed: seed != null ? seed : (U.vrand() * 4294967296) >>> 0, arena, wins: rules.wins, time: rules.time, bonus: rules.bonus,
-      ids: pair.map(m => m.id), builds: pair.map(m => m.info.build), names: pair.map(m => m.name) };
+      ids: pair.map(m => m.id), builds: pair.map(m => m.info.build), names: pair.map(m => m.name), track: pair.map(m => !!(m.info && m.info.track)) };   // (each fighter's TARGET TRACKING)
     R.fight = { fid, ids: cfg.ids, names: cfg.names, lines: pair.map(m => m.info.line), state: 'connecting' };
     pair.forEach(m => { m.ready = false; });
     toAll({ t: 'fight', cfg }); onFightCfg(cfg); pushRoom();
@@ -695,6 +695,7 @@
     const builds = cfg.builds.map((b, i) => Object.assign({}, b, { name: cfg.names[i] }));
     // the end of the match waits for its frame to be settled (a guessed KO can still be taken back)
     const opts = { mode: 'online', online: true, local: Math.max(0, local), builds, cpu: [null, null], arena: cfg.arena, wins: cfg.wins, time: cfg.time || 99, bonus: cfg.bonus, inputs: net,
+      track: Array.isArray(cfg.track) ? [cfg.track[0] === true, cfg.track[1] === true] : [false, false],   // (an older replay: no tracking, as it was played)
       onEnd: res => { if (!G) return; if (G.replay) replayEnd(res); else if (G.watch) watchEnd(res); else if (!G.ended && !G.endQ) G.endQ = { f: G.simF, res }; } };
     App.screen(null); Music.play('battle');
     const m = Match.create(opts); App.setView(m);
@@ -1352,7 +1353,7 @@
   const rleDec = a => { const out = []; for (let i = 0; i + 3 < a.length; i += 4) { const x = [a[i + 1] | 0, a[i + 2] | 0, a[i + 3] | 0]; for (let k = 0; k < a[i]; k++) out.push(x); } return out; };
   function buildReplay(cfg, side, inputs, snaps, fp, end, res) {
     return { kb: 'replay', v: 1, game: VERSION, build: BUILD, id: rid(), at: Date.now(), side, end: end | 0, winner: res.winner, score: res.wins.slice(0, 2),
-      cfg: { seed: cfg.seed, arena: cfg.arena, wins: cfg.wins, time: cfg.time, bonus: cfg.bonus, builds: cfg.builds, names: cfg.names },
+      cfg: { seed: cfg.seed, arena: cfg.arena, wins: cfg.wins, time: cfg.time, bonus: cfg.bonus, builds: cfg.builds, names: cfg.names, track: cfg.track },
       in: [rleEnc(inputs[0].slice(0, end + 1)), rleEnc(inputs[1].slice(0, end + 1))], snaps: snaps || {}, fp: fp || {}, keep: false };
   }
   const Replays = {

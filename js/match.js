@@ -31,7 +31,10 @@
     for (let i = 0; i < 2; i++) Input.players[i].cpu = null;
     const looks = opts.builds.map(b => Object.assign({}, b, { tint: 0 }));
     if (Models.looksAlike(looks[0], looks[1])) looks[1].tint = 1;   // two that would look alike: the second is TINTED
-    M.fighters = [0, 1].map(i => new Fighter(M, i, looks[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus, mods: opts.mods && opts.mods[i] }));
+    // TARGET TRACKING (an option, off by default): a person's attacks turn them to face the other figure first. Online,
+    // each player's own setting comes in the fight's setup (opts.track): the sim never reads this device's settings there
+    const track = opts.track || (opts.online || M.attract ? [false, false] : human.map(h => !!h && !!Input.settings.track));
+    M.fighters = [0, 1].map(i => new Fighter(M, i, looks[i], (opts.inputs || Input.players)[i], { bonus: opts.bonus, mods: opts.mods && opts.mods[i], track: !!track[i] }));
     M.ai = [null, null];
     for (let i = 0; i < 2; i++) if (!human[i]) { M.ai[i] = new AI(M, M.fighters[i], opts.cpu[i]); Input.players[i].cpu = M.ai[i]; }
     if (M.training) { M.ai[1] = new AI(M, M.fighters[1], 1); M.ai[1].dummy = 'stand'; Input.players[1].cpu = M.ai[1]; }
