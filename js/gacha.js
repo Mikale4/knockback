@@ -67,13 +67,24 @@
     const crank = VX.object(cg, s); crank.position.set(6 * s, 12 * s, 10 * s); root.add(crank);
     // the dome with capsules in it
     const domeY = 18 * s + 0.95;
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.98, 32, 20), new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, shininess: 120, specular: 0xffffff, depthWrite: false }));
-    dome.position.y = domeY; root.add(dome);
+    // the glass: a tinted front, and its far side seen through it (so it reads as a solid ball of glass)
+    const DOME = 0.98;
+    const back = new THREE.Mesh(new THREE.SphereGeometry(DOME, 32, 20), new THREE.MeshPhongMaterial({ color: 0xbfd8ff, transparent: true, opacity: 0.28, shininess: 60, side: THREE.BackSide, depthWrite: false }));
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(DOME, 32, 20), new THREE.MeshPhongMaterial({ color: 0xe4f0ff, transparent: true, opacity: 0.42, shininess: 140, specular: 0xffffff, depthWrite: false }));
+    back.position.y = dome.position.y = domeY; back.renderOrder = 1; dome.renderOrder = 3;
+    root.add(back, dome);
+    // the capsules, piled in the bottom of the dome: every one wholly inside the glass (centre within DOME - radius)
     const capsGrp = new THREE.Group(); capsGrp.position.y = domeY; root.add(capsGrp);
+    const CR = 0.17, IN = DOME - CR - 0.05, placed = [];
     for (let i = 0; i < 34; i++) {
-      const c = capsule(U.pick([0, 0, 0, 1, 1, 2, 3]), 0.17);
-      const a = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * 0.72, y = -0.75 + Math.floor(i / 9) * 0.27 + Math.random() * 0.1;
-      c.position.set(Math.cos(a) * rr, y, Math.sin(a) * rr); c.rotation.set(Math.random() * 3, Math.random() * 3, 0); capsGrp.add(c);
+      let p = null;
+      for (let k = 0; k < 120 && !p; k++) {
+        const y = -IN + Math.random() * (IN * 1.15), ry = Math.sqrt(Math.max(0, IN * IN - y * y)), a = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * ry;
+        const q = new V3(Math.cos(a) * rr, y, Math.sin(a) * rr);
+        if (placed.every(o => o.distanceTo(q) > CR * 1.55) || k === 119) p = q;
+      }
+      placed.push(p);
+      const c = capsule(U.pick([0, 0, 0, 1, 1, 2, 3]), CR); c.position.copy(p); c.rotation.set(Math.random() * 3, Math.random() * 3, 0); capsGrp.add(c);
     }
     const cap = VX.object(new VX.Grid().cyl('y', 0, 0, 4, 0, 2, RED).box(-1, 3, -1, 1, 3, 1, GOLD), s); cap.position.y = domeY + 0.92; root.add(cap);
     root.userData = { crank, capsGrp, chute: new V3(0, 5 * s, 11 * s) };
@@ -130,7 +141,8 @@
         seq = { list: results, i: -1, phase: 'next', t: 0, onShow, done, fast: results.length > 1 && false };
       },
       advance() { if (!seq) return; if (seq.phase === 'shown') { seq.phase = 'clear'; seq.t = 0; } else if (seq.phase !== 'next') seq.skip = true; },
-      skipAll() { if (!seq) return; seq.skipAll = true; V.advance(); },
+      // SKIP on a x10: no more cranks and reveals, straight to the results
+      skipAll() { if (!seq) return; const S = seq; clearReveal(); seq = null; crank.rotation.z = 0; V.camGoal.p.set(0, 2.1, 6.2); V.camGoal.t.set(0, 1.3, 0); S.done && S.done(); },
       busy: () => !!seq,
     };
     function clearReveal() { if (seq && seq.item) { scene.remove(seq.item); seq.item = null; } if (seq && seq.cap) { scene.remove(seq.cap); seq.cap = null; } if (seq && seq.halves) { seq.halves.forEach(h => scene.remove(h)); seq.halves = null; } }

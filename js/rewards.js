@@ -303,7 +303,7 @@
     tab = tab || Rewards._tab || 'daily'; Rewards._tab = tab;
     const { btn, topbar } = Menu.ui, R = resets();
     const cnt = k => all[k] && all[k].filter ? all[k].filter(r => r.ready).length : 0;
-    const row = r => el('div', { class: 'rwrow' + (r.ready ? ' ready' : '') + (r.claimed ? ' done' : '') },
+    const row = r => el('div', { class: 'rwrow' + (r.line ? '' : ' nofig') + (r.ready ? ' ready' : '') + (r.claimed ? ' done' : '') },
       r.line ? el('img', { class: 'rwfig', src: Models.figIcon(KB.mintBuild(r.line, 0)), alt: '' }) : null,
       el('div', { class: 'rwtxt' },
         el('b', null, r.it.name),
