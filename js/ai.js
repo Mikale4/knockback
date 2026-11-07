@@ -219,15 +219,18 @@
       if (!mv) return;
       if (this.moveSer !== f.moveSerial) {
         // a new move: whatever was still buffered for the last one is stale now
-        this.moveSer = f.moveSerial; this.next = null; this.fumbled = r() < L.fumble[lv]; this.wantPause = null;
+        this.moveSer = f.moveSerial; this.next = null; this.fumbled = r() < L.fumble[lv]; this.wantPause = null; this.wantChase = r() < 0.45;
         if (f.kind === 'toss') this.guardT = 0;
         for (const a of BTNS) { this.held[a] = false; f.input.at[a] = null; }
       }
       // held buttons: a wound-up Light (the Viking's axe), a charged KNOCK
       if (mv.chargeL && f.kind === 'light' && this.windUpFor === mv.id && this.windUp > 0) { this.windUp -= dt; this.held.light = true; }
+      if (f.kind === 'heavy' && mv.auto && this.autoMash && !f.autoArm && f.moveT > 0.03 && f.moveT < mv.su) this.press('heavy');   // (an auto combo: Heavy again)
       if (f.kind === 'heavy' && mv.charge && this.chargeHold > 0) { const aim = this.wallAim(f, o); if (aim) this.stickTo(aim.x, aim.z, 1, true); this.chargeHold -= dt; this.held.heavy = true; }
       if (mv.rapid && f.moveT > mv.su) this.press('light');
       if (!f.moveHit || this.fumbled) return;
+      // TECH CHASE: once a KNOCK has them flying, the stick toward them and Snap (half a bar of Hype)
+      if (f.kind === 'heavy' && this.wantChase && lv >= 2 && f.hype >= 50 && o.state === 'tumble' && o.combo.by === f && d > 2.6) { this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 1, true); this.press('snap'); return; }
       if (!this.next) this.next = this.nextLink(mv, d);
       const n = this.next;
       if (n.stick === 'aim') this.stickTo(n.x, n.z, 1, true); else if (n.stick === 'none') this.stop();
@@ -334,7 +337,7 @@
       this.stop(); this.plan = null;
       if (r() < L.aggro[lv] * dt * 8) {
         if (o.state === 'guard' && r() < 0.5 + lv * 0.12) { this.guardT = 0.12; this.held.guard = true; this.press('light'); }
-        else if (r() < 0.22) { const aim = this.wallAim(f, o); if (aim) this.stickTo(aim.x, aim.z, 1, true); this.press('heavy'); this.chargeHold = aim && r() < 0.5 ? U.rnd(0.1, 0.5) : 0; }
+        else if (r() < 0.22) { const aim = this.wallAim(f, o); if (aim) this.stickTo(aim.x, aim.z, 1, true); this.press('heavy'); this.chargeHold = aim && r() < 0.5 ? U.rnd(0.1, 0.5) : 0; this.autoMash = !aim && !!KB.MOVES[f.st.heavy].auto && r() < 0.7; if (this.autoMash) this.chargeHold = 0; }
         else {
           if (f.st.sig === 'beat' && !Music.beat(m).near && r() < 0.25 * lv) return;
           const root = KB.MOVES[f.lightRoot()];

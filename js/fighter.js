@@ -71,7 +71,7 @@
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
       this.rounds = this.st.rounds; this.reloadT = 0;   // (AMMO: a gun's rounds, a bow's arrows)
-      this.mot = []; this.mside = 0; this.counterRip = null; this.counterCall = null; this.regenRate = 0; this.riseAir = false; this.leapDone = false;   // (COMMAND SPECIALS)
+      this.mot = []; this.mside = 0; this.chasing = false; this.autoArm = false; this.counterRip = null; this.counterCall = null; this.regenRate = 0; this.riseAir = false; this.leapDone = false;   // (COMMAND SPECIALS)
       this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false; this.undyingUsed = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -189,6 +189,7 @@
       // the Snap button: Burst out of hitstun, or cancel a move with Hype
       if (I.peek('snap') && this.state !== 'ko' && !this.m.frozen) {
         if ((this.inHitstun || this.state === 'held' && !this.heldBySuper) && this.burst >= 100) { I.take('snap'); this.doBurst(); }
+        else if (this.hype >= 50 && this.canChase()) { I.take('snap'); this.techChase(); }
         else if (this.state === 'attack' && this.move && this.move.type !== 'super' && this.hype >= 50) { I.take('snap'); this.snapCancel(); }
       }
 
@@ -310,6 +311,15 @@
       if (vanish) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 8, color: 0x6a4a9a, speed: 2, size: 0.1, gravity: -2, life: 0.4 });
     }
     updDodge(dt) {
+      if (this.chasing) {
+        // TECH CHASE: the dash steers onto where they're going and stops a step short (then you're free to act)
+        const o = this.opp, tx = o ? o.pos.x + o.vel.x * 0.12 : this.pos.x, tz = o ? o.pos.z + o.vel.z * 0.12 : this.pos.z;
+        const dx = tx - this.pos.x, dz = tz - this.pos.z, d = Math.hypot(dx, dz);
+        if (!o || ['ko', 'out'].includes(o.state) || d < 1.25 || this.stateT > 0.7) { this.chasing = false; this.vel.x *= 0.15; this.vel.z *= 0.15; this.lastDodgeEnd = -9; this.setState(this.grounded ? 'idle' : 'air'); return; }
+        const sp = 21; this.vel.x = dx / d * sp; this.vel.z = dz / d * sp; this.yaw = Math.atan2(dx, dz); this.dodgeDir.set(dx / d, 0, dz / d);
+        if (U.vrand() < 0.5) FX.burst(_c.copy(this.pos).setY(0.15), { n: 1, color: [0x7cf9ff, this.m.arena.dust], speed: 1, size: 0.08, life: 0.3 });
+        this.physics(dt, 0); return;
+      }
       const T = 0.3, dist = 3.3 * this.st.dodgeDist * (this.dodgeAir ? 0.8 * this.st.airDodgeDist : 1);
       const k = this.stateT < T ? (dist / T) * (1.5 - this.stateT / T) : 0;
       this.vel.x = this.dodgeDir.x * k; this.vel.z = this.dodgeDir.z * k;
@@ -502,7 +512,7 @@
       }
       if (mv.limit && !this.useLimited(id, mv)) return;   // (a move with a limit: n uses in any t seconds)
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
-      this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1; this.riseAir = false; this.leapDone = false;
+      this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1; this.riseAir = false; this.leapDone = false; this.autoArm = false;
       this.beatOn = !!(mv.beat && this.st.sig === 'beat' && (kind === 'light' || kind === 'air') && Music.beat(this.m).near); this.beatShown = false;
       if (this.beatOn) FX.ring(_c.copy(this.pos).setY(0.08), { r0: 1.0, r1: 1.7, life: 0.25, color: 0xfff27a });
       if (mv.armorSU) this.giveArmor(mv.su, mv.oneArmor);
@@ -552,11 +562,11 @@
       const mv = this.move, I = this.input;
       if (mv.type === 'super') return this.updSuper(dt);
       // hold Heavy to charge a KNOCK (up to 0.6 s); the VIKING's axe winds up any Light the same way (to 0.5 s)
-      const heavyCharge = mv.charge && this.kind === 'heavy' && I.held.heavy && this.charge < 0.6;
+      const heavyCharge = mv.charge && this.kind === 'heavy' && I.held.heavy && this.charge < 0.6 && !this.autoArm;
       const lightCharge = mv.chargeL && this.kind === 'light' && I.held.light && this.charge < 0.5 && this.moveT > 0.03;
       if ((heavyCharge || lightCharge) && this.moveT >= mv.su * 0.6) {
         this.charge += dt; this.flash = 0.3; this.flashCol = lightCharge && this.charge >= 0.45 ? 0xff4020 : 0xffb030;
-        if (lightCharge) this.giveArmor(0.05, true);   // (once its one hit is spent, holding on doesn't bring it back: the 1.2 s wait)
+        if (lightCharge || heavyCharge) this.giveArmor(0.05, true);   // (a held Heavy too: one hit of armour, for every figure)   // (once its one hit is spent, holding on doesn't bring it back: the 1.2 s wait)
         if (U.rand() < 0.4) FX.burst(this.fig.socket(lightCharge ? 'wR' : 'wL', [0, 0, lightCharge ? 9 : 2]), { n: 1, color: 0xffd060, glow: true, speed: 1.5, size: 0.06, gravity: -3, life: 0.3 });
         this.vel.x *= 0.8; this.vel.z *= 0.8; this.physics(dt, 0); return;
       }
@@ -565,7 +575,9 @@
       const t0 = this.moveT; this.moveT += dt * flow; const t = this.moveT;
       // mash Light during a rapid move to keep it going
       if (mv.rapid && t >= mv.su && t < mv.su + mv.ac + this.acExt && this.rapidUsed < mv.rapid && I.take('light', 0.12)) { this.rapidUsed++; this.acExt += 0.18; this.extraHits += 3; }
-      const su = mv.su, ac = mv.ac + (this.acExt || 0), end = su + ac + mv.rc; this.curAc = ac;   // (acExt: unset until a first move; a Legend Art as your first move never ended)
+      const su = mv.su, ac = mv.ac + (this.acExt || 0), end = su + ac + mv.rc; this.curAc = ac;
+      // HEAVY AUTO COMBO: Heavy again before the KNOCK lands makes it the opener of the chain (heavies.js)
+      if (mv.auto && this.kind === 'heavy' && !this.autoArm && t < su + 0.02 && I.take('heavy', 0.2)) { this.autoArm = true; this.flash = 0.15; this.flashCol = 0xffd060; }   // (acExt: unset until a first move; a Legend Art as your first move never ended)
       const F = this.forward;
       // movement through the move
       if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; this.vel.z = F.z * sp; if (!this.grounded && !mv.hop) this.vel.y = 0; }
@@ -597,6 +609,7 @@
     }
     cancels(mv, t, su, ac) {
       const I = this.input, hit = this.moveHit, k = this.kind;
+      if (k === 'heavy' && mv.auto && this.autoArm && hit && t >= su + ac * 0.5) { this.startMove(mv.auto, 'heavy'); this.autoArm = true; return true; }   // (the chain runs itself)
       const after = t >= su + ac * (mv.multi ? 0.85 : hit ? 0.3 : 1);
       const nx = mv.nx || {};
       if (k === 'light') {
@@ -689,7 +702,7 @@
     activeFrames(mv) {
       const o = this.opp; if (!o) return;
       // a multi-hit move hits again every slice of its active time; only the last hit carries the real knockback
-      let use = mv;
+      let use = this.autoArm && mv.auto ? Object.assign({}, mv, { kb: [2.5, 0], launch: 0, launcher: 0, finisher: 0, stun: 0.5 }) : mv;   // (an auto combo's opener staggers)
       if (mv.multi) {
         const n = mv.multi + (this.extraHits || 0), idx = Math.min(n - 1, Math.floor((this.moveT - mv.su) / ((this.curAc || mv.ac) / n)));
         if (idx > this.lastSub) { this.lastSub = idx; this.hitSet.delete(o); }
@@ -1046,6 +1059,22 @@
     /* let go without a throw (they got hit, a round ended) */
     dropGrab() { const o = this.grabbing; this.grabbing = null; this.throwT = -1; this.pummelT = 0; if (o && o.state === 'held' && o.held && o.held.by === this) { o.held = null; o.setState(o.pos.y > 0.05 ? 'air' : 'idle'); } }
 
+    /* TECH CHASE: they're flying from your KNOCK (or tumbling off a wall), you hold the stick toward them and Snap:
+       half a bar of Hype, your recovery is cancelled, and your dash runs them down, stopping a step short */
+    canChase() {
+      const o = this.opp, s = this.stick();
+      if (!o || !s || o.combo.by !== this || o.state !== 'tumble' || !this.grounded) return false;
+      if (!['idle', 'run', 'attack'].includes(this.state) || (this.state === 'attack' && (!this.move || this.move.type === 'super'))) return false;
+      const dx = o.pos.x - this.pos.x, dz = o.pos.z - this.pos.z, d = Math.hypot(dx, dz);
+      return d > 1.8 && (s.x * dx + s.z * dz) / d > 0.5;
+    }
+    techChase() {
+      const o = this.opp; this.hype -= 50; this.move = null; this.pauseWin = null;
+      this.dodgeDir = _v.subVectors(o.pos, this.pos).setY(0).normalize().clone(); this.dodgeAir = false; this.chasing = true; this.setState('dodge');
+      this.yaw = Math.atan2(this.dodgeDir.x, this.dodgeDir.z); this.inv = Math.max(this.inv, 0.12);
+      SFX.play('dodge'); this.m.call(this, 'TECH CHASE!', 'snap'); this.m.event('chase', { f: this, vic: o });
+      FX.ring(_c.copy(this.pos).setY(0.1), { r1: 1.6, life: 0.3, normal: new V3(0, 1, 0), color: 0x7cf9ff }); this.flash = 0.2; this.flashCol = 0x7cf9ff;
+    }
     snapCancel() {
       this.hype -= 50; this.move = null; this.setState(this.grounded ? 'idle' : 'air');
       if (!this.grounded) this.vel.y = Math.max(this.vel.y, 2);

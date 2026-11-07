@@ -318,6 +318,32 @@ shows what's left under SPECIAL. Thrown sports balls don't use ammo: those have 
 | Cannoneer's Swivel Gun | 3 shot (Grapeshot, Mortar Drop) | 5 s | Barrel Bash |
 | Archer's bow | 10 arrows (Snap Shot, Volley, Arrow Rain, Power Draw, Plunging Arrow) | 5 s | Bow Jab, Bow Swat, Bracer Bash |
 
+## Armoured charge, auto combos and Tech Chase
+
+- **Holding Heavy** to charge it gives **one hit of armour**, for every figure. The first hit taken while charging
+  is shrugged off and the charge carries on; a second one gets through.
+- **Heavy auto combos:** a tap of Heavy is the KNOCK, as ever. Press Heavy again before it lands and it becomes a
+  three-hit auto combo instead: the opener only staggers, the chain runs itself on a hit, and it ends in a
+  stronger KNOCK. Ten brawlers have one (`js/heavies.js`):
+
+  | Figure | Chain |
+  |---|---|
+  | Monk | Thunder Palm › Twin Dragons › Thunderclap |
+  | Viking | Shield Ram › Axe Chop › Skull Splitter |
+  | Knight | Shield Bash › Pommel Strike › Overhand Cut |
+  | Boxer | Power Hook › One-Two › Liver Shot |
+  | Wrestler | Spear › Knife-Edge Chop › Clothesline |
+  | Weightlifter | Kettle Swing › Kettlebell Return › Overhead Slam |
+  | Shogun | Gunbai Bash › Tachi Cut › Gunbai Sweep |
+  | Crusader | Heater Charge › Flail Swing › Shield Crush |
+  | Redbeard | Kalkan Charge › Kilij Draw › Kalkan Smash |
+  | Sailor | Haymaker › Bar-Room Jab › Knockout Swing |
+
+- **Tech Chase:** when your KNOCK sends them flying, hold the stick toward them and press **Snap**. For half a bar
+  of Hype your recovery is cancelled and your dash runs them down, stopping a step short so you can keep the combo
+  going (catch the wall rebound, meet them as they land). Snap without the stick toward them is the plain Snap
+  Cancel. The CPU tech chases too.
+
 ## Command Specials
 
 Every figure has three more Specials on fighting-game motions with Head Special: **↓↘→** usually the way in (a shot,
