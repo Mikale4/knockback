@@ -942,3 +942,14 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
 .cmprow.txt em, .cmprow.txt b { font-size: 11px; text-align: left; } .cmprow.txt em { text-decoration: line-through; opacity: .75; }
 .cmprow.hd { border-bottom: 2px solid var(--line); } .cmprow.hd em, .cmprow.hd b, .cmprow.hd span { font: 900 10px var(--body); letter-spacing: 1px; color: var(--dim); }
 .cmpnote { font-size: 12px; color: var(--dim); margin: 8px 0 0; } .cmpfine { font-size: 10.5px; color: var(--dim); opacity: .75; margin: 8px 0 0; }
+
+/* training while you wait in an online room: what's on in the room, READY, and the way back */
+.olrtrain { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; justify-content: center;
+  width: max-content; max-width: calc(100vw - 24px); box-sizing: border-box; padding: 6px 10px; border-radius: 10px; background: rgba(14, 12, 24, .82); border: 1px solid rgba(255,255,255,.12);
+  font: 900 11px var(--body); color: var(--dim); pointer-events: auto; z-index: 4; }
+.olrtrain span { color: var(--cyan); letter-spacing: .05em; } .olrtrain b { color: #fff; font-size: 12px; }
+.olrtrain.up { border-color: var(--yel); } .olrtrain.up b { color: var(--yel); }
+.olrtrain .btn { margin: 0; white-space: nowrap; } .olrtrain .olrt { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+/* narrower, the Hype bars fill the bottom: under the top bars and the frame meter instead */
+@media (max-width: 1299px) { .olrtrain { bottom: auto; top: 232px; } }
+@media (max-width: 700px) { .olrtrain { flex-wrap: wrap; top: 150px; } }

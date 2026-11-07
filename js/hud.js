@@ -109,19 +109,22 @@
     cineTint(t) { if (!refs || U.quiet) return; const e = refs.cTint; if (!t) { e.style.opacity = 0; return; } if (e.dataset.bg !== t[0]) { e.dataset.bg = t[0]; e.style.background = t[0]; } e.style.opacity = t[1]; },
     /* the Start choice follows a SAVE POSITION */
     trainingSpot() { const s = refs && refs.spot && refs.spot.querySelector('select'); if (s && M && M.training) s.value = M.training.spot; },
+    /* H turned the hitboxes on or off: the panel follows */
+    trainingSync() { const s = refs && refs.hb && refs.hb.querySelector('select'); if (s && M && M.training) s.value = String(!!M.training.hitboxes); },
     trainingPanel() {
-      const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); if (key === 'inputs' || key === 'frames') U.write('kb.lab', { inputs: T.inputs, frames: T.frames }); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
+      const T = M.training; const sel = (label, key, opts) => el('label', null, label, el('select', { onchange: e => { T[key] = e.target.value === 'true' ? true : e.target.value === 'false' ? false : e.target.value; e.target.blur(); if (key === 'inputs' || key === 'frames' || key === 'hitboxes') U.write('kb.lab', { inputs: T.inputs, frames: T.frames, hitboxes: T.hitboxes }); } }, ...opts.map(([v, t]) => el('option', { value: v, selected: String(T[key]) === String(v) }, t))));
       const tb = (label, fn, cls) => el('button', { class: 'btn small' + (cls ? ' ' + cls : ''), onclick: e => { e.currentTarget.blur(); fn(); } }, label);
       const panel = el('div', { class: 'trainpanel' + (U.touch ? ' min' : '') },
         el('b', { onclick: () => panel.classList.toggle('min') }, 'TRAINING ', el('i', null, '▾')),
         sel('Dummy', 'dummy', [['stand', 'Stand'], ['guard', 'Guard'], ['jump', 'Jump'], ['tech', 'Tech + Burst'], ['cpu', 'CPU'], ['play', 'Playback (loop)']]),
         sel('Meters', 'meter', [['true', 'Always full'], ['false', 'Normal']]),
+        refs.hb = sel('Hitboxes', 'hitboxes', [['false', 'Hide'], ['true', 'Show']]),
         refs.spot = sel('Start', 'spot', [['centre', 'Centre'], ['wall', 'By a wall'], ['saved', 'Saved position']]),
         el('div', { class: 'trbtns' }, tb('SAVE POSITION', () => M.trainSave()), tb('RESET', () => M.trainReset(), 'ghost')),
         M.lab ? el('div', { class: 'trbtns' }, tb('● RECORD', () => Lab.record(M), 'rec'), tb('▶ PLAY', () => Lab.play(M), 'ghost')) : null,
         M.lab ? sel('Inputs', 'inputs', [['true', 'Show'], ['false', 'Hide']]) : null,
         M.lab ? sel('Frame data', 'frames', [['true', 'Show'], ['false', 'Hide']]) : null,
-        el('span', { class: 'hint' }, U.touch ? 'Pause button: move list, record and play' : 'R: reset · T: save the position · Y: record the dummy (you play it) · U: play it back · pad: tap Back to reset, hold it to save; record and play are in the pause menu · Esc: pause'),
+        el('span', { class: 'hint' }, U.touch ? 'Pause button: move list, record and play' : 'R: reset · T: save the position · H: hitboxes · Y: record the dummy (you play it) · U: play it back · pad: tap Back to reset, hold it to save; record and play are in the pause menu · Esc: pause'),
         refs.tr = el('div', { class: 'trread' }, 'LAST COMBO'));
       return panel;
     },
@@ -137,11 +140,11 @@
             el('div', { class: 'col' },
               el('button', { class: 'btn big', onclick: close }, 'RESUME'),
               el('button', { class: 'btn', onclick: () => { close(); if (match.opts.mode === 'arcade' && window.Arcade) Arcade.restarted(); match.restart(); } }, match.opts.mode === 'arcade' ? 'RESTART (A CONTINUE)' : 'RESTART'),
-              match.training && !match.opts.tutorial && !match.opts.trials ? el('button', { class: 'btn', onclick: () => { close(); App.setView(null); Menu.training(); } }, 'CHARACTER SELECT') : null,
+              match.training && !match.opts.tutorial && !match.opts.trials && !match.opts.roomTraining ? el('button', { class: 'btn', onclick: () => { close(); App.setView(null); Menu.training(); } }, 'CHARACTER SELECT') : null,
               ['cpu', 'versus', 'watch'].includes(match.opts.mode) && !match.attract ? el('button', { class: 'btn', onclick: () => { close(); App.setView(null); Menu.versus(match.opts.cfg || Menu._vs); } }, 'CHARACTER SELECT') : null,
               match.lab ? el('button', { class: 'btn', onclick: () => { close(); Lab.record(match); } }, match.lab.rec ? 'STOP RECORDING' : 'RECORD THE DUMMY') : null,
               match.lab ? el('button', { class: 'btn', onclick: () => { close(); Lab.play(match); } }, match.ai[1] && match.ai[1].play && !match.ai[1].play.loop ? 'STOP PLAYBACK' : 'PLAY THE RECORDING') : null,
-              el('button', { class: 'btn ghost', onclick: () => { close(); App.quitMatch(); } }, 'QUIT TO MENU'),
+              el('button', { class: 'btn ghost', onclick: () => { close(); App.quitMatch(); } }, match.opts.roomTraining ? 'BACK TO THE ROOM' : 'QUIT TO MENU'),
               ...['sfx', 'music'].map(k => el('label', { class: 'vol pvol' }, k.toUpperCase(), el('input', { type: 'range', min: 0, max: 1, step: 0.05, value: SFX.vol[k], oninput: e => SFX.setVol(k, +e.target.value) })))),
             el('div', { class: 'col wide' }, HUD.moveList(match.fighters[0].build, 0)))));
       document.body.append(ov);

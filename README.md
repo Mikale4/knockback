@@ -549,7 +549,9 @@ fight live** and waits for their turn.
   Custom slots) or any of the ten base characters (their Standard set). Switching takes your READY off. Press
   **READY**, or **SIT OUT** to just watch. A queue decides who fights next; with **auto-start** the next fight begins
   5 s after both are ready. Turn off "watch fights automatically" to stay on the room screen; WATCH joins a fight
-  that's on.
+  that's on. **TRAINING** practises while you wait: Training with the fighter you've brought (the dummy is your next
+  opponent if you're up next), the room carrying on meanwhile. A bar says what's on in the room and has READY and
+  BACK TO THE ROOM (so does the pause menu); when your fight comes up you go straight into it.
 - **Chat:** type your own messages (up to 120 characters; plain text, so no links or formatting get through) or tap a
   quick-chat phrase. The host passes messages on and slows down floods (4 every 6 s). Each player can MUTE someone
   (just for themselves), hide typed messages, or turn on a swear filter (off by default). The host can switch the room
@@ -654,6 +656,11 @@ default on a computer, off on a phone):
 
 - **Inputs:** your button history on the left, one row each time what you hold changes: how many frames you held it,
   the stick as an arrow (as it sits on screen) and the buttons (L, H, G, SP, SN, SU, T, J, D).
+- **Hitboxes** (the TRAINING panel, or H): what the game really tests, drawn as wire shapes. BLUE where a fighter
+  can be hit by a blow (two spheres up the body; bigger while tumbling; three along the floor when they're down,
+  which only the moves that hit them there can reach). RED a blow while it's live (its reach, height and radius; round
+  the fighter for a spinning one), YELLOW a grab. ORANGE a shot, as wide as it hits, and a trap's or a strike from the
+  sky's circle on the floor.
 - **Frame data:** a frame meter, one cell a frame for both of you: STARTUP (green), ACTIVE (red), RECOVERY (blue), hit
   or block stun (yellow), dodging (purple). A hit's hitstop isn't counted, as on a fighting game's own meter. Under it,
   your last move's startup (the frame it first hits on), active and recovery frames, and the **frame advantage** once

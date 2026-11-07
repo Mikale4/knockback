@@ -567,6 +567,7 @@
     if (N.quick && N.stage === 'joining') { quickFailed(); return; }
     const peer = N.peer, pick = N.pick; N.leaving = true;
     if (G) endFight();
+    if (N.tbar) { N.tbar.remove(); N.tbar = null; }
     try { peer && peer.destroy(); } catch (e) { /* fine */ }
     N = freshN(pick); N.status = text || 'Lost the connection to the room.';
     App.setView(null); Online.open(true);
@@ -591,6 +592,7 @@
      fighter measures the ping (three round trips), picks the input delay and says go. */
   function onFightCfg(cfg) {
     N.flog = { cfg, D: null, inputs: [{}, {}], top: [0, 0], snaps: {}, over: null };
+    if (N.stage === 'training' && cfg.ids.includes(N.myId)) endTraining(false);
     if (G && G.watch) endFight();
     const side = cfg.ids.indexOf(N.myId);
     if (side < 0) { N.stage = N.stage === 'watch' ? 'room' : N.stage; if (N.stage === 'room') Online.open(true); return; }
@@ -1047,10 +1049,45 @@
     document.body.append(G.menu);
   };
 
+  /* ===================================================== training while you wait
+     TRAINING in the room: Training with the fighter you've brought, while the room carries on. The dummy is your next
+     opponent if you're up next, else whoever you last trained against. A bar at the top says what's on in the room and
+     has READY and BACK TO THE ROOM (so does the pause menu); when your fight comes up you go straight into it. */
+  function startTraining() {
+    const R = N && N.room; if (!R || G || (R.fight && R.fight.ids.includes(N.myId))) return;
+    const pair = nextPair(), foe = pair && pair.some(m => m.id === N.myId) ? pair.find(m => m.id !== N.myId) : null;
+    const tr = Auth.S.train || {}, last = String(tr.d || '').startsWith('mint:') ? tr.d.slice(5) : null;
+    const dummy = foe ? foe.info.line : last && KB.LINES[last] ? last : U.pick(KB.LINE_ORDER);
+    const arena = R.rules.arena && R.rules.arena !== 'random' ? R.rules.arena : 'shelf';
+    N.stage = 'training';
+    App.startMatch({ mode: 'training', builds: [Object.assign({}, N.me.build), KB.mintBuild(dummy, 0)], cpu: [null, null], arena, wins: 99, time: 999, bonus: R.rules.bonus === true,
+      roomTraining: true, onQuit: () => endTraining(true) });
+    N.tbar = el('div', { class: 'olrtrain' }); U.$('hud').append(N.tbar); trainBar();
+  }
+  function endTraining(back) {
+    if (!N || N.stage !== 'training') return;
+    if (N.tbar) { N.tbar.remove(); N.tbar = null; }
+    N.stage = 'room';
+    const v = App.view; if (v && v.opts && v.opts.roomTraining) { const p = document.getElementById('pause'); if (p) p.remove(); App.setView(null); }
+    if (back) Online.open(true);
+  }
+  function trainBar() {
+    const R = N && N.room, b = N && N.tbar; if (!R || !b) return;
+    const { btn } = Menu.ui, me = memberOf(N.myId) || {}, F = R.fight, pair = nextPair(), foe = pair && pair.some(m => m.id === N.myId) ? pair.find(m => m.id !== N.myId) : null;
+    const txt = F ? 'Now fighting: ' + F.names.join(' vs ')
+      : foe ? (R.cd != null ? 'YOUR FIGHT IN ' + R.cd + ': ' : 'YOU\'RE UP NEXT: ') + 'vs ' + foe.name + (me.ready ? '' : ' · press READY')
+        : pair ? 'Next up: ' + pair.map(m => m.name).join(' vs ') : 'Waiting for players';
+    b.classList.toggle('up', !!foe);
+    b.replaceChildren(el('div', { class: 'olrt' }, el('span', null, 'ROOM ' + R.code + ' · TRAINING'), el('b', null, txt)),
+      btn(me.ready ? 'READY ✓' : 'READY', () => act({ t: 'ready', on: !me.ready }), 'small' + (me.ready ? ' on' : '') + (me.sit ? ' off' : '')),
+      btn('BACK TO THE ROOM', () => endTraining(true), 'ghost small'));
+  }
+
   /* ===================================================== the lobby */
   let updPings = () => {}, drawChat = () => {};
   function draw() {
     if (!N || !N.redraw) return;
+    if (N.stage === 'training') { trainBar(); return; }
     if (N.stage === 'fight' || N.stage === 'watch') { drawResultNote(); return; }
     const a = document.activeElement;
     if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('.screen.online')) { N.dirty = true; return; }   // not while you're typing
@@ -1167,6 +1204,7 @@
           el('div', { class: 'olmine' },
             btn(me.ready ? 'READY ✓' : 'READY', () => act({ t: 'ready', on: !me.ready }), 'big' + (me.ready ? ' on' : '') + (fighting || me.sit ? ' off' : '')),
             btn(me.sit ? 'SITTING OUT' : 'SIT OUT', () => act({ t: 'sit', on: !me.sit }), 'ghost' + (me.sit ? ' on' : '')),
+            btn('TRAINING', () => startTraining(), 'ghost' + (fighting ? ' off' : '')),
             el('label', { class: 'olcheck' }, el('input', { type: 'checkbox', checked: N.autoWatch || null, onchange: e => { N.autoWatch = e.target.checked; } }), 'Watch fights automatically')),
           pickFig,
           (() => {

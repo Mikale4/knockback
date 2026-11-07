@@ -20,7 +20,7 @@
     const M = {
       opts, scene, camera, arena, time: 0, phase: 'intro', phaseT: 0, round: 1, wins: [0, 0], clock: opts.time,
       frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [], minions: [], cine: null, camShot: null,
-      training: opts.mode === 'training' ? { dummy: 'stand', meter: true, godP2: false, reset: 0, spot: 'centre' } : null,
+      training: opts.mode === 'training' ? { dummy: 'stand', meter: true, godP2: false, reset: 0, spot: 'centre', hitboxes: !!U.read('kb.lab', {}).hitboxes } : null,
       attract: opts.mode === 'attract', results: null, camT: new V3(0, 0, 0), camP: new V3(0, 8, 14), camShake: 0,
     };
     // the players
@@ -943,6 +943,42 @@
     M.timers = [];
     M.after = (sec, fn) => { M.timers.push({ at: M.time + sec, fn }); };
     const runTimers = () => { if (!M.timers.length) return; const due = M.timers.filter(t => M.time >= t.at); if (!due.length) return; M.timers = M.timers.filter(t => M.time < t.at); for (const t of due) t.fn(); };
+    /* TRAINING · HITBOXES: what the game really tests, drawn as wire shapes (looks only, and only in training).
+       BLUE where a fighter can be hit by a blow (Combat.overlap: two spheres up the body; bigger while tumbling; three
+       along the floor when they're down, which only the moves that hit them there can reach). RED a blow while it's live
+       (activeFrames: its reach, height and radius, or round the fighter for a spinning one, for as long as it's live;
+       YELLOW for a grab; drawn over the blue). ORANGE a shot, as wide as it hits (it hits anyone whose body it passes within that of, from
+       ankle to head), and a trap's or a strike from the sky's circle on the floor. */
+    const HB = { pool: [], n: 0, geo: null };
+    function hbShape(at, r, col, op, flat) {
+      if (!HB.geo) HB.geo = new THREE.SphereGeometry(1, 16, 10);
+      let m = HB.pool[HB.n];
+      if (!m) { m = new THREE.Mesh(HB.geo, new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, depthTest: false, depthWrite: false, toneMapped: false })); m.renderOrder = 998; scene.add(m); HB.pool.push(m); }
+      m.material.color.setHex(col); m.material.opacity = op; m.renderOrder = col === 0x3ab8ff ? 998 : 999; m.position.copy(at); if (flat) m.scale.set(r, 0.04, r); else m.scale.setScalar(r); m.visible = true; HB.n++;
+    }
+    function drawHitboxes() {
+      HB.n = 0;
+      if (M.training && M.training.hitboxes) {
+        for (const f of M.fighters) {
+          const s = f.state;
+          if (s === 'tumble' || s === 'held' || s === 'out') for (const y of [0.45, 1.35]) hbShape(_v.copy(f.pos).setY(f.pos.y + y), 0.6, 0x3ab8ff, 0.5);
+          else if (s === 'down' || (s === 'ko' && f.grounded)) { const sx = Math.sin(f.yaw), sz = Math.cos(f.yaw); for (const k of [0.45, -0.25, -0.95]) hbShape(_v.set(f.pos.x + sx * k, f.pos.y + 0.3, f.pos.z + sz * k), 0.45, 0x3ab8ff, 0.28); }
+          else for (const y of [0.5, 1.35]) hbShape(_v.copy(f.pos).setY(f.pos.y + y), 0.48, 0x3ab8ff, 0.5);
+          const mv = f.move;
+          if (s === 'attack' && mv && (mv.type === 'melee' || mv.type === 'teleport' || mv.type === 'grab') && f.moveT >= mv.su && f.moveT < mv.su + (f.curAc || mv.ac)) {
+            const F = f.forward, c = mv.around ? _v.set(f.pos.x, f.pos.y + 1, f.pos.z) : _v.set(f.pos.x + F.x * mv.reach, f.pos.y + mv.h, f.pos.z + F.z * mv.reach);
+            hbShape(c, mv.rad, mv.type === 'grab' ? 0xffd040 : 0xff3a3a, 0.95);
+          }
+        }
+        for (const p of M.projs) {
+          if (p.kind === 'dart' && !p.visual && p.pos) hbShape(p.pos, p.w || 0.4, 0xffa030, 0.85);
+          else if (p.kind === 'trap' && p.pos && p.mv && p.mv.trap) hbShape(_v.copy(p.pos).setY(0.05), p.mv.trap.r || 1, 0xffa030, 0.6, true);
+          else if (p.kind === 'smite' && p.at && p.mv && p.mv.smite) hbShape(_v.copy(p.at).setY(0.05), p.mv.smite.rad || 1, p.struck ? 0xff3a3a : 0xffa030, 0.7, true);
+          else if (p.pos && p.kind !== 'part') hbShape(p.pos, 0.5, 0xffa030, 0.6);
+        }
+      }
+      for (let i = HB.n; i < HB.pool.length; i++) HB.pool[i].visible = false;
+    }
     M.update = rawDt => {
       if (M.paused) { updCamera(0); return; }
       if (M.slowT > 0) { M.slowT -= rawDt; if (M.slowT <= 0) M.slow = 1; }
@@ -985,6 +1021,7 @@
       for (let i = M.clones.length - 1; i >= 0; i--) { const c = M.clones[i]; c.t += dt; c.f.root.position.lerpVectors(c.from, c.to, U.clamp(c.t / 0.22, 0, 1)); if (c.t > 0.4) { c.f.root.traverse(o => { if (o.isMesh && o.material.opacity) o.material.opacity *= 0.8; }); } if (c.t > 0.7) { c.f.dispose(); M.clones.splice(i, 1); } }
       if (U.quiet) return;
       arena.draw(M, dt);   // (the hazard's meshes and the stage's ambient life: drawn frames only)
+      if (M.training || HB.n) drawHitboxes();
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
       sweepTrails();
       updCamera(rawDt); FX.update(dt);
@@ -1404,6 +1441,7 @@
       // R / Backspace resets; T saves the position. A pad's Back (View / Share / Create) button: tap to reset, hold to save
       if (Input.keyDown('KeyR') || Input.keyDown('Backspace')) { if (!T.resetHeld) { T.resetHeld = true; M.trainReset(); } } else T.resetHeld = false;
       if (Input.keyDown('KeyT')) { if (!T.saveHeld) { T.saveHeld = true; M.trainSave(); } } else T.saveHeld = false;
+      if (Input.keyDown('KeyH') && !Input.binds.some(B => Object.values(B).some(k => k.includes('KeyH')))) { if (!T.hbHeld) { T.hbHeld = true; T.hitboxes = !T.hitboxes; HUD.trainingSync(); U.write('kb.lab', Object.assign(U.read('kb.lab', {}), { hitboxes: T.hitboxes })); } } else T.hbHeld = false;
       const back = Input.pads().some(p => p.pressed.includes(8));
       if (back) { T.backT = (T.backT || 0) + dt; if (T.backT > 0.8 && !T.backSaved) { T.backSaved = true; M.trainSave(); } }
       else { if (T.backT > 0 && !T.backSaved) M.trainReset(); T.backT = 0; T.backSaved = false; }
