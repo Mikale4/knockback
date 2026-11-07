@@ -79,10 +79,10 @@
         recast: [r1, protoOf(KB.mintBuild(run.rival, 0)), protoOf(run.build)] };
     }
     if (i === 6) return { i, kind: 'sov', tag: 'FINAL BOSS', name: 'The Sovereign', line: null, css: '#ffd040', build: SOV(), lvl, arena: 'shelf', mods: Object.assign({ hp: D.boss, def: 0.02 }, hard) };
-    if (i === 3) { const b = KB.mintBuild(run.rival, 2); return { i, kind: 'rival', tag: 'RIVAL', name: b.name, line: run.rival, css: LN(run.rival).css, build: b, lvl, arena: arenaOf(run, i), mods: hard }; }
+    if (i === 3) { const b = KB.mintBuild(run.rival, 2); return { i, kind: 'rival', tag: 'RIVAL', name: b.name, line: run.rival, css: LN(run.rival).css, build: b, lvl, arena: Arena.home(run.rival) || arenaOf(run, i), mods: hard }; }
     const line = run.order[i < 3 ? i : i - 1], r = RAR[i], b = KB.mintBuild(line, r);
     if (r === 3) b.name = 'CHASE ' + LN(line).figure;
-    return { i, kind: 'fight', tag: 'STAGE ' + (i + 1), name: b.name, line, css: LN(line).css, build: b, lvl, arena: arenaOf(run, i), mods: hard };
+    return { i, kind: 'fight', tag: 'STAGE ' + (i + 1), name: b.name, line, css: LN(line).css, build: b, lvl, arena: Arena.home(line) || arenaOf(run, i), mods: hard };   // (on their own playset)
   }
   const youOf = run => ({ name: LN(run.line).figure, build: run.build, css: LN(run.line).css });
   const ctxOf = (run, st) => ({ you: youOf(run), opp: st ? { name: st.name, build: st.build, css: st.css } : null,
@@ -246,11 +246,12 @@
     }
     a.clears = (a.clears | 0) + 1; Sv.records.arcadeClears++;
     const sel = Rewards.selGrant('arcade');
+    const fig = !sel && kind !== 'over' ? Rewards.dailyFigure() : null;   // (after the first clear: a random fighter you don't have, once a day)
     const nb = bestOf(run); a.run = null; Auth.save();
     Rewards.record({ arcadeClears: 1 });
-    summary(run, kind, got, nb, sel);
+    summary(run, kind, got, nb, sel, fig);
   }
-  function summary(run, kind, got, newBest, sel) {
+  function summary(run, kind, got, newBest, sel, fig) {
     App.setView(null);
     const D = DIFFS[run.diff], rank = runRank(run), title = kind === 'true' ? 'TRUE ENDING' : kind === 'normal' ? 'NORMAL ENDING' : 'GAME OVER';
     const stat = (k, v) => el('div', null, el('small', null, k), el('b', null, v));
@@ -265,6 +266,9 @@
         ...got.map(g => el('div', { class: 'reward' }, g)),
         sel ? el('div', { class: 'reward gold selwon' }, '🎫 SELECTION TICKET!', el('small', null, 'Your first Arcade clear: pick any fighter you don\'t have yet and its whole set is yours.'),
           el('button', { class: 'rwready', onclick: () => Menu.selection() }, 'CHOOSE A FIGHTER ▸')) : null,
+        fig ? el('div', { class: 'reward gold selwon' }, '★ NEW FIGURE: ' + LN(fig.line).figure.toUpperCase(), el('small', null, 'Today\'s Arcade figure: a fighter you didn\'t have is yours now (one a day).'),
+          el('button', { class: 'rwready', onclick: () => Menu.newFigure(fig.line, fig.res) }, 'SEE IT ▸')) : null,
+        !sel && !fig && kind !== 'over' && Rewards.figureToday() && KB.LINE_ORDER.some(l => !Inv.hasFigure(l)) ? el('p', { class: 'note hint' }, 'Today\'s Arcade figure is already yours: clear it again tomorrow for another fighter.') : null,
         kind === 'normal' ? el('p', { class: 'note hint' }, 'Something rattled inside the Case... Climb again with no continues, losing no more than two rounds, to find out what.') : null,
         kind === 'over' ? el('p', { class: 'note hint' }, 'The run is over. Your score still counts toward your best.') : null,
         el('div', { class: 'row' }, btn('ARCADE', () => Arcade.open(), 'big'), btn('STORIES', () => Arcade.gallery(), 'ghost'), btn('HUB', () => Menu.hub(), 'ghost')))));

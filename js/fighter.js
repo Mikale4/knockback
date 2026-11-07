@@ -639,8 +639,9 @@
           // Heavy in a string launches them up; held toward them, it's the KNOCK instead (back into the wall)
           const s = this.stick(), d0 = I.dirAt.heavy, s0 = d0 && Math.hypot(d0.x, d0.y) > 0.3 ? new V3(d0.x, 0, -d0.y).normalize() : null, o = this.opp;
           if ((s && s.dot(this.forward) > 0.5) || (s0 && s0.dot(this.forward) > 0.5)) this.startMove(this.leftMove('heavy'), 'heavy');
-          // PIRATE with the Flintlock: a Quick Shot gun cancel instead, once a combo, then the string starts over
-          else if (this.st.gunCancel && !this.broken.armL && this.gunReady() && o && !o.combo.gun) {   // (an empty chamber: the launcher)
+          // PIRATE with the Flintlock: Heavy after the FIRST Light is a Quick Shot gun cancel (once a combo, then the string
+          // starts over); after two or more it's the launcher like everyone's
+          else if (this.st.gunCancel && mv.id === this.lightRoot() && !this.broken.armL && this.gunReady() && o && !o.combo.gun) {   // (an empty chamber: the launcher)
           o.combo.gun = true; this.startMove(this.st.gunCancel, 'gun'); }
           else this.startMove(this.leftMove('launch'), 'launch');
           return true;

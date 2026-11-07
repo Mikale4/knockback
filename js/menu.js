@@ -39,6 +39,8 @@
   function pickArena(cur, onPick, o) {
     o = o || {};
     const tile = id => {
+      if (id === 'home') return el('button', { class: 'artile' + (cur === id ? ' on' : ''), onclick: () => { SFX.play('ok'); close(); onPick(id); } },
+        el('div', { class: 'arimg' }, el('span', null, '\u2302')), el('b', null, 'HOME GROUND'), el('small', null, 'The opponent\u2019s own playset'));
       const I = id === 'random' ? null : Arena.info(id);
       const img = el('div', { class: 'arimg', style: I ? { backgroundImage: 'linear-gradient(' + I.sky + ', ' + I.floor + ')' } : null }, I ? null : el('span', null, '?'));
       if (I) Arena.thumb(id, u => { if (u) { img.style.backgroundImage = 'url(' + u + ')'; img.classList.add('lit'); } });
@@ -46,20 +48,30 @@
         img, I && I.haz ? el('em', { class: 'arhaz' }, '⚠ ' + I.haz) : null,
         el('b', null, I ? I.name : 'RANDOM'), el('small', null, I ? I.tag : 'A different arena every fight'));
     };
-    const ids = (o.random ? ['random'] : []).concat(Arena.LIST);
+    // tabs: THE HOUSE (the stages with hazards), then each series' PLAYSETS (every figure's own stage)
+    const tabOf = id => { const T = Arena.THEMES[id]; return T && T.line && KB.LINES[T.line] ? KB.LINES[T.line].theme : 'house'; };
+    const tabs = [{ id: 'house', name: 'THE HOUSE' }].concat(KB.THEMES.map(T => ({ id: T.id, name: T.name })));
+    let tab = Menu._arTab || (cur && Arena.THEMES[cur] ? tabOf(cur) : 'house');
+    const grid = el('div', { class: 'argrid' }), bar = el('div', { class: 'thtabs artabs' });
+    const fill = () => {
+      bar.innerHTML = ''; for (const T of tabs) bar.append(el('button', { class: T.id === tab ? 'on' : '', onclick: () => { SFX.play('ui'); tab = Menu._arTab = T.id; fill(); } }, T.name));
+      const ids = (o.random ? ['random'] : []).concat(o.home ? ['home'] : []).concat(Arena.LIST.filter(id => tabOf(id) === tab));
+      grid.innerHTML = ''; grid.append(...ids.map(tile));
+    };
+    fill();
     const close = modal(el('div', { class: 'arpick' }, el('h2', null, 'ARENA'),
       el('p', { class: 'note' }, o.note || (Input.settings.hazards === false ? 'STAGE HAZARDS are off (Options): the ⚠ stages play without theirs.' : 'Stages marked ⚠ have a STAGE HAZARD (you can turn them off in Options). Hover or long-press one to read what it does.')),
-      el('div', { class: 'argrid' }, ...ids.map(tile))));
+      bar, grid));
     const ms = document.querySelectorAll('.overlay .modal'), m = ms[ms.length - 1]; if (m) m.classList.add('wide');
     setTimeout(() => { const on = document.querySelector('.artile.on'); if (on) { on.scrollIntoView({ block: 'nearest' }); Input.focus && Input.focus(on); } }, 30);
   }
   /* a settings row that shows the arena picked (its picture and name) and opens the picker */
   function arenaRow(label, val, set, redraw, o) {
-    o = o || {}; const I = val === 'random' || !Arena.THEMES[val] ? null : Arena.info(val);
-    const img = I ? el('img', { alt: '' }) : el('div', { class: 'arq' }, '?'); if (I) Arena.thumb(val, u => { if (u) img.src = u; });
+    o = o || {}; const I = val === 'random' || !Arena.THEMES[val] ? null : Arena.info(val), home = val === 'home';
+    const img = I ? el('img', { alt: '' }) : el('div', { class: 'arq' }, home ? '\u2302' : '?'); if (I) Arena.thumb(val, u => { if (u) img.src = u; });
     return el('div', { class: 'seg arrow' }, el('span', null, label),
       el('div', null, el('button', { class: 'arsel', disabled: o.locked || null, onclick: () => pickArena(val, v => { set(v); redraw(); }, o) }, img,
-        el('div', { class: 'artext' }, el('b', null, I ? I.name : 'RANDOM'), el('small', null, I ? (I.haz ? '⚠ ' + I.haz + (o.hazOff ? ' (off here)' : '') : 'No hazard') : 'A different arena every fight')),
+        el('div', { class: 'artext' }, el('b', null, I ? I.name : home ? 'HOME GROUND' : 'RANDOM'), el('small', null, I ? (I.haz ? '⚠ ' + I.haz + (o.hazOff ? ' (off here)' : '') : I.tag) : home ? 'The opponent\u2019s own playset' : 'A different arena every fight')),
         o.locked ? null : el('i', { class: 'archev' }, 'CHANGE ›'))));
   }
   const activeBuild = () => Inv.levelled(S().builds[S().active || 0]);
@@ -365,6 +377,13 @@
             : 'Pick any fighter you don\'t have yet: you get its whole set, ready to fight as.'),
         themeTabs(() => Menu.selection()), el('div', { class: 'packs' }, ...packs)));
     },
+    /* a figure given outright (every one of its combo trials cleared, the Arcade's figure of the day): its whole
+       Standard set, no ticket needed. null if it was already yours */
+    giftFigure(line) {
+      if (Inv.hasFigure(line)) return null;
+      const res = KB.SLOTS.map(slot => Object.assign({ slot }, Inv.add(line, slot, 0))); Auth.save();
+      SFX.play('reveal', { r: 2 }); toast('NEW FIGURE: ' + KB.LINES[line].figure + '!', 'gold'); return res;
+    },
     collect(line) {
       const Sv = S(); if (!(Sv.selTickets > 0) || Inv.hasFigure(line)) return;
       Sv.selTickets--;
@@ -491,7 +510,7 @@
             two ? paintRow('P2 COLOURS', cfg.c2, p2line, k => { cfg.c2 = k; }, () => Menu.versus(cfg)) : null,
             two ? null : seg('CPU LEVEL', cfg.lvl, lvls, v => cfg.lvl = +v),
           ],
-          arenaRow('ARENA', cfg.arena, v => { cfg.arena = v; }, () => Menu.versus(cfg), { random: true }),
+          arenaRow('ARENA', cfg.arena, v => { cfg.arena = v; }, () => Menu.versus(cfg), { random: true, home: true }),
           seg('ROUNDS', cfg.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => cfg.wins = +v),
           seg('RARITY BONUS', cfg.bonus, [[true, 'On'], [false, 'Off (fair)']], v => cfg.bonus = v === true || v === 'true'),
           two ? el('p', { class: 'note' }, 'P1: arrows + Z X C / A S D / F, Space, L-Shift · P2: I J K L + Numpad 1-7, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Controllers: the first pad is P1, the second P2 (swap them, and rebind anything, in OPTIONS).') : null,
@@ -501,15 +520,18 @@
     versusStart(cfg) {
       const mine = S().builds;
       const pick = (v, lvl) => v === 'random' ? KB.randomBuild(Math.min(3, lvl)) : String(v).startsWith('mine:') ? Inv.levelled(mine[+v.slice(5)]) : KB.mintBuild(v, Math.min(3, lvl));
-      const arena = cfg.arena === 'random' || !Arena.THEMES[cfg.arena] ? U.pick(Arena.LIST) : cfg.arena;
+      const home = b => (b && Arena.home(b.core.line)) || U.pick(Arena.LIST);   // (HOME GROUND: the second figure's own playset)
+      let arena = cfg.arena === 'random' || cfg.arena === 'home' || !Arena.THEMES[cfg.arena] ? U.pick(Arena.LIST) : cfg.arena;
       if (cfg.mode === 'watch') {
-        App.startMatch({ mode: 'watch', builds: [pick(cfg.w1, cfg.l1), pick(cfg.w2, cfg.l2)], cpu: [cfg.l1, cfg.l2], arena, wins: cfg.wins, bonus: cfg.bonus, cfg });
+        const w1 = pick(cfg.w1, cfg.l1), w2 = pick(cfg.w2, cfg.l2); if (cfg.arena === 'home') arena = home(w2);
+        App.startMatch({ mode: 'watch', builds: [w1, w2], cpu: [cfg.l1, cfg.l2], arena, wins: cfg.wins, bonus: cfg.bonus, cfg });
         return;
       }
       const b1 = painted(Inv.levelled(mine[cfg.p1]), myPaint());
       let b2;
       if (cfg.mode === 'two') b2 = painted(String(cfg.p2b).startsWith('mint:') ? KB.mintBuild(cfg.p2b.slice(5), 0) : Inv.levelled(mine[+cfg.p2b]), cfg.c2);
       else b2 = cfg.p2 === 'random' ? KB.randomBuild(Math.min(3, cfg.lvl)) : KB.mintBuild(cfg.p2, Math.min(3, cfg.lvl));
+      if (cfg.arena === 'home') arena = home(b2);
       App.startMatch({ mode: cfg.mode === 'two' ? 'versus' : 'cpu', builds: [b1, b2], cpu: [null, cfg.mode === 'two' ? null : cfg.lvl], arena, wins: cfg.wins, bonus: cfg.bonus, lvl: cfg.lvl });
     },
     /* ----------------------------------------------------------- arcade

@@ -916,3 +916,6 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
 .artile small { font: 500 10.5px var(--body); color: var(--dim); line-height: 1.25; }
 .arhaz { position: absolute; top: 9px; left: 9px; background: rgba(255, 176, 48, .95); color: #1a1006; font: 800 9px var(--body); font-style: normal; letter-spacing: 1px; padding: 2px 6px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
 @media (max-width: 560px) { .argrid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 7px; } .arsel img, .arsel .arq { width: 72px; height: 40px; } .seg .arsel .archev { display: none; } }
+
+/* COMBO TRIALS: how far a fighter you don't own is from being unlocked */
+.tcard .tlock { display: block; font: 800 10px var(--body); letter-spacing: 0.5px; color: #ffd23a; margin-top: 2px; }

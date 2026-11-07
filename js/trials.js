@@ -53,7 +53,7 @@
     // per-line changes to the common ones
     if (FIX[line]) FIX[line](T, S, g, a, air);
     // three more, after the seven: the air Heavy SPIKE and its ground bounce, an OTG off the floor, and a Part Toss
-    const up = S.gunCancel ? [L(g[0]), L(g[1]), { m: S.gunCancel, k: 'heavy' }, L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }] : [L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }];
+    const up = S.gunCancel ? [L(g[0]), { m: S.gunCancel, k: 'heavy' }, L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }] : [L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }];
     const spike = [...up, { e: 'jump', k: 'jump' }, air[0], { m: S.airHeavy, k: 'heavy', t: 'air' }, { e: 'gbounce' }];
     const shotHeavy = KB.MOVES[S.heavy].type === 'proj';
     const pick = shotHeavy ? { m: S.dashAtk, k: 'light', t: 'otg' } : { m: S.heavy, k: 'heavy', t: 'otg' };
@@ -94,9 +94,9 @@
     pirate: (T, S, g, a, air) => {
       const t = T.find(x => x.name === 'Launcher');
       t.name = 'Smoke and steel'; t.stars = 3; t.note = 'The first Heavy in a combo is a Quick Shot; the string starts again, and the next Heavy launches.';
-      t.steps = [L(g[0]), L(g[1]), { m: S.gunCancel, k: 'heavy' }, L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }, { e: 'jump', k: 'jump' }, ...air];
+      t.steps = [L(g[0]), { m: S.gunCancel, k: 'heavy' }, L(g[0]), L(g[1]), { m: S.launch, k: 'heavy' }, { e: 'jump', k: 'jump' }, ...air];
       const s = T.find(x => x.name === 'Special cancel');
-      s.name = 'Gunslinger'; s.note = 'Quick Shot mid-string, then the whole string again.'; s.steps = [L(g[0]), L(g[1]), { m: S.gunCancel, k: 'heavy' }, ...g.map(L)];
+      s.name = 'Gunslinger'; s.note = 'One Light, then Heavy: a Quick Shot, then the whole string again.'; s.steps = [L(g[0]), { m: S.gunCancel, k: 'heavy' }, ...g.map(L)];
     },
     // the Chain Hook drags them in rather than out: the Ninja's wall combo starts with the dash attack
     ninja: (T, S, g) => {
@@ -144,12 +144,12 @@
     ],
     pirate: () => [
       { name: 'Pistols and powder', wall: true, stars: 3, note: 'Only the pistol and the cannons: Point Blank into the wall, and BROADSIDE as they come off it.', steps: [H('pointBlank', 'far'), WB, ...ART] },
-      { name: 'Six-shooter', stars: 4, note: 'Quick Shot, Pistol Whip, a Plunging Shot from the air, and a second Pistol Whip off the ground bounce.', steps: [L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), H('pistolWhip')] },
-      { name: 'Dirty deeds', stars: 3, note: 'A Quick Shot starts the string over; sand in their eyes, and the whole string while they can\'t see.', steps: [L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), PZ('cuP'), L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
-      { name: 'Keelhaul', stars: 5, note: 'Open with BROADSIDE: a raw Legend Art GROUND BOUNCES them. Then the guns: Quick Shot, Pistol Whip and a Plunging Shot.', steps: [...ART, GB, L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot')] },
-      { name: 'Plunging OTG', stars: 4, note: 'Two Plunging Shots: the first bounces them, the second puts them down for a Peg Sweep OTG.', steps: [L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), OTG('pegSweep', 'light')] },
-      { name: 'Cannonball', stars: 3, note: 'The whole air string: the Cannonball spikes them, and the whole string off the bounce.', steps: [L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), A('cuAirB'), A('cuAirC'), GB, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
-      { name: 'Loose cannon', stars: 3, note: 'A Quick Shot, then a Part Toss to extend it again.', steps: [L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), { m: 'partToss', k: 'toss' }, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
+      { name: 'Six-shooter', stars: 4, note: 'Quick Shot, Pistol Whip, a Plunging Shot from the air, and a second Pistol Whip off the ground bounce.', steps: [L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), H('pistolWhip')] },
+      { name: 'Dirty deeds', stars: 3, note: 'A Quick Shot starts the string over; sand in their eyes, and the whole string while they can\'t see.', steps: [L('cuA'), H('quickShot'), L('cuA'), L('cuB'), PZ('cuP'), L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
+      { name: 'Keelhaul', stars: 5, note: 'Open with BROADSIDE: a raw Legend Art GROUND BOUNCES them. Then the guns: Quick Shot, Pistol Whip and a Plunging Shot.', steps: [...ART, GB, L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot')] },
+      { name: 'Plunging OTG', stars: 4, note: 'Two Plunging Shots: the first bounces them, the second puts them down for a Peg Sweep OTG.', steps: [L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), OTG('pegSweep', 'light')] },
+      { name: 'Cannonball', stars: 3, note: 'The whole air string: the Cannonball spikes them, and the whole string off the bounce.', steps: [L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), A('cuAirB'), A('cuAirC'), GB, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
+      { name: 'Loose cannon', stars: 3, note: 'A Quick Shot, then a Part Toss to extend it again.', steps: [L('cuA'), H('quickShot'), L('cuA'), L('cuB'), { m: 'partToss', k: 'toss' }, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
     ],
     monk: () => [
       { name: 'Sweep the leg', stars: 3, note: 'The pause branch is a Leg Sweep that launches: jump after it for the air string.', steps: [L('fiA'), L('fiB'), PZ('fiP'), J, A('fiAirA'), A('fiAirB'), A('fiAirC')] },
@@ -238,11 +238,11 @@
       { name: 'Last stand', note: 'Judgment, a Part Toss (it gives back the ground bounce), Judgment again, and the HOLY LANCE off the second bounce with a Sabaton Stomp OTG.', steps: [L('loA'), L('loB'), L('loC'), GB, L('loA'), L('loB'), PT, L('loA'), L('loB'), L('loC'), GB, L('loA'), L('loB'), ...ART, OTG('stomp', 'light')] },
     ],
     pirate: () => [
-      { name: 'Dead man\'s chest', wall: true, note: 'Quick Shot, Pistol Whip, a Plunging Shot, Point Blank into the wall off the bounce, a Part Toss, then BROADSIDE and a Peg Sweep OTG.', steps: [L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), TW('pointBlank'), WB, L('cuA'), L('cuB'), PT, L('cuA'), L('cuB'), ...ART, OTG('pegSweep', 'light')] },
-      { name: 'Gun kata', note: 'All pistol: Quick Shot, Pistol Whip, Plunging Shot, Pistol Whip again off the ground bounce, Plunging Shot to put them down, and a Peg Sweep OTG.', steps: [L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), OTG('pegSweep', 'light')] },
-      { name: 'Dirty pirate', wall: true, note: 'Sand, a Quick Shot, the Boot to the Face into the wall, and up off the rebound.', steps: [L('cuA'), L('cuB'), PZ('cuP'), L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), L('cuC'), L('cuD'), WB, L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), A('cuAirB'), A('cuAirC')] },
-      { name: 'Broadside', note: 'Open with BROADSIDE (a raw Art bounces them), the guns, a Plunging Shot to put them down, a Peg Sweep OTG and a Part Toss.', steps: [...ART, GB, L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), OTG('pegSweep', 'light'), L('cuA'), L('cuB'), PT, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
-      { name: 'Keelhauled', wall: true, note: 'Point Blank from range into the wall, Quick Shot, Pistol Whip, a Plunging Shot, a Part Toss and the Boot.', steps: [FAR('pointBlank'), WB, L('cuA'), L('cuB'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), PT, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
+      { name: 'Dead man\'s chest', wall: true, note: 'Quick Shot, Pistol Whip, a Plunging Shot, Point Blank into the wall off the bounce, a Part Toss, then BROADSIDE and a Peg Sweep OTG.', steps: [L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), TW('pointBlank'), WB, L('cuA'), L('cuB'), PT, L('cuA'), L('cuB'), ...ART, OTG('pegSweep', 'light')] },
+      { name: 'Gun kata', note: 'All pistol: Quick Shot, Pistol Whip, Plunging Shot, Pistol Whip again off the ground bounce, Plunging Shot to put them down, and a Peg Sweep OTG.', steps: [L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), OTG('pegSweep', 'light')] },
+      { name: 'Dirty pirate', wall: true, note: 'Sand, a Quick Shot, the Boot to the Face into the wall, and up off the rebound.', steps: [L('cuA'), L('cuB'), PZ('cuP'), L('cuA'), H('quickShot'), L('cuA'), L('cuB'), L('cuC'), L('cuD'), WB, L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), A('cuAirB'), A('cuAirC')] },
+      { name: 'Broadside', note: 'Open with BROADSIDE (a raw Art bounces them), the guns, a Plunging Shot to put them down, a Peg Sweep OTG and a Part Toss.', steps: [...ART, GB, L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), OTG('pegSweep', 'light'), L('cuA'), L('cuB'), PT, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
+      { name: 'Keelhauled', wall: true, note: 'Point Blank from range into the wall, Quick Shot, Pistol Whip, a Plunging Shot, a Part Toss and the Boot.', steps: [FAR('pointBlank'), WB, L('cuA'), H('quickShot'), L('cuA'), L('cuB'), H('pistolWhip'), J, A('cuAirA'), AH('airShot'), GB, L('cuA'), L('cuB'), PT, L('cuA'), L('cuB'), L('cuC'), L('cuD')] },
     ],
     monk: () => [
       { name: 'Thousand fists', wall: true, note: 'Flurry, up, Axe Kick, the Flurry and the Dragon Palm into the wall, a Part Toss, then HUNDRED HANDS and Thunder Palm on the knockdown.', steps: [L('fiA'), L('fiB'), MASH('fiC'), H('risingPalm'), J, A('fiAirA'), AH('axeKick'), GB, L('fiA'), L('fiB'), MASH('fiC'), L('fiD'), WB, L('fiA'), L('fiB'), PT, L('fiA'), L('fiB'), ...ART, OTG('thunderPalm')] },
@@ -660,11 +660,16 @@
     if (R.at >= R.trial.steps.length) return success();
     draw();
   }
+  /* every trial a fighter has, Basic, Advanced and Professional: clear them all and the fighter is yours */
+  const TIERS = ['basic', 'adv', 'pro'];
+  const lineAll = l => TIERS.reduce((n, t) => n + listOf(l, t).length, 0);
+  const lineGot = l => TIERS.reduce((n, t) => n + clearedCount(l, t), 0);
   function success() {
     R.state = 'ok'; SFX.play('win'); HUD.banner('TRIAL CLEAR', 'fight', 1.1);
     const first = !cleared(R.line, R.i, R.tier), k = key(R.line, R.tier);
     if (!R.demo) { (done()[k] = done()[k] || {})[R.i] = Date.now(); Auth.save(); if (first && window.Rewards) Rewards.record({ trials: 1 }); }
-    R.note = R.demo ? 'That\'s how it goes. Your turn!' : first ? 'Cleared! On to the next one.' : 'Cleared again.';
+    const unlocked = !R.demo && first && lineGot(R.line) >= lineAll(R.line) && !Inv.hasFigure(R.line) && Menu.giftFigure(R.line);   // (the last of its trials: the fighter is yours)
+    R.note = R.demo ? 'That\'s how it goes. Your turn!' : unlocked ? 'Every trial cleared: the ' + KB.LINES[R.line].figure + ' is yours!' : first ? 'Cleared! On to the next one.' : 'Cleared again.';
     stopDemo(); draw();
     const m = R.m, i = R.i, wasDemo = R.wasDemo;
     setTimeout(() => { if (!R || R.m !== m || R.i !== i) return; if (!wasDemo && R.i + 1 < R.list.length) go(R.i + 1); else reset(); }, 1800);
@@ -857,15 +862,16 @@
       el('div', { class: 'panel trialsel' },
         el('div', { class: 'ttabs' }, tab('basic', 'BASIC'), tab('adv', 'ADVANCED'), tab('pro', 'PROFESSIONAL')),
         el('p', { class: 'note' }, (pro ? 'The longest, hardest-hitting combos in the game, with every mechanic there is: KNOCK//BACKs, ground bounces, OTGs, Specials, Snap Cancels, Part Tosses (and imps), and Legend Arts. ' : adv ? 'Each fighter\'s own long combos, built on what only it has: ground and wall bounces, OTGs, and Legend Arts to end them. '
-          : 'Every fighter\'s combos on its own move list, step by step. ') + 'DEMO shows you any of them. ' + got + ' / ' + total + ' cleared.'),
+          : 'Every fighter\'s combos on its own move list, step by step. ') + 'DEMO shows you any of them. ' + got + ' / ' + total + ' cleared. Clear all of a fighter\'s trials (Basic, Advanced and Professional) and the fighter is yours.'),
         Menu.themeTabs(() => Trials.open(focus)),
         el('div', { class: 'tgrid' }, ...Menu.themeLines().filter(l => listOf(l, tier).length).map(l => {
           const L = KB.LINES[l], n = listOf(l, tier).length, c = clearedCount(l, tier);
           return el('button', { class: 'tcard' + (c >= n ? ' full' : '') + (l === focus ? ' focus' : ''), style: { '--lc': L.css }, onclick: () => { SFX.play('ok'); Trials.start(l, null, tier); } },
             el('img', { src: Models.figIcon(KB.mintBuild(l, 0)), alt: '' }), el('b', null, L.name), el('small', null, c + ' / ' + n + (c >= n ? ' ✓' : '')),
+            Inv.hasFigure(l) ? null : el('em', { class: 'tlock' }, '\ud83d\udd12 ' + lineGot(l) + ' / ' + lineAll(l) + ' to unlock'),
             el('div', { class: 'tbar' }, el('i', { style: { width: (100 * c / n) + '%' } })));
         })))));
   };
-  Trials.all = all; Trials.allAdv = allAdv; Trials.allPro = allPro; Trials.cleared = cleared;
+  Trials.all = all; Trials.allAdv = allAdv; Trials.allPro = allPro; Trials.cleared = cleared; Trials.lineAll = lineAll; Trials.lineGot = lineGot;
   window.Trials = Trials;
 })();

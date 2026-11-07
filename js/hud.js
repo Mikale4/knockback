@@ -165,7 +165,7 @@
         KB.MOVES[S.heavy] && KB.MOVES[S.heavy].auto ? row(k('heavy') + ' ' + k('heavy'), 'Auto combo', [S.heavy, KB.MOVES[S.heavy].auto, KB.MOVES[KB.MOVES[S.heavy].auto].auto].map(nm).join(' \u203a ') + ': Heavy again before it lands') : null,
         row('toward + ' + k('snap'), 'Tech Chase', 'after your KNOCK sends them flying: half a bar of Hype, and your dash runs them down'),
         row('air ' + k('light') + ' ×' + A.length, A.map(nm).join(' › '), S.mixed ? 'mixed air string, one per jump' : 'air string, one per jump'),
-        S.gunCancel ? row(k('light') + '… ' + k('heavy'), nm(S.gunCancel), 'gun cancel (Flintlock), once a combo; then Light starts the string again') : null,
+        S.gunCancel ? row(k('light') + ' ' + k('heavy'), nm(S.gunCancel), 'one Light, then Heavy: a gun cancel (Flintlock), once a combo; then Light starts the string again') : null,
         S.rounds ? row('\u25cf'.repeat(S.rounds), S.rounds + ' ' + S.ammo.toLowerCase(), 'every shot spends one; empty, you reload (' + +S.reload.toFixed(1) + ' s)' + (S.dry.heavy ? ' and Heavy is the ' + nm(S.dry.heavy) : '')) : null,
         S.sig ? row('★ ' + S.sigName, S.sigDesc, 'R-ARM signature') : null,
         row('air ' + k('heavy'), nm(S.airHeavy), 'spike: ground bounce'),

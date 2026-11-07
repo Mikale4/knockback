@@ -345,6 +345,15 @@
     S.selGot = S.selGot || {}; if (S.selGot[src]) return false;
     S.selGot[src] = Date.now(); S.selTickets = (S.selTickets | 0) + 1; Auth.save(); return true;
   };
+  /* the ARCADE's figure of the day: after the first clear (that one pays the Selection Ticket instead, and doesn't count),
+     each clear unlocks a random fighter you don't have yet, once a day */
+  Rewards.dailyFigure = () => {
+    const S = Auth.S; if (!S || S.figDay === dayKey()) return null;
+    const pool = KB.LINE_ORDER.filter(l => !Inv.hasFigure(l)); if (!pool.length) return null;
+    const line = pool[Math.floor(Math.random() * pool.length)]; S.figDay = dayKey();
+    return { line, res: Menu.giftFigure(line) };
+  };
+  Rewards.figureToday = () => !!(Auth.S && Auth.S.figDay === dayKey());
   Rewards.selBackfill = () => !!(Auth.S && Auth.S.records && Auth.S.records.arcadeClears >= 1) && Rewards.selGrant('arcade');
   Rewards.items = items; Rewards.claim = claim;
   window.Rewards = Rewards;

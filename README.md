@@ -164,7 +164,7 @@ string and a signature; your stance comes from it too.
 |---|---|---|---|---|
 | Samurai (Katana) | Kiri › Kesa › Tsuki › Rising Cut (launches up) | Issen: dash through them, knock them back the other way | Kiri › Kesa › Tsubame Gaeshi (2-hit spike) | **Kaeshi**: Light right after a Just Guard is a crumpling riposte |
 | Knight (Longsword) | Cleave › Backswing › Judgment (ground-bounce slam) | Pommel Strike (crumple) | Cleave › Plunging Thrust (dive) | **Steadfast**: armour in the startup of every swing after the first |
-| Pirate (Cutlass) | Cut › Backcut › Flourish (spin) › Boot to the Face | Sand in the Eyes (dizzy) | Cut › Backcut › Cannonball (dive) | **Dirty Fighting**; with the Flintlock, Heavy mid-string is a **Quick Shot** gun cancel. The Flintlock holds **four rounds** (Point Blank, Quick Shot and the Plunging Shot spend one each); empty, it reloads for 5 s and Heavy clubs them with the butt |
+| Pirate (Cutlass) | Cut › Backcut › Flourish (spin) › Boot to the Face | Sand in the Eyes (dizzy) | Cut › Backcut › Cannonball (dive) | **Dirty Fighting**; with the Flintlock, one Light then Heavy is a **Quick Shot** gun cancel (two Lights then Heavy is the launcher). The Flintlock holds **four rounds** (Point Blank, Quick Shot and the Plunging Shot spend one each); empty, it reloads for 5 s and Heavy clubs them with the butt |
 | Monk (Fists) | Jab › Cross › Hundred Fists (mash to extend) › Dragon Palm | Leg Sweep (launcher) | Knee › Spin Kick › Whirlwind Kick | **Flow**: moves speed up as a combo goes on |
 | Viking (Axe) | Hack › Hew › Whirlwind (hits all around) | Skull Splitter (ground bounce) | Chop › Axe Drill (spinning dive) | **Wind-up**: hold Light on any swing for armour against one hit, +45% damage, a crumple |
 | Ninja (Tantō) | Flick › Backflick › Vanishing Stab (blinks behind, once a combo) › Shadow Slash | Kunai Toss | Flick › Backflick › Kunai Rain | **Shadow Dash**: Dodge after an air hit to dash at them |
@@ -620,6 +620,41 @@ fighter's box: all six parts, Standard (any you already had level up), and the f
 Use it from COLLECTION (SELECTION TICKET, marked 🎫 in the hub), the CAPSULES screen, REWARDS, or straight from the
 results of that Arcade clear. The picker shows all ten fighters on one screen, the ones you have greyed out. The hub's
 **ACTIVE FIGURE** plate lists your **figures** (every fighter you have) and then your custom slots.
+
+**More ways to win a fighter:**
+- **The Arcade's figure of the day:** after your first clear (that one pays the Selection Ticket instead, and doesn't
+  count), every Arcade clear unlocks a **random fighter you don't have yet**, once a day.
+- **Master a fighter:** clear **every one of its combo trials** (Basic, Advanced and Professional, 22 in all) and that
+  fighter is yours. The COMBO TRIALS screen shows how far you are on each fighter you don't own yet (🔒 n / 22).
+
+## Playsets: every figure's own stage
+
+Every figure comes with its own **playset** (`js/playsets.js`), a stage built from its world, with its own floor,
+walls, light, scenery and drifting particles (cherry blossom, snow, embers, bubbles, rain...). There are 36 of them
+and they have no hazards (the house stages keep those). In the arena picker the house stages are under THE HOUSE and
+the playsets under a tab for each series. **HOME GROUND** (Versus) fights on the second figure's playset, and in the
+**Arcade** every fight is on the opponent's playset (the bosses still wait on the shelf). RANDOM picks from all 56.
+
+| Figure | Playset | Figure | Playset |
+|---|---|---|---|
+| Monk | MOUNTAIN TEMPLE | Cannoneer | GUN DECK |
+| Viking | LONGHOUSE | Blackbeard | STORM DECK |
+| Summoner | SUMMONING CIRCLE | Redbeard | CORSAIR HARBOUR |
+| Bard | TAVERN STAGE | Sailor | HARBOUR PIER |
+| Samurai | CHERRY BLOSSOM DOJO | Marauder | RAIDED PORT |
+| Shinobi | MOONLIT ROOFTOPS | Musketeer | FORT RAMPART |
+| Ronin | ROADSIDE TEAHOUSE | Ghost Pirate | DAVY JONES' LOCKER |
+| Kunoichi | WISTERIA GARDEN | Wrestler | LUCHA ARENA |
+| Shogun | CASTLE KEEP | Baseball | BALLPARK |
+| Daimyo | LORD'S COURTYARD | Football | GRIDIRON |
+| Knight | CASTLE COURTYARD | Soccer | THE PITCH |
+| Paladin | CATHEDRAL | Boxer | TITLE FIGHT |
+| Dragoon | DRAGON'S PEAK | Fencer | SALLE D'ARMES |
+| Templar | DESERT FORTRESS | Weightlifter | IRON GYM |
+| Crusader | SIEGE CAMP | Bowler | BOWLING ALLEY |
+| Lancer | THE LISTS | Archer | ARCHERY RANGE |
+| Pirate | PIRATE SHIP | Skater | SKATE PARK |
+| Captain | QUARTERDECK | Basketball | STREET COURT |
 
 ## Arenas and STAGE HAZARDS
 
