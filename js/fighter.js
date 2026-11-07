@@ -479,6 +479,7 @@
     specialId() {
       const S = this.st, cpu = this.input.cpu, c = cpu && cpu.cmd ? cpu.cmd : this.motion();   // (the CPU just says which)
       if (cpu && cpu.cmd) cpu.cmd = null;
+      if (c) this.m.event('motion', { f: this, c });   // (the tutorial listens)
       const id = c && S.cmd && S.cmd[c];
       return id && KB.MOVES[id] ? id : S.special;
     }

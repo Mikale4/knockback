@@ -44,6 +44,9 @@
   const cue = (n, btn, gap) => { const A = ai(); if (!A.cue) A.cue = { n: n || 1, btn: btn || 'light', gap: gap || 0.16, next: S.m.time + 0.15 }; };
   const stringLen = () => { let id = me().lightRoot(), n = 0; while (id && n < 9) { n++; id = (KB.MOVES[id].nx || {}).l; } return n; };
   const blocked = r => r === 'blocked' || r === 'jguard' || r === 'gcrush';
+  const nm = id => el('b', null, id && KB.MOVES[id] ? KB.MOVES[id].name : '?');
+  const autoOf = () => KB.MOVES[me().st.heavy] && KB.MOVES[me().st.heavy].auto;   // (a Heavy auto combo: heavies.js)
+  const autoEnd = () => KB.MOVES[autoOf()].auto;
 
   /* ---------------------------------------------------------- the lessons
      text: what the card says, need: how many to do, on(kind, data): what
@@ -98,6 +101,16 @@
       tick() { if (S.got === 1 && !dummy().comboing) { S.got = 0; S.note = 'Missed the rebound. Knock them into the wall again, and be ready as they come back.'; place(W() - 4.4, W() - 2.8); return 'redraw'; } },
     },
     {
+      id: 'chase', title: 'TECH CHASE', need: 1,
+      text: () => ['KNOCK them again (two ', K('light'), ', then toward them + ', K('heavy'), '), and while they fly, hold the stick TOWARD them and press ', K('snap'), ': for half a bar of Hype your dash runs them down, a step short, so the combo goes on. You have the Hype.'],
+      setup() { place(-4, -2.6); },
+      tick() { const a = me(); if (a.hype < 60 && !a.chasing) a.hype = 100; },
+      on(k, d) {
+        if (k === 'chase' && d.f === me()) return true;
+        if (k === 'snap' && d.f === me()) S.note = 'That was a plain Snap: hold the stick toward them as you press it, while they\'re still flying.';
+      },
+    },
+    {
       id: 'guard', title: 'GUARD', need: 2,
       text: () => ['The dummy is going to swing at you. Hold ', K('guard'), ' to block. (Tap it just before a hit lands for a JUST GUARD.)'],
       setup() { place(-1.6, 0); S.cueAt = S.m.time + 0.8; },
@@ -119,6 +132,28 @@
       },
     },
     {
+      id: 'charge', title: 'ARMOURED CHARGE', need: 1,
+      text: () => ['Hold ', K('heavy'), ' to charge your Heavy: it hits harder, and while you hold it you take ONE hit without flinching. Hold Heavy now: the dummy will swing at you while you charge.'],
+      setup() { place(-1.3, 0); S.swung = false; },
+      tick() {
+        // the dummy swings the moment you start charging (so a Heavy that's a shot doesn't send it away first)
+        const a = me(), v = dummy(), charging = a.state === 'attack' && a.kind === 'heavy' && a.charge > 0.02;
+        if (charging && !S.swung && v.state !== 'attack') { cue(1, 'light', 0.1); S.swung = true; }
+        if (!charging && a.state !== 'attack') S.swung = false;
+        if (!charging && a.state !== 'attack' && v.state !== 'attack' && Math.hypot(v.pos.x - a.pos.x, v.pos.z - a.pos.z) > 3) place(-1.3, 0);   // (back in close)
+      },
+      on(k, d) {
+        if (k === 'hit' && d.vic === me() && d.r === 'armor' && me().kind === 'heavy') return true;
+        if (k === 'hit' && d.vic === me() && d.r === 'hit') S.note = 'Start holding Heavy a moment before the swing reaches you, and keep holding it.';
+      },
+    },
+    {
+      id: 'auto', title: 'AUTO COMBO', need: 1, skip: () => !autoOf(),
+      text: () => ['Your Heavy has an AUTO COMBO: press ', K('heavy'), ', then ', K('heavy'), ' again before the first one lands: ', nm(me().st.heavy), ' \u203a ', nm(autoOf()), ' \u203a ', nm(autoEnd()), ', the last one a KNOCK. (One press on its own is still the KNOCK.)'],
+      setup() { place(-1.4, 0); },
+      on(k, d) { if (k === 'move' && d.f === me() && d.id === autoEnd()) return true; },
+    },
+    {
       id: 'grab', title: 'GRAB AND THROW', need: 3,
       text: () => S.got < 1 ? ['The dummy is guarding now. Guard beats your string, but a GRAB beats guard: hold ', K('guard'), ' and press ', K('light'), '.']
         : S.got < 2 ? ['Got them. ', K('light'), ' while you hold them: a pummel.']
@@ -133,10 +168,24 @@
     },
     {
       id: 'special', title: 'SPECIAL', need: 1,
-      text: () => ['Your HEAD gives you a Special: ', el('b', null, KB.MOVES[me().st.special].name), '. Press ', K('special'), '. (Three a round; one comes back every 16 seconds.)'],
+      text: () => ['Your HEAD gives you a Special: ', el('b', null, KB.MOVES[me().st.special].name), '. Press ', K('special'), '. (', el('b', null, me().st.uses + ' uses'), ' a round, shared with the three Specials that come next; used ones come back with time.)'],
       setup() { place(-2.4, 0); },
       tick() { const a = me(); if (a.uses < 1) a.uses = a.st.uses; a.spReady = 0; },
       on(k, d) { if (k === 'move' && d.f === me() && d.kind === 'special') return true; },
+    },
+    {
+      id: 'cmd', title: 'COMMAND SPECIALS', need: 3,
+      text: () => { const C = me().st.cmd || {}; return ['Three more Specials, on stick motions like a 2D fighter: \u2193 is down, and \u2192 is the side of the screen the dummy is on (right, now). ',
+        el('b', null, '\u2193\u2198\u2192'), ' + ', K('special'), ': ', nm(C.qcf), '. ', el('b', null, '\u2193\u2199\u2190'), ' + ', K('special'), ': ', nm(C.qcb), '. ', el('b', null, '\u2192\u2193\u2198'), ' + ', K('special'), ': ', nm(C.dp), '. Do each motion once (roll the stick, then press Special).']; },
+      setup() { place(-2.4, 0); S.motions = new Set(); },
+      tick() { const a = me(); a.uses = a.st.uses; a.spReady = 0; },
+      on(k, d) { if (k === 'motion' && d.f === me()) { S.motions.add(d.c); return S.motions.size; } },
+    },
+    {
+      id: 'ammo', title: 'AMMO', need: 1, skip: () => !me().st.rounds,
+      text: () => { const T = me().st; return ['Your weapon holds ', el('b', null, T.rounds + ' ' + T.ammo.toLowerCase()), ' (counted under SPECIAL). Fire until it\'s empty: it reloads for ', el('b', null, +T.reload.toFixed(1) + ' s'), ', and meanwhile ', K('heavy'), ' is the ', nm(T.dry.heavy), '.']; },
+      setup() { place(-4, 0); me().rounds = me().st.rounds; me().reloadT = 0; },
+      tick() { if (me().reloadT > 0) return true; },
     },
     {
       id: 'otg', title: 'OTG', need: 1,
@@ -174,22 +223,23 @@
   ];
 
   /* ------------------------------------------------------------ the card */
+  const mine = () => LESSONS.filter(l => !l.skip || !l.skip());   // (the lessons this figure gets)
   function draw(flash) {
     const L = LESSONS[S.i]; if (!S.card || !L) return;
     const c = S.card; c.innerHTML = ''; c.className = 'tut' + (flash ? ' ' + flash : '');
     c.append(...[
-      el('div', { class: 'n' }, el('span', null, (S.onboard ? 'NEW COLLECTOR · ' : '') + 'TUTORIAL · LESSON ' + (S.i + 1) + ' / ' + LESSONS.length), el('i', null, touching() ? '' : 'Esc: pause')),
+      el('div', { class: 'n' }, el('span', null, (S.onboard ? 'NEW COLLECTOR · ' : '') + 'TUTORIAL · LESSON ' + (mine().indexOf(L) + 1) + ' / ' + mine().length), el('i', null, touching() ? '' : 'Esc: pause')),
       el('h3', null, S.ok ? '✓ ' + L.title : L.title),
       el('p', null, ...(S.ok ? [S.ok] : L.text.call(L))),
       L.need > 1 ? el('div', { class: 'tpips' }, ...Array.from({ length: L.need }, (_, k) => el('i', { class: k < S.got ? 'on' : '' }))) : null,
       S.note && !S.ok ? el('div', { class: 'try' }, S.note) : null,
       el('div', { class: 'row' },
-        el('button', { onclick: () => { SFX.play('ui'); next(); } }, S.i + 1 < LESSONS.length ? 'SKIP LESSON ▸' : 'SKIP'),
+        el('button', { onclick: () => { SFX.play('ui'); next(); } }, L.id !== 'finish' ? 'SKIP LESSON ▸' : 'SKIP'),
         el('button', { onclick: () => { SFX.play('back'); leave(); } }, S.onboard ? 'SKIP THE TUTORIAL' : 'LEAVE'))].filter(Boolean));
   }
   const PRAISE = ['Nice!', 'Clean.', 'That\'s it.', 'Sharp.', 'Exactly.', 'Good.'];
   function complete() {
-    const L = LESSONS[S.i], nx = LESSONS[S.i + 1];
+    const L = LESSONS[S.i]; let j = S.i + 1; while (LESSONS[j] && LESSONS[j].skip && LESSONS[j].skip()) j++; const nx = LESSONS[j];
     S.ok = U.pick(PRAISE) + ' ' + (nx ? 'Next: ' + nx.title.toLowerCase().replace(/^./, x => x.toUpperCase()) + '.' : 'Tutorial complete!');
     SFX.play('ok'); HUD.banner(L.title, 'round', 0.9); draw('ok');
     if (L.done) L.done();
@@ -200,6 +250,7 @@
     if (!S) return;
     const prev = LESSONS[S.i]; if (prev && prev.done && !S.ok) prev.done();
     S.i++; S.got = 0; S.note = ''; S.ok = null; S.wait = null; ai().cue = null;
+    while (LESSONS[S.i] && LESSONS[S.i].skip && LESSONS[S.i].skip()) S.i++;   // (no auto combo, no ammo: not your lesson)
     const L = LESSONS[S.i];
     if (!L) return finish();
     if (L.id !== 'finish') { ai().dummy = 'tut'; }
@@ -273,7 +324,7 @@
       el('div', { class: 'tick' }, '✓'),
       el('h2', null, 'TUTORIAL COMPLETE'),
       el('div', { class: 'stats' }, ...row('Longest combo', st.combo + ' hits'), ...row('Most wall bounces', String(st.bounces)), ...(bonus ? row('Reward', '+' + bonus + ' TOKENS') : [])),
-      el('p', null, 'Every figure plays by the same buttons. What each of yours does is in its MOVE LIST (pause in a fight, or the Workshop), and every key and button can be changed in OPTIONS. TRAINING has a dummy to practise on any time.'),
+      el('p', null, 'Every figure plays by the same buttons. What each of yours does (its string, its Heavy, all four Specials) is in its MOVE LIST (pause in a fight, or the Workshop), and every key and button can be changed in OPTIONS. TRAINING has a dummy to practise on any time.'),
       el('div', { class: 'row' },
         el('button', { class: 'btn big', onclick: () => { SFX.play('ok'); if (onboard) Menu.afterTutorial(true); else Menu.hub(); } }, onboard ? 'ON TO THE HUB' : 'BACK TO THE HUB'),
         el('button', { class: 'btn ghost', onclick: () => { SFX.play('ok'); Tutorial.start({ onboard }); } }, 'AGAIN')));

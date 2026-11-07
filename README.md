@@ -537,9 +537,12 @@ fight live** and waits for their turn.
 New collectors are offered it right after opening their first figure, and it's in the hub (**TUTORIAL**) and HOW TO
 PLAY any time after (`js/tutorial.js`). It's a real fight in the Toy Shelf against a Knight dummy where nothing happens
 until you do it: a card over the fight gives one lesson at a time, in your own keys (or your controller's buttons, or
-the touch buttons), and the next opens once you've done it (or SKIP). Fourteen lessons: move, jump, your string, the
-Launcher into an air combo, the KNOCK//BACK and catching the rebound, guard, dodge, grab-pummel-throw, your Special,
-an OTG, a Part Toss, a Spring Burst, your Legend Art, and a last round where the dummy fights back. The dummy only
+the touch buttons), and the next opens once you've done it (or SKIP). Up to nineteen lessons:
+move, jump, your string, the Launcher into an air combo, the KNOCK//BACK and catching the rebound, a Tech Chase,
+guard, dodge, the armoured charge, your Heavy's auto combo (if it has one), grab-pummel-throw, your Special, your
+three Command Specials (it names each one and wants each motion once), your weapon's ammo and reload (if it has
+any), an OTG, a Part Toss, a Spring Burst, your Legend Art, and a last round where the dummy fights back. A figure
+without an auto combo or ammo skips those lessons, and the count shows only the lessons yours gets. The dummy only
 swings when a lesson wants it to and nobody can lose. Finishing it the first time is worth **900 Tokens**.
 
 ## Combo Trials
