@@ -55,8 +55,14 @@
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
     if (!e.repeat) for (const f of anyPress.slice()) f(e.code);
     keys.add(e.code);
+    // a pad's presses can come in as keys as well (Steam's desktop controller layout, Windows' own gamepad keys):
+    // while a pad is in use, a key doesn't turn the prompts back to the keyboard (they'd flicker between the two)
+    if (fromPad(e)) return;
     lastDevice[0] = 'keys'; if (binds[1] && Object.values(binds[1]).some(a => a.includes(e.code))) lastDevice[1] = 'keys';
   });
+  let padAt = -1e9;   // when a pad was last used (performance.now)
+  const fromPad = e => /^Gamepad/.test(e.key || '') || !e.code || performance.now() - padAt < 600
+    || connected().some(gp => gp.buttons.some((b, i) => pressedB(gp, i)) || Math.hypot(padDir(gp).x, padDir(gp).y) > 0);
   window.addEventListener('keyup', e => keys.delete(e.code));
   window.addEventListener('blur', () => keys.clear());
 
@@ -119,7 +125,7 @@
           if (pressedB(gp, PAUSE_BTN)) { H.pause = true; any = true; }
           const d = padDir(gp);
           if (Math.hypot(d.x, d.y) > 0.01) { mx = d.x; my = d.y; any = true; }
-          if (any) { this.pad = gp; lastDevice[this.i] = 'pad'; }
+          if (any) { this.pad = gp; lastDevice[this.i] = 'pad'; padAt = performance.now(); }
         }
       }
       const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
