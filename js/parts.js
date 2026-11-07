@@ -366,7 +366,7 @@
       dmgR: m('armR'), dmgL: m('armL'), dmgH: m('head'), dmgG: m('legs'), dmgK: m('card'),
       set, setDmg: set === 2 ? 1.08 : set === 1 ? 1.04 : 1,
       armor: { head: Math.round(H.armor * m('head')), armR: Math.round(R.armor * m('armR')), armL: Math.round(L.armor * m('armL')), legs: Math.round(G.armor * m('legs')) },
-      passive: K.passive, special: H.special, cmd: H.cmd || null, uses: H.uses + (H.cmd ? 1 : 0), super: K.super,   // (COMMAND SPECIALS share the uses: one more for them)
+      passive: K.passive, special: H.special, cmd: H.cmd || null, uses: H.usesMax || H.uses + (H.cmd ? 1 : 0), super: K.super,   // (COMMAND SPECIALS share the uses: one more for them; usesMax caps a head outright)
       ...(() => { const mixed = b.armR.line !== b.armL.line && M['hx:' + b.armR.line + ':' + b.armL.line + ':0']; return { mixed: !!mixed, light: mixed ? 'hx:' + b.armR.line + ':' + b.armL.line + ':0' : R.light, air: mixed ? 'hxa:' + b.armR.line + ':' + b.armL.line + ':0' : R.air }; })(),
       lightPure: R.light, airPure: R.air, spear: !!R.spear, sig: R.sig, ripMove: R.ripMove, ripName: R.ripName, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
       trailR: R.trail, trailL: L.trail,

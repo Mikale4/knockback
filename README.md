@@ -425,7 +425,7 @@ The move list (pause) shows all four.
 | Shinobi | **Shuriken**: three stars | **Makibishi**: caltrops, SLOWED | **Smoke Bomb**: vanishes for 3 s |
 | Ronin | **Drunken Stagger**: an untouchable stumbling cut | **Sake Spit**: in their eyes, DIZZY | **Last Stand**: harder the lower his HP (up to ×2.6) |
 | Kunoichi | **Poison Mist**: POISONED | **Charm**: a blown kiss, their stick works backwards | **Senbon Pin**: PINNED, can't move or jump |
-| Shogun | **Siege Ram**: the next wall they hit breaks | **Shogun's Decree**: WEAKENED and SLOWED all round | **Kabuto Stance**: nothing staggers him for 5 s |
+| Shogun | **Siege Ram**: the next wall they hit breaks | **Shogun's Decree**: WEAKENED and SLOWED all round | **Kabuto Stance**: nothing staggers him for 5 s (the Shogun's Kabuto allows one Special a round, plain or command, and it doesn't come back) |
 | Daimyo | **Returning Tessen**: the fan comes back, hits both ways | **Castle Gate**: a wall no shot or figure passes | **Bribe**: their next hit does nothing |
 | Knight | **Shield Charge**: armoured, breaks guards | **Mordhau**: the crossguard as a hammer, crumple | **Chivalry**: frontal blows guarded on their own |
 | Paladin | **Judgment**: a pillar of light on the marked spot | **Lay on Hands**: heal 12% | **Divine Shield**: untouchable 1.5 s, can't attack |
