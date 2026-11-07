@@ -352,6 +352,10 @@
       board: { speed: 26, trail: 0.6, tw: 0.14, tcol: 0xffd040, w: 0.85, flat: 14 },
       bpin: { speed: 28, trail: 0.6, tw: 0.08, tcol: 0xffffff, w: 0.6, spin: 20 },
       belay: { speed: 28, trail: 0.6, tw: 0.08, tcol: 0xe8c890, w: 0.6, spin: 22 },
+      heart: { speed: 16, trail: 0.5, tw: 0.08, tcol: 0xff6ab0, w: 0.6, spin: 0 },
+      kalkan: { speed: 22, trail: 0.6, tw: 0.16, tcol: 0xd8a830, w: 0.85, flat: 16 },
+      crescent: { speed: 20, trail: 0.3, tw: 0.2, tcol: 0xe8eef8, w: 1.3 },
+      lasso: { speed: 20, trail: 0.5, tw: 0.05, tcol: 0xc8a878, w: 0.75, flat: 12 },
     };
     /* MODERN SPORTS shots: where each comes from (a hand, the feet, or rolled along the floor), its look, a spread, aimed down */
     const SPORT = {
@@ -365,6 +369,8 @@
       grape: { look: 'pellet', from: 'wL', spread: [-0.3, -0.15, 0, 0.15, 0.3], gun: 1 }, mortar: { look: 'cannonball', from: 'wL', down: 1, gun: 1 }, chainshot: { look: 'chainshot', from: 'wL', gun: 1 },
       hatchet: { look: 'hatchet', from: 'wL' }, musket: { look: 'bullet', from: 'wR', gun: 1 }, musketAim: { look: 'bullet', from: 'wR', gun: 1 }, wisp: { look: 'wisp', from: 'wL' },
       shuriken: { look: 'shuriken', from: 'wR', spread: [-0.14, 0, 0.14] }, tessen: { look: 'tessen', from: 'wL' }, board: { look: 'board', from: 'wR' }, bpin: { look: 'bpin', from: 'wR' }, belay: { look: 'belay', from: 'wR' },
+      heart: { look: 'heart', from: 'wR' }, kalkan: { look: 'kalkan', from: 'wL', bounce: 2 }, crescent: { look: 'crescent', from: 'wR', pierce: 1 }, lasso: { look: 'lasso', from: 'wR' },
+      tessenRet: { look: 'tessen', from: 'wL', ret: 1 }, plateRoll: { look: 'plate', from: 'wR', ground: 1 }, split: { look: 'bpin', from: 'wR', spread: [-0.16, 0.16] },
       arrowsUp: { look: 'arrow', from: 'wR', up: 1, spread: [-0.2, 0, 0.2] }, hotshot: { look: 'cannonball', from: 'wL', gun: 1 }, wisps: { look: 'wisp', from: 'wR', spread: [-0.25, 0, 0.25] },
       buck: { look: 'pellet', from: 'wR', spread: [-0.22, -0.11, 0, 0.11, 0.22], gun: 1 },
       pin: { look: 'needle', from: 'wL' }, pins: { look: 'needle', from: 'wL', spread: [-0.14, 0, 0.14] }, pinsDown: { look: 'needle', from: 'wL', down: 1, spread: [-0.14, 0, 0.14] },
@@ -388,6 +394,9 @@
       board: () => { const g = new VX.Grid(); g.box(-3, 0, -9, 3, 0, 9, 0x2a2a30); g.box(-3, 1, -9, 3, 1, 9, 0xd8a830); for (const z of [-6, 6]) { g.box(-2, -1, z, 2, -1, z, 0xa8acb4); g.set(-3, -1, z, 0xf4f4f0); g.set(3, -1, z, 0xf4f4f0); } return VX.object(g, 0.04); },
       bpin: () => { const g = new VX.Grid(); g.ell(0, 0, 3, 1.6, 1.6, 2.6, 0xf6f4ee); g.ell(0, 0, -3, 1.0, 1.0, 1.4, 0xf6f4ee); g.box(-1, -1, -1, 1, 1, 0, 0xd8323a); return VX.object(g, 0.04); },
       belay: () => { const g = new VX.Grid(); g.box(-1, -1, -1, 1, 1, 6, 0x8a5a2a); g.ell(0, 0, 4, 1.6, 1.6, 2.4, 0xa86a32); g.box(-1, -1, -4, 1, 1, -2, 0x6a4020); return VX.object(g, 0.04); },
+      heart: () => { const g = new VX.Grid(); for (const [x, y] of [[-2, 2], [-1, 3], [1, 3], [2, 2], [-3, 1], [3, 1], [0, 2]]) g.set(x, y, 0, 0xff6ab0); for (let y = -2; y <= 1; y++) for (let x = -2 - Math.min(0, y); x <= 2 + Math.min(0, y); x++) if (Math.abs(x) <= 2 + y) g.set(x, y, 0, y < 0 ? 0xff3a8a : 0xff6ab0); return VX.object(g, 0.05); },
+      kalkan: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 6, 0.6, 6, (x, y, z) => Math.hypot(x, z) > 5 ? 0xd8a830 : Math.hypot(x, z) < 1.5 ? 0xffe27a : 0x8a2a1a); return VX.object(g, 0.045); },
+      lasso: () => { const g = new VX.Grid(); for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; g.set(Math.round(Math.cos(a) * 6), 0, Math.round(Math.sin(a) * 6), (k & 1) ? 0xc8a878 : 0x8a6a3a); } return VX.object(g, 0.05); },
       basketball: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 6.2, 6.2, 6.2, (x, y, z) => Math.abs(x) < 0.5 || Math.abs(y) < 0.5 || Math.abs(Math.hypot(x, y) - 4.6) < 0.5 ? 0x2a1a10 : 0xe8681a); return VX.object(g, 0.035); },
     };
     const ballSrc = {};
@@ -395,6 +404,7 @@
     const SPORT_MESH = {
       arrow: () => new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.72), new THREE.MeshLambertMaterial({ color: 0xd8c08a })),
       plate: () => { const g = new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16); g.rotateX(Math.PI / 2); return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x3a3e48 })); },
+      crescent: () => { const g = new THREE.RingGeometry(0.55, 0.85, 20, 1, Math.PI * 0.15, Math.PI * 0.7); g.rotateX(-Math.PI / 2); g.rotateY(-Math.PI / 2); return new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xe8eef8, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false, toneMapped: false })); },
     };
     let kunaiSrc = null, weightSrc = null;
     const kunaiMesh = () => {
@@ -460,6 +470,69 @@
       M.projs.push({ kind: 'trap', f, mv, pos: at, mesh, t: 0, tick: 0, id: 's' + (++M.shotId) });
       FX.burst(at.clone().setY(0.2), { n: 8, color: arena.dust, speed: 2, size: 0.07, life: 0.4 }); SFX.play('whoosh');
     };
+    /* ---- UNIQUE SPECIALS: the things only one figure does (fighter.js onActive calls M.act for a move with act) */
+    const myImps = f => M.minions.filter(mn => mn.owner === f);
+    function gateMesh() { const g = new VX.Grid(); for (let x = -15; x <= 15; x++) for (let y = 0; y <= 18; y++) g.set(x, y, 0, (y % 6 === 0 || Math.abs(x) % 10 === 0) ? 0x2a1a10 : ((x + y) & 1) ? 0x8a5a2a : 0x7a4a22); for (const x of [-12, 0, 12]) g.set(x, 9, 1, 0xd8a830); return VX.object(g, 0.12); }
+    function parrotMesh() { const g = new VX.Grid(); g.ell(0, 0, 0, 1.5, 1.5, 2.4, 0xd8301a); g.box(-3, 0, -1, -2, 0, 1, 0x2a9a3a); g.box(2, 0, -1, 3, 0, 1, 0x2a9a3a); g.set(0, 0, 3, 0xffd84a); g.set(0, 1, 2, 0x1c1c22); g.box(0, -1, -3, 0, -1, -5, 0x2a5ad8); return VX.object(g, 0.06); }
+    M.gateHit = pt => { for (const q of M.projs) if (q.kind === 'gate') { const c = Math.cos(-q.yaw), sn = Math.sin(-q.yaw), dx = pt.x - q.pos.x, dz = pt.z - q.pos.z, lx = dx * c + dz * sn, lz = -dx * sn + dz * c; if (Math.abs(lx) < 1.9 && Math.abs(lz) < 0.35 && pt.y < 2.3) return q; } return null; };
+    M.act = (f, mv) => {
+      const o = M.opp(f), F = f.forward, a = mv.act;
+      if (a === 'impBomb') {
+        // SUMMONER: one of her imps, thrown (a fresh one if none is out); it bursts where it lands
+        let mn = myImps(f).find(x => !x.carried) || null; if (!mn) { M.summon(f, 1, true); mn = myImps(f).slice(-1)[0]; } if (!mn) return;
+        const from = f.pos.clone().addScaledVector(F, 0.6).setY(f.pos.y + 1.3); poof(mn);
+        const mesh = Models.imp('summoner', impR(f)); mesh.position.copy(from); scene.add(mesh);
+        const d = o ? Math.min(7, U.dist(f.pos, o.pos)) : 5, h = Math.max(2, d / 0.75); M.projs.push({ kind: 'bomb', f, mv, mesh, pos: from, vel: new V3(F.x * h, 6.5, F.z * h), t: 0 }); SFX.play('whoosh');   // (lobbed to land on them: 0.75 s up and down)
+      } else if (a === 'soulSwap') {
+        // SUMMONER: she trades places with her imp furthest away
+        let mn = null, far = -1; for (const x of myImps(f)) { const e = U.dist(x.pos, f.pos); if (e > far) { far = e; mn = x; } } if (!mn) return;
+        FX.burst(_q2.copy(f.pos).setY(1), { n: 14, color: [impCol(), 0xffffff], glow: true, speed: 3, size: 0.08, life: 0.4 });
+        const was = f.pos.clone(); f.pos.set(mn.pos.x, Math.max(0, mn.pos.y), mn.pos.z); mn.pos.set(was.x, was.y, was.z); f.clampInside(); f.vel.set(0, 0, 0); f.inv = Math.max(f.inv, 0.3); if (o) f.yaw = U.ang(f.pos, o.pos);
+        FX.burst(_q2.copy(f.pos).setY(1), { n: 14, color: [impCol(), 0xffffff], glow: true, speed: 3, size: 0.08, life: 0.4 }); SFX.play('dodge'); M.call(f, 'SOUL SWAP', 'buff');
+      } else if (a === 'sacrifice') {
+        // SUMMONER: every imp bursts, each healing her 5% and giving 10 Hype
+        const all = myImps(f); let n = 0; for (const mn of all) { poof(mn); n++; }
+        const h = Math.round(f.maxHp * 0.05 * n * f.st.healMult); f.hp = Math.min(f.maxHp, f.hp + h); f.hype = Math.min(100, f.hype + 10 * n); M.call(f, 'BLOOD PACT +' + h, 'heal');
+        FX.burst(_q2.copy(f.pos).setY(1), { n: 10 + n * 6, color: [impCol(), 0xff3a5a, 0xffffff], speed: 3, gravity: -3, size: 0.08, life: 0.7 });
+      } else if (a === 'kiBurst') {
+        // MONK: every enemy shot within 4.5 m is destroyed
+        let n = 0; for (let i = M.projs.length - 1; i >= 0; i--) { const q = M.projs[i]; if (!q.f || q.f === f || q.visual || ['trap', 'gate', 'sball', 'part', 'fnote'].includes(q.kind)) continue;
+          const at = q.pos || q.at; if (!at || Math.hypot(at.x - f.pos.x, at.z - f.pos.z) > 4.5) continue; FX.spark(at, { color: 0xffe080, size: 1.2 }); dropProj(q); M.projs.splice(i, 1); n++; }
+        FX.ring(_q2.copy(f.pos).setY(1), { r1: 4.5, life: 0.4, normal: new V3(0, 1, 0), color: 0xffe080 }); if (n) M.call(f, 'KI BURST ×' + n, 'buff');
+      } else if (a === 'gate') {
+        // DAIMYO: a castle gate rises in front of him for 6 s
+        for (let i = M.projs.length - 1; i >= 0; i--) { const q = M.projs[i]; if (q.kind === 'gate' && q.f === f) { scene.remove(q.mesh); M.projs.splice(i, 1); } }
+        const at = inside(f.pos.clone().addScaledVector(F, mv.reach || 1.8)); at.y = 0; const mesh = gateMesh(); mesh.position.copy(at); mesh.rotation.y = f.yaw; scene.add(mesh);
+        M.projs.push({ kind: 'gate', f, mv, pos: at, yaw: f.yaw, mesh, t: 0, id: 's' + (++M.shotId) }); FX.addShake(0.3); SFX.play('boom'); FX.burst(at.clone().setY(0.3), { n: 16, color: arena.dust, speed: 3, size: 0.1, life: 0.5 });
+      } else if (a === 'parrot') {
+        // PIRATE: his parrot flies at them and pecks three times
+        const mesh = parrotMesh(), from = f.pos.clone().setY(f.pos.y + 1.9); mesh.position.copy(from); scene.add(mesh);
+        M.projs.push({ kind: 'parrot', f, mv, mesh, pos: from, vel: new V3(F.x * 6, 2, F.z * 6), t: 0, pecks: 0, cd: 0, away: false, id: 's' + (++M.shotId) }); SFX.play('whoosh'); M.call(f, 'POLLY!', 'small');
+      } else if (a === 'shove') {
+        // CAPTAIN: the deck lurches, and they go with it (it can't be guarded)
+        if (o && !['ko', 'out', 'held'].includes(o.state) && o.inv <= 0) { const d = _q2.subVectors(o.pos, f.pos).setY(0); if (d.lengthSq() < 0.01) d.copy(F); d.normalize(); Combat.hit(f, o, KB.MOVES.cCapT, { kind: 'special', force: true, dir: d.clone(), proj: true, at: o.pos.clone().setY(o.pos.y + 0.6) }); }
+        FX.addShake(0.6); SFX.play('boom'); M.call(f, 'HARD TO PORT!', 'buff');
+      } else if (a === 'scourge') {
+        // TEMPLAR: 8% of his HP for 40 Hype and zeal
+        f.hp = Math.max(1, f.hp - Math.round(f.maxHp * 0.08)); f.hype = Math.min(100, f.hype + 40); f.buffs.zeal = 5; M.call(f, 'SCOURGE +40', 'buff'); FX.burst(_q2.copy(f.pos).setY(1.2), { n: 12, color: [0xd8301a, 0xffffff], speed: 2.5, size: 0.07, life: 0.5 });
+      } else if (a === 'reloadDrill') {
+        // MUSKETEER: loaded in a heartbeat, and the next hit is a crumpler
+        if (f.st.rounds) { f.rounds = f.st.rounds; f.reloadT = 0; } f.addBuff({ id: 'empower', t: 4, call: 'MAKE READY!' });
+      } else if (a === 'dance') {
+        // FOOTBALL: the celebration (it's the long wind-up that costs him)
+        f.hype = Math.min(100, f.hype + 35); M.call(f, 'TOUCHDOWN! +35', 'buff'); FX.burst(_q2.copy(f.pos).setY(1.5), { n: 20, color: [0xffd84a, 0xffffff, 0x3a7ae0], speed: 3.5, gravity: 4, size: 0.08, life: 0.8 });
+      } else if (a === 'hulkUp') {
+        // WRESTLER: he shakes it all off
+        const h = Math.round(f.maxHp * 0.08 * f.st.healMult); f.hp = Math.min(f.maxHp, f.hp + h); f.burst = 100; f.giveArmor(2); M.call(f, 'HULK UP! +' + h, 'buff'); FX.addShake(0.3); FX.ring(_q2.copy(f.pos).setY(1), { r1: 2, life: 0.4, normal: new V3(0, 1, 0), color: 0xffd23a });
+      } else if (a === 'spare') {
+        // BOWLER: the ball on the floor rolls back to him, through anything in its way
+        const b = f.balls.bowling; if (!b) return; const from = b.pos.clone().setY(0.25), to = f.pos.clone().setY(0.25), d = to.clone().sub(from), len = d.length();
+        if (len > 0.5) dart(f, mv, 'bowling', from, d.normalize(), len, { grp: { done: false } }); pickBall(b, 'quiet'); SFX.play('whoosh'); M.call(f, 'SPARE!', 'small');
+      } else if (a === 'safe') {
+        // BASEBALL: a stolen base: past them in the slide, and the crowd loves it
+        if (o && U.dist(f.pos, o.pos) < 5) { f.hype = Math.min(100, f.hype + 15); M.after(0.3, () => M.call(f, 'SAFE! +15', 'buff')); }
+      }
+    };
     function reflectDart(p, o, at) {
       // a shot turned back (a raised shield, a bunt): it flies at whoever loosed it, and it's theirs now
       const s = p.f; p.f = o; p.k = 'special'; p.grp = { done: false }; p.pos.copy(at); p.from.copy(at); p.back = at.clone(); p.dist = 0; p.range = Math.max(8, p.range);
@@ -480,7 +553,8 @@
       const trail = underTrail(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glowMat(look === 'bolt' ? opt.col : L.tcol, look === 'kunai' ? 0.45 : 0.8)), look === 'bolt' ? opt.col : L.tcol);
       trail.scale.set(L.tw, L.tw, 0.001); trail.visible = false; scene.add(trail);
       M.projs.push({ kind: 'dart', look, f, mv, k: f.kind, charge: opt.charge || 0, pos: from.clone(), from: from.clone(), back: f.pos.clone().setY(f.pos.y + 1.15), dir: dir.clone().normalize(), speed: L.speed, range, dist: 0, w: L.w,
-        mesh, trail, own, grp: opt.grp || { done: false }, id: 's' + (++M.shotId), visual: !!opt.visual, col: opt.col, t: 0, stuck: null });
+        mesh, trail, own, grp: opt.grp || { done: false }, id: 's' + (++M.shotId), visual: !!opt.visual, col: opt.col, t: 0, stuck: null,
+        ret: !!opt.ret, home: false, bounce: opt.bounce || 0, pierce: !!opt.pierce, ground: !!opt.ground });
     }
     /* where a moving point (a to b) meets their body: standing (shins to head) or, for an OTG, lying on the floor */
     function bodyHit(f, o, a, b, w, mv, kind) {
@@ -629,7 +703,8 @@
           SFX.play('whoosh'); if (S.from === 'feet') FX.burst(from, { n: 6, color: arena.dust, speed: 2, size: 0.07, life: 0.4 });
         } else {
           const grp = { done: false };
-          for (const a of S.spread || [0]) dart(f, mv, S.look, from, dir.clone().applyAxisAngle(UP, a), range, { grp, charge });
+          if (S.ground) { from.y = 0.22; dir.y = 0; dir.normalize(); }   // (a rolled plate keeps to the floor)
+          for (const a of S.spread || [0]) dart(f, mv, S.look, from, dir.clone().applyAxisAngle(UP, a), range, { grp, charge, ret: S.ret, bounce: S.bounce, pierce: S.pierce, ground: S.ground });
           if (S.gun) { SFX.play(S.look === 'bullet' || S.look === 'pellet' ? 'shot' : 'boom'); FX.addShake(0.2); muzzleFlash(from, dir); f.kickT = 0.14; }
           SFX.play(S.look === 'arrow' ? 'whoosh' : 'whoosh'); if (S.from === 'feet') FX.burst(from, { n: 6, color: arena.dust, speed: 2, size: 0.07, life: 0.4 });
         }
@@ -1041,6 +1116,7 @@
       else if (p.kind === 'wave') { disposeGroup(p.mesh); p.notes.forEach(n => scene.remove(n)); }
       else if (p.kind === 'part') { if (p.grp.parent) p.grp.parent.remove(p.grp); }
       else if (p.kind === 'trap') killTrap(p);
+      else if (p.kind === 'gate' || p.kind === 'parrot') scene.remove(p.mesh);
       else if (p.kind === 'sball') { scene.remove(p.mesh); if (p.trail) { scene.remove(p.trail); p.trail.geometry.dispose(); p.trail.material.dispose(); p.trail = null; } }
       else if (p.mesh) scene.remove(p.mesh);
     }
@@ -1080,12 +1156,19 @@
           const f = p.f, o = M.opp(f), a = _q.copy(p.back || p.pos), step = Math.min(p.speed * dt, p.range - p.dist); p.back = null;
           p.pos.addScaledVector(p.dir, step); p.dist += step;
           let end = null, what = null;
-          if (!p.visual && !p.grp.done && o) { const q = bodyHit(f, o, a, p.pos, p.w, p.mv, p.k); if (q) { if (o.buffs.reflect && !o.inHitstun) { reflectDart(p, o, q); continue; } end = q; what = 'fighter'; } }
+          if (p.home) { const tx = f.pos.x - p.pos.x, tz = f.pos.z - p.pos.z, tl = Math.hypot(tx, tz); if (tl < 0.9) { killDart(p); M.projs.splice(i, 1); continue; } p.dir.set(tx / tl, 0, tz / tl); p.range = p.dist + tl + 2; }   // (the fan comes home)
+          if (!p.visual && !p.grp.done && o && !(p.ground && o.pos.y > 0.35)) { const q = bodyHit(f, o, a, p.pos, p.w, p.mv, p.k); if (q) { if (o.buffs.reflect && !o.inHitstun) { reflectDart(p, o, q); continue; } end = q; what = 'fighter'; } }
           if (!p.visual) M.hitMinionsSeg(f, a, p.pos, 0.15, p.id);
-          if (!end) for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.06) { p.pos[w.axis] = w.sign * (w.lim - 0.06); end = p.pos.clone(); what = 'wall'; break; }
+          let hitW = null; if (!end) for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.06) { p.pos[w.axis] = w.sign * (w.lim - 0.06); end = p.pos.clone(); what = 'wall'; hitW = w; break; }
+          if (!end) { const g = M.gateHit && M.gateHit(p.pos); if (g) { end = p.pos.clone(); what = 'wall'; } }   // (the DAIMYO's gate stops shots)
           if (!end && p.pos.y <= 0.04) { p.pos.y = 0.04; end = p.pos.clone(); what = 'floor'; }
           if (!end && p.dist >= p.range) { end = p.pos.clone(); what = 'air'; }
           if (end) p.pos.copy(end);
+          // a shot that carries on: through them (a crescent, a fan), off a wall (a shield), or back home (a fan at full stretch)
+          if (what === 'fighter' && (p.pierce || p.ret)) { p.grp.done = true; Combat.hit(f, o, p.mv, { kind: p.k, charge: p.charge, at: end.clone(), from: f.pos.clone(), dir: shotDir(f, o, p.dir), proj: true, otg: o.state === 'down' }); dartImpact(p, end, what); end = null; what = null; }
+          if (what === 'wall' && hitW && p.bounce > 0) { p.bounce--; p.dir[hitW.axis] *= -1; p.from.copy(p.pos); p.dist = 0; p.range = 8; p.grp = { done: false }; FX.spark(p.pos, { color: 0xffe27a, size: 1 }); SFX.play('guard'); end = null; what = null; }
+          if (what === 'air' && p.ret && !p.home) { p.home = true; p.grp = { done: false }; end = null; what = null; }
+          if (p.ground) p.pos.y = 0.22;
           p.mesh.position.copy(p.pos); if (p.look === 'kunai') p.mesh.rotateZ(dt * 25); else if (LOOK[p.look].flat) p.mesh.rotateOnWorldAxis(UP, dt * LOOK[p.look].flat); else if (LOOK[p.look].spin) p.mesh.rotateX(dt * LOOK[p.look].spin);
           if (p.look === 'bowling' && U.vrand() < 0.4) FX.burst(_q2.copy(p.pos).setY(0.05), { n: 1, color: arena.dust, speed: 1, size: 0.06, life: 0.3 });
           const tl = Math.min(LOOK[p.look].trail, p.pos.distanceTo(p.from));
@@ -1137,6 +1220,20 @@
           Combat.hit(f, o, KB.MOVES[T.hit], { kind: 'trap', force: true, dir: d, at: _q2.copy(o.pos).setY(0.4).clone(), from: p.pos.clone(), proj: true });
           FX.burst(_q2.copy(p.pos).setY(0.2), { n: 14, color: [T.col || 0xffffff, arena.dust], speed: 3.5, size: 0.09, life: 0.5 }); SFX.play(T.sfx || 'heavy'); if (T.call) M.call(o, T.call, 'counter');
           killTrap(p); M.projs.splice(i, 1);
+        } else if (p.kind === 'parrot') {
+          // PIRATE: Polly flies at them, pecks three times, and flies off
+          const f = p.f, o = M.opp(f), tgt = o ? _q2.copy(o.pos).setY(o.pos.y + 1.5) : p.pos;
+          if (!p.away && o && !['ko', 'out'].includes(o.state)) { const d = _w.subVectors(tgt, p.pos), l = d.length(); p.vel.lerp(d.multiplyScalar(11 / Math.max(l, 0.01)), Math.min(1, dt * 6)); p.cd -= dt;
+            if (l < 0.9 && p.cd <= 0) { p.cd = 0.3; p.pecks++; const last = p.pecks >= 3; if (o.inv <= 0) Combat.hit(f, o, last ? p.mv : Object.assign({}, p.mv, { kb: [0.5, 0], launch: 0, stun: 0.4 }), { kind: 'special', at: tgt.clone(), from: p.pos.clone(), dir: f.forward.clone(), proj: true, multiHit: !last }); if (last) p.away = true; } }
+          else { p.away = true; p.vel.y += 8 * dt; }
+          if (p.t > 4.5) p.away = true; p.pos.addScaledVector(p.vel, dt); p.mesh.position.copy(p.pos); p.mesh.lookAt(_w.copy(p.pos).add(p.vel)); p.mesh.rotateZ(Math.sin(p.t * 30) * 0.4);
+          if (p.away && (p.t > 6 || p.pos.y > 9)) { scene.remove(p.mesh); M.projs.splice(i, 1); }
+        } else if (p.kind === 'gate') {
+          // DAIMYO: the castle gate: no one walks through it, then it sinks back down
+          if (p.t > 6 || p.f.state === 'out') { scene.remove(p.mesh); M.projs.splice(i, 1); continue; }
+          if (p.t > 5.6) p.mesh.position.y = -(p.t - 5.6) * 6;
+          const c = Math.cos(-p.yaw), sn = Math.sin(-p.yaw);
+          for (const g of M.fighters) { const dx = g.pos.x - p.pos.x, dz = g.pos.z - p.pos.z, lx = dx * c + dz * sn, lz = -dx * sn + dz * c; if (Math.abs(lx) < 2.3 && Math.abs(lz) < 0.7 && g.pos.y < 2.3) { const nz = lz >= 0 ? 0.7 : -0.7, push = nz - lz; g.pos.x += -sn * push; g.pos.z += c * push; } }
         } else if (p.kind === 'smite') {
           const S = p.mv.smite, D = S.delay || 0.55, f = p.f, o = M.opp(f), L = S.look && LOOK[S.look];
           p.mesh.scale.setScalar(0.5 + 0.5 * Math.min(1, p.t / D)); p.mesh.material.opacity = 0.45 + 0.4 * Math.abs(Math.sin(p.t * 14));

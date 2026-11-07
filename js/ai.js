@@ -66,7 +66,8 @@
     /* COMMAND SPECIALS: which of the three suits the distance (null: none of them) */
     pickCmd(C, d, o) {
       const fits = k => {
-        const mv = KB.MOVES[C[k]]; if (!mv) return false;
+        const mv = KB.MOVES[C[k]]; if (!mv || !this.f.canSpecial(C[k])) return false;
+        if (mv.type === 'act') return mv.act === 'parrot' || mv.act === 'shove' ? d > 3 : mv.act === 'impBomb' ? d > 3 && d < 8 : mv.act === 'gate' ? d > 4 : mv.encore ? !!this.f.lastSp : d > 3.5;
         if (k === 'dp') return d < 2 && Math.random() < 0.3;
         if (mv.type === 'proj') return mv.proj === 'breath' ? d < 3.2 : d > 3 && d < (mv.range || 8) + 0.5;
         if (mv.type === 'dash') return d > 2 && d < (mv.dist || 5) + 1;
@@ -304,6 +305,8 @@
       }
 
       // ---- neutral
+      // a vanished SHINOBI: no idea where he is, so stand and guard
+      if (o.buffs.invis && d > 1.4) { this.stop(); if (r() < 0.04) { this.held.guard = true; this.guardT = 0.4; } return; }
       if (f.hype >= 100 && d < Math.min(6, this.superReach(KB.MOVES[f.st.super])) && r() < 0.015 * (lv + 1)) { this.press('super'); return; }
       if (lv >= 1 && f.canSpear() && d > 3.5 && d < 9 && o.state !== 'down' && r() < 0.004 * (lv + 1)) { this.press('guard'); this.press('heavy'); return; }   // (the DRAGOON's lance, thrown)
       const sp = KB.MOVES[f.st.special];
