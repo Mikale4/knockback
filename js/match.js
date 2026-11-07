@@ -265,7 +265,19 @@
     const INK = {}, inkCol = col => new THREE.Color(col == null ? 0xffffff : col).multiplyScalar(0.16);
     const inkMat = (col, op) => { const k = col + '|' + (op || 0); return INK[k] || (INK[k] = op ? new THREE.MeshBasicMaterial({ color: inkCol(col), transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }) : new THREE.MeshBasicMaterial({ color: inkCol(col), side: THREE.BackSide, toneMapped: false })); };
     const inked = (mesh, col, s) => { const sh = new THREE.Mesh(mesh.geometry, inkMat(col)); sh.scale.setScalar(s); sh.castShadow = true; sh.userData.keep = true; mesh.add(sh); return mesh; };
-    const underTrail = (trail, col) => { const u = new THREE.Mesh(trail.geometry, inkMat(col, 0.45)); u.scale.set(2.4, 2.4, 1); u.renderOrder = -1; u.userData.keep = true; trail.add(u); return trail; };
+    const underTrail = (trail, col) => { const u = new THREE.Mesh(trail.geometry, inkMat(col, 0.45)); u.scale.set(2.4, 2.4, 1); u.renderOrder = -1; u.userData.keep = true; trail.add(u); trail.userData.trail = true; return trail; };
+    // a shot's trail left to fade on its own: the dark band goes at once (it would hold its colour while the glow fades)
+    const fadeTrail = trail => { for (const c of trail.children) c.visible = false; M.fx.push({ m: trail, t: 0, life: 0.1 }); };
+    /* a trail no shot and no fade owns any more leaves (looks only, drawn frames only). An online rollback can put back
+       one whose fade had already finished: the fade is a look and isn't saved, so nothing else would ever take it away */
+    function sweepTrails() {
+      let owned = null;
+      for (let i = scene.children.length - 1; i >= 0; i--) {
+        const o = scene.children[i]; if (!o.userData.trail) continue;
+        if (!owned) { owned = new Set(); for (const p of M.projs) if (p.trail) owned.add(p.trail); for (const e of M.fx) owned.add(e.m); }
+        if (!owned.has(o)) scene.remove(o);
+      }
+    }
     const shadows = o => { o.traverse(c => { if (c.isMesh) c.castShadow = true; }); return o; };
     /* ---- what flies: aim, the muzzle flash, darts (a bullet, a kunai, a bolt) and the chain */
     const UP = new V3(0, 1, 0), CHAIN_N = 64, _q = new V3(), _o3 = new THREE.Object3D();
@@ -441,7 +453,7 @@
     }
     function killDart(p) {
       scene.remove(p.mesh); if (p.own) { p.mesh.geometry.dispose(); p.mesh.material.dispose(); }
-      if (p.trail) { if (p.trail.visible) M.fx.push({ m: p.trail, t: 0, life: 0.1 }); else { scene.remove(p.trail); p.trail.geometry.dispose(); p.trail.material.dispose(); } p.trail = null; }
+      if (p.trail) { if (p.trail.visible) fadeTrail(p.trail); else { scene.remove(p.trail); p.trail.geometry.dispose(); p.trail.material.dispose(); } p.trail = null; }
     }
     const _q2 = new V3();
     function dartImpact(p, at, what) {
@@ -844,6 +856,7 @@
       if (U.quiet) return;
       arena.draw(M, dt);   // (the hazard's meshes and the stage's ambient life: drawn frames only)
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
+      sweepTrails();
       updCamera(rawDt); FX.update(dt);
       if (!M.attract) HUD.update(M);
     };
@@ -1030,7 +1043,7 @@
           if (!end) continue;
           if (what === 'fighter') { p.grp.done = true; Combat.hit(f, o, p.mv, { kind: p.k, charge: p.charge, at: end.clone(), from: f.pos.clone(), dir: shotDir(f, o, p.dir), proj: true, otg: o.state === 'down' }); }
           dartImpact(p, end, what);
-          if (p.look === 'kunai' && (what === 'wall' || what === 'floor')) { p.stuck = 0.9; if (p.trail) { M.fx.push({ m: p.trail, t: 0, life: 0.1 }); p.trail = null; } continue; }
+          if (p.look === 'kunai' && (what === 'wall' || what === 'floor')) { p.stuck = 0.9; if (p.trail) { fadeTrail(p.trail); p.trail = null; } continue; }
           killDart(p); M.projs.splice(i, 1);
         } else if (p.kind === 'sball') {
           updBall(p, dt);
