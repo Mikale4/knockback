@@ -288,14 +288,34 @@
       });
       let picker = null;
       if (slotOpen) {
-        const items = Inv.forSlot(slotOpen);
+        // a click PICKS a part: it goes on the figure on the stand and the panel compares it with what you have on;
+        // EQUIP (or a double click) snaps it on
+        const items = Inv.forSlot(slotOpen), cmp = el('div', { class: 'wscmp' }), cells = [];
+        const equip = it => {
+          const p0 = document.querySelector('.wspanel'), y = p0 ? p0.scrollTop : 0;
+          raw[slotOpen] = { line: it.line, r: it.r, lv: 0 }; Auth.save(); SFX.play('snapon'); Menu._wsPick = null; Menu.workshop(slotOpen);
+          const p1 = document.querySelector('.wspanel'); if (p1) p1.scrollTop = y;
+        };
+        const pick = (it, quiet) => {
+          Menu._wsPick = { slot: slotOpen, line: it.line, r: it.r };
+          for (const c of cells) c.b.classList.toggle('sel', c.it === it);
+          cmp.innerHTML = ''; cmp.append(...Menu.partCompare(raw, b, st, slotOpen, it, () => equip(it)));
+          const same = b[slotOpen].line === it.line && b[slotOpen].r === it.r;
+          useRoom(same ? b : Inv.levelled(Object.assign({}, raw, { [slotOpen]: { line: it.line, r: it.r, lv: 0 } })));
+          if (!quiet) SFX.play('ui');
+        };
         picker = el('div', { class: 'picker' }, el('h3', null, 'YOUR ' + KB.SLOT_NAME[slotOpen] + ' PARTS (' + items.length + ')'),
+          el('p', { class: 'phint' }, 'Click a part to try it on the figure and compare it with what you have on. Double-click to equip.'),
           el('div', { class: 'pgrid' }, ...items.map(it => {
             const on = b[slotOpen].line === it.line && b[slotOpen].r === it.r;
-            return el('button', { class: 'pcell ' + rcls(it.r) + (on ? ' on' : ''), title: KB.PARTS[it.line][slotOpen].desc, onclick: () => { raw[slotOpen] = { line: it.line, r: it.r, lv: 0 }; Auth.save(); SFX.play('snapon'); Menu.workshop(slotOpen); } },
-              el('img', { src: Models.icon(it.line, slotOpen, it.r) }), el('b', null, partLabel(it)), el('small', null, stars(it.r))); })),
-          el('p', { class: 'pdesc' }, KB.PARTS[b[slotOpen].line][slotOpen].desc));
-      }
+            const cell = el('button', { class: 'pcell ' + rcls(it.r) + (on ? ' on' : ''), title: KB.PARTS[it.line][slotOpen].desc, onclick: () => pick(it), ondblclick: () => equip(it) },
+              on ? el('em', { class: 'pon' }, 'ON') : null,
+              el('img', { src: Models.icon(it.line, slotOpen, it.r) }), el('b', null, partLabel(it)), el('small', null, stars(it.r)));
+            cells.push({ b: cell, it }); return cell; })),
+          cmp);
+        const was = Menu._wsPick && Menu._wsPick.slot === slotOpen && items.find(x => x.line === Menu._wsPick.line && x.r === Menu._wsPick.r);
+        if (items.length) pick(was || items.find(x => x.line === b[slotOpen].line && x.r === b[slotOpen].r) || items[0], true);
+      } else Menu._wsPick = null;
       const stat = (k, v, max) => el('div', { class: 'stat' }, el('span', null, k), el('div', { class: 'sbar' }, el('i', { style: { width: Math.min(100, v / max * 100) + '%' } })), el('b', null, typeof v === 'number' ? (v % 1 ? v.toFixed(2) : v) : v));
       const nameIn = el('input', { type: 'text', value: raw.name, maxlength: 22, onchange: e => { raw.name = e.target.value.trim() || 'Custom'; Auth.save(); } });
       App.screen(el('div', { class: 'screen workshop' }, topbar('WORKSHOP', () => Menu.hub()),
@@ -318,6 +338,49 @@
               stat('WEIGHT', +st.weight.toFixed(2), 1.4), stat('GUARD', st.guard, 300), stat('AIR JUMPS', st.airJumps, 2), stat('HYPE GAIN', +st.hypeGain.toFixed(2), 1.6)),
             el('div', { class: 'wsfoot' }, el('span', { class: 'setb' }, st.set === 2 ? 'MINT SET: +8% damage, +6% HP' : st.set === 1 ? 'PARTIAL SET (3+ parts match the card): +4% damage' : 'Match 3+ parts to your Legend Card\'s line for a set bonus'),
               btn('MOVE LIST', () => modal(HUD.moveList(b, 0)), 'small'))))));
+    },
+    /* the Workshop's part card: what a part is (its rarity and level, and what they add), and what changes if you put it on */
+    partCompare(raw, b, st, slot, it, onEquip) {
+      const cur = b[slot], same = cur.line === it.line && cur.r === it.r, R = KB.RARITY[it.r], lv = it.lv || 0;
+      const nb = same ? b : Inv.levelled(Object.assign({}, raw, { [slot]: { line: it.line, r: it.r, lv: 0 } })), ns = same ? st : KB.stats(nb);
+      const mult = R.mult * (1 + 0.02 * lv), pc = x => (x >= 1 ? '+' : '') + Math.round((x - 1) * 1000) / 10 + '%';
+      const WHAT = { head: 'its Specials\u2019 damage and the head\u2019s armour', core: 'max HP', armR: 'Light damage (air Lights too) and the arm\u2019s armour', armL: 'Heavy, launcher and air Heavy damage and the arm\u2019s armour', legs: 'dash attack damage and the legs\u2019 armour', card: 'Legend Art damage' }[slot];
+      const MV = id => id && KB.MOVES[id] ? KB.MOVES[id].name : '\u2014';
+      // [label, value, format, higher is better (null: neither)]
+      const num = [
+        ['HP', s => s.hp, v => U.fmt(v), true], ['DEFENCE', s => s.def * 100, v => Math.round(v) + '%', true],
+        ['SPEED', s => s.speed, v => v.toFixed(2), true], ['JUMP', s => s.jump, v => +v.toFixed(1), true], ['AIR JUMPS', s => s.airJumps, v => v, true],
+        ['WEIGHT', s => s.weight, v => v.toFixed(2), null], ['KNOCKBACK TAKEN', s => s.kbTaken * 100, v => Math.round(v) + '%', false],
+        ['GUARD', s => s.guard, v => v, true], ['HYPE GAIN', s => s.hypeGain, v => '\u00d7' + v.toFixed(2), true], ['SPECIAL USES', s => s.uses, v => v, true],
+        ['LIGHT DAMAGE', s => s.dmgR * s.setDmg, pc, true], ['HEAVY DAMAGE', s => s.dmgL * s.setDmg, pc, true], ['SPECIAL DAMAGE', s => s.dmgH * s.setDmg, pc, true],
+        ['DASH ATTACK DMG', s => s.dmgG * s.setDmg, pc, true], ['LEGEND ART DMG', s => s.dmgK * s.setDmg, pc, true],
+      ];
+      if (slot !== 'core' && slot !== 'card') num.push([KB.SLOT_NAME[slot] + ' ARMOUR', s => s.armor[slot], v => v, true]);
+      const txt = [
+        ['LIGHT STRING', s => MV(s.light)], ['HEAVY', s => MV(s.heavy)], ['LAUNCHER', s => MV(s.launch)], ['AIR HEAVY', s => MV(s.airHeavy)],
+        ['SPECIAL', s => MV(s.special)], ['COMMAND SPECIALS', s => s.cmd ? [s.cmd.qcf, s.cmd.qcb, s.cmd.dp].map(MV).join(' \u00b7 ') : '\u2014'], ['DASH ATTACK', s => MV(s.dashAtk)],
+        ['LEGEND ART', s => MV(s.super)], ['PASSIVE', s => s.passive ? (KB.PASSIVE[s.passive] || s.passive) : '\u2014'], ['SIGNATURE', s => s.sigName || '\u2014'],
+        ['SET BONUS', s => s.set === 2 ? 'MINT SET (+8% dmg, +6% HP)' : s.set === 1 ? 'PARTIAL SET (+4% dmg)' : 'none'],
+      ];
+      const head = el('div', { class: 'cmphead ' + rcls(it.r) },
+        el('img', { src: Models.icon(it.line, slot, it.r) }),
+        el('div', null, el('small', null, KB.SLOT_NAME[slot] + ' \u00b7 ' + KB.LINES[it.line].name), el('b', null, partLabel(it, slot)),
+          el('span', { class: 'cmprar' }, stars(it.r) + ' ' + R.name + (lv ? '  \u00b7  LEVEL +' + lv : ''))),
+        same ? el('span', { class: 'cmpon' }, '\u2713 ON') : btn('EQUIP', onEquip, 'small claim'));
+      const bonus = el('p', { class: 'cmpbonus' }, el('b', null, R.name + ' +' + Math.round((R.mult - 1) * 100) + '%'), ' \u00b7 ', el('b', null, 'level +' + lv + (lv ? ': +' + lv * 2 + '%' : '')),
+        ' \u2192 ', el('b', null, pc(mult)), ' to ' + WHAT + '. ' + (it.r < 3 ? 'DELUXE is +4%, LIMITED +8%, CHASE +12%. A' : 'A') + ' duplicate of this exact part (same line and rarity) is a level: +2% each, up to +5.');
+      const rows = [];
+      for (const [k, f, fmt, up] of num) {
+        const a = f(st), z = f(ns), d = z - a; if (same || Math.abs(d) < 1e-6) continue;
+        const good = up == null ? null : (d > 0) === up;
+        rows.push(el('div', { class: 'cmprow' }, el('span', null, k), el('em', null, String(fmt(a))), el('i', null, '\u2192'), el('b', { class: good == null ? '' : good ? 'up' : 'down' }, String(fmt(z)))));
+      }
+      for (const [k, f] of txt) { const a = f(st), z = f(ns); if (same || a === z) continue; rows.push(el('div', { class: 'cmprow txt' }, el('span', null, k), el('em', null, a), el('i', null, '\u2192'), el('b', null, z))); }
+      return [head, bonus, el('p', { class: 'pdesc' }, KB.PARTS[it.line][slot].desc),
+        same ? el('p', { class: 'cmpnote' }, 'This is the part you have on. Pick another to compare.')
+          : rows.length ? el('div', { class: 'cmprows' }, el('div', { class: 'cmprow hd' }, el('span', null, 'IF YOU EQUIP IT'), el('em', null, 'NOW'), el('i'), el('b', null, 'WITH IT')), ...rows)
+            : el('p', { class: 'cmpnote' }, 'Nothing changes: the same numbers and moves as the part you have on.'),
+        el('p', { class: 'cmpfine' }, 'Rarity and levels count in every fight except those with RARITY BONUS switched off (Versus and online rooms can turn it off for a fair fight).')];
     },
     /* a new custom slot: it starts as your starter's set, ready to rebuild */
     unlockCustom(i) {

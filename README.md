@@ -737,7 +737,7 @@ ignores rarity bonuses; it remembers your setup) · Training (pick yourself from
 combo readout, health back the moment a combo ends, a start by a wall or a SAVED POSITION; R resets and T saves, or tap /
 hold a pad's Back button; and the **lab**: inputs, frame data, record and play) ·
 Workshop (your custom slots: Custom A and B free, Custom C to F unlocked with tokens for 1,000 / 2,000 / 3,000 /
-5,000; your figures, the fighters you have, stay their Standard sets; the hub's ACTIVE FIGURE plate picks which one you fight with) ·
+5,000; your figures, the fighters you have, stay their Standard sets; the hub's ACTIVE FIGURE plate picks which one you fight with. Clicking a part tries it on the figure on the stand and compares it with the part you have on: its rarity and level and what they add, then every number and move that changes (HP, speed, damage by kind, armour, the Special, the Legend Art, the set bonus...), in green or red; EQUIP or a double click snaps it on) ·
 Shelf (collection and records).
 
 **Colours:** every figure comes in seven palettes, chosen on the Versus (P1 and P2), Training and Online fighter

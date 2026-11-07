@@ -920,3 +920,22 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
 
 /* COMBO TRIALS: how far a fighter you don't own is from being unlocked */
 .tcard .tlock { display: block; font: 800 10px var(--body); letter-spacing: 0.5px; color: #ffd23a; margin-top: 2px; }
+
+/* WORKSHOP: a part picked in the grid, compared with what you have on */
+.pcell { position: relative; } .pcell.sel { outline: 3px solid var(--cyan); outline-offset: -3px; background: #1a2a3a; }
+.pcell .pon { position: absolute; top: 3px; left: 4px; font: 900 9px var(--body); font-style: normal; color: #000; background: var(--yel); border-radius: 4px; padding: 1px 4px; }
+.phint { font-size: 11.5px; color: var(--dim); margin: -4px 0 8px; }
+.wscmp { position: sticky; bottom: -10px; margin: 10px -10px -10px; padding: 10px 12px 12px; background: #15111f; border-top: 2px solid var(--line); border-radius: 0 0 8px 8px; box-shadow: 0 -10px 18px rgba(0,0,0,.45); max-height: 48vh; overflow: auto; }
+.cmphead { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center; }
+.cmphead img { width: 52px; height: 52px; object-fit: contain; background: var(--panel2); border-radius: 8px; border-bottom: 3px solid var(--rc); }
+.cmphead small { display: block; color: var(--dim); font: 700 10px var(--body); letter-spacing: 1px; } .cmphead b { display: block; font: 20px var(--head); letter-spacing: 1.5px; line-height: 1.1; }
+.cmprar { color: var(--rc); font: 900 11px var(--body); letter-spacing: .5px; }
+.cmpon { font: 900 12px var(--body); color: #5be37a; white-space: nowrap; }
+.cmpbonus { font-size: 12px; margin: 8px 0 0; line-height: 1.45; color: var(--ink); } .cmpbonus b { color: var(--yel); }
+.cmprows { display: grid; gap: 2px; margin-top: 8px; }
+.cmprow { display: grid; grid-template-columns: minmax(96px, auto) 1fr 14px 1fr; gap: 6px; align-items: baseline; font-size: 12px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.cmprow span { color: var(--dim); font: 700 10.5px var(--body); letter-spacing: .8px; } .cmprow em { font-style: normal; color: var(--dim); text-align: right; } .cmprow i { color: var(--dim); font-style: normal; text-align: center; }
+.cmprow b { font-weight: 900; } .cmprow b.up { color: #5be37a; } .cmprow b.down { color: #ff6a6a; }
+.cmprow.txt em, .cmprow.txt b { font-size: 11px; text-align: left; } .cmprow.txt em { text-decoration: line-through; opacity: .75; }
+.cmprow.hd { border-bottom: 2px solid var(--line); } .cmprow.hd em, .cmprow.hd b, .cmprow.hd span { font: 900 10px var(--body); letter-spacing: 1px; color: var(--dim); }
+.cmpnote { font-size: 12px; color: var(--dim); margin: 8px 0 0; } .cmpfine { font-size: 10.5px; color: var(--dim); opacity: .75; margin: 8px 0 0; }
