@@ -63,6 +63,22 @@
       return best && bd < 7 ? { x: -best.n.x, z: -best.n.z, dist: bd, w: best } : null;
     }
     /* how far away a Legend Art can still catch them */
+    /* COMMAND SPECIALS: which of the three suits the distance (null: none of them) */
+    pickCmd(C, d, o) {
+      const fits = k => {
+        const mv = KB.MOVES[C[k]]; if (!mv) return false;
+        if (k === 'dp') return d < 2 && Math.random() < 0.3;
+        if (mv.type === 'proj') return mv.proj === 'breath' ? d < 3.2 : d > 3 && d < (mv.range || 8) + 0.5;
+        if (mv.type === 'dash') return d > 2 && d < (mv.dist || 5) + 1;
+        if (mv.type === 'leap' || mv.type === 'teleport') return d > 3 && d < (mv.range || 8);
+        if (mv.type === 'trap') return d > 2.5 && d < 7;
+        if (mv.type === 'grab') return d < 1.6;
+        if (mv.type === 'radial') return d < (mv.rad || 2) + 0.3;
+        if (mv.type === 'buff') return mv.buff.id === 'counter' ? d < 2.4 && o.state === 'attack' : d > 4;
+        return d < (mv.reach || 1.2) + 0.8;
+      };
+      const ks = ['qcf', 'qcb', 'dp'].filter(fits); return ks.length ? ks[Math.floor(Math.random() * ks.length)] : null;
+    }
     superReach(mv) { return { dash: (mv.dist || 6) * 1.25, melee: (mv.close || 2) + 1.6, proj: (mv.range || 8) - 0.5, leap: 12, jump: 14, mark: 9, wave: mv.rad - 0.3, radial: mv.rad + 0.2 }[mv.catchType] || 3.5; }
     /* how close the first Light of the string reaches (a lance reaches further than a tantō) */
     range() { const mv = KB.MOVES[this.f.lightRoot()] || {}; return U.clamp((mv.reach || 1.2) + 0.3, 1.45, 2.1); }
@@ -292,6 +308,12 @@
         const imps = m.minions.filter(mn => mn.owner === f).length;
         const ok = sp.type === 'proj' ? d > (sp.proj === 'breath' ? 0 : 3) && d < (sp.proj === 'breath' ? 3.2 : 8) : sp.type === 'teleport' ? d > 3 : sp.type === 'dash' ? d > 2 && d < 5.5 : sp.type === 'radial' ? d < 2.5 : sp.type === 'buff' ? d > 4 : sp.type === 'summon' ? imps < f.st.minions - 1 && d > 2.2 : false;
         if (ok) { this.press('special'); this.wait = 0.4; return; }
+      }
+      // COMMAND SPECIALS: the dragon punch when they jump in close; now and then one picked for the distance
+      const CM = f.st.cmd;
+      if (CM && lv >= 1 && f.canSpecial(CM.dp || CM.qcf)) {   // (their own checks: a ball on the floor only stops a ball Special)
+        if (CM.dp && o.pos.y > 1.1 && d < 2.6 && o.vel.y < 2 && r() < 0.04 * lv) { this.cmd = 'dp'; this.press('special'); this.wait = 0.5; return; }
+        if (r() < 0.005 * (lv + 1)) { const k = this.pickCmd(CM, d, o); if (k) { this.cmd = k; this.press('special'); this.wait = 0.5; return; } }
       }
       const heavy = KB.MOVES[f.st.heavy];
       if (heavy.type === 'proj' && !(heavy.ball && f.ballOut(heavy.ball)) && !(heavy.round && !f.gunReady()) && d > 2.5 && d < heavy.range + 1 && r() < 0.012 * (lv + 1)) { this.press('heavy'); this.wait = 0.5; return; }

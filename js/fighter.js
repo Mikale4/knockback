@@ -71,6 +71,7 @@
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
       this.rounds = this.st.rounds; this.reloadT = 0;   // (AMMO: a gun's rounds, a bow's arrows)
+      this.mot = []; this.counterRip = null; this.counterCall = null; this.regenRate = 0; this.riseAir = false; this.leapDone = false;   // (COMMAND SPECIALS)
       this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false; this.undyingUsed = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -140,7 +141,7 @@
     /* PART TOSS (its own button, F by default): pull off a part of your own and throw it -- the head first, then the L-arm, then the R-arm.
        A hit extends the combo (twice a combo at most) */
     /* a Special is ready: uses left, a head to use it with, and (Shadow Step) its cooldown over */
-    canSpecial() { const sp = KB.MOVES[this.st.special]; return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0) && !(sp && sp.ball && this.ballOut(sp.ball)); }
+    canSpecial(id) { const sp = KB.MOVES[id || this.st.special]; return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0) && !(sp && sp.ball && this.ballOut(sp.ball)); }
     tossable() { return ['head', 'armL', 'armR'].find(p => !this.broken[p] && !this.fig.detached[p]) || null; }
     canToss() { const o = this.opp; return !!(this.hasImp() || this.tossable()) && !(o && o.combo.by === this && o.comboing && o.combo.ext >= 2); }
     /* the SUMMONER carrying an imp throws it, not a part */
@@ -177,6 +178,8 @@
         this.reloadT -= dt;
         if (this.reloadT <= 0) { this.reloadT = 0; this.rounds = S.rounds; if (this.state !== 'ko' && this.state !== 'out') { this.m.call(this, S.ammoIn, 'buff'); SFX.play('snapon'); } }
       }
+      this.recMotion();
+      if (this.buffs.regen && this.state !== 'ko' && this.state !== 'out') this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.regenRate * dt);
       if (this.beanT > 0) {   // BASEBALL: beaned, and seeing stars as soon as they're on their feet
         this.beanWin -= dt;
         if (this.beanWin <= 0 || this.state === 'ko' || this.state === 'out') this.beanT = 0;
@@ -221,7 +224,7 @@
       const S = this.st, I = this.input, dir = this.stick();
       const legs = this.broken.legs ? 0.68 : 1;
       if (this.tryActions(true)) return;
-      const sp = S.speed * legs * (this.buffs.momentum ? 1.06 : 1) * (this.buffs.valor ? 1.1 : 1);
+      const sp = S.speed * legs * (this.buffs.momentum ? 1.06 : 1) * (this.buffs.valor ? 1.1 : 1) * (this.buffs.haste ? 1.3 : 1);
       if (dir) {
         this.vel.x = U.smooth(this.vel.x, dir.x * sp, 14, dt); this.vel.z = U.smooth(this.vel.z, dir.z * sp, 14, dt);
         this.yaw = U.turn(this.yaw, Math.atan2(dir.x, dir.z), 1 - Math.exp(-16 * dt));
@@ -253,7 +256,7 @@
       if (this.m.frozen || this.m.phase !== 'fight') return false;
       if (I.take('super') && this.hype >= 100 && ground) { this.startSuper(); return true; }
       if (I.take('toss') && this.canToss()) { this.startMove(this.tossMove(), 'toss'); return true; }
-      if (I.take('special')) { if (this.canSpecial() && (ground || this.moveOk(S.special, 'air'))) { this.startMove(S.special, 'special'); return true; } else if (this.broken.head) this.m.call(this, 'NO HEAD!', 'bad'); else { const sp = KB.MOVES[S.special]; if (sp && sp.ball && this.ballOut(sp.ball) && this.m.time - this.noBallT > 0.8) { this.noBallT = this.m.time; this.m.call(this, 'NO BALL!', 'bad'); } } }
+      if (I.take('special')) { const id = this.specialId(); if (this.canSpecial(id) && (ground || this.moveOk(id, 'air'))) { this.startSpecial(id); return true; } else if (this.broken.head) this.m.call(this, 'NO HEAD!', 'bad'); else { const sp = KB.MOVES[id]; if (sp && sp.ball && this.ballOut(sp.ball) && this.m.time - this.noBallT > 0.8) { this.noBallT = this.m.time; this.m.call(this, 'NO BALL!', 'bad'); } } }
       if (ground) {
         if (I.held.guard && I.take('light')) { this.startMove(this.grabMove(), 'throw'); return true; }
         if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return true; }
@@ -424,6 +427,56 @@
       if (this.rounds <= 0) { this.reloadT = this.st.reload; this.reloadCall(true); }
     }
     reloadCall(force) { if (!force && this.m.time - (this.reloadCallT || -9) < 0.8) return; this.reloadCallT = this.m.time; this.m.call(this, this.reloadT > 0 && !force ? this.st.ammoOut + ': ' + this.reloadT.toFixed(1) + ' s' : this.st.ammoOut, 'bad'); }
+    /* COMMAND SPECIALS. The stick is read relative to them: toward them is →, away is ←, and either side is ↓ (there's
+       no crouch in an arena). A quarter-circle forward (↓↘→), back (↓↙←) or a dragon punch (→↓↘) with Special is that
+       Special instead of the plain one; the motion counts for half a second */
+    recMotion() {
+      const mv = this.input.move, l = Math.hypot(mv.x, mv.y), H = this.mot || (this.mot = []);
+      let c = 5, s = 0;
+      if (l > 0.5) {
+        const o = this.opp, ref = o && o.state !== 'out' ? U.ang(this.pos, o.pos) : this.yaw;
+        const a = U.wrap(Math.atan2(mv.x, -mv.y) - ref), k = Math.min(4, Math.round(Math.abs(a) / (Math.PI / 4)));
+        c = [6, 3, 2, 1, 4][k]; s = k > 0 && k < 4 ? (a > 0 ? 1 : -1) : 0;
+      }
+      const last = H[H.length - 1];
+      if (!last || last.c !== c || last.s !== s) { H.push({ c, s, t: this.m.time }); if (H.length > 12) H.shift(); }
+    }
+    motion() {
+      const H = this.mot; if (!H || H.length < 2) return null;
+      let n = H.length - 1; const now = this.m.time;
+      if (H[n].c === 5 && n > 0 && now - H[n].t < 0.12) n--;   // (let go of the stick just before Special)
+      const end = H[n]; if (now - end.t > 0.3) return null;
+      const find = (i, c, side) => { for (; i >= 0; i--) { const e = H[i]; if (end.t - e.t > 0.45) return -1; if (e.c === c && (!side || e.s === side)) return i; } return -1; };
+      if (end.c === 3) { const i = find(n - 1, 2, end.s); if (i >= 0 && find(i - 1, 6, 0) >= 0) return 'dp'; }
+      if (end.c === 6 && find(n - 1, 2, 0) >= 0) return 'qcf';
+      if (end.c === 4 && find(n - 1, 2, 0) >= 0) return 'qcb';
+      return null;
+    }
+    specialId() {
+      const S = this.st, cpu = this.input.cpu, c = cpu && cpu.cmd ? cpu.cmd : this.motion();   // (the CPU just says which)
+      if (cpu && cpu.cmd) cpu.cmd = null;
+      const id = c && S.cmd && S.cmd[c];
+      return id && KB.MOVES[id] ? id : S.special;
+    }
+    startSpecial(id) {
+      if (id !== this.st.special) { this.mot.length = 0; this.m.call(this, KB.MOVES[id].name.toUpperCase(), 'small'); }
+      this.startMove(id, 'special');
+    }
+    /* a LEAP at them: it comes down where they were standing, and hits all round when it lands */
+    startLeap(mv) {
+      const o = this.opp, T = mv.air || 0.6, R = mv.range || 8;
+      const tgt = o && !['out', 'ko'].includes(o.state) && U.dist(this.pos, o.pos) < R ? _w.copy(o.pos) : _w.copy(this.pos).addScaledVector(this.forward, R * 0.6);
+      this.vel.set((tgt.x - this.pos.x) / T, GRAV * T / 2, (tgt.z - this.pos.z) / T); this.grounded = false;
+      if (o) this.yaw = U.ang(this.pos, o.pos);
+    }
+    leapLand(mv) {
+      const o = this.opp; this.vel.set(0, 0, 0);
+      FX.addShake(0.35); FX.ring(_c.copy(this.pos).setY(0.06), { r1: mv.rad + 0.8, life: 0.4 }); FX.burst(_c.copy(this.pos).setY(0.1), { n: 16, color: this.m.arena.dust, speed: 4, size: 0.1, life: 0.5 }); SFX.play('boom');
+      this.m.hitMinions(this, _c.copy(this.pos).setY(0.6), mv.rad, this.moveSerial * 10 + 7);
+      if (o && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < mv.rad + BODY && o.pos.y - this.pos.y < 1.8 && !this.hitSet.has(o)) {
+        this.hitSet.add(o); Combat.hit(this, o, mv, { kind: this.kind, dir: _v.subVectors(o.pos, this.pos).setY(0).normalize().clone(), at: _c.copy(o.pos).setY(o.pos.y + 0.6).clone() });
+      }
+    }
     grabMove() { return this.st.sig === 'grappler' ? 'wrGrab' : 'throw'; }
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
@@ -443,7 +496,7 @@
       }
       if (mv.limit && !this.useLimited(id, mv)) return;   // (a move with a limit: n uses in any t seconds)
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
-      this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1;
+      this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1; this.riseAir = false; this.leapDone = false;
       this.beatOn = !!(mv.beat && this.st.sig === 'beat' && (kind === 'light' || kind === 'air') && Music.beat(this.m).near); this.beatShown = false;
       if (this.beatOn) FX.ring(_c.copy(this.pos).setY(0.08), { r0: 1.0, r1: 1.7, life: 0.25, color: 0xfff27a });
       if (mv.armorSU) this.giveArmor(mv.su, mv.oneArmor);
@@ -466,8 +519,9 @@
       else if (!d && dist < 9) this.yaw = a;
     }
     dmgMult(kind) {
-      const S = this.st; let m = { light: S.dmgR, air: S.dmgR, spear: S.dmgR, heavy: S.dmgL, launch: S.dmgL, airHeavy: S.dmgL, gun: S.dmgL, special: S.dmgH, dash: S.dmgG, super: S.dmgK, throw: 1 }[kind] || 1;
+      const S = this.st; let m = { light: S.dmgR, air: S.dmgR, spear: S.dmgR, heavy: S.dmgL, launch: S.dmgL, airHeavy: S.dmgL, gun: S.dmgL, special: S.dmgH, counter: S.dmgH, trap: S.dmgH, dash: S.dmgG, super: S.dmgK, throw: 1 }[kind] || 1;
       m *= S.setDmg;
+      if (this.buffs.weak) m *= 0.8;   // (WEAKENED by a command special)
       if (this.buffs.momentum) m *= 1.1; if (this.buffs.fury) m *= 1.15; if (this.buffs.valor) m *= 1.12;
       if (S.passive === 'wyrmblood' && !this.grounded) m *= 1.12;
       if (kind === 'minion') m *= S.impDmg || 1;
@@ -508,8 +562,8 @@
       const su = mv.su, ac = mv.ac + (this.acExt || 0), end = su + ac + mv.rc; this.curAc = ac;   // (acExt: unset until a first move; a Legend Art as your first move never ended)
       const F = this.forward;
       // movement through the move
-      if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; this.vel.z = F.z * sp; if (!this.grounded) this.vel.y = 0; }
-      else if (mv.lunge && t > su * 0.4 && t < su + ac) {
+      if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; this.vel.z = F.z * sp; if (!this.grounded && !mv.hop) this.vel.y = 0; }
+      else if (mv.lunge && mv.type !== 'leap' && t > su * 0.4 && t < su + ac) {   // (a leap flies its own arc)
         // lunge in, but stop short of running past them
         const o = this.opp, near = o && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < (mv.reach || 1) * 0.85 && Math.abs(U.wrap(U.ang(this.pos, o.pos) - this.yaw)) < 1.2;
         const sp = near ? 0 : mv.lunge * (this.grounded ? 1 : 0.4); this.vel.x = U.smooth(this.vel.x, F.x * sp, 20, dt); this.vel.z = U.smooth(this.vel.z, F.z * sp, 20, dt); }
@@ -518,6 +572,9 @@
       if (this.kind === 'airHeavy' && t >= su) this.vel.y = Math.min(this.vel.y, -6);
       if (mv.dive && t >= su && !this.grounded) { this.vel.x = F.x * 7; this.vel.z = F.z * 7; this.vel.y = -12; }
       this.physics(dt, 0);
+      // COMMAND SPECIALS: a rising move is committed until it lands (a beat to recover); a leap hits where it comes down
+      if (mv.rise && t >= su) { if (!this.grounded) this.riseAir = true; else if (this.riseAir) { this.riseAir = false; const lag = mv.landLag || 0.2; if (t >= end - lag) { this.moveT = end - lag; SFX.play('land'); } } }
+      if (mv.type === 'leap' && !this.leapDone && t > su + 0.1 && this.grounded) { this.leapDone = true; this.leapLand(mv); if (this.moveT < su + ac) this.moveT = su + ac; }
       // into the active frames
       if (t0 < su && t >= su) this.onActive(mv);
       if (t >= su && t < su + ac) this.activeFrames(mv);
@@ -525,7 +582,7 @@
       // cancels
       if (this.cancels(mv, t, su, ac)) return;
       const diving = this.kind === 'airHeavy' || mv.dive;
-      if ((t >= end && !(this.yankT > 0)) || (diving && this.grounded && t > su)) {
+      if ((t >= end && !(this.yankT > 0) && !((mv.rise || mv.type === 'leap') && !this.grounded)) || (diving && this.grounded && t > su)) {
         if (diving && this.grounded) { this.land(); FX.ring(_c.copy(this.pos).setY(0.05), { r1: 1.6, life: 0.3 }); SFX.play('land'); this.setState('idle'); this.vel.set(0, 0, 0); this.recoverT = 0.15; return; }
         // a string move with a pause branch: wait a beat, then Light
         const pw = this.kind === 'light' && mv.nx && mv.nx.p ? { id: mv.nx.p, from: this.m.time + 0.03, to: this.m.time + 0.6 } : null;
@@ -572,7 +629,7 @@
       }
       if (hit && after && ['light', 'heavy', 'launch', 'air', 'dash', 'gun'].includes(k)) {
         if (I.peek('toss', 0.2) && this.canToss()) { I.take('toss'); this.startMove(this.tossMove(), 'toss'); return true; }
-        if (I.peek('special', 0.2) && this.canSpecial() && (this.grounded || this.moveOk(this.st.special, 'air'))) { I.take('special'); this.startMove(this.st.special, 'special'); return true; }
+        if (I.peek('special', 0.2)) { const id = this.specialId(); if (this.canSpecial(id) && (this.grounded || this.moveOk(id, 'air'))) { I.take('special'); this.startSpecial(id); return true; } }
         if (I.peek('super', 0.2) && this.hype >= 100 && this.grounded) { I.take('super'); this.startSuper(); return true; }
       }
       // a free dodge out of a finished, landed string (after recovery mostly)
@@ -582,6 +639,13 @@
       const F = this.forward, o = this.opp;
       if (mv.sfx) SFX.play(mv.sfx === 'shot' ? 'whoosh' : mv.sfx === 'heavy' ? 'whoosh' : mv.sfx);
       this.activeOn = true;
+      // COMMAND SPECIALS: up off the floor, a hop, a step back, a trap set down, a leap at them
+      if (mv.rise) { this.vel.y = mv.rise; this.grounded = false; }
+      if (mv.hop) { this.vel.y = mv.hop; this.grounded = false; }
+      if (mv.recoil) { this.vel.x = -F.x * mv.recoil; this.vel.z = -F.z * mv.recoil; if (mv.recoilUp) { this.vel.y = mv.recoilUp; this.grounded = false; } }
+      if (mv.type === 'trap') this.m.placeTrap(this, mv);
+      if (mv.puff) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.8), { n: 26, color: [mv.puff, 0xffffff, 0x8a8a90], speed: 3.5, size: 0.14, gravity: -1, life: 0.65 });   // (smoke, spirits, a muzzle's blast)
+      if (mv.type === 'leap') this.startLeap(mv);
       if (mv.type === 'proj') { this.m.fire(this, mv, this.charge); if (mv.round && this.st.rounds) this.spendRound(); }
       else if (mv.type === 'radial') {
         FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.1, life: 0.35, color: 0xffe0a0 });
@@ -662,6 +726,12 @@
       if (b.id === 'hornpipe') { this.buffs.valor = b.t; this.m.call(this, 'HORNPIPE!', 'buff'); for (let i = 0; i < 2; i++) FX.ring(_c.copy(this.pos).setY(0.2 + i * 0.4), { r1: 1.3 + i * 0.3, life: 0.35, color: 0x7ad8ff }); }
       if (b.id === 'phase') { this.inv = Math.max(this.inv, b.t); this.buffs.phase = b.t; this.m.call(this, 'PHASE', 'buff'); FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 14, color: [0x6affb0, 0xd8fff0], glow: true, speed: 2, size: 0.08, gravity: -1, life: 0.6 }); }
       if (b.id === 'parry') { this.buffs.parry = b.t; this.m.call(this, 'EN GARDE', 'buff'); FX.spark(this.fig.socket('wR', [0, 0, 8]), { color: 0x9ad8ff, size: 1.2 }); }
+      // COMMAND SPECIALS
+      if (b.id === 'counter') { this.buffs.counter = b.t; this.counterRip = b.rip; this.counterCall = b.call || 'COUNTER'; FX.ring(_c.copy(this.pos).setY(1), { r1: 1.3, life: 0.3, normal: new V3(0, 1, 0), color: 0xffffff }); }
+      if (b.id === 'reflect') { this.buffs.reflect = b.t; this.m.call(this, b.call || 'REFLECT', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, life: 0.35, normal: new V3(0, 1, 0), color: 0x9ad8ff }); }
+      if (b.id === 'haste') { this.buffs.haste = b.t; this.m.call(this, b.call || 'HASTE', 'buff'); FX.burst(_c.copy(this.pos).setY(0.3), { n: 12, color: [0xffffff, 0x9ad8ff], speed: 3, size: 0.07, life: 0.4 }); }
+      if (b.id === 'regen') { this.buffs.regen = b.t; this.regenRate = b.hp / b.t; this.m.call(this, b.call || 'REGEN', 'heal'); FX.burst(_c.copy(this.pos).setY(1), { n: 16, color: [0x66ffcc, 0xffffff], glow: true, speed: 2, gravity: -3, life: 0.7, size: 0.07 }); }
+      if (b.id === 'iron') { this.armorT = b.t; this.armorHits = b.hits || 3; this.buffs.iron = b.t; this.m.call(this, b.call || 'IRON SHIRT', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, life: 0.35, normal: new V3(0, 1, 0), color: 0xd8a830 }); }
       if (b.id === 'nova') { const heal = Math.round(this.maxHp * b.heal * this.st.healMult); this.hp = Math.min(this.maxHp, this.hp + heal); this.m.call(this, '+' + heal + ' HP', 'heal'); }
       if (b.id === 'valor') { this.buffs.valor = b.t; this.m.call(this, 'SONG OF VALOR', 'buff'); for (let i = 0; i < 3; i++) FX.ring(_c.copy(this.pos).setY(0.3 + i * 0.5), { r1: 1.4 + i * 0.3, life: 0.4 + i * 0.1, color: 0xff8ad8 }); }
       if (b.id === 'mantra') {
@@ -1195,7 +1265,7 @@
       dir.y = 0; if (dir.lengthSq() < 1e-4) dir.copy(fwd(att.yaw)); dir.normalize();
 
       // ---- BOB & WEAVE / PARRY (Specials): the next attack that would land is slipped, or turned aside with a riposte
-      if ((vic.buffs.slip || vic.buffs.parry || vic.buffs.kawarimi) && !o.force && !o.remote && mv.type !== 'grab' && o.kind !== 'super' && !['held', 'tumble', 'down', 'ko', 'out', 'hit'].includes(vic.state)) {
+      if ((vic.buffs.slip || vic.buffs.parry || vic.buffs.kawarimi || vic.buffs.counter) && !o.force && !o.remote && mv.type !== 'grab' && o.kind !== 'super' && !['held', 'tumble', 'down', 'ko', 'out', 'hit'].includes(vic.state)) {
         const side = new V3(-dir.z, 0, dir.x);
         if (vic.buffs.kawarimi) {
           // KUNOICHI: the hit lands on a log in her clothes; she's behind them, and they're left standing there
@@ -1205,6 +1275,13 @@
           vic.move = null; vic.setState(vic.grounded ? 'idle' : 'air'); vic.inv = Math.max(vic.inv, 0.35); vic.yaw = U.ang(vic.pos, att.pos); vic.hype = Math.min(100, vic.hype + 8);
           att.hitstop = Math.max(att.hitstop, 0.3); m.call(vic, 'KAWARIMI!', 'tech'); SFX.play('dodge'); m.event('evade', { f: vic, by: att });
           FX.burst(_c.copy(vic.pos).setY(vic.pos.y + 0.9), { n: 10, color: [0xd8d0c0, 0xffffff], speed: 2, size: 0.12, gravity: -1, life: 0.4 });
+          return 'miss';
+        }
+        if (vic.buffs.counter) {
+          // COMMAND SPECIALS: a counter stance takes the blow and answers it (a grab or a Legend Art gets through)
+          delete vic.buffs.counter; vic.inv = Math.max(vic.inv, 0.3); att.hitstop = Math.max(att.hitstop, 0.24); vic.yaw = U.ang(vic.pos, att.pos);
+          if (!o.proj && U.dist(vic.pos, att.pos) > 1.3) { const d = _v.subVectors(vic.pos, att.pos).setY(0).normalize(); vic.pos.set(att.pos.x + d.x * 1.1, vic.pos.y, att.pos.z + d.z * 1.1); vic.clampInside(); }
+          vic.startMove(vic.counterRip, 'counter'); m.call(vic, vic.counterCall + '!', 'counter'); SFX.play('jguard'); FX.spark(atPos, { color: 0xffffff, size: 1.8 }); m.event('evade', { f: vic, by: att });
           return 'miss';
         }
         if (vic.buffs.slip) {
@@ -1234,7 +1311,7 @@
           return 'jguard';
         }
         const chip = Math.round(raw * 0.12 * vic.st.chip);
-        vic.hp = Math.max(1, vic.hp - chip); vic.guardHp -= raw * (mv.launch ? 1.0 : 0.7) * (overShield ? 2 : 1); vic.guardIdle = 0;
+        vic.hp = Math.max(1, vic.hp - chip); vic.guardHp -= raw * (mv.launch ? 1.0 : 0.7) * (overShield ? 2 : 1) * (mv.crush || 1); vic.guardIdle = 0;
         if (vic.broken.armL === false) vic.armor.armL = Math.max(1, vic.armor.armL - raw * 0.25);
         att.hype = Math.min(100, att.hype + raw * 0.04 * att.st.hypeGain);
         if (vic.guardHp <= 0) {
@@ -1291,6 +1368,8 @@
         vic.burn = { t: bt, left: Math.round(bt / 0.5), tick: 0, dps: bn[0] * att.dmgMult(o.kind), by: att, poison: pz };
       }
       // DAIMYO: Tribute levies their Hype
+      if (mv.slow && vic.hp > 0) { vic.slowT = Math.max(vic.slowT || 0, mv.slow); m.call(vic, 'SLOWED', 'bad'); }
+      if (mv.weaken && vic.hp > 0) { vic.buffs.weak = Math.max(vic.buffs.weak || 0, mv.weaken); m.call(vic, 'WEAKENED', 'bad'); }
       if (mv.steal && vic.hp > 0) { const st = Math.min(Math.round(vic.hype), mv.steal); if (st > 0) { vic.hype -= st; att.hype = Math.min(100, att.hype + st); m.call(att, 'TRIBUTE +' + st, 'buff'); } }
       // PART TOSS: the combo is extended -- its clock starts over, with a fresh OTG and ground bounce (twice a combo)
       if (o.ext && !o.noCombo && vic.combo.ext < 2) { const n = ++vic.combo.ext; vic.combo.t = 0; vic.combo.dh = vic.combo.hits; vic.combo.otg = 0; vic.combo.gb = false; vic.floatT = 0.35;   /* (they hang a moment: time to follow the throw) */ m.call(att, 'EXTEND ' + n + '/2', 'buff'); m.event('extend', { att, vic, n }); }
@@ -1367,6 +1446,7 @@
         if (mv.spike) { v = mv.kb[1]; vic.spiked = true; } else vic.spiked = false;
         vic.vel.set(dir.x * h, v * (v > 0 ? Math.min(1.15, kbk) : 1), dir.z * h);
         vic.setState('tumble'); vic.grounded = v <= 0 && vic.pos.y <= 0.01; if (v > 0) vic.pos.y = Math.max(vic.pos.y, 0.02), vic.grounded = false;
+        if (mv.trip) vic.hardKD = true;   // (tripped: they go down hard)
         vic.hitstun = (0.26 + 0.026 * Math.hypot(h, v)) * decay;
         vic.hardKD = !!(mv.spike || o.kind === 'super' || o.kind === 'throw'); vic.kdT = 0;
         vic.yaw = Math.atan2(-dir.x, -dir.z);

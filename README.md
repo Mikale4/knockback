@@ -63,6 +63,11 @@ player's own setting travels in the fight's setup (and its replay), so the two s
 | Down Dash (in the air) | Guard + Dodge | Guard + Dodge | RB + B | R1 + ○ |
 | Pause / move list | Esc | | Menu | Options |
 
+**Command Specials:** a motion on the stick, then Head Special. The stick is read relative to your opponent, so
+**→ is toward them, ← is away and ↓ is either side** (an arena has no crouch): **↓↘→** (quarter-circle forward),
+**↓↙←** (quarter-circle back) and **→↓↘** (dragon punch). Special on its own is still the head's own Special. See
+[Command Specials](#command-specials) for every figure's three.
+
 **Everything can be rebound in Options.** Each action takes two keys per player (a key that already does something
 swaps over). Every controller button can be rebound too: click the slot and press the button.
 
@@ -311,6 +316,67 @@ shows what's left under SPECIAL. Thrown sports balls don't use ammo: those have 
 | Musketeer's musket | 1 cartridge (Musket Shot) | 3 s (1.8 s Drilled) | Musket Butt |
 | Cannoneer's Swivel Gun | 3 shot (Grapeshot, Mortar Drop) | 5 s | Barrel Bash |
 | Archer's bow | 10 arrows (Snap Shot, Volley, Arrow Rain, Power Draw, Plunging Arrow) | 5 s | Bow Jab, Bow Swat, Bracer Bash |
+
+## Command Specials
+
+Every figure has three more Specials on fighting-game motions with Head Special: **↓↘→** usually the way in (a shot,
+a rush, a strike at range), **↓↙←** the trick (a counter, a trap, a guard, a command grab) and **→↓↘** the answer to
+a jump (a rising move, invincible on the way up unless it says armour). The stick is read relative to the opponent:
+→ toward them, ← away, ↓ either side. They belong to the HEAD (wear someone's head, use their Specials) and share its
+uses with the plain Special: every head has one more use a round for them. The move list (pause) shows all four.
+
+What they can do, new to the game:
+- **Rising moves:** committed until they land, then a beat to recover, so a whiffed one can be punished.
+- **Traps:** they sit on the floor for 8 to 12 s, one of each at a time, and the first foot in them sets them off.
+  An **aura** (Consecrate, Greek Fire) ticks for whoever stands in it instead.
+- **Strikes from above:** a mark on the floor where they stand, struck half a second later. You can step out of it.
+- **Leaps:** they land where the opponent was standing and hit all round.
+- **Counters:** a 0.6 s stance that answers a blow with its own riposte. A command grab or a Legend Art gets
+  through it.
+- **Reflects:** shots bounce back at whoever loosed them.
+- **On a hit:** SLOWED (they move at half speed), WEAKENED (they deal 20% less) and a hard knockdown.
+- **Guard crushers:** moves that chew through a guard faster.
+
+The CPU uses them too: the dragon punch when you jump in close, and the others when the distance suits them.
+
+| Figure | ↓↘→ | ↓↙← | →↓↘ |
+|---|---|---|---|
+| Monk | Hundred-Hand Palm: six palms, the last a KNOCK | Iron Shirt: 3 s, three hits don't stagger | Crane Ascends |
+| Viking | Hurled Axe: 8.5 m KNOCK, dents a guard | Shield Wall: 1.2 s, shots bounce back | Odin's Ascent |
+| Summoner | Wisp Swarm: three wisps, 9 m | Binding Circle (trap): ASLEEP | Spirit Pillar (all round) |
+| Bard | Lullaby: notes, 7 m, ASLEEP | Discord: all round, WEAKENED 6 s | Power Chord |
+| Samurai | Mumyō Thrust: 5 m dash, breaks guards | Mikiri (counter): crumpling draw | Mikazuki |
+| Shinobi | Shuriken: three, 10 m, stagger | Makibishi (trap): caltrops, SLOWED | Smoke Bomb: DIZZY all round, flips away |
+| Ronin | Drunken Stagger: invincible stumbling cut | Sake Fire: sake over the lantern, BURNING | Wandering Moon |
+| Kunoichi | Poison Mist: POISONED | Wire Trap (trap): cut and SLOWED | Swallow Kick |
+| Shogun | Tachi Sweep: 2 m low, down hard | Shogun's Decree: all round, WEAKENED and SLOWED | Tachi Ascent (armour) |
+| Daimyo | Tessen Throw: 9 m KNOCK, steals 12 Hype | Retainer's Oath (counter): steals 15 Hype | Lord's Ascent |
+| Knight | Shield Charge: armoured 5.5 m, breaks guards | Mordhau: crossguard hammer, crumple | Shield Uppercut (armour) |
+| Paladin | Judgment: a pillar of light on the marked spot | Lay on Hands: heal 12% over 4 s | Hammer of Dawn |
+| Dragoon | Dragon Fang: 2.3 m fiery thrust, BURNING | High Jump: invincible leap, lands on them | Wyrmrise (BURNING) |
+| Templar | Cross Blade: 4.5 m thrust, breaks guards | Consecrate (aura): heals him, BURNS them | Martyr's Rise |
+| Crusader | Flail Snare: 2.6 m, drags them in | Iron Faith (counter): heals half its damage | Morning Star Rise (three hits) |
+| Lancer | Trample: 7 m, three hits, down hard | Wheel About: armoured, all round | Rear Up |
+| Pirate | Rope Swing: 7 m, over low attacks | Spilled Rum (trap): slip, down hard, BURNING | Crow's Nest Kick |
+| Captain | Ship's Guns: a cannonball on the marked spot | Parley (counter): crumple, WEAKENED | Mainmast Rise |
+| Cannoneer | Hot Shot: 9 m KNOCK, BURNING | Powder Trail (trap): blown sky-high | Recoil Jump |
+| Blackbeard | Grenado: bursts 2 m wide | Hellfire Breath: BURNING and WEAKENED | Teach's Hook (WEAKENED) |
+| Redbeard | Scimitar Dance: four cuts on the move | Greek Fire (aura): a pool that BURNS | Crescent Moon |
+| Sailor | Belaying Pin: 8 m, DIZZY | Bowline Snare (trap): caught and held | Anchor's Aweigh |
+| Marauder | Pillage (command grab): steals 25 Hype | Hull Breaker: armoured overhead, wrecks guards | Bearded Hook |
+| Musketeer | Buck and Ball: a spray, 6 m KNOCK | Form Square (counter): crumple | Bayonet Rise |
+| Ghost Pirate | Chains of the Deep: 6.5 m, drags them in | Haunt: behind them, SLOWED | Rising Tide |
+| Wrestler | Running Lariat: armoured 5 m | Powerbomb (command grab) | Dropkick |
+| Baseball | Line Drive: the furthest KNOCK there is | Bunt: 1 s, shots bounce back | Uppercut Swing |
+| Football | Stiff Arm: KNOCK, breaks guards | Hurdle: invincible, cleats down, bounce | Pancake Block (armour) |
+| Soccer | Slide Tackle: 6 m low, down hard | Simulation (counter): YELLOW CARD, DIZZY, WEAKENED 8 s | Bicycle Kick (spikes) |
+| Boxer | Dempsey Roll: five hooks, 4 m | Rope-a-Dope (counter): crumpling hook | Gazelle Punch |
+| Fencer | Flèche: 6 m in a flash | Prise de Fer: WEAKENED, wrecks guards | Passata Sotto |
+| Weightlifter | Deadlift Throw (command grab) | Barbell Spin: armoured, all round, four hits | Clean & Jerk (armour) |
+| Bowler | Pin Toss: 8.5 m, DIZZY | Pin Setter (trap): down hard | Follow-Through |
+| Archer | Rain of Arrows: on the marked spot, spikes | Disengage: backflip and an arrow | Skyward Volley (three arrows up) |
+| Skater | Board Toss: 8 m KNOCK | Ollie Slam: leap, lands on them | McTwist (three hits) |
+| Basketball | Ankle Breaker: invincible crossover, DIZZY | Take the Charge (counter): crumple | Alley-Oop |
 
 ## Mixed strings (every pair of arms has its own)
 
@@ -656,6 +722,7 @@ shake** setting (Full, Reduced, Off).
 | `js/edo_look.js`, `js/realm_look.js` | Their voxel parts and stances (the Lancer's warhorse, `Anim.mounted`) |
 | `js/edo_arts.js`, `js/realm_arts.js` | Their Legend Arts (and the Basketball player's) |
 | `js/edo_story.js`, `js/realm_story.js` | Their Arcade stories (and the Basketball player's) |
+| `js/commands.js` | COMMAND SPECIALS: every figure's three motion Specials (the mechanics are in fighter.js and match.js) |
 | `js/sea.js`, `js/sea_look.js`, `js/sea_arts.js`, `js/sea_story.js` | LOVERS OF THE SEA: the crew's lines, figures, Legend Arts and stories |
 | `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |
 | `js/arcade.js` | ARCADE: the run, story scenes, VS screen, ranks, continues, the hidden route, endings, STORIES |
