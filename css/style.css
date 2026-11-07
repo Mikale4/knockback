@@ -925,7 +925,10 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
 .pcell { position: relative; } .pcell.sel { outline: 3px solid var(--cyan); outline-offset: -3px; background: #1a2a3a; }
 .pcell .pon { position: absolute; top: 3px; left: 4px; font: 900 9px var(--body); font-style: normal; color: #000; background: var(--yel); border-radius: 4px; padding: 1px 4px; }
 .phint { font-size: 11.5px; color: var(--dim); margin: -4px 0 8px; }
-.wscmp { position: sticky; bottom: -10px; margin: 10px -10px -10px; padding: 10px 12px 12px; background: #15111f; border-top: 2px solid var(--line); border-radius: 0 0 8px 8px; box-shadow: 0 -10px 18px rgba(0,0,0,.45); max-height: 48vh; overflow: auto; }
+.wscmp { margin: 10px 0 0; padding: 10px 12px 12px; background: #15111f; border: 2px solid var(--line); border-radius: 10px; }
+/* in the figure's frame, right of the figure (the frame lets clicks through; the card takes them) */
+.blisterframe .wscmp.side { position: absolute; top: 48px; right: 22px; bottom: 22px; width: min(430px, 42%); margin: 0; overflow: auto; pointer-events: auto; background: rgba(21, 17, 31, .94); box-shadow: 0 10px 30px rgba(0,0,0,.5); box-sizing: border-box; }
+.blisterframe.withcmp .bf-name { right: min(452px, 44%); }
 .cmphead { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center; }
 .cmphead img { width: 52px; height: 52px; object-fit: contain; background: var(--panel2); border-radius: 8px; border-bottom: 3px solid var(--rc); }
 .cmphead small { display: block; color: var(--dim); font: 700 10px var(--body); letter-spacing: 1px; } .cmphead b { display: block; font: 20px var(--head); letter-spacing: 1.5px; line-height: 1.1; }

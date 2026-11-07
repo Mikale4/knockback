@@ -120,7 +120,7 @@
     return V;
   }
   let room = null;
-  function useRoom(b, side) { if (!room || App.view !== room) { room = showroom(); App.setView(room); } room.setFigure(b || activeBuild()); room.side = side || 1; return room; }
+  function useRoom(b, side) { if (!room || App.view !== room) { room = showroom(); App.setView(room); } room.setFigure(b || activeBuild()); room.side = side || 1; room.offset = 1.15; return room; }
 
   /* attract mode behind the title and login */
   function attract() {
@@ -286,11 +286,15 @@
           el('img', { src: Models.icon(it.line, slot, it.r) }),
           el('div', { class: 'sr-t' }, el('small', null, KB.SLOT_NAME[slot] + ' · ' + KB.LINES[it.line].name), el('b', null, partLabel(it, slot)), el('span', { class: 'stars' }, stars(it.r) + ' ' + KB.RARITY[it.r].name)));
       });
-      let picker = null;
+      let picker = null, cmpEl = null;
+      const wide = !window.matchMedia('(max-width: 820px)').matches;
+      // with the part card open in the frame, the figure moves left of it (half the card's width, in the camera's units)
+      const shift = () => { if (!room) return; room.offset = 1.15; const c = cmpEl; if (!c || !c.isConnected) return; const w = c.getBoundingClientRect().width; if (!w) return;
+        const cam = room.camera, vis = 2 * 6.8 * Math.tan(cam.fov * Math.PI / 360) * cam.aspect; room.offset = 1.15 + (w / 2 + 14) * vis / innerWidth; };
       if (slotOpen) {
         // a click PICKS a part: it goes on the figure on the stand and the panel compares it with what you have on;
         // EQUIP (or a double click) snaps it on
-        const items = Inv.forSlot(slotOpen), cmp = el('div', { class: 'wscmp' }), cells = [];
+        const items = Inv.forSlot(slotOpen), cmp = el('div', { class: 'wscmp' + (wide ? ' side' : '') }), cells = [];
         const equip = it => {
           const p0 = document.querySelector('.wspanel'), y = p0 ? p0.scrollTop : 0;
           raw[slotOpen] = { line: it.line, r: it.r, lv: 0 }; Auth.save(); SFX.play('snapon'); Menu._wsPick = null; Menu.workshop(slotOpen);
@@ -301,7 +305,7 @@
           for (const c of cells) c.b.classList.toggle('sel', c.it === it);
           cmp.innerHTML = ''; cmp.append(...Menu.partCompare(raw, b, st, slotOpen, it, () => equip(it)));
           const same = b[slotOpen].line === it.line && b[slotOpen].r === it.r;
-          useRoom(same ? b : Inv.levelled(Object.assign({}, raw, { [slotOpen]: { line: it.line, r: it.r, lv: 0 } })));
+          useRoom(same ? b : Inv.levelled(Object.assign({}, raw, { [slotOpen]: { line: it.line, r: it.r, lv: 0 } }))); shift();
           if (!quiet) SFX.play('ui');
         };
         picker = el('div', { class: 'picker' }, el('h3', null, 'YOUR ' + KB.SLOT_NAME[slotOpen] + ' PARTS (' + items.length + ')'),
@@ -312,7 +316,8 @@
               on ? el('em', { class: 'pon' }, 'ON') : null,
               el('img', { src: Models.icon(it.line, slotOpen, it.r) }), el('b', null, partLabel(it)), el('small', null, stars(it.r)));
             cells.push({ b: cell, it }); return cell; })),
-          cmp);
+          wide ? null : cmp);
+        cmpEl = wide ? cmp : null;
         const was = Menu._wsPick && Menu._wsPick.slot === slotOpen && items.find(x => x.line === Menu._wsPick.line && x.r === Menu._wsPick.r);
         if (items.length) pick(was || items.find(x => x.line === b[slotOpen].line && x.r === b[slotOpen].r) || items[0], true);
       } else Menu._wsPick = null;
@@ -320,7 +325,7 @@
       const nameIn = el('input', { type: 'text', value: raw.name, maxlength: 22, onchange: e => { raw.name = e.target.value.trim() || 'Custom'; Auth.save(); } });
       App.screen(el('div', { class: 'screen workshop' }, topbar('WORKSHOP', () => Menu.hub()),
         el('div', { class: 'wsbody' },
-          el('div', { class: 'blisterframe', style: { '--lc': KB.LINES[b.card.line].css } }, el('div', { class: 'bf-top' }, logo('l-tiny'), el('span', null, st.set === 2 ? 'MINT SET' : st.set === 1 ? 'PARTIAL SET' : 'CUSTOM')), el('div', { class: 'bf-name' }, raw.name)),
+          el('div', { class: 'blisterframe' + (cmpEl ? ' withcmp' : ''), style: { '--lc': KB.LINES[b.card.line].css } }, el('div', { class: 'bf-top' }, logo('l-tiny'), el('span', null, st.set === 2 ? 'MINT SET' : st.set === 1 ? 'PARTIAL SET' : 'CUSTOM')), el('div', { class: 'bf-name' }, raw.name), cmpEl),
           el('div', { class: 'panel wspanel' },
             el('div', { class: 'tabs wstabs' }, ...CUSTOMS.map((c, k) => {
               const i = k + 1;
@@ -338,6 +343,7 @@
               stat('WEIGHT', +st.weight.toFixed(2), 1.4), stat('GUARD', st.guard, 300), stat('AIR JUMPS', st.airJumps, 2), stat('HYPE GAIN', +st.hypeGain.toFixed(2), 1.6)),
             el('div', { class: 'wsfoot' }, el('span', { class: 'setb' }, st.set === 2 ? 'MINT SET: +8% damage, +6% HP' : st.set === 1 ? 'PARTIAL SET (3+ parts match the card): +4% damage' : 'Match 3+ parts to your Legend Card\'s line for a set bonus'),
               btn('MOVE LIST', () => modal(HUD.moveList(b, 0)), 'small'))))));
+      requestAnimationFrame(shift);
     },
     /* the Workshop's part card: what a part is (its rarity and level, and what they add), and what changes if you put it on */
     partCompare(raw, b, st, slot, it, onEquip) {
