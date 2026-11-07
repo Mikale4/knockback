@@ -1,7 +1,7 @@
 /* commands.js -- COMMAND SPECIALS: three more Specials for every figure, on fighting-game motions.
 
-   The stick is read relative to the opponent: toward them is →, away is ←, and either side is ↓ (an arena has no
-   crouch). With Special:
+   The stick is read on the screen like a 2D fighter's: ↓ is down, and → is the side of the screen (left or right) the
+   opponent is on, flipping when you swap sides; the Special then turns to face them. With Special:
      ↓↘→  (a quarter-circle forward)   usually the way in: a shot, a rush, a strike at range
      ↓↙←  (a quarter-circle back)      the trick: a counter stance, a trap, a guard, a command grab
      →↓↘  (a dragon punch)             the answer to a jump: a rising move, usually invincible on the way up

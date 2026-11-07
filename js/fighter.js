@@ -71,7 +71,7 @@
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
       this.rounds = this.st.rounds; this.reloadT = 0;   // (AMMO: a gun's rounds, a bow's arrows)
-      this.mot = []; this.counterRip = null; this.counterCall = null; this.regenRate = 0; this.riseAir = false; this.leapDone = false;   // (COMMAND SPECIALS)
+      this.mot = []; this.mside = 0; this.counterRip = null; this.counterCall = null; this.regenRate = 0; this.riseAir = false; this.leapDone = false;   // (COMMAND SPECIALS)
       this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false; this.undyingUsed = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -427,29 +427,32 @@
       if (this.rounds <= 0) { this.reloadT = this.st.reload; this.reloadCall(true); }
     }
     reloadCall(force) { if (!force && this.m.time - (this.reloadCallT || -9) < 0.8) return; this.reloadCallT = this.m.time; this.m.call(this, this.reloadT > 0 && !force ? this.st.ammoOut + ': ' + this.reloadT.toFixed(1) + ' s' : this.st.ammoOut, 'bad'); }
-    /* COMMAND SPECIALS. The stick is read relative to them: toward them is →, away is ←, and either side is ↓ (there's
-       no crouch in an arena). A quarter-circle forward (↓↘→), back (↓↙←) or a dragon punch (→↓↘) with Special is that
-       Special instead of the plain one; the motion counts for half a second */
+    /* COMMAND SPECIALS, read on the screen like a 2D fighter's: ↓ is the stick pulled down, and → is whichever side of
+       the screen (left or right) the opponent is on, so the gesture is the same wherever they stand (it flips when you
+       swap sides). A quarter-circle forward (↓↘→), back (↓↙←) or a dragon punch (→↓↘) with Special is that Special
+       instead of the plain one; the motion counts for half a second. The camera never turns in a fight, so the screen's
+       right is the world's +x (the same mapping stick() uses) and the sim never has to read the camera */
     recMotion() {
-      const mv = this.input.move, l = Math.hypot(mv.x, mv.y), H = this.mot || (this.mot = []);
-      let c = 5, s = 0;
+      const mv = this.input.move, l = Math.hypot(mv.x, mv.y), H = this.mot || (this.mot = []), o = this.opp;
+      // which side they're on: it only changes once they're clearly across (straight above or below keeps the last side)
+      if (o && o.state !== 'out') { const dx = o.pos.x - this.pos.x; if (Math.abs(dx) > 0.35 || !this.mside) this.mside = dx >= 0 ? 1 : -1; }
+      let c = 5;
       if (l > 0.5) {
-        const o = this.opp, ref = o && o.state !== 'out' ? U.ang(this.pos, o.pos) : this.yaw;
-        const a = U.wrap(Math.atan2(mv.x, -mv.y) - ref), k = Math.min(4, Math.round(Math.abs(a) / (Math.PI / 4)));
-        c = [6, 3, 2, 1, 4][k]; s = k > 0 && k < 4 ? (a > 0 ? 1 : -1) : 0;
+        const k = Math.round(Math.atan2(mv.y, mv.x * (this.mside || 1)) / (Math.PI / 4));   // 0 is forward, -2 is down
+        c = { 0: 6, 1: 9, 2: 8, 3: 7, 4: 4, '-4': 4, '-1': 3, '-2': 2, '-3': 1 }[k];
       }
       const last = H[H.length - 1];
-      if (!last || last.c !== c || last.s !== s) { H.push({ c, s, t: this.m.time }); if (H.length > 12) H.shift(); }
+      if (!last || last.c !== c) { H.push({ c, t: this.m.time }); if (H.length > 12) H.shift(); }
     }
     motion() {
       const H = this.mot; if (!H || H.length < 2) return null;
       let n = H.length - 1; const now = this.m.time;
       if (H[n].c === 5 && n > 0 && now - H[n].t < 0.12) n--;   // (let go of the stick just before Special)
       const end = H[n]; if (now - end.t > 0.3) return null;
-      const find = (i, c, side) => { for (; i >= 0; i--) { const e = H[i]; if (end.t - e.t > 0.45) return -1; if (e.c === c && (!side || e.s === side)) return i; } return -1; };
-      if (end.c === 3) { const i = find(n - 1, 2, end.s); if (i >= 0 && find(i - 1, 6, 0) >= 0) return 'dp'; }
-      if (end.c === 6 && find(n - 1, 2, 0) >= 0) return 'qcf';
-      if (end.c === 4 && find(n - 1, 2, 0) >= 0) return 'qcb';
+      const find = (i, c) => { for (; i >= 0; i--) { const e = H[i]; if (end.t - e.t > 0.45) return -1; if (e.c === c) return i; } return -1; };
+      if (end.c === 3) { const i = find(n - 1, 2); if (i >= 0 && find(i - 1, 6) >= 0) return 'dp'; }
+      if (end.c === 6 && find(n - 1, 2) >= 0) return 'qcf';
+      if (end.c === 4 && find(n - 1, 2) >= 0) return 'qcb';
       return null;
     }
     specialId() {
@@ -459,8 +462,11 @@
       return id && KB.MOVES[id] ? id : S.special;
     }
     startSpecial(id) {
-      if (id !== this.st.special) { this.mot.length = 0; this.m.call(this, KB.MOVES[id].name.toUpperCase(), 'small'); }
+      const cmd = id !== this.st.special, o = this.opp;
+      if (cmd) { this.mot.length = 0; this.m.call(this, KB.MOVES[id].name.toUpperCase(), 'small'); }
       this.startMove(id, 'special');
+      // a command special goes at them wherever they are on the screen (the motion ends on their side, not on them)
+      if (cmd && o && o.state !== 'out' && this.move && this.move.id === id) this.yaw = U.ang(this.pos, o.pos);
     }
     /* a LEAP at them: it comes down where they were standing, and hits all round when it lands */
     startLeap(mv) {

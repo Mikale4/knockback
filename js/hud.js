@@ -170,7 +170,7 @@
         row(k('dodge') + ' › ' + k('light'), nm(S.dashAtk), 'dash attack (LEGS)'),
         row(k('special'), nm(S.special), S.uses + ' uses a round (HEAD)'),
         ...(S.cmd ? [['qcf', '↓↘→'], ['qcb', '↓↙←'], ['dp', '→↓↘']].filter(([c]) => S.cmd[c] && KB.MOVES[S.cmd[c]]).map(([c, a]) => row(a + ' ' + k('special'), nm(S.cmd[c]), KB.MOVES[S.cmd[c]].desc || '')) : []),
-        S.cmd ? row('→ ← ↓', 'Command motions', '→ is toward them, ← away, ↓ either side; all four Specials share the uses') : null,
+        S.cmd ? row('→ ← ↓', 'Command motions', 'like a 2D fighter: ↓ is down, → is the side of the screen they’re on; all four Specials share the uses') : null,
         row(k('super'), nm(S.super), '100 Hype (LEGEND CARD)'),
         row(k('guard') + ' + ' + k('light'), 'Grab', 'beats guard. Then ' + k('light') + ' pummel, tilt or ' + k('heavy') + ' throw that way (' + k('heavy') + ' alone slams), ' + k('jump') + ' throws up'),
         row(k('toss'), 'Part Toss', 'throw one of your parts: in a combo it EXTENDS it (twice a combo)'),

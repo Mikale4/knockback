@@ -63,9 +63,10 @@ player's own setting travels in the fight's setup (and its replay), so the two s
 | Down Dash (in the air) | Guard + Dodge | Guard + Dodge | RB + B | R1 + ○ |
 | Pause / move list | Esc | | Menu | Options |
 
-**Command Specials:** a motion on the stick, then Head Special. The stick is read relative to your opponent, so
-**→ is toward them, ← is away and ↓ is either side** (an arena has no crouch): **↓↘→** (quarter-circle forward),
-**↓↙←** (quarter-circle back) and **→↓↘** (dragon punch). Special on its own is still the head's own Special. See
+**Command Specials:** a motion on the stick, then Head Special, read on the screen like a 2D fighter's: **↓ is the
+stick pulled down and → is the side of the screen (left or right) your opponent is on**, flipping when you swap
+sides, so the gesture is the same anywhere on the stage: **↓↘→** (quarter-circle forward), **↓↙←** (quarter-circle
+back) and **→↓↘** (dragon punch). The Special then turns to face them wherever they are. Special on its own is still the head's own Special. See
 [Command Specials](#command-specials) for every figure's three.
 
 **Everything can be rebound in Options.** Each action takes two keys per player (a key that already does something
@@ -321,8 +322,8 @@ shows what's left under SPECIAL. Thrown sports balls don't use ammo: those have 
 
 Every figure has three more Specials on fighting-game motions with Head Special: **↓↘→** usually the way in (a shot,
 a rush, a strike at range), **↓↙←** the trick (a counter, a trap, a guard, a command grab) and **→↓↘** the answer to
-a jump (a rising move, invincible on the way up unless it says armour). The stick is read relative to the opponent:
-→ toward them, ← away, ↓ either side. They belong to the HEAD (wear someone's head, use their Specials) and share its
+a jump (a rising move, invincible on the way up unless it says armour). Motions are read on the screen like a 2D
+fighter's: ↓ is down, → is the side they're on (it flips when you swap sides), and the Special then faces them. They belong to the HEAD (wear someone's head, use their Specials) and share its
 uses with the plain Special: every head has one more use a round for them. The move list (pause) shows all four.
 
 What they can do, new to the game:
