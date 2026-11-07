@@ -486,29 +486,29 @@
   const ROUTE_FIX = {};
   /* ELEMENT BENDERS: their route names, and each one's pause branch as the signature trial */
   Object.assign(NAMES, {
-    air: ['Updraft', 'Downburst', 'Air blast', 'Eye of the storm', 'Vacuum', 'Gale step', 'Tailwind', 'Crosswind', 'Jet stream', 'Nine winds', 'Cyclone', 'Weightless'],
-    water: ['Wave rise', 'Waterfall', 'Water jet', 'Tidal wave', 'Ice shackle', 'Healing water', 'Undertow', 'Riptide', 'High tide', 'Cold snap', 'The flood', 'Still water'],
-    earth: ['Pillar rise', 'Meteor', 'Boulder', 'Tectonic', 'Rock armour', 'Quake', 'Landslide', 'Fault line', 'Bedrock', 'Avalanche', 'The mountain', 'Unmoved'],
-    flame: ['Rising flame', 'Falling sun', 'Fireball', 'Inferno', 'Flare', 'Fire ring', 'Kindling', 'Firestorm', 'Wildfire', 'Inner fire', 'Blaze', 'Phoenix step'],
-    blood: ['Marionette', 'Drag down', 'Puppet throw', 'Strings', 'Seize', 'Blood pull', 'Heartbeat', 'Full moon', 'The dance', 'Crimson', 'No escape', 'Bow'],
-    lava: ['Eruption', 'Meteor', 'Molten fist', 'Volcano', 'Basalt', 'Magma spit', 'Slag', 'Lava flow', 'Caldera', 'Obsidian', 'Magma core', 'Molten'],
-    storm: ['Thunder rise', 'Strike down', 'Lightning bolt', 'Thunderhead', 'Jolt', 'Thunderstrike', 'Static', 'Forked', 'Chain lightning', 'Overcharge', 'The storm', 'Flash'],
-    blast: ['Upblast', 'Crater', 'Spark shot', 'Chain reaction', 'Flashbang', 'Sticky charge', 'Fuse', 'Powder keg', 'Demolition', 'Shockwave', 'Big bang', 'Aftershock'],
-    metal: ['Iron upper', 'Anvil', 'Iron fist', 'Foundry', 'Cable lash', 'Shrapnel', 'Forged', 'Tempered', 'Heavy metal', 'Rivet', 'The forge', 'Ironhand'],
-    spirit: ['Ascend', 'Descent', 'Spirit lance', 'Spirit world', 'Soul grasp', 'Spirit pulse', 'Lantern', 'Wisps', 'Crossing', 'Two worlds', 'Lost ones', 'Serene'],
-    swamp: ['Bog rise', 'Mire', 'Thornwhip', 'Swallowing bog', 'Mud in the eye', 'Sinking mud', 'Roots', 'Quagmire', 'Undergrowth', 'Bog-born', 'The deep mire', 'Overgrown'],
+    air: ['Touch the sky', 'Downburst', 'Air blast', 'Eye of the storm', 'Lion rolls the ball', 'Gale step', 'Walking the circle', 'Mother palms', 'Jet stream', 'Nine winds', 'Cyclone', 'Weightless'],
+    water: ['White crane', 'Waterfall', 'Water jet', 'Tidal wave', 'Needle at sea bottom', 'Healing water', 'Push hands', 'Riptide', 'Cloud hands', 'Cold snap', 'Grasp the sparrow\u2019s tail', 'Still water'],
+    earth: ['Lifting bridge', 'Meteor', 'Boulder', 'Tectonic', 'Tiger claw', 'Quake', 'Horse stance', 'Tiger and crane', 'Bedrock', 'Avalanche', 'The mountain', 'Unmoved'],
+    flame: ['Whirlwind', 'Falling sun', 'Fireball', 'Inferno', 'Plum blossom', 'Fire ring', 'Open the gate', 'Linked chain', 'Wildfire', 'Inner fire', 'Ten roads', 'Phoenix step'],
+    blood: ['Seal the vessel', 'Drag down', 'Puppet throw', 'Strings', 'Small catch', 'Blood pull', 'Heartbeat', 'Full moon', 'Seize and hold', 'Crimson', 'No escape', 'Bow'],
+    lava: ['Pow choy', 'Meteor', 'Molten fist', 'Volcano', 'Kup choy', 'Magma spit', 'Five shouts', 'Lava flow', 'Caldera', 'Obsidian', 'Magma core', 'Molten'],
+    storm: ['Green dragon', 'Strike down', 'Lightning bolt', 'Thunderhead', 'Splitting palm', 'Thunderstrike', 'Chop and hang', 'Forked', 'Chain lightning', 'Overcharge', 'The storm', 'Flash'],
+    blast: ['Shoulder lean', 'Crater', 'Spark shot', 'Chain reaction', 'Embrace and split', 'Sticky charge', 'Six openings', 'Powder keg', 'Demolition', 'Charging step', 'Big bang', 'Aftershock'],
+    metal: ['Matching bridge', 'Anvil', 'Iron fist', 'Foundry', 'Controlling bridge', 'Shrapnel', 'Twelve bridges', 'Tempered', 'Heavy metal', 'Iron wire', 'The forge', 'Ironhand'],
+    spirit: ['Flying crane', 'Descent', 'Spirit lance', 'Spirit world', 'Shaking crane', 'Spirit pulse', 'Lantern', 'Wisps', 'Sanchin', 'Two worlds', 'Lost ones', 'Serene'],
+    swamp: ['Pound the mortar', 'Mire', 'Thornwhip', 'Swallowing bog', 'Six sealing', 'Sinking mud', 'Silk reeling', 'Quagmire', 'Cannon fist', 'Bog-born', 'The deep mire', 'Overgrown'],
   });
-  const BENDER_SIG = { air: ['xaP', 'Vacuum', 'Pause after Twin Gust: the Vacuum Palm sucks them in and folds them up. Then the whole string.'],
-    water: ['xwP', 'Ice shackle', 'Pause after the Backlash: the Ice Shackle folds them up and freezes their feet. Then the whole string.'],
-    earth: ['xeP', 'Rock armour', 'Pause after the Rock Hook: the Rock Armour Bash crumples them. Then the whole string.'],
-    flame: ['xfP', 'Flare', 'Pause after the Fire Fist: the Flare leaves them DIZZY. Then the whole string.'],
-    blood: ['xbP', 'Seize', 'Pause after the Twist: she Seizes them from 2 m and they fold. Then the whole string.'],
-    lava: ['xlP', 'Basalt', 'Pause after the Cinder Hook: the Basalt Bash crumples them. Then the whole string.'],
-    storm: ['xzP', 'Jolt', 'Pause after the Arc Cross: the Jolt locks them up. Then the whole string.'],
-    blast: ['xxP', 'Flashbang', 'Pause after the Snap Hook: the Flashbang leaves them DIZZY. Then the whole string.'],
-    metal: ['xmP', 'Cable lash', 'Pause after the Steel Hook: the Cable Lash hauls them in from 2.2 m and they fold. Then the whole string.'],
-    spirit: ['xsP', 'Soul grasp', 'Pause after the Wisp Strike: the Soul Grasp leaves them DIZZY. Then the whole string.'],
-    swamp: ['xqP', 'Mud in the eye', 'Pause after the Mud Slap: Mud Toss leaves them DIZZY. Then the whole string.'] };
+  const BENDER_SIG = { air: ['xaP', 'Lion rolls the ball', 'Pause after the Single Palm Change: Lion Rolls the Ball sucks them in and folds them up. Then the whole string.'],
+    water: ['xwP', 'Needle at sea bottom', 'Pause after Wild Horse Parts Mane: Needle at Sea Bottom folds them up and freezes their feet. Then the whole string.'],
+    earth: ['xeP', 'Tiger claw', 'Pause after the Pressing Bridge: the Tiger Claw crumples them. Then the whole string.'],
+    flame: ['xfP', 'Plum blossom', 'Pause after Pierce the Heart: Plum Blossom leaves them DIZZY. Then the whole string.'],
+    blood: ['xbP', 'Small catch', 'Pause after Misplacing the Bone: Small Catch and Hit seizes them from 2 m and they fold. Then the whole string.'],
+    lava: ['xlP', 'Kup choy', 'Pause after the Sow Choy: the Kup Choy hammers down and crumples them. Then the whole string.'],
+    storm: ['xzP', 'Splitting palm', 'Pause after the Hanging Palm: the Single Splitting Palm folds them up. Then the whole string.'],
+    blast: ['xxP', 'Embrace and split', 'Pause after the Top Elbow: Embrace and Split leaves them DIZZY. Then the whole string.'],
+    metal: ['xmP', 'Controlling bridge', 'Pause after the Separating Bridge: the Controlling Bridge hauls them in from 2.2 m and they fold. Then the whole string.'],
+    spirit: ['xsP', 'Shaking crane', 'Pause after the Crane Wing: the Shaking Crane leaves them DIZZY. Then the whole string.'],
+    swamp: ['xqP', 'Six sealing', 'Pause after Draping Fist Over Body: Six Sealing Four Closing leaves them DIZZY. Then the whole string.'] };
   for (const [line, [pz, name, note]] of Object.entries(BENDER_SIG)) SIG[line] = (S, g) => ({ name, note, steps: [L(g[0]), L(g[1]), PZ(pz), ...g.map(L)] });
   // the heavier ones jump low: no second launch after the bounce, a Part Toss and the string instead
   const benderLow = (adv, pro, k) => { const M = id => KB.MOVES[id].name; adv[6].steps = [...k.spike, ...k.two, PT, ...k.str]; adv[6].note = M(k.S.airHeavy) + ' for the bounce, a Part Toss (a fresh bounce), and the whole string.'; };

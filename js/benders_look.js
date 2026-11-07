@@ -179,19 +179,145 @@
     leg(g, p, o) { g.box(-1, -7, -1, 1, 0, 1, p.main); g.box(-1, -11, -1, 1, -8, 1, p.skin); for (const x of [-1, 1]) g.set(x, -11, 2, 0x4a6a2a); knee(g, p, o); },   // root-wrapped feet
   };
 
-  /* ------------------------------------------------------------ the stances */
-  const fists = (lean, guardR, guardL, hy) => ({ torso: [lean, 0.35, 0], head: [0, -0.3, 0], armR: [-guardR, 0.25, -0.3], wR: [0.3, 0, 0], armL: [-guardL, -0.25, 0.35], wL: [0.2, 0, 0], legL: [-0.38, 0, 0.14], legR: [0.32, 0, -0.14], hy });
+  /* ------------------------------------------------------------ the stances
+     Each bender fights in a real martial art, the one their element was built on:
+       AIR       Baguazhang: walking the circle, low, the body twisted toward them, lead palm out, rear palm at the elbow
+       WATER     Yang-style tai chi: Ward Off, the front arm rounded across the chest, the rear hand down by the hip
+       EARTH     Hung Gar: the four-level horse stance, a tiger claw out, the rear fist chambered at the hip
+       FIRE      Northern Shaolin long fist: a long, deep bow stance, lead palm out, rear fist at the waist
+       BLOOD     chin na: seizing and locking, a clawed hand up, weight light on the front foot
+       LAVA      Choy Li Fut: low, the torso angled away to cut the target, lead arm long, rear hand up by the chin
+       LIGHTNING Piguazhang: tall and loose, the rear arm wound back for the chop
+       EXPLOSION Bajiquan: the higher Baji horse stance, side-on, both fists close with the elbows sunk
+       METAL     the Iron Wire of Hung Gar: a square horse stance, both bridges out, every muscle locked
+       SPIRIT    Fujian White Crane: the lead hand a crane's beak, the rear arm spread like a wing
+       SWAMP     Chen-style tai chi: Lazily Tying Coat, low and wide, the right palm out to the side */
   Object.assign(Anim.READY, {
-    air: { torso: [0.05, 0.45, 0], head: [0, -0.4, 0], armR: [-0.6, 0.4, -0.9], wR: [0, 0, 0], armL: [-1.3, -0.3, 0.5], wL: [0, 0, 0], legL: [-0.3, 0, 0.1], legR: [0.45, 0, -0.1], hy: -0.5 },
-    water: { torso: [0.08, 0.4, 0], head: [0, -0.35, 0], armR: [-1.2, 0.3, -0.6], wR: [0.4, 0, 0], armL: [-0.9, -0.3, 0.6], wL: [0.3, 0, 0], legL: [-0.35, 0, 0.12], legR: [0.3, 0, -0.12], hy: -0.7 },
-    earth: Object.assign(fists(0.2, 1.3, 1.5, -1.2), { legL: [-0.45, 0, 0.25], legR: [0.4, 0, -0.25] }),
-    flame: fists(0.15, 1.5, 1.7, -0.9),
-    blood: { torso: [0.0, 0.3, 0], head: [0.05, -0.25, 0], armR: [-1.4, 0.2, -0.1], wR: [-0.4, 0, 0], armL: [-0.5, -0.1, 0.4], wL: [0, 0, 0], legL: [-0.15, 0, 0.05], legR: [0.15, 0, -0.05], hy: -0.2 },
-    lava: Object.assign(fists(0.2, 1.4, 1.6, -1.1), { legL: [-0.42, 0, 0.22], legR: [0.38, 0, -0.22] }),
-    storm: { torso: [0.1, 0.45, 0], head: [0, -0.4, 0], armR: [-1.5, 0.3, -0.2], wR: [0.2, 0, 0], armL: [-0.4, -0.2, 0.7], wL: [0, 0, 0], legL: [-0.38, 0, 0.14], legR: [0.34, 0, -0.14], hy: -0.8 },
-    blast: fists(0.15, 1.4, 1.6, -1.0),
-    metal: Object.assign(fists(0.2, 1.5, 1.6, -1.1), { legL: [-0.42, 0, 0.2], legR: [0.38, 0, -0.2] }),
-    spirit: { torso: [0.05, 0.35, 0.05], head: [0.05, -0.3, 0.05], armR: [-1.1, 0.4, -0.4], wR: [0.3, 0, 0], armL: [-0.7, -0.2, 0.6], wL: [0.3, 0, 0], legL: [-0.2, 0, 0.08], legR: [0.25, 0, -0.08], hy: -0.3 },
-    swamp: { torso: [0.25, 0.3, 0], head: [0.1, -0.25, 0], armR: [-0.9, 0.3, -0.5], wR: [0.3, 0, 0], armL: [-0.7, -0.2, 0.6], wL: [0.6, 0, 0], legL: [-0.45, 0, 0.22], legR: [0.4, 0, -0.22], hy: -1.3 },
+    air: { torso: [0.08, -0.55, 0], head: [0, 0.5, 0], armL: [-1.75, 0, 0.6], wL: [0.1, 0, 0], armR: [-1.3, 0, 0.75], wR: [0.1, 0, 0], legL: [-0.55, 0, 0.04], legR: [0.45, 0, -0.04], hy: -1.6 },
+    water: { torso: [0.05, 0.25, 0], head: [0, -0.25, 0], armL: [-1.35, 0, -0.55], wL: [0.1, 0, 0], armR: [-0.4, 0, -0.18], wR: [0.6, 0, 0], legL: [-0.45, 0, 0.1], legR: [0.3, 0, -0.1], hy: -1.0 },
+    earth: { torso: [0.1, 0.15, 0], head: [0, -0.12, 0], armL: [-1.4, -0.2, 0.15], wL: [-0.7, 0, 0], armR: [0.35, 0, -0.18], wR: [1.5, 0, 0], legL: [-0.15, 0, 0.5], legR: [0.1, 0, -0.5], hy: -1.4 },
+    flame: { torso: [0.12, 0.45, 0], head: [0, -0.4, 0], armL: [-1.5, -0.2, 0.25], wL: [0.1, 0, 0], armR: [0.35, 0, -0.2], wR: [1.5, 0, 0], legL: [-0.65, 0, 0.08], legR: [0.55, 0, -0.08], hy: -2.0 },
+    blood: { torso: [0.0, 0.3, 0], head: [0.05, -0.25, 0], armR: [-1.5, 0.3, -0.05], wR: [-0.6, 0, 0], armL: [-0.5, -0.1, 0.4], wL: [0, 0, 0], legL: [-0.25, 0, 0.05], legR: [0.2, 0, -0.05], hy: -0.35 },
+    lava: { torso: [0.15, 0.65, 0], head: [0.02, -0.6, 0], armL: [-1.3, -0.3, 0.55], wL: [1.3, 0, 0], armR: [-2.0, 0.3, 0.35], wR: [1.2, 0, 0], legL: [-0.5, 0, 0.12], legR: [0.45, 0, -0.2], hy: -1.5 },
+    storm: { torso: [0.05, 0.55, 0], head: [0, -0.5, 0], armL: [-0.9, -0.2, 0.35], wL: [0.1, 0, 0], armR: [0.5, 0, -0.35], wR: [0.1, 0, 0], legL: [-0.45, 0, 0.1], legR: [0.4, 0, -0.1], hy: -1.0 },
+    blast: { torso: [0.1, 0.6, 0], head: [0, -0.55, 0], armL: [-1.2, -0.2, 0.15], wL: [1.5, 0, 0], armR: [-0.9, 0.2, 0.25], wR: [1.5, 0, 0], legL: [-0.25, 0, 0.35], legR: [0.2, 0, -0.35], hy: -0.9 },
+    metal: { torso: [0.08, 0.1, 0], head: [0, -0.08, 0], armR: [-1.35, 0, 0.25], wR: [1.5, 0, 0], armL: [-1.35, 0, -0.25], wL: [1.5, 0, 0], legL: [-0.1, 0, 0.5], legR: [0.05, 0, -0.5], hy: -1.4 },
+    spirit: { torso: [0.05, 0.4, 0.05], head: [0.05, -0.35, 0.05], armL: [-1.6, -0.2, 0.25], wL: [-1.1, 0, 0], armR: [-0.4, 0, -1.2], wR: [0.3, 0, 0], legL: [-0.3, 0, 0.05], legR: [0.15, 0, -0.08], hy: -0.5 },
+    swamp: { torso: [0.15, 0.25, 0], head: [0.05, -0.2, 0], armR: [-1.45, 0, -1.0], wR: [0.1, 0, 0], armL: [-0.5, 0, 0.25], wL: [0.6, 0, 0], legL: [-0.2, 0, 0.45], legR: [0.2, 0, -0.45], hy: -1.5 },
   });
+
+  /* ------------------------------------------------------- the techniques (wind, then strike)
+     named for the techniques of each art; the moves in benders.js use them */
+  const horse = { legL: [-0.15, 0, 0.5], legR: [0.1, 0, -0.5], hy: -1.6 }, bow = { legL: [-0.65, 0, 0.08], legR: [0.55, 0, -0.08], hy: -2.0 };
+  const tuck = { legL: [-0.95, 0, 0.1], legR: [-0.25, 0, -0.1] }, A = (...o) => Object.assign({}, ...o);
+  Object.assign(Anim.P, {
+    // BAGUAZHANG
+    piercePalm: { wind: { torso: [0.1, -0.5, 0], armR: [0.2, 0, -0.3], armL: [-1.2, 0, 0.5], hy: -1.4 }, strike: { torso: [0.12, 0.6, 0], armR: [-1.65, 0, 0.1], wR: [1.5, 0, 0], armL: [-1.0, 0, -0.6], legR: [-0.5, 0, 0], legL: [0.4, 0, 0], hy: -1.5 } },
+    palmChange: { wind: { torso: [0.05, 0.7, 0], armL: [-1.5, 0, -0.6], armR: [-0.6, 0, 0.3], hy: -1.6 }, strike: { torso: [0.12, -0.7, 0], armL: [-1.6, 0, 0.1], wL: [0.1, 0, 0], armR: [-1.3, 0, 0.6], legL: [-0.6, 0, 0.15], legR: [0.45, 0, -0.1], hy: -1.8 } },
+    pushPalm: { wind: { torso: [0.05, -0.7, 0], armR: [-0.6, 0, 0.3], armL: [-1.3, 0, 0.4], hy: -1.6 }, strike: { torso: [0.12, 0.6, 0], armR: [-1.6, 0, 0.0], wR: [0.1, 0, 0], armL: [-1.2, 0, -0.5], legR: [-0.55, 0, -0.1], legL: [0.45, 0, 0.1], hy: -1.8 } },
+    doubleChange: { spin: 1, wind: { torso: [0.1, 0.6, 0], armR: [-1.4, 0, -0.9], armL: [-1.2, 0, 0.9], hy: -1.6 }, strike: { armR: [-1.57, 0, -1.25], wR: [0.1, 0, 0], armL: [-1.57, 0, 1.25], wL: [0.1, 0, 0], legL: [-0.4, 0, 0.2], legR: [0.35, 0, -0.2], hy: -1.9 } },
+    touchSky: { wind: { torso: [0.4, 0, 0], armR: [0.3, 0, -0.3], armL: [-0.8, 0, 0.3], hy: -2.2 }, strike: { torso: [-0.25, 0.2, 0], armR: [-3.05, 0, -0.1], wR: [0.1, 0, 0], armL: [-0.3, 0, 0.35], legL: [-0.2, 0, 0], legR: [0.15, 0, 0], hy: 0.3 } },
+    rollBall: { wind: { torso: [0.1, 0.4, 0], armR: [-1.9, 0, -0.5], armL: [-1.1, 0, 0.5], hy: -1.4 }, strike: { torso: [-0.1, -0.4, 0], armR: [-1.1, 0, 0.3], armL: [-1.9, 0, -0.3], legL: [-0.3, 0, 0.1], legR: [0.5, 0, -0.1], hy: -1.4 } },
+    swallowSkim: { wind: A(tuck, { torso: [0.1, 0.4, 0], armR: [-1.4, 0, 0.8] }), strike: A(tuck, { torso: [0.15, -0.4, 0], armR: [-1.5, 0, -1.15], wR: [0.1, 0, 0], armL: [-1.2, 0, 0.7] }) },
+    phoenixNest: { wind: { torso: [-0.3, 0, 0], armR: [-2.9, 0, -0.3], armL: [-2.9, 0, 0.3], legL: [-0.8, 0, 0] }, strike: { torso: [0.6, 0, 0], armR: [-0.7, 0, -0.15], wR: [0.1, 0, 0], armL: [-0.7, 0, 0.15], wL: [0.1, 0, 0], legL: [-1.0, 0, 0], legR: [-0.3, 0, 0] } },
+    // YANG TAI CHI
+    brushKnee: { wind: { torso: [0, -0.5, 0], armR: [-2.0, 0, -0.6], armL: [-1.0, 0, -0.3], hy: -1.0 }, strike: { torso: [0.1, 0.5, 0], armR: [-1.55, 0, 0.1], wR: [0.1, 0, 0], armL: [-0.25, 0, 0.45], legL: [-0.55, 0, 0.1], legR: [0.4, 0, -0.1], hy: -1.4 } },
+    partMane: { wind: { torso: [0, 0.5, 0], armL: [-1.0, 0, -0.5], armR: [-1.7, 0, 0.3], hy: -1.0 }, strike: { torso: [0.08, -0.45, 0], armL: [-1.9, 0, 0.7], wL: [0.1, 0, 0], armR: [-0.3, 0, -0.3], legL: [-0.6, 0, 0.12], legR: [0.45, 0, -0.1], hy: -1.6 } },
+    singleWhip: { wind: { torso: [0, 0.6, 0], armR: [-1.5, 0, 0.4], armL: [-1.0, 0, -0.5], hy: -1.2 }, strike: { torso: [0.08, -0.3, 0], armR: [-1.6, 0, -1.45], wR: [-1.0, 0, 0], armL: [-1.55, 0, 0.2], wL: [0.1, 0, 0], legL: [-0.5, 0, 0.25], legR: [0.4, 0, -0.2], hy: -1.8 } },
+    craneWings: { wind: { torso: [0.15, 0, 0], armR: [-1.4, 0, 0.6], armL: [-1.4, 0, -0.6], hy: -1.4 }, strike: { torso: [-0.15, 0.2, 0], armR: [-2.9, 0, -0.45], wR: [0.1, 0, 0], armL: [-0.3, 0, 0.35], legL: [-0.25, 0, 0], legR: [0.1, 0, 0], hy: 0.1 } },
+    seaNeedle: { wind: { torso: [-0.1, 0.2, 0], armR: [-2.4, 0, -0.3], armL: [-0.9, 0, 0.3] }, strike: { torso: [0.7, 0.15, 0], armR: [-0.75, 0, 0.05], wR: [1.5, 0, 0], armL: [-0.4, 0, 0.3], legL: [-0.35, 0, 0], legR: [0.25, 0, 0], hy: -2.0 } },
+    fanBack: { wind: A(tuck, { armR: [-1.2, 0, 0.3], armL: [-1.2, 0, -0.3] }), strike: A(tuck, { torso: [0.05, -0.4, 0], armR: [-2.7, 0, -0.6], armL: [-1.6, 0, 0.1], wL: [0.1, 0, 0] }) },
+    earFists: { wind: { torso: [0.2, 0, 0], armR: [-0.4, 0, -0.9], armL: [-0.4, 0, 0.9], legL: [-0.8, 0, 0] }, strike: { torso: [0.45, 0, 0], armR: [-1.9, 0, 0.35], wR: [1.5, 0, 0], armL: [-1.9, 0, -0.35], wL: [1.5, 0, 0], legL: [-0.9, 0, 0], legR: [-0.3, 0, 0] } },
+    taiPush: { wind: { torso: [-0.15, 0, 0], armR: [-1.0, 0, 0.2], armL: [-1.0, 0, -0.2], legL: [-0.3, 0, 0], legR: [0.3, 0, 0], hy: -0.8 }, strike: { torso: [0.15, 0.1, 0], armR: [-1.55, 0, 0.05], wR: [0.1, 0, 0], armL: [-1.55, 0, -0.05], wL: [0.1, 0, 0], legL: [-0.55, 0, 0.1], legR: [0.45, 0, -0.1], hy: -1.5 } },
+    taiPress: { wind: { torso: [-0.1, 0.3, 0], armL: [-1.2, 0, -0.5], armR: [-1.0, 0, 0.5], hy: -0.9 }, strike: { torso: [0.15, 0.1, 0], armL: [-1.5, 0, -0.35], armR: [-1.5, 0, 0.35], wR: [0.1, 0, 0], legL: [-0.55, 0, 0.1], legR: [0.45, 0, -0.1], hy: -1.5 } },
+    cloudHands: { wind: { torso: [0.05, -0.5, 0], armR: [-1.7, 0, -0.2], armL: [-0.8, 0, 0.3], legL: [0, 0, 0.35], legR: [0, 0, -0.35], hy: -1.0 }, strike: { torso: [0.05, 0.5, 0], armR: [-0.8, 0, -0.3], armL: [-1.7, 0, 0.2], legL: [0, 0, 0.35], legR: [0, 0, -0.35], hy: -1.0 } },
+    commence: { wind: { armR: [-1.5, 0, -0.1], armL: [-1.5, 0, 0.1], wR: [0.1, 0, 0], wL: [0.1, 0, 0], torso: [0, 0, 0], head: [0, 0, 0], legL: [0, 0, 0.15], legR: [0, 0, -0.15], hy: -0.3 }, strike: { armR: [-0.6, 0, -0.15], armL: [-0.6, 0, 0.15], torso: [0.05, 0, 0], head: [0.1, 0, 0], legL: [0, 0, 0.15], legR: [0, 0, -0.15], hy: -1.2 } },
+    // HUNG GAR
+    straightBridge: { wind: A(horse, { torso: [0.1, -0.2, 0], armR: [0.4, 0, -0.15], armL: [-1.4, 0, 0.1] }), strike: A(horse, { torso: [0.12, 0.3, 0], armR: [-1.6, 0, 0.12], wR: [1.5, 0, 0], armL: [0.35, 0, 0.15], hy: -1.8 }) },
+    pressBridge: { wind: { torso: [0, -0.2, 0], armL: [-1.8, 0, -0.2], wL: [-0.7, 0, 0], armR: [0.35, 0, -0.15], hy: -1.4 }, strike: { torso: [0.15, 0.35, 0], armL: [-0.9, 0, -0.2], wL: [-0.7, 0, 0], armR: [-1.6, 0, 0.1], wR: [1.5, 0, 0], legL: [-0.45, 0, 0.2], legR: [0.35, 0, -0.2], hy: -1.8 } },
+    inchBridge: { wind: A(horse, { torso: [0.1, -0.3, 0], armR: [-1.0, 0, 0.4] }), strike: { torso: [0.12, 0.35, 0], armR: [-1.4, 0, 0.25], wR: [1.5, 0, 0], armL: [0.3, 0, 0.15], legL: [-0.3, 0, 0.3], legR: [-0.2, 0, -0.35], hy: -1.6 } },
+    liftBridge: { wind: { torso: [0.35, 0, 0], armR: [0.2, 0, -0.3], hy: -2.2 }, strike: { torso: [-0.25, 0.2, 0], armR: [-2.7, 0, 0.15], wR: [1.5, 0, 0], armL: [0.3, 0, 0.2], hy: 0 } },
+    tigerClaws: { wind: { torso: [-0.1, 0, 0], armR: [0.35, 0, -0.2], armL: [0.35, 0, 0.2], hy: -1.4 }, strike: { torso: [0.2, 0.1, 0], armR: [-1.85, 0, 0.1], wR: [-0.7, 0, 0], armL: [-1.15, 0, -0.1], wL: [-0.7, 0, 0], legL: [-0.55, 0, 0.15], legR: [0.45, 0, -0.15], hy: -2.0 } },
+    craneBeak: { wind: A(tuck, { armR: [-0.4, 0, -0.6] }), strike: A(tuck, { torso: [0.1, 0.3, 0], armR: [-1.5, 0, -0.1], wR: [-1.2, 0, 0], armL: [-0.3, 0, 1.0] }) },
+    tameTiger: { wind: { torso: [-0.3, 0, 0], armR: [-2.8, 0, -0.3], armL: [-2.8, 0, 0.3], legL: [-0.8, 0, 0] }, strike: { torso: [0.6, 0, 0], armR: [-0.7, 0, -0.2], wR: [-0.7, 0, 0], armL: [-0.7, 0, 0.2], wL: [-0.7, 0, 0], legL: [-1.0, 0, 0], legR: [-0.3, 0, 0] } },
+    horseHold: { wind: A(horse, { torso: [0, 0, 0], head: [0, 0, 0], armR: [0.35, 0, -0.2], armL: [0.35, 0, 0.2], wR: [1.5, 0, 0], wL: [1.5, 0, 0] }), strike: A(horse, { torso: [0.05, 0, 0], head: [0.05, 0, 0], armR: [0.4, 0, -0.18], armL: [0.4, 0, 0.18], wR: [1.5, 0, 0], wL: [1.5, 0, 0], hy: -2.1 }) },
+    // NORTHERN SHAOLIN LONG FIST
+    bowPunch: { wind: A(bow, { torso: [0.1, -0.4, 0], armR: [0.4, 0, -0.2], armL: [-1.5, 0, 0.2] }), strike: A(bow, { torso: [0.15, 0.7, 0], armR: [-1.62, 0, 0.05], wR: [1.5, 0, 0], armL: [0.4, 0, 0.2], legL: [-0.7, 0, 0.08], legR: [0.6, 0, -0.08], hy: -2.3 }) },
+    heartPunch: { wind: { torso: [0.1, -0.5, 0], armR: [0.4, 0, -0.2], hy: -1.4 }, strike: A(bow, { torso: [0.3, 0.75, 0], armR: [-1.4, 0, 0.1], wR: [1.5, 0, 0], armL: [-0.3, 0, 0.6], hy: -2.4 }) },
+    springLeg: { wind: { legR: [-0.8, 0, 0], armR: [-1.4, 0, -1.0], armL: [-1.4, 0, 1.0], torso: [0, 0, 0] }, strike: { legR: [-1.55, 0, 0], legL: [0.12, 0, 0], torso: [-0.2, 0, 0], armR: [-1.5, 0, -1.25], wR: [0.1, 0, 0], armL: [-1.5, 0, 1.25], wL: [0.1, 0, 0], hy: 0 } },
+    whirlwindKick: { spin: 1, wind: { torso: [0.3, -0.4, 0], armR: [-1.0, 0, -0.9], armL: [-1.0, 0, 0.9], hy: -2.0 }, strike: { legR: [-2.6, 0, -0.3], legL: [0.3, 0, 0], torso: [-0.3, 0, 0], armR: [-2.5, 0, -0.5], armL: [-2.5, 0, 0.5], hy: 0.8 } },
+    plumBlossom: { wind: { torso: [0.1, 0.3, 0], armR: [-1.5, 0, 0.3], armL: [-1.5, 0, -0.3], hy: -1.2 }, strike: { torso: [0.1, 0.1, 0], armR: [-1.75, 0, -0.65], wR: [0.1, 0, 0], armL: [-1.75, 0, 0.65], wL: [0.1, 0, 0], legL: [-0.55, 0, 0.1], legR: [0.45, 0, -0.1], hy: -1.6 } },
+    flyingKick: { wind: { legL: [-1.3, 0, 0], legR: [0.2, 0, 0], torso: [0.1, 0, 0], armL: [-2.4, 0, 0.5] }, strike: { legR: [-1.65, 0, 0], legL: [-0.9, 0, 0], torso: [-0.3, 0, 0], armR: [-1.6, 0, 0], wR: [0.1, 0, 0], armL: [-2.6, 0, 0.5] } },
+    lotusKick: { wind: { legR: [-2.6, 0, 0.6], torso: [-0.3, 0.3, 0], armR: [-1.4, 0, -0.9], armL: [-1.4, 0, 0.9] }, strike: { legR: [-0.4, 0, -0.9], legL: [-0.6, 0, 0], torso: [0.4, -0.3, 0], armR: [-1.4, 0, -0.9], wR: [0.1, 0, 0], armL: [-1.4, 0, 0.9] } },
+    // CHIN NA
+    tendonGrip: { wind: { torso: [0, -0.2, 0], armR: [-1.2, 0, -0.3], wR: [0, 0, 0] }, strike: { torso: [0.08, 0.35, 0], armR: [-1.6, 0.8, 0.05], wR: [-0.9, 0, 0], armL: [-0.6, 0, 0.3], legR: [-0.3, 0, 0], legL: [0.2, 0, 0], hy: -0.8 } },
+    boneTwist: { wind: { armR: [-1.5, 0, 0.1], wR: [-0.8, 0, 0], armL: [-1.5, 0, -0.1], wL: [-0.8, 0, 0], torso: [0.1, 0, 0] }, strike: { torso: [-0.15, -0.4, 0], armR: [-1.3, 1.2, 0.2], wR: [-0.8, 0, 0], armL: [-1.3, -1.2, -0.2], wL: [-0.8, 0, 0], legL: [-0.4, 0, 0], legR: [0.35, 0, 0], hy: -0.9 } },
+    breathSeal: { wind: { torso: [0, -0.3, 0], armR: [-2.0, 0, -0.4] }, strike: { torso: [0.15, 0.5, 0], armR: [-1.75, 0, 0.0], wR: [0.1, 0, 0], armL: [-1.2, 0, -0.4], legR: [-0.4, 0, 0], legL: [0.3, 0, 0], hy: -1.0 } },
+    vesselSeal: { wind: { torso: [0.2, 0, 0], armR: [-0.6, 0, -0.2], wR: [1.5, 0, 0], hy: -1.0 }, strike: { torso: [-0.2, 0.25, 0], head: [-0.25, -0.2, 0], armR: [-2.6, 0, 0.0], wR: [1.5, 0, 0], armL: [-0.3, 0, 0.5], hy: 0 } },
+    smallCatch: { wind: { torso: [0, -0.3, 0], armL: [-1.6, 0, -0.1], wL: [-0.8, 0, 0], armR: [-0.4, 0, -0.3] }, strike: { torso: [0.1, 0.6, 0], armL: [0.3, 0, 0.3], wL: [-0.8, 0, 0], armR: [-1.55, 0, 0.1], wR: [0.1, 0, 0], legL: [-0.5, 0, 0.1], legR: [0.4, 0, -0.1], hy: -1.2 } },
+    eagleClaw: { wind: A(tuck, { armR: [-2.6, 0, -0.3], wR: [-0.4, 0, 0] }), strike: A(tuck, { torso: [0.3, 0.2, 0], armR: [-1.2, 0, 0.1], wR: [-1.0, 0, 0], armL: [-0.6, 0, 0.5] }) },
+    captureHold: { wind: { torso: [-0.3, 0, 0], armR: [-2.7, 0, -0.3], wR: [-0.8, 0, 0], armL: [-2.7, 0, 0.3], wL: [-0.8, 0, 0], legL: [-0.8, 0, 0] }, strike: { torso: [0.5, 0, 0], armR: [0.1, 0, -0.3], wR: [-0.8, 0, 0], armL: [0.1, 0, 0.3], wL: [-0.8, 0, 0], legL: [-1.0, 0, 0], legR: [-0.3, 0, 0] } },
+    // CHOY LI FUT
+    chopJab: { wind: { torso: [0.12, -0.2, 0], armR: [-1.1, 0, -0.4], hy: -1.3 }, strike: { torso: [0.15, 0.75, 0], armR: [-1.62, 0, 0.12], wR: [1.5, 0, 0], armL: [-1.0, 0, 0.6], legL: [-0.55, 0, 0.12], legR: [0.5, 0, -0.2], hy: -1.8 } },
+    sowSwing: { wind: { torso: [0.1, -0.9, 0], armR: [-1.5, 0, -1.5], wR: [1.3, 0, 0], hy: -1.4 }, strike: { torso: [0.15, 0.9, 0], armR: [-1.55, 0, 0.75], wR: [1.4, 0, 0], armL: [-0.9, 0, 0.6], legL: [-0.55, 0, 0.12], legR: [0.5, 0, -0.2], hy: -1.8 } },
+    gwaBackfist: { wind: { torso: [-0.2, 0.3, 0], armR: [-3.0, 0, 0.2], wR: [1.3, 0, 0] }, strike: { torso: [0.25, 0.4, 0], armR: [-1.35, 0, 0.05], wR: [1.2, 0, 0], armL: [-1.0, 0, 0.5], legL: [-0.5, 0, 0.1], legR: [0.45, 0, -0.15], hy: -1.6 } },
+    powUpper: { wind: { torso: [0.3, -0.7, 0], armR: [0.7, 0, -0.5], wR: [1.3, 0, 0], hy: -2.2 }, strike: { torso: [-0.25, 0.6, 0], armR: [-2.7, 0, 0.3], wR: [1.4, 0, 0], armL: [-0.6, 0, 0.5], hy: 0.2 } },
+    kupHammer: { wind: { torso: [-0.4, 0.2, 0], armR: [-3.1, 0, -0.1], wR: [1.3, 0, 0], hy: -0.4 }, strike: { torso: [0.6, 0.2, 0], armR: [-0.9, 0, 0.1], wR: [1.4, 0, 0], armL: [-0.6, 0, 0.5], legL: [-0.6, 0, 0.1], legR: [0.5, 0, -0.15], hy: -2.0 } },
+    nailKick: { wind: { legR: [-2.2, 0, 0], torso: [-0.3, 0, 0], armR: [-1.2, 0, -0.8], armL: [-1.2, 0, 0.8] }, strike: { legR: [-0.3, 0, 0], legL: [-0.9, 0, 0], torso: [0.5, 0, 0], armR: [-1.2, 0, -0.9], armL: [-1.2, 0, 0.9] } },
+    springKick: { wind: A(tuck, { torso: [0.15, 0.3, 0], armR: [-1.6, 0, 0.3] }), strike: { legR: [-1.6, 0, 0.1], legL: [-0.4, 0, 0], torso: [-0.3, 0.3, 0], armR: [-1.4, 0, 0.5], armL: [-0.6, 0, 0.8] } },
+    // PIGUAZHANG
+    chopPalm: { wind: { torso: [-0.1, -0.4, 0], armR: [-2.9, 0, -0.3], wR: [0.1, 0, 0], armL: [-1.2, 0, 0.3] }, strike: { torso: [0.2, 0.6, 0], armR: [-1.2, 0, 0.1], wR: [0.1, 0, 0], armL: [0.6, 0, 0.3], legL: [-0.5, 0, 0.1], legR: [0.45, 0, -0.1], hy: -1.4 } },
+    chopPalmL: { wind: { torso: [-0.1, 0.4, 0], armL: [-2.9, 0, 0.3], wL: [0.1, 0, 0], armR: [-1.2, 0, -0.3] }, strike: { torso: [0.2, -0.6, 0], armL: [-1.2, 0, -0.1], wL: [0.1, 0, 0], armR: [0.6, 0, -0.3], legL: [-0.5, 0, 0.1], legR: [0.45, 0, -0.1], hy: -1.4 } },
+    hangPalm: { wind: { torso: [0.2, -0.3, 0], armR: [0.6, 0, -0.2], wR: [0.1, 0, 0] }, strike: { torso: [-0.1, 0.5, 0], armR: [-2.3, 0, 0.1], wR: [0.1, 0, 0], armL: [-0.6, 0, 0.4], legL: [-0.45, 0, 0.1], legR: [0.4, 0, -0.1], hy: -1.0 } },
+    wheelPalms: { alt: ['chopPalm', 'chopPalmL'], wind: { torso: [-0.1, -0.4, 0], armR: [-2.9, 0, -0.3], armL: [0.6, 0, 0.3] }, strike: { torso: [0.2, 0.6, 0], armR: [-1.2, 0, 0.1], armL: [0.6, 0, 0.3], hy: -1.4 } },
+    greenDragon: { wind: { torso: [0.3, 0, 0], armR: [0.5, 0, -0.3], armL: [0.5, 0, 0.3], hy: -2.0 }, strike: { torso: [-0.25, 0.1, 0], armR: [-2.9, 0, -0.25], wR: [0.1, 0, 0], armL: [-2.9, 0, 0.25], wL: [0.1, 0, 0], hy: 0.4 } },
+    splitPalm: { wind: { torso: [-0.2, 0.2, 0], armR: [-3.1, 0, 0], wR: [0.1, 0, 0], armL: [-1.4, 0, 0.3] }, strike: { torso: [0.55, 0.3, 0], armR: [-0.9, 0, 0.05], wR: [0.1, 0, 0], armL: [0.7, 0, 0.3], legL: [-0.6, 0, 0.1], legR: [0.5, 0, -0.1], hy: -2.0 } },
+    whipPalm: { wind: A(tuck, { torso: [0.1, 0.4, 0], armR: [-1.5, 0, 0.9] }), strike: A(tuck, { torso: [0.1, -0.5, 0], armR: [-1.5, 0, -1.2], wR: [0.1, 0, 0], armL: [-0.6, 0, 0.6] }) },
+    // BAJIQUAN
+    stampPunch: { wind: { torso: [0.1, -0.3, 0], armR: [0.2, 0, -0.2], armL: [-1.3, 0, 0.2], legR: [0.3, 0, -0.1], hy: -0.6 }, strike: { torso: [0.12, 0.75, 0], armR: [-1.6, 0, 0.1], wR: [1.5, 0, 0], armL: [0.4, 0, 0.3], legL: [-0.55, 0, 0.2], legR: [0.35, 0, -0.25], hy: -1.7 } },
+    topElbow: { wind: { torso: [0.1, -0.3, 0], armR: [-0.6, 0, -0.4], hy: -1.0 }, strike: { torso: [0.15, 1.0, 0], armR: [-1.5, 0, 1.1], wR: [-1.5, 0, 0], armL: [-1.4, 0, -0.9], legL: [-0.3, 0, 0.35], legR: [0.25, 0, -0.35], hy: -1.5 } },
+    tiKnee: { wind: { legR: [0.45, 0, 0], hy: -0.6, armR: [-1.4, 0, -0.1], armL: [-1.4, 0, 0.1] }, strike: { legR: [-1.9, 0, 0], legL: [0.3, 0, 0], torso: [0.2, 0, 0], armR: [0.3, 0, -0.3], wR: [1.5, 0, 0], armL: [0.3, 0, 0.3], wL: [1.5, 0, 0], hy: 0.8 } },
+    kaoLean: { wind: { torso: [0.3, 0.3, 0], armR: [-0.5, 0, -0.2], armL: [-0.5, 0, 0.2], hy: -2.0 }, strike: { torso: [-0.2, 1.3, 0.35], head: [0, -0.9, -0.2], armR: [-0.3, 0, -0.3], armL: [-0.2, 0, 0.3], legL: [-0.6, 0, 0.2], legR: [0.4, 0, -0.2], hy: -0.6 } },
+    embraceSplit: { wind: { torso: [0.15, 0, 0], armR: [-1.5, 0, 0.6], armL: [-1.5, 0, -0.6], hy: -1.0 }, strike: { torso: [-0.1, 0, 0], armR: [-1.6, 0, -1.3], wR: [0.1, 0, 0], armL: [-1.6, 0, 1.3], wL: [0.1, 0, 0], legL: [-0.3, 0, 0.3], legR: [0.2, 0, -0.3], hy: -1.4 } },
+    risingFoot: { wind: A(tuck, { armR: [-0.8, 0, -0.6], armL: [-0.8, 0, 0.6] }), strike: { legR: [-1.4, 0, 0], legL: [-0.3, 0, 0], torso: [-0.25, 0, 0], armR: [-0.8, 0, -0.6], armL: [-0.8, 0, 0.6] } },
+    poundElbow: { wind: { torso: [-0.3, -0.3, 0], armR: [-2.8, 0, -0.4], legL: [-0.8, 0, 0] }, strike: { torso: [0.7, 0.5, 0], armR: [-0.4, 0, 0.6], wR: [-1.5, 0, 0], armL: [-0.5, 0, 0.5], legL: [-1.0, 0, 0], legR: [-0.3, 0, 0] } },
+    // IRON WIRE
+    hardBridge: { wind: A(horse, { torso: [0.08, -0.1, 0], armR: [0.35, 0, -0.15], armL: [-1.35, 0, -0.25] }), strike: A(horse, { torso: [0.1, 0.25, 0], armR: [-1.6, 0, 0.1], wR: [1.5, 0, 0], armL: [-1.0, 0, -0.3], wL: [1.5, 0, 0], hy: -1.8 }) },
+    separateBridge: { wind: A(horse, { armR: [-1.4, 0, 0.7], armL: [-1.4, 0, -0.7], wR: [1.5, 0, 0], wL: [1.5, 0, 0] }), strike: A(horse, { torso: [0.1, 0.05, 0], armR: [-1.5, 0, -0.9], wR: [1.5, 0, 0], armL: [-1.5, 0, 0.9], wL: [1.5, 0, 0], hy: -1.8 }) },
+    keepBridge: { wind: A(horse, { torso: [0.08, 0.3, 0], armR: [-1.6, 0, -0.5], wR: [1.5, 0, 0] }), strike: A(horse, { torso: [0.1, -0.4, 0], armR: [-1.6, 0, 0.9], wR: [-1.4, 0, 0], armL: [-1.4, 0, -0.6], wL: [1.5, 0, 0], hy: -1.8 }) },
+    matchBridge: { wind: { torso: [0.3, 0, 0], armR: [-0.5, 0, -0.2], armL: [-0.5, 0, 0.2], wR: [1.5, 0, 0], wL: [1.5, 0, 0], hy: -2.2 }, strike: { torso: [-0.2, 0, 0], armR: [-2.4, 0, -0.15], wR: [1.5, 0, 0], armL: [-2.4, 0, 0.15], wL: [1.5, 0, 0], hy: -0.4 } },
+    controlBridge: { wind: { torso: [0.1, 0.3, 0], armR: [-1.6, 0, 0.1], wR: [1.5, 0, 0], hy: -1.2 }, strike: { torso: [-0.1, -0.5, 0], armR: [0.2, 0, -0.3], wR: [1.5, 0, 0], armL: [-1.0, 0, -0.2], wL: [1.5, 0, 0], legL: [-0.4, 0, 0.3], legR: [0.3, 0, -0.3], hy: -1.6 } },
+    circBridge: { wind: A(tuck, { armR: [-2.2, 0, -0.5], wR: [1.5, 0, 0] }), strike: A(tuck, { torso: [0.15, 0.3, 0], armR: [-1.3, 0, 0.6], wR: [1.5, 0, 0], armL: [-1.0, 0, -0.3] }) },
+    stableBridge: { wind: { torso: [-0.3, 0, 0], armR: [-2.4, 0, -0.2], armL: [-2.4, 0, 0.2], wR: [1.5, 0, 0], wL: [1.5, 0, 0], legL: [-0.8, 0, 0] }, strike: { torso: [0.6, 0, 0], armR: [-0.9, 0, -0.15], wR: [1.5, 0, 0], armL: [-0.9, 0, 0.15], wL: [1.5, 0, 0], legL: [-1.0, 0, 0], legR: [-0.3, 0, 0] } },
+    // WHITE CRANE
+    beakPeck: { wind: { torso: [0.05, -0.2, 0], armR: [-1.2, 0, -0.5], wR: [0, 0, 0] }, strike: { torso: [0.1, 0.5, 0], armR: [-1.65, 0, 0.1], wR: [-1.2, 0, 0], armL: [-0.4, 0, 1.2], legL: [-0.45, 0, 0.05], legR: [0.3, 0, -0.08], hy: -1.0 } },
+    // the Spirit Lance: thrown from exactly where the old pointing hand was (the shot's start, and the trials, rest on it), the rear arm a wing
+    beakThrust: { wind: { armR: [-2.6, 0, -0.2], wR: [1.1, 0, 0], torso: [0, -0.3, 0], armL: [-0.4, 0, 1.2] }, strike: { armR: [-1.7, 0, 0.1], wR: [1.6, 0, 0], torso: [0.15, 0.4, 0], armL: [-0.4, 0, 1.2], hy: -0.6, legR: [0.4, 0, 0], legL: [-0.4, 0, 0] } },
+    craneWing: { wind: { torso: [0.05, 0.4, 0], armR: [-1.4, 0, 0.8] }, strike: { torso: [0.1, -0.4, 0], armR: [-1.5, 0, -1.3], wR: [0.1, 0, 0], armL: [-0.5, 0, 0.9], legL: [-0.4, 0, 0.05], legR: [0.3, 0, -0.08], hy: -0.9 } },
+    spreadWings: { spin: 1, wind: { torso: [0.15, 0, 0], armR: [-0.6, 0, 0.3], armL: [-0.6, 0, -0.3], hy: -1.2 }, strike: { torso: [0, 0, 0], armR: [-1.5, 0, -1.45], wR: [0.1, 0, 0], armL: [-1.5, 0, 1.45], wL: [0.1, 0, 0], legL: [-0.3, 0, 0.2], legR: [0.25, 0, -0.2], hy: -1.2 } },
+    flyingCrane: { wind: { torso: [0.3, 0, 0], armR: [0.5, 0, -0.6], armL: [0.5, 0, 0.6], hy: -2.0 }, strike: { torso: [-0.15, 0, 0], armR: [-2.6, 0, -0.9], wR: [0.1, 0, 0], armL: [-2.6, 0, 0.9], wL: [0.1, 0, 0], legR: [-1.2, 0, 0], legL: [0.05, 0, 0], hy: 0.6 } },
+    shakeA: { wind: { torso: [0.2, 0, 0], armR: [-1.0, 0, 0.3], armL: [-1.0, 0, -0.3] }, strike: { torso: [-0.15, 0.08, 0], armR: [-1.4, 0, -0.9], wR: [0.1, 0, 0], armL: [-1.4, 0, 0.9], wL: [0.1, 0, 0], hy: -0.8 } },
+    shakeB: { wind: { torso: [0.2, 0, 0], armR: [-1.0, 0, 0.3], armL: [-1.0, 0, -0.3] }, strike: { torso: [-0.1, -0.08, 0], armR: [-1.5, 0, -0.75], wR: [0.3, 0, 0], armL: [-1.5, 0, 0.75], wL: [0.3, 0, 0], hy: -1.0 } },
+    shakingCrane: { alt: ['shakeA', 'shakeB'], wind: { torso: [0.2, 0, 0], armR: [-1.0, 0, 0.3], armL: [-1.0, 0, -0.3], hy: -1.0 }, strike: { torso: [-0.15, 0, 0], armR: [-1.4, 0, -0.9], wR: [0.1, 0, 0], armL: [-1.4, 0, 0.9], wL: [0.1, 0, 0], hy: -0.8 } },
+    feedPeck: { wind: { torso: [-0.2, 0, 0], armR: [-2.6, 0, -0.2], armL: [-0.4, 0, 1.2], legL: [-0.8, 0, 0] }, strike: { torso: [0.55, 0.1, 0], armR: [-0.8, 0, 0.05], wR: [-1.2, 0, 0], armL: [-0.4, 0, 1.2], legL: [-1.0, 0, 0], legR: [-0.3, 0, 0] } },
+    craneStand: { wind: { torso: [0, 0, 0], armR: [-0.6, 0, -0.6], armL: [-0.6, 0, 0.6], hy: -0.6 }, strike: { torso: [-0.05, 0, 0], head: [-0.1, 0, 0], armR: [-1.1, 0, -1.25], wR: [-1.1, 0, 0], armL: [-1.1, 0, 1.25], wL: [-1.1, 0, 0], legR: [-1.0, 0, 0], legL: [0.02, 0, 0], hy: 0.2 } },
+    // CHEN TAI CHI
+    hiddenPunch: { wind: { torso: [0.1, -0.6, 0], armR: [0.4, 0, -0.2], armL: [-1.4, 0, -0.3], legL: [-0.4, 0, 0.3], legR: [0.3, 0, -0.3], hy: -1.8 }, strike: { torso: [0.15, 0.85, 0], armR: [-1.62, 0, 0.1], wR: [1.5, 0, 0], armL: [0.45, 0, 0.3], legL: [-0.55, 0, 0.3], legR: [0.4, 0, -0.3], hy: -2.2 } },
+    drapeFist: { wind: { torso: [-0.1, 0.4, 0], armR: [-2.4, 0, 0.8], wR: [1.4, 0, 0] }, strike: { torso: [0.2, -0.5, 0], armR: [-1.2, 0, -0.9], wR: [1.4, 0, 0], armL: [-0.6, 0, 0.5], legL: [-0.5, 0, 0.25], legR: [0.4, 0, -0.25], hy: -1.8 } },
+    stirA: { wind: { torso: [0.1, 0.5, 0] }, strike: { torso: [0.12, 0.4, 0], armR: [-1.4, 0, 0.6], wR: [0.1, 0, 0], armL: [-1.0, 0, 0.6], legL: [-0.5, 0, 0.25], legR: [0.4, 0, -0.25], hy: -1.8 } },
+    stirB: { wind: { torso: [0.1, -0.5, 0] }, strike: { torso: [0.12, -0.4, 0], armR: [-1.0, 0, -0.6], wR: [0.1, 0, 0], armL: [-1.4, 0, -0.6], legL: [-0.5, 0, 0.25], legR: [0.4, 0, -0.25], hy: -1.8 } },
+    yellowDragon: { alt: ['stirA', 'stirB'], wind: { torso: [0.1, 0.5, 0], armR: [-1.0, 0, -0.5], armL: [-1.4, 0, -0.5], hy: -1.6 }, strike: { torso: [0.12, 0.4, 0], armR: [-1.4, 0, 0.6], armL: [-1.0, 0, 0.6], legL: [-0.5, 0, 0.25], legR: [0.4, 0, -0.25], hy: -1.8 } },
+    poundMortar: { wind: { torso: [0.3, 0, 0], armR: [0.3, 0, 0.1], armL: [-0.9, 0, -0.4], hy: -2.2 }, strike: { torso: [-0.1, 0.1, 0], armR: [-2.5, 0, 0.2], wR: [1.5, 0, 0], armL: [-0.9, 0, -0.4], wL: [0.1, 0, 0], legR: [-1.3, 0, 0], legL: [0.05, 0, 0], hy: 0.6 } },
+    sixSealing: { wind: { torso: [-0.1, -0.2, 0], armR: [-1.9, 0, -0.4], armL: [-1.9, 0, 0.4], hy: -1.0 }, strike: { torso: [0.2, 0.15, 0], armR: [-1.35, 0, 0.15], wR: [0.1, 0, 0], armL: [-1.35, 0, -0.15], wL: [0.1, 0, 0], legL: [-0.55, 0, 0.25], legR: [0.45, 0, -0.25], hy: -1.9 } },
+    doubleJump: { wind: { legL: [-1.4, 0, 0], legR: [0.2, 0, 0], torso: [0.1, 0, 0], armL: [-2.4, 0, 0.6] }, strike: { legR: [-1.65, 0, 0], legL: [-0.8, 0, 0], torso: [-0.3, 0, 0], armR: [-1.6, 0, 0], wR: [0.1, 0, 0], armL: [-2.4, 0, 0.6] } },
+    poundGround: { wind: { torso: [-0.3, 0, 0], armR: [-2.9, 0, -0.2], wR: [1.5, 0, 0], legL: [-0.8, 0, 0] }, strike: { torso: [0.8, 0, 0], armR: [-0.5, 0, 0.1], wR: [1.5, 0, 0], armL: [-0.5, 0, 0.6], legL: [-0.9, 0, 0.1], legR: [0.3, 0, 0] } },
+  });
+
+  /* Baguazhang is walked, not run: low and level, gliding round them with the guard held up */
+  const run0 = Anim.run;
+  Anim.run = (base, phase, speed, style) => {
+    const o = run0(base, phase, speed, style);
+    if (style === 'air') { const c = Math.cos(phase); o.armR = base.armR.slice(); o.armL = base.armL.slice(); o.wR = base.wR.slice(); o.wL = base.wL.slice(); o.torso = [0.1, base.torso[1] * 0.8, 0]; o.head = base.head.slice(); o.legL[0] *= 0.8; o.legR[0] *= 0.8; o.hy = -1.3 - Math.abs(c) * 0.15; }
+    return o;
+  };
 })();

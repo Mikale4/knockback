@@ -42,7 +42,24 @@
       if (App.view && App.view !== v && App.view.dispose) App.view.dispose();
       App.view = v; if (v && v.resize) v.resize(W, H);
     },
-    screen(node) { const s = U.$('screens'); s.innerHTML = ''; if (node) s.append(node); },
+    /* show a screen. The same screen drawn again (a key bound, a setting changed, a part equipped: they redraw the
+       whole screen) keeps every scrolled panel where it was, matched by its place in the page and its class */
+    screen(node) {
+      const s = U.$('screens'), old = s.firstElementChild;
+      const keep = [];
+      if (old && node && old.className === node.className) {
+        const all = [old, ...old.querySelectorAll('*')];
+        all.forEach((e, i) => { if (e.scrollTop || e.scrollLeft) keep.push({ i, cls: e.className, top: e.scrollTop, left: e.scrollLeft }); });
+      }
+      s.innerHTML = ''; if (node) s.append(node);
+      if (keep.length) {
+        const all = [node, ...node.querySelectorAll('*')];
+        for (const k of keep) {
+          let e = all[k.i]; if (!e || e.className !== k.cls) e = all.find(x => x.className === k.cls && typeof k.cls === 'string' && k.cls);
+          if (e) { e.scrollTop = k.top; e.scrollLeft = k.left; }
+        }
+      }
+    },
     startMatch(opts) {
       App.screen(null); Music.play('battle');
       const o = Object.assign({}, opts);

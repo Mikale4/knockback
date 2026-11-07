@@ -315,7 +315,7 @@
         const ok = sp.type === 'proj' ? d > (sp.proj === 'breath' ? 0 : 3) && d < (sp.proj === 'breath' ? 3.2 : 8) : sp.type === 'teleport' ? d > 3 : sp.type === 'dash' ? d > 2 && d < 5.5 : sp.type === 'radial' ? d < 2.5 : sp.type === 'buff' ? d > 4 : sp.type === 'summon' ? imps < f.st.minions - 1 && d > 2.2 : false;
         if (ok) { this.press('special'); this.wait = 0.4; return; }
       }
-      // COMMAND SPECIALS: the dragon punch when they jump in close; now and then one picked for the distance
+      // COMMAND SPECIALS: the ↑ one when they jump in close; now and then one picked for the distance
       const CM = f.st.cmd;
       if (CM && lv >= 1 && f.canSpecial(CM.dp || CM.qcf)) {   // (their own checks: a ball on the floor only stops a ball Special)
         if (CM.dp && o.pos.y > 1.1 && d < 2.6 && o.vel.y < 2 && r() < 0.04 * lv) { this.cmd = 'dp'; this.press('special'); this.wait = 0.5; return; }

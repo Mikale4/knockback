@@ -691,7 +691,7 @@
   /* ===================================================== a fight on your screen */
   function makeMatch(cfg, local, watch) {
     const PC = Input.players[0].constructor, net = [new PC(0), new PC(1)];
-    net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 } }; });
+    net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 }, stick: 1 }; });   // (a person's stick, replayed: it picks the command Special)
     Input.mode = 'solo';
     const builds = cfg.builds.map((b, i) => Object.assign({}, b, { name: cfg.names[i] }));
     // the end of the match waits for its frame to be settled (a guessed KO can still be taken back)

@@ -64,10 +64,10 @@ player's own setting travels in the fight's setup (and its replay), so the two s
 | Down Dash (in the air) | Guard + Dodge | Guard + Dodge | RB + B | R1 + ○ |
 | Pause / move list | Esc | | Menu | Options |
 
-**Command Specials:** a motion on the stick, then Head Special, read on the screen like a 2D fighter's: **↓ is the
-stick pulled down and → is the side of the screen (left or right) your opponent is on**, flipping when you swap
-sides, so the gesture is the same anywhere on the stage: **↓↘→** (quarter-circle forward), **↓↙←** (quarter-circle
-back) and **→↓↘** (dragon punch). The Special then turns to face them wherever they are. Special on its own is still the head's own Special. See
+**Command Specials:** hold a direction and press Head Special. It's read on the screen: **→ is the side of the
+screen (left or right) your opponent is on**, flipping when you swap sides, so it's the same anywhere on the stage:
+**→ + Special**, **← + Special** and **↑ + Special** (the diagonals count as → or ←). The Special then turns to face
+them wherever they are. Special with the stick at rest (or pulled straight down) is still the head's own Special. See
 [Command Specials](#command-specials) for every figure's three.
 
 **Everything can be rebound in Options.** Each action takes two keys per player (a key that already does something
@@ -312,19 +312,37 @@ Eleven figures who move the world with their hands (`js/benders.js`, `js/benders
 costs the element (BREATH, WATER, STONE, FLAME, CHARGE, SPARK, SPIRIT; see Ammo), and while it comes back Heavy is a
 blow of the same element.
 
+Each one fights in the real martial art their element was built on, and stands, strikes and moves like it: the
+string, the pause branch and the air string are named for that art's techniques, and the Legend Arts are played out
+in it. AIR is Baguazhang: she stands low with her body twisted toward you, lead palm out and the rear palm at its
+elbow, glides about rather than running, and her Legend Art walks the circle round the tornado. WATER is Yang-style
+tai chi (Ward Off; Brush Knee, Wild Horse Parts Mane, Single Whip, Crane Spreads Wings, Needle at Sea Bottom, Fan
+Through the Back, Strike the Ears, Cloud Hands for the Tidal Wave). EARTH is Hung Gar: the horse stance, a tiger claw
+and the rear fist chambered, and its bridge hands (straight, pressing, inch, lifting). FIRE is Northern Shaolin long
+fist: a long bow stance, the bow-stance punch, Pierce the Heart, the springing leg (tan tui), whirlwind, flying and
+lotus kicks. BLOOD is chin na, its four ways of seizing named for her string (dividing the tendon, misplacing the bone,
+sealing the breath, sealing the vessel). LAVA is Choy Li Fut and its five fists (chop, sow, gwa, pow, kup). LIGHTNING
+is Piguazhang, the chop-hanging palm: arms that wheel and chop like bolts (Baji and Pigua are traditionally taught
+together, and Lightning and Explosion are rivals). EXPLOSION is Bajiquan: short explosive power, the stamping step, the
+top elbow, the rising knee and the shoulder lean. METAL is Hung Gar's Iron Wire, a horse stance of locked muscle, its
+string named for the twelve bridges (hard, separating, keeping, matching, controlling, circling, steady). SPIRIT is
+Fujian White Crane: beak and wing, the shaking crane, the flying crane on one leg, the feeding crane. SWAMP is
+Chen-style tai chi: Lazily Tying Coat, the hidden thrust punch, Yellow Dragon Stirs the Water, Buddha's Warrior Pounds
+the Mortar, Six Sealing Four Closing, the double jump kick and pounding the ground.
+
 | Line (R-ARM) | Light string | Pause branch | Air string | Signature | Heavy (L-ARM) | Special (HEAD) | Legend Art |
 |---|---|---|---|---|---|---|---|
-| Air (Gale Hand) | Gust Palm › Twin Gust › Spiral Kick › Updraft | Vacuum Palm (pulls in, crumple) | Wind Slice › Downdraft | **Gale Force**: Heavy KNOCKs throw them 25% further | Air Blast (8 m) | Gale Step (an invincible dash through them, DIZZY) | Eye of the Storm: a tornado lifts them and she brings them down |
-| Water (Water Whip) | Water Whip › Backlash › Twin Streams › Wave Rise | Ice Shackle (crumple, PINNED) | Spray › Waterfall | **Cold Snap**: Lights +25% on the ROOTED, FROZEN or SLOWED | Water Jet (8.5 m) | Healing Water (12% over 5 s) | Tidal Wave: the sea stands up and comes down on them |
-| Earth (Stone Fist) | Stone Fist › Rock Hook › Earth Knee › Pillar Rise | Rock Armour Bash (crumple) | Stone Kick › Meteor Drop | **Seismic**: Heavies +15% on anyone on the floor | Boulder Toss (7.5 m, breaks a guard) | Quake Stomp (3 m, knocks them flat) | Tectonic: pillars of rock, and the fist |
-| Fire (Flame Fist) | Flame Jab › Fire Fist › Flame Kick › Rising Flame (BURNING) | Flare (dizzy) | Fire Kick › Comet Kick | **Inner Fire**: Lights up to +20% with full Hype | Fireball (8 m, BURNING) | Fire Ring (all round, BURNING) | Inferno: a storm of burning blows and a blast of fire |
-| Blood (Puppeteer's Hand) | Grip › Twist (pulls in) › Wrench › Marionette Lift, all from 1.7 m | Seize (crumple, from 2 m) | Claw › Drag Down | **Puppeteer**: Lights HOBBLE them for a second | Puppet Throw (up to 3 m) | Blood Pull (drags them in from 4.5 m) | Marionette: lifted on strings, a dance, and the floor |
-| Lava (Molten Knuckles) | Magma Fist › Cinder Hook › Slag Knee › Eruption Upper (BURNING) | Basalt Bash (crumple) | Ember Kick › Meteor | **Slag**: +15% on the BURNING, and the fire starts over | Molten Fist (armoured, BURNING) | Magma Spit (7 m, BURNING) | Volcano: the floor erupts and she brings them down into it |
-| Lightning (Spark Hand) | Spark Jab › Arc Cross › Static Knee › Thunder Rise | Jolt (crumple) | Arc Kick › Thunderclap | **Static**: every Light takes 3 Hype from them | Lightning Bolt (11 m, fast) | Thunderstrike (a mark, then the sky strikes it) | Thunderhead: strike after strike, then once more, down |
-| Explosion (Spark Knuckle) | Pop Jab › Snap Hook › Burst Knee › Upblast | Flashbang (dizzy) | Pop Kick › Blast Dive | **Demolition**: his hits break parts 40% faster | Spark Shot (8 m, bursts) | Sticky Charge (goes off 2 s later, through a guard) | Chain Reaction: explosions up their body, then a big one |
-| Metal (Iron Knuckles) | Iron Jab › Steel Hook › Plate Knee › Iron Uppercut | Cable Lash (2.2 m, hauls them in, crumple) | Steel Kick › Anvil Drop | **Forged**: a landed Heavy makes his next Light +30% | Iron Fist (armoured) | Shrapnel (four shards, 7 m) | Foundry: iron plates clamp them and he hammers them out |
-| Spirit (Spirit Hand) | Spirit Palm › Wisp Strike › Soul Kick › Ascend | Soul Grasp (dizzy) | Drift Kick › Descent | **Cleansing Touch**: a Light ends one of their buffs | Spirit Lance (9 m) | Spirit Pulse (pushes away, DIZZY) | Spirit World: lanterns in the dark, spirits strike, and back out, hard |
-| Swamp (Vine Hand) | Vine Lash › Mud Slap › Root Snare › Bog Rise | Mud Toss (dizzy) | Vine Whip › Mire Drop | **Thorns**: every third Light ROOTS them | Thornwhip (2.3 m) | Sinking Mud (a pool that SLOWS) | Swallowing Bog: the mire takes them and spits them into the whip |
+| Air (Gale Hand) · Baguazhang | Piercing Palm › Single Palm Change › Double Palm Change › Touch the Sky | Lion Rolls the Ball (pulls in, crumple) | Swallow Skims Water › Phoenix Snatches Nest | **Gale Force**: Heavy KNOCKs throw them 25% further | Air Blast (8 m) | Gale Step (an invincible dash through them, DIZZY) | Eye of the Storm: a tornado lifts them and she brings them down |
+| Water (Water Whip) · Yang tai chi | Brush Knee › Wild Horse Parts Mane › Single Whip › Crane Spreads Wings | Needle at Sea Bottom (crumple, PINNED) | Fan Through the Back › Strike the Ears | **Cold Snap**: Lights +25% on the ROOTED, FROZEN or SLOWED | Water Jet (8.5 m) | Healing Water (12% over 5 s) | Tidal Wave: the sea stands up and comes down on them |
+| Earth (Stone Fist) · Hung Gar | Straight Bridge › Pressing Bridge › Inch Bridge › Lifting Bridge | Tiger Claw (crumple) | Crane's Beak › Taming the Tiger | **Seismic**: Heavies +15% on anyone on the floor | Boulder Toss (7.5 m, breaks a guard) | Quake Stomp (3 m, knocks them flat) | Tectonic: pillars of rock, and the fist |
+| Fire (Flame Fist) · Northern Shaolin | Bow-Stance Punch › Pierce the Heart › Springing Leg › Whirlwind Kick (BURNING) | Plum Blossom (dizzy) | Flying Kick › Lotus Kick | **Inner Fire**: Lights up to +20% with full Hype | Fireball (8 m, BURNING) | Fire Ring (all round, BURNING) | Inferno: a storm of burning blows and a blast of fire |
+| Blood (Puppeteer's Hand) · chin na | Dividing the Tendon › Misplacing the Bone (pulls in) › Sealing the Breath › Sealing the Vessel, all from 1.7 m | Small Catch and Hit (crumple, from 2 m) | Eagle Claw › Capture and Hold | **Puppeteer**: Lights HOBBLE them for a second | Puppet Throw (up to 3 m) | Blood Pull (drags them in from 4.5 m) | Marionette: lifted on strings, a dance, and the floor |
+| Lava (Molten Knuckles) · Choy Li Fut | Chop Choy › Sow Choy › Gwa Choy › Pow Choy (BURNING) | Kup Choy (crumple) | Springing Kick › Nailing Kick | **Slag**: +15% on the BURNING, and the fire starts over | Molten Fist (armoured, BURNING) | Magma Spit (7 m, BURNING) | Volcano: the floor erupts and she brings them down into it |
+| Lightning (Spark Hand) · Piguazhang | Chopping Palm › Hanging Palm › Chop-Hanging Wheel › Green Dragon Rises | Single Splitting Palm (crumple) | Whipping Palm › Falling Chop | **Static**: every Light takes 3 Hype from them | Lightning Bolt (11 m, fast) | Thunderstrike (a mark, then the sky strikes it) | Thunderhead: strike after strike, then once more, down |
+| Explosion (Spark Knuckle) · Bajiquan | Stamping Punch › Top Elbow › Rising Knee › Shoulder Lean | Embrace and Split (dizzy) | Rising Foot › Pounding Elbow | **Demolition**: his hits break parts 40% faster | Spark Shot (8 m, bursts) | Sticky Charge (goes off 2 s later, through a guard) | Chain Reaction: explosions up their body, then a big one |
+| Metal (Iron Knuckles) · Iron Wire | Hard Bridge › Separating Bridge › Keeping Bridge › Matching Bridge | Controlling Bridge (2.2 m, hauls them in, crumple) | Circling Bridge › Steady Bridge | **Forged**: a landed Heavy makes his next Light +30% | Iron Fist (armoured) | Shrapnel (four shards, 7 m) | Foundry: iron plates clamp them and he hammers them out |
+| Spirit (Spirit Hand) · White Crane | Crane's Beak › Crane Wing › Spreading Wings › Flying Crane | Shaking Crane (dizzy) | Calling Crane › Feeding Crane | **Cleansing Touch**: a Light ends one of their buffs | Spirit Lance (9 m) | Spirit Pulse (pushes away, DIZZY) | Spirit World: lanterns in the dark, spirits strike, and back out, hard |
+| Swamp (Vine Hand) · Chen tai chi | Hidden Thrust Punch › Draping Fist Over Body › Yellow Dragon Stirs › Pound the Mortar | Six Sealing Four Closing (dizzy) | Double Jump Kick › Pounding the Ground | **Thorns**: every third Light ROOTS them | Thornwhip (2.3 m) | Sinking Mud (a pool that SLOWS) | Swallowing Bog: the mire takes them and spits them into the whip |
 
 Passives: Windstep (Air, +20% for 0.6 s after a dodge), Flow (Water, +3% for every hit already in the combo, to +24%),
 Rooted (Earth, 20% less damage standing still), Stoke (Fire, his burns 40% hotter), Sanguine (Blood, 8% of her damage
@@ -397,7 +415,7 @@ Motions are read on the screen like a 2D fighter's: **↓ is down and → is the
 head, use their Specials) and share its uses with the plain Special: every head has one more use a round for them.
 The move list (pause) shows all four.
 
-| Figure | ↓↘→ | ↓↙← | →↓↘ |
+| Figure | → + Special | ← + Special | ↑ + Special |
 |---|---|---|---|
 | Monk | **Dim Mak**: a pressure point, SEALED (no Special) 6 s | **Iron Shirt**: three hits don't stagger him | **Ki Burst**: destroys every enemy shot within 4.5 m |
 | Viking | **Hurled Axe**: shatters a guard it hits | **Shield Wall**: shots bounce back | **Berserkergang**: 10% HP for +25% damage and armour on every attack |
@@ -591,7 +609,7 @@ until you do it: a card over the fight gives one lesson at a time, in your own k
 the touch buttons), and the next opens once you've done it (or SKIP). Up to nineteen lessons:
 move, jump, your string, the Launcher into an air combo, the KNOCK//BACK and catching the rebound, a Tech Chase,
 guard, dodge, the armoured charge, your Heavy's auto combo (if it has one), grab-pummel-throw, your Special, your
-three Command Specials (it names each one and wants each motion once), your weapon's ammo and reload (if it has
+three Command Specials (it names each one and wants each direction once), your weapon's ammo and reload (if it has
 any), an OTG, a Part Toss, a Spring Burst, your Legend Art, and a last round where the dummy fights back. A figure
 without an auto combo or ammo skips those lessons, and the count shows only the lessons yours gets. The dummy only
 swings when a lesson wants it to and nobody can lose. Finishing it the first time is worth **900 Tokens**.
@@ -841,7 +859,7 @@ shake** setting (Full, Reduced, Off).
 | `js/edo_look.js`, `js/realm_look.js` | Their voxel parts and stances (the Lancer's warhorse, `Anim.mounted`) |
 | `js/edo_arts.js`, `js/realm_arts.js` | Their Legend Arts (and the Basketball player's) |
 | `js/edo_story.js`, `js/realm_story.js` | Their Arcade stories (and the Basketball player's) |
-| `js/commands.js` | COMMAND SPECIALS: every figure's three motion Specials (the mechanics are in fighter.js and match.js) |
+| `js/commands.js` | COMMAND SPECIALS: every figure's three direction Specials (→, ←, ↑ + Special) (the mechanics are in fighter.js and match.js) |
 | `js/sea.js`, `js/sea_look.js`, `js/sea_arts.js`, `js/sea_story.js` | LOVERS OF THE SEA: the crew's lines, figures, Legend Arts and stories |
 | `js/benders.js`, `js/benders_look.js`, `js/benders_arts.js`, `js/benders_story.js` | ELEMENT BENDERS: the eleven lines and their own rules (through `KB.HOOK` and `KB.EXT`), figures, Legend Arts and stories |
 | `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |

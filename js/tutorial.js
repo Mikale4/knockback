@@ -175,8 +175,8 @@
     },
     {
       id: 'cmd', title: 'COMMAND SPECIALS', need: 3,
-      text: () => { const C = me().st.cmd || {}; return ['Three more Specials, on stick motions like a 2D fighter: \u2193 is down, and \u2192 is the side of the screen the dummy is on (right, now). ',
-        el('b', null, '\u2193\u2198\u2192'), ' + ', K('special'), ': ', nm(C.qcf), '. ', el('b', null, '\u2193\u2199\u2190'), ' + ', K('special'), ': ', nm(C.qcb), '. ', el('b', null, '\u2192\u2193\u2198'), ' + ', K('special'), ': ', nm(C.dp), '. Do each motion once (roll the stick, then press Special).']; },
+      text: () => { const C = me().st.cmd || {}; return ['Three more Specials: hold a direction and press Special. \u2192 is the side of the screen the dummy is on (right, now). ',
+        el('b', null, '\u2192'), ' + ', K('special'), ': ', nm(C.qcf), '. ', el('b', null, '\u2190'), ' + ', K('special'), ': ', nm(C.qcb), '. ', el('b', null, '\u2191'), ' + ', K('special'), ': ', nm(C.dp), '. Do each one once (the stick at rest is your plain Special).']; },
       setup() { place(-2.4, 0); S.motions = new Set(); },
       tick() { const a = me(); a.uses = a.st.uses; a.spReady = 0; },
       on(k, d) { if (k === 'motion' && d.f === me()) { S.motions.add(d.c); return S.motions.size; } },

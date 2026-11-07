@@ -295,10 +295,8 @@
         // a click PICKS a part: it goes on the figure on the stand and the panel compares it with what you have on;
         // EQUIP (or a double click) snaps it on
         const items = Inv.forSlot(slotOpen), cmp = el('div', { class: 'wscmp' + (wide ? ' side' : '') }), cells = [];
-        const equip = it => {
-          const p0 = document.querySelector('.wspanel'), y = p0 ? p0.scrollTop : 0;
+        const equip = it => {   // (App.screen keeps the panels' scroll when the Workshop redraws)
           raw[slotOpen] = { line: it.line, r: it.r, lv: 0 }; Auth.save(); SFX.play('snapon'); Menu._wsPick = null; Menu.workshop(slotOpen);
-          const p1 = document.querySelector('.wspanel'); if (p1) p1.scrollTop = y;
         };
         const pick = (it, quiet) => {
           Menu._wsPick = { slot: slotOpen, line: it.line, r: it.r };

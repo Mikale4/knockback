@@ -188,7 +188,7 @@ window.__superTest = (l1, l2, dist, opt) => {
    Runs `frames` fixed steps with both fighters mashing (a seeded stream), returns a fingerprint log. */
 window.__detRun = (seed, frames, l1, l2) => {
   const { rng, withRng } = Online._t, PC = Input.players[0].constructor, net = [new PC(0), new PC(1)];
-  net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 } }; });
+  net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 }, stick: 1 }; });
   const opts = { mode: 'online', online: true, local: 0, builds: [KB.mintBuild(l1, 0), KB.mintBuild(l2, 0)], cpu: [null, null], arena: 'shelf', wins: 9, time: 99, bonus: false, inputs: net, onEnd: () => {} };
   const m = Match.create(opts); App.setView(m); const R = rng(seed); withRng(R, () => m.restart());
   const IN = rng(seed ^ 0x5bd1e995), A = Input.ACTIONS, log = [];
@@ -204,7 +204,7 @@ window.__detRun = (seed, frames, l1, l2) => {
    replays them quietly; the whole saved fight must come out exactly the same (and so must the log, vs __detRun) */
 window.__rbRun = (seed, frames, l1, l2, every, depth, pre) => {
   const T = Online._t, { rng, withRng } = T, PC = Input.players[0].constructor, net = [new PC(0), new PC(1)];
-  net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 } }; });
+  net.forEach(p => { p.cpu = { held: {}, move: { x: 0, y: 0 }, stick: 1 }; });
   const opts = Object.assign({ mode: 'online', online: true, local: 0, builds: [KB.mintBuild(l1, 0), KB.mintBuild(l2, 0)], cpu: [null, null], arena: 'shelf', wins: 9, time: 99, bonus: false, inputs: net, onEnd: () => {} }, window.__rbOpts || {});   // (__rbOpts: e.g. { arena: 'trainset', hazards: true })
   const m = Match.create(opts); App.setView(m); const R = rng(seed); withRng(R, () => m.restart());
   T.prepSnap(m, net);

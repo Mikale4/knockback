@@ -1,8 +1,8 @@
 /* commands.js -- COMMAND SPECIALS: three more Specials for every figure, each one something only that figure would do.
 
-   The stick is read on the screen like a 2D fighter's: ↓ is down, and → is the side of the screen (left or right) the
-   opponent is on, flipping when you swap sides; the Special then turns to face them. With Special:
-     ↓↘→  (a quarter-circle forward)     ↓↙←  (a quarter-circle back)     →↓↘  (a dragon punch)
+   A direction held with Special, read on the screen: → is the side of the screen (left or right) the opponent is on,
+   flipping when you swap sides, ↑ is the stick pushed up; the Special then turns to face them:
+     → + Special (the qcf slot)     ← + Special (qcb)     ↑ + Special (dp)     (the keys are from when they were motions)
    The motions are only the buttons: what each does is the figure's own (a rising anti-air is there only where it's
    that figure's signature: the boxer's uppercut, the bicycle kick, the alley-oop, a horse rearing, a cannon jump).
    Plain Special is still the figure's own. All four share the HEAD's uses (one more use a round than before); they

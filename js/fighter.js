@@ -453,11 +453,13 @@
       if (this.rounds <= 0) { this.reloadT = this.st.reload; this.reloadCall(true); }
     }
     reloadCall(force) { if (!force && this.m.time - (this.reloadCallT || -9) < 0.8) return; this.reloadCallT = this.m.time; this.m.call(this, this.reloadT > 0 && !force ? this.st.ammoOut + ': ' + this.reloadT.toFixed(1) + ' s' : this.st.ammoOut, 'bad'); }
-    /* COMMAND SPECIALS, read on the screen like a 2D fighter's: ↓ is the stick pulled down, and → is whichever side of
-       the screen (left or right) the opponent is on, so the gesture is the same wherever they stand (it flips when you
-       swap sides). A quarter-circle forward (↓↘→), back (↓↙←) or a dragon punch (→↓↘) with Special is that Special
-       instead of the plain one; the motion counts for half a second. The camera never turns in a fight, so the screen's
-       right is the world's +x (the same mapping stick() uses) and the sim never has to read the camera */
+    /* COMMAND SPECIALS: a direction held with Special, read on the screen: → is whichever side of the screen (left or
+       right) the opponent is on, so it's the same wherever they stand (it flips when you swap sides), ↑ is the stick
+       pushed up. → + Special, ← + Special and ↑ + Special are the three (keyed qcf, qcb and dp: they were motions once,
+       a quarter circle forward and back and a dragon punch); the diagonals count as → or ←; Special with the stick at
+       rest (or pulled straight down) is the plain one. Let go of the stick a moment before Special and it still counts.
+       The CPU, a trial's demo and the harness just say which (cpu.cmd) and never read their stick for it. The camera never turns in a
+       fight, so the screen's right is the world's +x (the same mapping stick() uses) and the sim never reads the camera */
     recMotion() {
       const mv = this.input.move, l = Math.hypot(mv.x, mv.y), H = this.mot || (this.mot = []), o = this.opp;
       // which side they're on: it only changes once they're clearly across (straight above or below keeps the last side)
@@ -471,18 +473,14 @@
       if (!last || last.c !== c) { H.push({ c, t: this.m.time }); if (H.length > 12) H.shift(); }
     }
     motion() {
-      const H = this.mot; if (!H || H.length < 2) return null;
+      const H = this.mot; if (!H || !H.length) return null;
       let n = H.length - 1; const now = this.m.time;
       if (H[n].c === 5 && n > 0 && now - H[n].t < 0.12) n--;   // (let go of the stick just before Special)
-      const end = H[n]; if (now - end.t > 0.3) return null;
-      const find = (i, c) => { for (; i >= 0; i--) { const e = H[i]; if (end.t - e.t > 0.45) return -1; if (e.c === c) return i; } return -1; };
-      if (end.c === 3) { const i = find(n - 1, 2); if (i >= 0 && find(i - 1, 6) >= 0) return 'dp'; }
-      if (end.c === 6 && find(n - 1, 2) >= 0) return 'qcf';
-      if (end.c === 4 && find(n - 1, 2) >= 0) return 'qcb';
-      return null;
+      const c = H[n].c;
+      return c === 6 || c === 9 || c === 3 ? 'qcf' : c === 4 || c === 7 || c === 1 ? 'qcb' : c === 8 ? 'dp' : null;   // → ← ↑
     }
     specialId() {
-      const S = this.st, cpu = this.input.cpu, c = cpu && cpu.cmd ? cpu.cmd : this.motion();   // (the CPU just says which)
+      const S = this.st, cpu = this.input.cpu, c = cpu && cpu.cmd ? cpu.cmd : cpu && !cpu.stick ? null : this.motion();   // (the CPU, a trial demo and the harness just say which: their stick is for walking; online players' sticks are people's)
       if (cpu && cpu.cmd) cpu.cmd = null;
       if (c) this.m.event('motion', { f: this, c });   // (the tutorial listens)
       const id = c && S.cmd && S.cmd[c];
@@ -496,7 +494,7 @@
       const cmd = id !== this.st.special, o = this.opp;
       if (cmd) { this.mot.length = 0; this.m.call(this, KB.MOVES[id].name.toUpperCase(), 'small'); }
       this.startMove(id, 'special');
-      // a command special goes at them wherever they are on the screen (the motion ends on their side, not on them)
+      // a command special goes at them wherever they are on the screen (the direction is their side of the screen, not straight at them)
       if (cmd && o && o.state !== 'out' && this.move && this.move.id === id) this.yaw = U.ang(this.pos, o.pos);
     }
     /* a LEAP at them: it comes down where they were standing, and hits all round when it lands */
