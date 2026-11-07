@@ -298,6 +298,20 @@ ramrod, a brass nameplate with a name on it); the rivals are Blackbeard and Redb
 Sailor and the Marauder, the Musketeer and the Cannoneer. HISTORICAL FANTASY keeps the Monk, the Viking, the Summoner
 and the Bard for now. Their trials come from the same route generator, proven at 60 Hz, 144 Hz and on uneven frames.
 
+## Ammo
+
+Guns and bows run dry. Every shot spends one; the last one starts the reload, and until it's done the weapon's
+Heavy is a blow with the weapon itself (a string keeps going with the bow or the butt instead of the shot). The HUD
+shows what's left under SPECIAL. Thrown sports balls don't use ammo: those have to be picked back up.
+
+| Weapon | Ammo | Reload | Without it |
+|---|---|---|---|
+| Pirate's Flintlock | 4 rounds (Point Blank, Quick Shot, Plunging Shot) | 5 s | Pistol Butt, Pistol Club |
+| Blackbeard's Brace of Pistols | 6 pistols (Six Pistols, Pistol Rain, Close Shot) | 6 s | Pistol Butt, Pistol Club |
+| Musketeer's musket | 1 cartridge (Musket Shot) | 3 s (1.8 s Drilled) | Musket Butt |
+| Cannoneer's Swivel Gun | 3 shot (Grapeshot, Mortar Drop) | 5 s | Barrel Bash |
+| Archer's bow | 10 arrows (Snap Shot, Volley, Arrow Rain, Power Draw, Plunging Arrow) | 5 s | Bow Jab, Bow Swat, Bracer Bash |
+
 ## Mixed strings (every pair of arms has its own)
 
 Put an R-arm and an L-arm from **different lines** on one figure and they make a string of their own. The R-arm

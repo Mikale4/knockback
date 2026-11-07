@@ -26,7 +26,7 @@
       el('div', { class: 'hypebox' }, el('span', { class: 'hlabel' }, 'HYPE'), el('div', { class: 'bar hype' }, R.hype = el('i'), el('em')), R.hypen = el('b', { class: 'hypen' }, '0')),
       R.ready = el('div', { class: 'artready' }),
       el('div', { class: 'uses' }, el('span', null, 'SPECIAL'), R.uses = el('span', { class: 'usepips' })),
-      f.st.rounds ? R.rnd = el('div', { class: 'rounds' }, el('span', null, 'ROUNDS'), R.rounds = el('span', { class: 'usepips' })) : null,
+      f.st.rounds ? R.rnd = el('div', { class: 'rounds' }, el('span', null, f.st.ammo), R.rounds = el('span', { class: 'usepips' })) : null,
       R.combo = el('div', { class: 'combo' }, R.cn = el('b'), R.cl = el('span'), R.cb = el('em'), R.cd = el('small')));
     R.box = box; R.low = low; R.f = f; R.lastHp = f.hp; R.trailHp = f.hp;
     return R;
@@ -65,8 +65,8 @@
         R.hype.style.width = f.hype + '%'; R.hypen.textContent = Math.floor(f.hype); R.hype.parentNode.classList.toggle('max', f.hype >= 100); R.hype.parentNode.classList.toggle('half', f.hype >= 50);
         { const human = !(M.ai && M.ai[f.idx]) && !M.attract && M.opts.mode !== 'watch', on = human && f.hype >= 100 && !M.cine && f.state !== 'ko'; if (on !== R.readyOn) { R.readyOn = on; R.ready.classList.toggle('on', on); if (on) R.ready.textContent = 'LEGEND ART READY · ' + (U.touch && !Input.usingPad(f.idx) ? 'SUPER' : Input.prompt(f.idx, 'super')); } }
         R.uses.textContent = f.broken.head ? '✕' : '◆'.repeat(Math.max(0, f.uses)) + '◇'.repeat(Math.max(0, f.st.uses - Math.max(0, f.uses)));
-        if (R.rounds) {   // the FLINTLOCK's chamber
-          const t = f.broken.armL ? '\u2715' : f.reloadT > 0 ? 'RELOADING ' + f.reloadT.toFixed(1) : '\u25cf'.repeat(f.rounds) + '\u25cb'.repeat(Math.max(0, f.st.rounds - f.rounds));
+        if (R.rounds) {   // AMMO
+          const t = f.broken[f.st.ammoPart] ? '\u2715' : f.reloadT > 0 ? f.st.ammoOut + ' ' + f.reloadT.toFixed(1) : '\u25cf'.repeat(f.rounds) + '\u25cb'.repeat(Math.max(0, f.st.rounds - f.rounds));
           if (R.rounds.textContent !== t) { R.rounds.textContent = t; R.rnd.classList.toggle('empty', f.reloadT > 0); }
         }
         const pd = (el, k) => { const v = f.broken[k] ? 0 : f.armor[k] / f.armorMax[k]; el.className = el.className.split(' ')[0] + (f.broken[k] ? ' off' : v < 0.35 ? ' red' : v < 0.65 ? ' yel' : ''); };
@@ -164,7 +164,7 @@
         row(k('heavy') + ' (hold)', nm(S.heavy), 'the KNOCK: aim it at a wall'),
         row('air ' + k('light') + ' ×' + A.length, A.map(nm).join(' › '), S.mixed ? 'mixed air string, one per jump' : 'air string, one per jump'),
         S.gunCancel ? row(k('light') + '… ' + k('heavy'), nm(S.gunCancel), 'gun cancel (Flintlock), once a combo; then Light starts the string again') : null,
-        S.rounds ? row('\u25cf'.repeat(S.rounds), S.rounds + ' rounds', 'every shot spends one; empty, he reloads (' + S.reload + ' s) and Heavy is the Pistol Butt') : null,
+        S.rounds ? row('\u25cf'.repeat(S.rounds), S.rounds + ' ' + S.ammo.toLowerCase(), 'every shot spends one; empty, you reload (' + +S.reload.toFixed(1) + ' s)' + (S.dry.heavy ? ' and Heavy is the ' + nm(S.dry.heavy) : '')) : null,
         S.sig ? row('★ ' + S.sigName, S.sigDesc, 'R-ARM signature') : null,
         row('air ' + k('heavy'), nm(S.airHeavy), 'spike: ground bounce'),
         row(k('dodge') + ' › ' + k('light'), nm(S.dashAtk), 'dash attack (LEGS)'),

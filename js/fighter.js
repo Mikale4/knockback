@@ -70,7 +70,7 @@
       this.grounded = true; this.combo = this.freshCombo(); this.hitstun = 0; this.held = null; this.flash = 0; this.flashCol = 0xffffff;
       this.spin.rotation.set(0, 0, 0); this.techLock = 0; this.lastDodgeEnd = -9; this.groundT = 0; this.downT = 0; this.hardKD = false; this.kdT = 0; this.artFly = false; this.acExt = 0; this.gainsK = 0; this.cmdThrow = null;
       this.wallTouch = null; this.out = false; this.ko = false; this.runT = 0; this.phase = 0; this.hazT = 0;
-      this.rounds = this.st.rounds; this.reloadT = 0;   // (the FLINTLOCK's chamber)
+      this.rounds = this.st.rounds; this.reloadT = 0;   // (AMMO: a gun's rounds, a bow's arrows)
       this.balls = {}; this.beanT = 0; this.beanWin = 0; this.swayT = 0; this.noBallT = -9; this.penance = 0; this.firstBlood = false; this.undyingUsed = false;   // (MODERN SPORTS: the balls on the floor are dropped with the round's shots)
       this.obj.visible = true; this.cine = null; this.pose2 = null; this.kickT = 0; this.yankT = 0; this.chained = null; this.spReady = 0; this.grabbing = null; this.throwT = -1; this.pummelT = 0; this.asleep = false; this.pogos = 0; this.beatOn = false; this.lastBeat = -1;
       if (this.markProp) { this.markProp.parent && this.markProp.parent.remove(this.markProp); this.markProp = null; }
@@ -85,7 +85,7 @@
       this.armorT = Math.max(this.armorT, t);
     }
     /* moves with a use limit (the Ninja's Chain Hook: twice in any 5 s): canUse asks, useLimited spends one (or says how long to wait) */
-    limitT(mv) { return mv.limit.t * (this.st.sig === 'drill' ? 0.6 : 1); }   // (MUSKETEER: Drilled, a faster reload)
+    limitT(mv) { return mv.limit.t; }   // (the MUSKETEER's Drilled reload is in her ammo now)
     canUse(id) { const mv = KB.MOVES[id]; if (!mv || !mv.limit) return true; const now = this.m.time, log = (this.limits && this.limits[id]) || []; return log.filter(t => now - t < this.limitT(mv)).length < mv.limit.n; }
     useLimited(id, mv) {
       const now = this.m.time, L = this.limits = this.limits || {}, log = (L[id] || []).filter(t => now - t < this.limitT(mv));
@@ -173,9 +173,9 @@
       if (S.sig === 'beat' && !this.broken.armR) { const b = Music.beat(this.m); if (b.n !== this.lastBeat) { this.lastBeat = b.n; if (this.state !== 'ko' && !this.m.cine) FX.ring(_c.copy(this.pos).setY(0.06), { r0: 0.3, r1: 1.0, life: 0.22, color: 0xff8ad8 }); } }
       if (this.m.training && this.m.training.meter) { this.hype = 100; this.burst = 100; this.uses = S.uses; }
       if (this.combo.hits && this.inHitstun) this.combo.t += dt;
-      if (this.reloadT > 0) {   // FLINTLOCK: reloading, three rounds back in the chamber when it's done
+      if (this.reloadT > 0) {   // AMMO: reloading, and all of it back when it's done
         this.reloadT -= dt;
-        if (this.reloadT <= 0) { this.reloadT = 0; this.rounds = S.rounds; if (this.state !== 'ko' && this.state !== 'out') { this.m.call(this, 'RELOADED', 'buff'); SFX.play('snapon'); } }
+        if (this.reloadT <= 0) { this.reloadT = 0; this.rounds = S.rounds; if (this.state !== 'ko' && this.state !== 'out') { this.m.call(this, S.ammoIn, 'buff'); SFX.play('snapon'); } }
       }
       if (this.beanT > 0) {   // BASEBALL: beaned, and seeing stars as soon as they're on their feet
         this.beanWin -= dt;
@@ -417,13 +417,13 @@
       this.spearOut = false; this.spearGrp = null; this.spear = null;
       if (!quiet) { SFX.play('snapon'); FX.burst(F.socket('wR', [0, 0, 8]), { n: 10, color: [0xffffff, 0xffc890], glow: true, speed: 2.5, size: 0.06, life: 0.35 }); }
     }
-    /* FLINTLOCK: three rounds; a shot spends one when it goes off, and the last one starts the reload */
+    /* AMMO (the Flintlock, pistols, a musket, a swivel gun, a bow): a shot spends one when it goes off, the last one starts the reload */
     gunReady() { return !this.st.rounds || this.rounds > 0; }
     spendRound() {
       this.rounds = Math.max(0, this.rounds - 1);
       if (this.rounds <= 0) { this.reloadT = this.st.reload; this.reloadCall(true); }
     }
-    reloadCall(force) { if (!force && this.m.time - (this.reloadCallT || -9) < 0.8) return; this.reloadCallT = this.m.time; this.m.call(this, this.reloadT > 0 && !force ? 'RELOADING: ' + this.reloadT.toFixed(1) + ' s' : 'RELOADING', 'bad'); }
+    reloadCall(force) { if (!force && this.m.time - (this.reloadCallT || -9) < 0.8) return; this.reloadCallT = this.m.time; this.m.call(this, this.reloadT > 0 && !force ? this.st.ammoOut + ': ' + this.reloadT.toFixed(1) + ' s' : this.st.ammoOut, 'bad'); }
     grabMove() { return this.st.sig === 'grappler' ? 'wrGrab' : 'throw'; }
     startLight() { this.startMove(this.lightRoot(), 'light'); }
     startMove(id, kind) {
@@ -436,10 +436,10 @@
         id = alt; mv = KB.MOVES[alt];
       }
       if (mv.round && this.st.rounds && this.rounds <= 0) {
-        // FLINTLOCK: the chamber's empty while he reloads: Heavy clubs them with the butt, the air Heavy brings it down on them
-        const alt = { heavy: 'pistolButt', airHeavy: 'pistolClub' }[kind];
-        if (!alt) { this.reloadCall(); return; }
-        id = alt; mv = KB.MOVES[alt];
+        // AMMO: out while reloading: the move you make without it (the butt of the gun, the bow itself); a string keeps going
+        const alt = (this.st.dry || {})[kind], a = alt && KB.MOVES[alt];
+        if (!a) { this.reloadCall(); return; }
+        id = alt; mv = mv.nx && !a.nx ? Object.assign({}, a, { nx: mv.nx }) : a;
       }
       if (mv.limit && !this.useLimited(id, mv)) return;   // (a move with a limit: n uses in any t seconds)
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;

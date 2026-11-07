@@ -189,15 +189,19 @@
   // ARCHER · Recurve Bow: bow strikes into an arrow at point blank; pause to loose a three-arrow volley
   mv('arA', { name: 'Bow Strike', pose: 'slashA', su: 0.06, dmg: 22, reach: 1.25, lunge: 3, nx: { l: 'arB' } });
   mv('arB', { name: 'Limb Swipe', pose: 'slashB', su: 0.06, dmg: 24, reach: 1.25, stun: 0.5, lunge: 3, nx: { l: 'arC', p: 'arP' } });
-  mv('arC', { name: 'Snap Shot', type: 'proj', proj: 'arrow', pose: 'drawBow', su: 0.08, rc: 0.16, dmg: 26, kb: [2.5, 0], stun: 0.5, range: 6, trail: 0, sfx: 'whoosh', nx: { l: 'arD' } });
+  mv('arC', { name: 'Snap Shot', type: 'proj', proj: 'arrow', pose: 'drawBow', su: 0.08, rc: 0.16, dmg: 26, kb: [2.5, 0], stun: 0.5, range: 6, round: 1, trail: 0, sfx: 'whoosh', nx: { l: 'arD' } });
   mv('arD', { name: 'Bow Uppercut', pose: 'upslash', su: 0.1, ac: 0.08, rc: 0.24, dmg: 42, reach: 1.25, kb: [2, 12.5], launch: 1, launcher: 1, finisher: 1 });
-  mv('arP', { name: 'Volley', type: 'proj', proj: 'arrows', pose: 'drawBow', su: 0.1, rc: 0.26, dmg: 34, kb: [10, 5], launch: 1, range: 7.5, finisher: 1, trail: 0, sfx: 'whoosh' });
+  mv('arP', { name: 'Volley', type: 'proj', proj: 'arrows', pose: 'drawBow', su: 0.1, rc: 0.26, dmg: 34, kb: [10, 5], launch: 1, range: 7.5, finisher: 1, round: 1, trail: 0, sfx: 'whoosh' });
   mv('arAirA', { name: 'Air Strike', pose: 'slashA', su: 0.06, dmg: 22, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'arAirB' } });
   mv('arAirB', { name: 'Air Swipe', pose: 'slashB', su: 0.06, dmg: 22, kb: [3, 4.5], air: 1, h: 1, nx: { l: 'arAirC' } });
-  mv('arAirC', { name: 'Arrow Rain', type: 'proj', proj: 'arrowDown', pose: 'drawBow', su: 0.07, rc: 0.22, dmg: 36, kb: [2, -11], launch: 1, spike: 1, air: 1, range: 6.5, trail: 0, sfx: 'whoosh' });
-  mv('powerDraw', { name: 'Power Draw', type: 'proj', proj: 'arrowBig', pose: 'drawBow', su: 0.2, rc: 0.3, dmg: 74, kb: [16, 5], launch: 1, range: 10.5, charge: 1, trail: 0, sfx: 'whoosh' });
+  mv('arAirC', { name: 'Arrow Rain', type: 'proj', proj: 'arrowDown', pose: 'drawBow', su: 0.07, rc: 0.22, dmg: 36, kb: [2, -11], launch: 1, spike: 1, air: 1, range: 6.5, round: 1, trail: 0, sfx: 'whoosh' });
+  mv('powerDraw', { name: 'Power Draw', type: 'proj', proj: 'arrowBig', pose: 'drawBow', su: 0.2, rc: 0.3, dmg: 74, kb: [16, 5], launch: 1, range: 10.5, charge: 1, round: 1, trail: 0, sfx: 'whoosh' });
   mv('bracerUpper', { name: 'Bracer Upper', pose: 'uppercutL', su: 0.1, ac: 0.08, rc: 0.27, dmg: 36, kb: [1, 13], launch: 1, launcher: 1, trail: 0, sfx: 'heavy' });
-  mv('plungingArrow', { name: 'Plunging Arrow', type: 'proj', proj: 'arrowDown', pose: 'drawBow', su: 0.13, rc: 0.28, dmg: 52, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 7, trail: 0, sfx: 'whoosh' });
+  mv('plungingArrow', { name: 'Plunging Arrow', type: 'proj', proj: 'arrowDown', pose: 'drawBow', su: 0.13, rc: 0.28, dmg: 52, kb: [3, -13], launch: 1, spike: 1, air: 1, range: 7, round: 1, trail: 0, sfx: 'whoosh' });
+  // an empty quiver while she restocks: the bow itself, and the bracer
+  mv('bowJab', { name: 'Bow Jab', pose: 'thrust', su: 0.07, dmg: 24, reach: 1.3, stun: 0.5, lunge: 3, trail: 0, sfx: 'whoosh' });
+  mv('bowSwat', { name: 'Bow Swat', pose: 'slashA', su: 0.07, ac: 0.08, rc: 0.22, dmg: 30, kb: [2, -11], launch: 1, spike: 1, air: 1, h: 0.8, trail: 0, sfx: 'whoosh' });
+  mv('bracerBash', { name: 'Bracer Bash', pose: 'hookL', su: 0.15, ac: 0.07, rc: 0.3, dmg: 42, reach: 1.1, rad: 0.9, kb: [13, 4.5], launch: 1, lunge: 4, trail: 0, sfx: 'heavy' });
   mv('pinningShot', { name: 'Pinning Shot', type: 'proj', proj: 'arrowBig', pose: 'drawBow', su: 0.16, rc: 0.32, dmg: 46, kb: [3, 0], crumple: 1.0, range: 12, trail: 0, sfx: 'whoosh' });
   mv('archerSlide', { name: 'Slide Kick', pose: 'slide', su: 0.08, ac: 0.14, rc: 0.28, dmg: 36, kb: [3, 8.5], launch: 1, lunge: 9, zone: 'low', h: 0.35, trail: 0, sfx: 'whoosh' });
   mv('bullseye', { name: 'Bullseye', type: 'super', pose: 'drawBow', su: 0.14, catchType: 'proj', range: 12, superLook: 'arrow', superFrom: 'wR', seq: 'bullseye', dmg: 290, kb: [26, 6], zone: 'mid' });
@@ -302,8 +306,8 @@
   P.archer = {
     head: { name: 'Sun Visor', armor: 100, weight: 0.88, special: 'pinningShot', uses: 3, hype: 1.05, desc: 'SPECIAL: Pinning Shot. An arrow that flies 12 m and crumples them where they stand.' },
     core: { name: 'Chest Guard', hp: 930, def: 0.04, weight: 0.9, guard: -5, desc: 'Light. A guard on one side.' },
-    armR: { name: 'Recurve Bow', armor: 115, weight: 0.88, light: 'arA', air: 'arAirA', sig: 'quickdraw', sigName: 'Quick Draw', sigDesc: 'The string fires arrows: a Snap Shot in the middle, a three-arrow Volley on the pause, Arrow Rain in the air.', trail: 0xfff07a, desc: 'Bow Strike › Limb Swipe › Snap Shot (an arrow) › Bow Uppercut. Pause after the Swipe: Volley, three arrows. Air: Strike › Swipe › Arrow Rain. SIGNATURE: arrows in the string.' },
-    armL: { name: 'Arm Guard', armor: 105, weight: 0.85, heavy: 'powerDraw', launch: 'bracerUpper', airHeavy: 'plungingArrow', guard: 70, chip: 1.15, trail: 0xfff07a, desc: 'HEAVY: Power Draw, an arrow that KNOCKs them from 10.5 m. Guard: weak.' },
+    armR: { name: 'Recurve Bow', armor: 115, weight: 0.88, light: 'arA', air: 'arAirA', rounds: 10, reload: 5, ammo: 'ARROWS', ammoOut: 'RESTOCKING', ammoIn: 'RESTOCKED', dry: { heavy: 'bracerBash', airHeavy: 'bodyDrop', light: 'bowJab', air: 'bowSwat' }, sig: 'quickdraw', sigName: 'Quick Draw', sigDesc: 'The string fires arrows: a Snap Shot in the middle, a three-arrow Volley on the pause, Arrow Rain in the air.', trail: 0xfff07a, desc: 'Bow Strike › Limb Swipe › Snap Shot (an arrow) › Bow Uppercut. Pause after the Swipe: Volley, three arrows. Air: Strike › Swipe › Arrow Rain. SIGNATURE: arrows in the string.' },
+    armL: { name: 'Arm Guard', armor: 105, weight: 0.85, heavy: 'powerDraw', launch: 'bracerUpper', airHeavy: 'plungingArrow', guard: 70, chip: 1.15, trail: 0xfff07a, rounds: 10, reload: 5, ammo: 'ARROWS', ammoOut: 'RESTOCKING', ammoIn: 'RESTOCKED', dry: { heavy: 'bracerBash', airHeavy: 'bodyDrop', light: 'bowJab', air: 'bowSwat' }, desc: 'HEAVY: Power Draw, an arrow that KNOCKs them from 10.5 m. TEN ARROWS in the quiver (every arrow she looses spends one); empty, she restocks for 5 s, the string strikes with the bow and Heavy is a Bracer Bash. Guard: weak.' },
     legs: { name: 'Trail Runners', armor: 150, weight: 0.85, speed: 6.5, jump: 12.5, airJumps: 1, dashAtk: 'archerSlide', perk: 'skyward', desc: 'Skyward: a high jump, and air dodges go 35% further. DASH ATTACK: Slide Kick.' },
     card: { name: 'Bullseye', super: 'bullseye', passive: 'eagle', desc: 'LEGEND ART: Bullseye, a sky full of arrows and one through the middle. PASSIVE (Eagle Eye): +18% damage on hits from 5 m or more.' },
   };
