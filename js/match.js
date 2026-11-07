@@ -399,6 +399,7 @@
       lasso: () => { const g = new VX.Grid(); for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; g.set(Math.round(Math.cos(a) * 6), 0, Math.round(Math.sin(a) * 6), (k & 1) ? 0xc8a878 : 0x8a6a3a); } return VX.object(g, 0.05); },
       basketball: () => { const g = new VX.Grid(); g.ell(0, 0, 0, 6.2, 6.2, 6.2, (x, y, z) => Math.abs(x) < 0.5 || Math.abs(y) < 0.5 || Math.abs(Math.hypot(x, y) - 4.6) < 0.5 ? 0x2a1a10 : 0xe8681a); return VX.object(g, 0.035); },
     };
+    Object.assign(LOOK, KB.EXT.LOOK); Object.assign(SPORT, KB.EXT.SPORT); Object.assign(BALL_MAKE, KB.EXT.BALL);   // (a series' own shots)
     const ballSrc = {};
     const ballMesh = look => (ballSrc[look] || (ballSrc[look] = BALL_MAKE[look]())).clone();
     const SPORT_MESH = {
@@ -461,13 +462,16 @@
       powder: () => { const g = new VX.Grid(); for (let z = -10; z <= 10; z++) { g.set(((z * 7) % 3 + 3) % 3 - 1, 0, z, 0x1c1c22); if (z % 3 === 0) g.set(0, 0, z, 0x4a4a52); } g.ell(0, 1, -12, 2, 2, 2, 0x5a3a1a); return VX.object(g, 0.06); },
       rope: () => { const g = new VX.Grid(); for (let k = 0; k < 28; k++) { const a = k / 28 * Math.PI * 2; g.set(Math.round(Math.cos(a) * 8), 0, Math.round(Math.sin(a) * 8), (k & 1) ? 0xc8a878 : 0x8a6a3a); } g.box(8, 0, 0, 12, 0, 0, 0xc8a878); return VX.object(g, 0.055); },
     };
+    Object.assign(TRAP_MAKE, KB.EXT.TRAP);
     function killTrap(p) { scene.remove(p.mesh); p.mesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); if (o.userData.own) o.material.dispose(); } }); }
+    /* what a series' acts and projectiles get to work with (KB.EXT) */
+    const X = { scene, arena, dart, inside, bodyHit, killDart, killTrap, glowMat, inked, shadows, predict, flatMat, flat, TRAP_MAKE, LOOK, V3, UP, dropProj: p => dropProj(p), shotDir: (f, o, d) => shotDir(f, o, d) };
     M.placeTrap = (f, mv) => {
       const T = mv.trap, F = f.forward;
       for (let i = M.projs.length - 1; i >= 0; i--) { const q = M.projs[i]; if (q.kind === 'trap' && q.f === f && q.mv.id === mv.id) { killTrap(q); M.projs.splice(i, 1); } }   // (one of each at a time)
       const at = inside(f.pos.clone().addScaledVector(F, mv.reach || 1.6)); at.y = 0;
       const mesh = TRAP_MAKE[T.look](T.col, T.r); mesh.position.copy(at).setY(0.02); mesh.rotation.y = f.yaw; scene.add(mesh);
-      M.projs.push({ kind: 'trap', f, mv, pos: at, mesh, t: 0, tick: 0, id: 's' + (++M.shotId) });
+      M.projs.push({ kind: 'trap', f, mv, pos: at, dir: F.clone(), mesh, t: 0, tick: 0, id: 's' + (++M.shotId) });
       FX.burst(at.clone().setY(0.2), { n: 8, color: arena.dust, speed: 2, size: 0.07, life: 0.4 }); SFX.play('whoosh');
     };
     /* ---- UNIQUE SPECIALS: the things only one figure does (fighter.js onActive calls M.act for a move with act) */
@@ -477,7 +481,8 @@
     M.gateHit = pt => { for (const q of M.projs) if (q.kind === 'gate') { const c = Math.cos(-q.yaw), sn = Math.sin(-q.yaw), dx = pt.x - q.pos.x, dz = pt.z - q.pos.z, lx = dx * c + dz * sn, lz = -dx * sn + dz * c; if (Math.abs(lx) < 1.9 && Math.abs(lz) < 0.35 && pt.y < 2.3) return q; } return null; };
     M.act = (f, mv) => {
       const o = M.opp(f), F = f.forward, a = mv.act;
-      if (a === 'impBomb') {
+      if (KB.EXT.ACTS[a]) KB.EXT.ACTS[a](M, f, mv, X);
+      else if (a === 'impBomb') {
         // SUMMONER: one of her imps, thrown (a fresh one if none is out); it bursts where it lands
         let mn = myImps(f).find(x => !x.carried) || null; if (!mn) { M.summon(f, 1, true); mn = myImps(f).slice(-1)[0]; } if (!mn) return;
         const from = f.pos.clone().addScaledVector(F, 0.6).setY(f.pos.y + 1.3); poof(mn);
@@ -558,7 +563,7 @@
     }
     /* where a moving point (a to b) meets their body: standing (shins to head) or, for an OTG, lying on the floor */
     function bodyHit(f, o, a, b, w, mv, kind) {
-      if (['out', 'ko', 'getup'].includes(o.state) || o.inv > 0) return null;
+      if (['out', 'ko', 'getup'].includes(o.state) || o.inv > 0 || o.buffs.haze) return null;   // (HEAT HAZE: shots pass through)
       const lying = o.state === 'down';
       if (lying && !Combat.otgOk(f, o, mv, kind)) return null;
       const dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz;
@@ -1112,6 +1117,7 @@
     }
     /* take something that's flying out of the scene (a new round, the end of the match) */
     function dropProj(p) {
+      if (KB.EXT.PROJS[p.kind]) return KB.EXT.PROJS[p.kind].drop(M, p, X);
       if (p.kind === 'dart') killDart(p); else if (p.kind === 'chain') endChain(p); else if (p.kind === 'hex') disposeGroup(p.mesh);
       else if (p.kind === 'wave') { disposeGroup(p.mesh); p.notes.forEach(n => scene.remove(n)); }
       else if (p.kind === 'part') { if (p.grp.parent) p.grp.parent.remove(p.grp); }
@@ -1123,6 +1129,7 @@
     function updProjs(dt) {
       for (let i = M.projs.length - 1; i >= 0; i--) {
         const p = M.projs[i]; p.t += dt;
+        const XP = KB.EXT.PROJS[p.kind]; if (XP) { if (XP.update(M, p, dt, X)) { XP.drop(M, p, X); M.projs.splice(i, 1); } continue; }
         if (p.kind === 'bomb') {
           p.vel.y -= 22 * dt; p.pos.addScaledVector(p.vel, dt); p.mesh.position.copy(p.pos); p.mesh.rotation.x += dt * 8;
           if (U.rand() < 0.5) FX.burst(p.pos.clone().setY(p.pos.y + 0.3), { n: 1, color: 0xffc040, glow: true, speed: 0.5, size: 0.05, life: 0.2, gravity: -2 });
@@ -1207,6 +1214,13 @@
           const f = p.f, o = M.opp(f), T = p.mv.trap, life = T.life || 9;
           if (p.t >= life || f.state === 'out') { killTrap(p); M.projs.splice(i, 1); continue; }
           if (p.t > life - 0.5) p.mesh.scale.setScalar(Math.max(0.05, (life - p.t) / 0.5));
+          if (T.spin) p.mesh.rotation.y += T.spin * dt;
+          if (T.drift && p.dir) { p.pos.addScaledVector(p.dir, T.drift * dt); inside(p.pos); p.mesh.position.x = p.pos.x; p.mesh.position.z = p.pos.z; }
+          if (T.aura && T.aura.pull && o && o.inv <= 0 && !['ko', 'out', 'held', 'down', 'getup'].includes(o.state) && o.pos.y < 2.5) {
+            const dx = p.pos.x - o.pos.x, dz = p.pos.z - o.pos.z, d = Math.hypot(dx, dz);
+            if (d < T.r + 1.6 && d > 0.25) { const s = Math.min(d, T.aura.pull * dt); o.pos.x += dx / d * s; o.pos.z += dz / d * s; }
+          }
+          if (T.aura && T.aura.slow && o && o.inv <= 0 && Math.hypot(o.pos.x - p.pos.x, o.pos.z - p.pos.z) < T.r && o.pos.y < 0.5) o.slowT = Math.max(o.slowT || 0, 0.15);
           const inR = g => g && Math.hypot(g.pos.x - p.pos.x, g.pos.z - p.pos.z) < T.r && g.pos.y < 0.5 && !['ko', 'out', 'down', 'getup', 'held'].includes(g.state);
           if (T.aura) {
             p.tick -= dt; if (p.tick > 0) continue; p.tick = 0.5;

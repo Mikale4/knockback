@@ -438,6 +438,108 @@
       const lamp = new VX.Grid(); lamp.box(0, 0, 0, 0, 30, 0, 0x3a3a40); lamp.box(0, 30, 0, 5, 30, 0, 0x3a3a40); lamp.box(4, 28, -1, 6, 29, 1, G(0xffd890)); prop(g, lamp, 0.4, 14, -2, -12); glowLight(g, 0xffd890, 0.8, 24, 16, 10, -12); },
     ambient: null });
 
+  /* ===================================================== ELEMENT BENDERS */
+  const deadTree = (c, h) => { const g = new VX.Grid(); g.cyl('y', 0, 0, 1.2, 0, h, c); g.line(0, h * 0.6, 0, -6, h + 4, 2, c, 0.8); g.line(0, h * 0.8, 0, 5, h + 6, -2, c, 0.8); g.line(0, h, 0, 1, h + 8, 1, c, 0.7); return g; };
+  const cloud = () => { const g = new VX.Grid(); g.ell(0, 0, 0, 10, 3, 6, 0xffffff); g.ell(6, 2, 0, 6, 3, 5, 0xffffff); g.ell(-7, 1, 1, 6, 2.5, 5, 0xf0f6ff); return g; };
+  const spike = (c, tip, h) => { const g = new VX.Grid(); for (let y = 0; y < h; y++) g.cyl('y', 0, 0, Math.max(0.5, 3 - y * 3 / h), y, y, y > h - 4 ? tip : c); return g; };
+  set('air', { name: 'SKY TEMPLE', tag: 'Pale stone above the clouds, banners in the wind',
+    sky: [0x6ab8f0, 0xd8f0ff], fog: 0xc8e4f8, hemi: [0xffffff, 0x8ab0d0, 1.0], sun: [0xfff4e0, 1.1],
+    floor: (x, z) => Math.abs(dist(x, z) - 10) < 0.7 ? 0xf0c860 : tiles(x, z, 8, 0xe8e4dc, 0xdcd8d0, 0xb8b4ac),
+    wall: (x, y, i) => y === 9 ? 0xf0c860 : (i % 8 === 0 ? 0xc8c4bc : 0xe8e4dc),
+    edge: 0xf0c860, dust: [0xe8e4dc, 0xffffff], out: 0xe8f4ff, outY: -20, post: 0xc8c4bc, plinth: 0xb8b4ac,
+    scenery(g) { for (const x of [-16, 16]) prop(g, K.tower(5, 22, 0xe8e4dc, 0x5a9ad8, 0xf0c860), 0.45, x, -2, -18);
+      for (const [x, z] of [[-8, -20], [8, -20]]) prop(g, K.banner(18, 0xf0c860, 0x5a9ad8), 0.4, x, -2, z);
+      for (const [x, y, z] of [[-20, -6, -6], [21, -7, -10], [-6, -8, -30], [12, -5, -34], [0, -10, 16], [-22, -9, 12]]) prop(g, cloud(), 0.5, x, y, z); },
+    ambient: g => drift(g, { col: 0xffffff, n: 70, speed: 0.2, size: 0.12, wind: 3, amp: 0.2 }) });
+  set('water', { name: 'FROZEN SHORE', tag: 'Sea ice at the edge of the world, under snow',
+    sky: [0x2a4a7a, 0xa8d0f0], fog: 0xb8d8f0, hemi: [0xe8f4ff, 0x4a6a8a, 0.95], sun: [0xe8f0ff, 0.95],
+    floor: (x, z) => hh(x >> 1, 5, z >> 1) > 0.93 ? 0x9ac8e8 : speck(x, z, 0xd8ecf8, 0xffffff, 0.86),
+    wall: (x, y, i) => ((y + (i >> 2)) % 3 === 0 ? 0xb8dcf0 : 0xd8ecf8),
+    edge: 0xffffff, dust: [0xd8ecf8, 0xffffff], out: 0x1a4a7a, outY: -2, post: 0x9ac8e8, plinth: 0x6a9ac8,
+    scenery(g) { for (const [x, z, h] of [[-15, -10, 16], [-18, -16, 22], [16, -12, 18], [19, -18, 14], [-6, -22, 12], [7, -24, 20]]) prop(g, spike(0xb8dcf0, 0xffffff, h), 0.45, x, -2, z);
+      const ig = new VX.Grid(); ig.ell(0, 0, 0, 9, 7, 9, (x, y, z) => y < 0 ? -1 : ((y + (x >> 2)) % 3 === 0 ? 0xc8dcf0 : 0xf0f8ff)); ig.box(-2, 0, 8, 2, 4, 9, 0x6a8ab0); prop(g, ig, 0.4, 13, -2, -22, -0.4); },
+    ambient: g => drift(g, { col: 0xffffff, n: 160, speed: 0.6, size: 0.12 }) });
+  set('earth', { name: 'CANYON RING', tag: 'A ring of stone slabs in a red canyon',
+    sky: [0xd8904a, 0xf8d8a0], fog: 0xe8c090, hemi: [0xfff0d8, 0x6a4a2a, 0.95], sun: [0xffe0b0, 1.1],
+    floor: (x, z) => hh(x, 4, z) > 0.94 ? 0x6a4a2a : tiles(x, z, 6, 0x9a7a5a, 0x8e6e50, 0x6a4a2a),
+    wall: (x, y, i) => hh(i, y, 3) > 0.8 ? 0x6a4a2a : (y > 7 ? 0xa88a62 : 0x8a6a4a),
+    edge: 0x6a4a2a, dust: [0x9a7a5a, 0xb89a6a], out: 0x5a3a20, outY: -2, post: 0x6a4a2a, plinth: 0x5a3a1a,
+    scenery(g) { for (const [x, z, r] of [[-20, -26, 10], [0, -36, 12], [22, -28, 11], [-26, -8, 8], [26, -6, 7]]) prop(g, K.rock(0xa86a3a, r), 0.5, x, -2, z);
+      for (const [x, z] of [[-12, -12], [12, -12]]) { const c = new VX.Grid(); c.box(-3, 0, -3, 3, 20, 3, (xx, y, zz) => y % 5 === 0 ? 0x6a4a2a : 0x9a7a5a); prop(g, c, 0.42, x, -2, z); } },
+    ambient: null });
+  set('flame', { name: 'EMBER PALACE', tag: 'Red lacquer, gold trim and braziers burning',
+    sky: [0x3a0a0a, 0xd8501a], fog: 0x6a1a10, hemi: [0xffd0a0, 0x2a0a08, 0.85], sun: [0xffa060, 1.0],
+    floor: (x, z) => dist(x, z) < 4 ? (dist(x, z) < 2.6 ? 0xd8a040 : 0x1a1414) : tiles(x, z, 8, 0x8a1a12, 0x7a1410, 0xd8a040),
+    wall: (x, y, i) => y === 9 ? 0xd8a040 : (i % 6 === 0 ? 0x1a1414 : 0x8a1a12),
+    edge: 0xd8a040, dust: [0x8a1a12, 0xffa040], out: 0x1a0808, outY: -2, post: 0x1a1414, plinth: 0x2a0a08,
+    scenery(g) { prop(g, K.pagoda(2, 0x8a1a12, 0x1a1414, 7, 0xd8a040), 0.5, 0, -2, -26);
+      for (const [x, z] of [[-14, -10], [14, -10], [-18, -20], [18, -20]]) { const b = new VX.Grid(); b.box(-1, 0, -1, 1, 6, 1, 0x1a1414); b.ell(0, 8, 0, 3, 1.5, 3, 0xd8a040); b.ell(0, 10, 0, 2, 2, 2, G(0xff7a2a)); b.set(0, 12, 0, G(0xffd040)); prop(g, b, 0.4, x, -2, z); }
+      glowLight(g, 0xff7a2a, 1.2, 30, 0, 6, -12); },
+    ambient: g => drift(g, { col: 0xff7a2a, n: 120, rise: true, speed: 0.8, size: 0.1 }) });
+  set('blood', { name: 'MOONLIT HOLLOW', tag: 'Dead trees under a blood-red moon',
+    sky: [0x0a0410, 0x3a0a1a], fog: 0x1a0810, hemi: [0xd8c0d0, 0x0a0408, 0.6], sun: [0xffe0e0, 0.7],
+    floor: (x, z) => hh(x, 6, z) > 0.975 ? 0x8a0a1a : speck(x, z, 0x2a1418, 0x3a1a20, 0.7),
+    wall: (x, y, i) => i % 4 === 0 ? 0x2a1a14 : (y === 4 || y === 8 ? 0x3a2a1a : -1),
+    edge: 0x2a1a14, dust: [0x2a1418, 0x8a0a1a], out: 0x05020a, outY: -2, post: 0x2a1a14, plinth: 0x14080c,
+    scenery(g) { prop(g, K.disc(7, G(0xffd0d0)), 0.6, 10, 16, -34); prop(g, K.disc(6, G(0xff8a9a)), 0.6, 10.3, 16.2, -33.8);
+      for (const [x, z, h] of [[-16, -10, 14], [17, -12, 16], [-10, -22, 18], [12, -24, 13], [-22, -18, 12]]) prop(g, deadTree(0x2a1a14, h), 0.45, x, -2, z);
+      glowLight(g, 0xff2a4a, 0.6, 30, 0, 8, -10); },
+    ambient: g => drift(g, { col: 0xff2a4a, n: 60, rise: true, speed: 0.3, size: 0.08 }) });
+  set('lava', { name: 'MAGMA CALDERA', tag: 'Black basalt over a sea of lava',
+    sky: [0x1a0a08, 0xff5a1a], fog: 0x4a1a0a, hemi: [0xffb080, 0x1a0806, 0.8], sun: [0xff9a5a, 1.0],
+    floor: (x, z) => hh(x, 7, z) > 0.95 || (x * 3 + z * 5) % 29 === 0 ? 0xff6a1a : speck(x, z, 0x2a1a16, 0x3a2420, 0.7),
+    wall: (x, y, i) => y === 9 ? 0x3a2420 : (i % 3 === 0 ? 0x1a1210 : 0x2a1a16),
+    edge: 0x3a2420, dust: [0x2a1a16, 0xff6a1a], out: 0xff5a1a, outY: -6, post: 0x1a1210, plinth: 0x2a1a16,
+    scenery(g) { const vo = new VX.Grid(); for (let y = 0; y < 22; y++) vo.cyl('y', 0, 0, 24 - y, y, y, (x, yy, z) => yy > 18 && hh(x, yy, z) > 0.5 ? G(0xff5a1a) : (hh(x, yy, z) > 0.8 ? 0x3a2420 : 0x2a1a16)); prop(g, vo, 0.6, 0, -2, -42);
+      for (const [x, z, r] of [[-18, -12, 6], [19, -14, 7], [-24, -24, 8], [24, -26, 6]]) prop(g, K.rock(0x2a1a16, r), 0.45, x, -2, z);
+      glowLight(g, 0xff6a1a, 1.4, 40, 0, 4, -14); },
+    ambient: g => drift(g, { col: 0xffa040, n: 140, rise: true, speed: 1.0, size: 0.09 }) });
+  set('storm', { name: 'STORM PEAK', tag: 'A slate summit in the rain, lightning rods at every corner',
+    sky: [0x0a0e1a, 0x3a4a6a], fog: 0x2a3448, hemi: [0xb8c8e8, 0x0a0e1a, 0.75], sun: [0xc8d8ff, 0.8],
+    floor: (x, z) => Math.abs(dist(x, z) - 9) < 0.6 ? 0xffe03a : tiles(x, z, 10, 0x4a5060, 0x424858, 0x2a2e38),
+    wall: (x, y, i) => y === 9 || y === 0 ? 0x6a7080 : (i % 3 === 0 ? 0x6a7080 : -1),
+    edge: 0x6a7080, dust: [0x4a5060, 0x7ae8ff], out: 0x0a0e1a, outY: -20, post: 0x6a7080, plinth: 0x2a2e38,
+    scenery(g) { for (const [x, z] of [[-17, -9], [17, -9], [-20, -20], [20, -20]]) { const r = new VX.Grid(); r.box(0, 0, 0, 0, 28, 0, 0x6a7080); r.box(-1, 28, -1, 1, 30, 1, G(0x7ae8ff)); r.box(-2, 0, -2, 2, 1, 2, 0x3a3e48); prop(g, r, 0.42, x, -2, z); }
+      for (const [x, z, r] of [[-14, -34, 12], [6, -40, 15], [24, -32, 10]]) prop(g, spike(0x3a4050, 0xe8eef8, r * 2), 0.6, x, -6, z); },
+    ambient: g => { const rain = drift(g, { col: 0x9ab8e8, n: 220, speed: 5, size: 0.06, wind: 1.5, amp: 0.1 }), L = new THREE.PointLight(0xbff4ff, 0, 90); L.position.set(0, 26, -12); g.add(L); let t = 0;
+      return { update(dt) { rain.update(dt); t -= dt; if (t <= 0 && U.vrand() < 0.006) t = 0.14; L.intensity = t > 0 ? 3.5 : 0; } }; } });
+  set('blast', { name: "SAPPER'S RANGE", tag: 'Scorched dirt, craters, sandbags and powder kegs',
+    sky: [0x8a7a6a, 0xd8c8a8], fog: 0xb8a890, hemi: [0xfff0d8, 0x4a3a2a, 0.9], sun: [0xffe8c0, 1.05],
+    floor: (x, z) => [[14, 12], [46, 30], [28, 38], [52, 10], [10, 36]].some(([a, b]) => Math.hypot(x - a, z - b) < 3.2) ? (hh(x, 2, z) > 0.5 ? 0x2a2420 : 0x3a322a) : speck(x, z, 0x9a8a6a, 0x8a7a5a, 0.6),
+    wall: (x, y, i) => ((y + (i >> 1)) % 2 === 0 ? 0xb8a880 : 0xa89870),
+    edge: 0x6a5a3a, dust: [0x9a8a6a, 0x3a3a3a], out: 0x6a5a3a, outY: -2, post: 0x6a5a3a, plinth: 0x4a3a2a,
+    scenery(g) { for (const [x, z] of [[-14, -10], [-16, -12], [15, -11]]) prop(g, K.barrel(0xd8301a, 0x2a2a30), 0.42, x, -2, z);
+      for (const [x, z] of [[17, -14], [-18, -18], [20, -20]]) prop(g, K.crate(0x8a6a3a), 0.45, x, -2, z);
+      prop(g, K.target(9), 0.45, 0, 2, -26); },
+    ambient: g => drift(g, { col: 0x8a847a, n: 50, rise: true, speed: 0.4, size: 0.22, op: 0.5 }) });
+  set('metal', { name: 'IRON FOUNDRY', tag: 'Riveted plate, girders and the furnaces roaring',
+    sky: [0x14161a, 0x4a3a2a], fog: 0x2a2622, hemi: [0xffd8a0, 0x14161a, 0.8], sun: [0xffc890, 0.95],
+    floor: (x, z) => (x % 8 === 0 || z % 8 === 0) ? 0x3a3e44 : ((x % 8 === 2 || x % 8 === 6) && (z % 8 === 2 || z % 8 === 6) ? 0x8a8e98 : 0x5a5e66),
+    wall: (x, y, i) => y === 9 || y === 0 ? 0x8a6a2a : (i % 4 === 0 || (i + y) % 4 === 0 ? 0x5a5e66 : -1),
+    edge: 0x8a6a2a, dust: [0x5a5e66, 0xffa040], out: 0x14161a, outY: -2, post: 0x3a3e44, plinth: 0x2a2e34,
+    scenery(g) { for (const x of [-16, 0, 16]) { const fu = new VX.Grid(); fu.box(-6, 0, -4, 6, 14, 4, (xx, y, z) => z === 4 && Math.abs(xx) < 3 && y > 2 && y < 8 ? G(0xff7a1a) : 0x3a3e44); fu.cyl('y', 0, 0, 2, 15, 26, 0x2a2e34); prop(g, fu, 0.45, x, -2, -24); }
+      const gi = new VX.Grid(); gi.box(-40, 30, 0, 40, 31, 1, 0x8a6a2a); for (const x of [-40, 40]) gi.box(x, 0, 0, x + 1, 30, 1, 0x8a6a2a); prop(g, gi, 0.42, 0, -2, -16);
+      glowLight(g, 0xff7a1a, 1.4, 34, 0, 4, -20); },
+    ambient: g => drift(g, { col: 0xffa040, n: 90, rise: true, speed: 1.2, size: 0.06 }) });
+  set('spirit', { name: 'LANTERN GROVE', tag: 'Night in the grove where the lanterns float',
+    sky: [0x0a0a2a, 0x2a1a4a], fog: 0x1a1430, hemi: [0xc8b8ff, 0x0a0820, 0.7], sun: [0xd8c8ff, 0.7],
+    floor: (x, z) => hh(x, 9, z) > 0.985 ? 0xc8a8ff : speck(x, z, 0x1a2240, 0x22284a, 0.6),
+    wall: (x, y, i) => y === 9 ? 0xffd86a : (i % 5 === 0 || y === 5 ? 0x4a4a6a : -1),
+    edge: 0x4a4a6a, dust: [0x22284a, 0xc8a8ff], out: 0x05050f, outY: -2, post: 0x4a4a6a, plinth: 0x14142a,
+    scenery(g) { for (const [x, z] of [[-16, -12], [17, -14], [-12, -24], [10, -26], [-22, -20], [22, -22]]) prop(g, K.tree(0x2a1a2a, 0x2a2a5a, 12, 7, 0x3a3a7a), 0.45, x, -2, z);
+      for (const [x, y, z] of [[-8, 5, -14], [6, 6, -16], [-3, 7, -20], [12, 5, -10], [-14, 6, -8]]) prop(g, K.lantern(0xffd86a), 0.45, x, y, z);
+      prop(g, K.stoneLantern(), 0.45, -6, -2, -12); prop(g, K.stoneLantern(), 0.45, 6, -2, -12); glowLight(g, 0xc8a8ff, 1.0, 30, 0, 6, -12); },
+    ambient: g => drift(g, { col: 0xffd86a, n: 90, rise: true, speed: 0.25, size: 0.1, amp: 0.8 }) });
+  set('swamp', { name: 'THE MIRE', tag: 'Black water, reeds and the old drowned trees',
+    sky: [0x1a2a14, 0x6a7a4a], fog: 0x3a4a2a, hemi: [0xc8d8a0, 0x141a0c, 0.75], sun: [0xd8e0b0, 0.8],
+    floor: (x, z) => hh(x >> 2, 2, z >> 2) > 0.78 ? (hh(x, 3, z) > 0.9 ? 0x4a6a3a : 0x2a3a2a) : speck(x, z, 0x4a4a2a, 0x3a4a22, 0.6),
+    wall: (x, y, i) => (hh(i, 1, 4) > 0.4 && y < 4 + (hh(i, 2, 4) * 6 | 0)) ? (y % 3 ? 0x6a8a3a : 0x8aa84a) : -1,
+    noEdge: true, edge: 0x4a4a2a, dust: [0x4a4a2a, 0x9ab83a], out: 0x1a2a14, outY: -2, post: 0x3a2a1a, plinth: 0x2a2a14,
+    scenery(g) { for (const [x, z, h] of [[-16, -10, 14], [17, -12, 12], [-10, -22, 16], [12, -24, 18], [-22, -18, 12]]) prop(g, deadTree(0x3a2a1a, h), 0.45, x, -2, z);
+      for (const [x, z] of [[-18, -6], [18, -8], [0, -20]]) prop(g, K.tree(0x3a2a1a, 0x4a5a2a, 10, 6, 0x6a7a3a), 0.42, x, -2, z);
+      glowLight(g, 0xb8e85a, 0.7, 30, 0, 5, -10); },
+    ambient: g => drift(g, { col: 0xb8e85a, n: 70, rise: true, speed: 0.2, size: 0.09, amp: 0.9 }) });
+
   /* ================================================== the lists and the home ground */
   Arena.HOUSE = Arena.LIST.slice();
   Arena.HOME = HOME;

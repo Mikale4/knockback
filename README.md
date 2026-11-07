@@ -3,7 +3,8 @@
 A voxel arena fighter where the fighters are **action figures**, in series of their own: **HISTORICAL FANTASY**
 (Monk, Viking, Summoner, Bard), **EDO JAPAN** (Samurai, Shinobi, Ronin, Kunoichi, Shogun, Daimyo), **KNIGHTS OF THE
 REALM** (Knight, Paladin, Dragoon, Templar, Crusader, Lancer), **LOVERS OF THE SEA** (Pirate, Captain, Cannoneer,
-Blackbeard, Redbeard, Sailor, Marauder, Musketeer, Ghost Pirate) and **MODERN SPORTS** (eleven athletes) — 36 lines,
+Blackbeard, Redbeard, Sailor, Marauder, Musketeer, Ghost Pirate), **ELEMENT BENDERS** (Air, Water, Earth, Fire,
+Blood, Lava, Lightning, Explosion, Metal, Spirit and Swamp) and **MODERN SPORTS** (eleven athletes) — 47 lines,
 and every figure is six snap-on parts you can mix freely.
 
 **The gimmick is the name:** launch someone into a wall and they **bounce back off it**, still helpless, so you can keep
@@ -304,6 +305,38 @@ ramrod, a brass nameplate with a name on it); the rivals are Blackbeard and Redb
 Sailor and the Marauder, the Musketeer and the Cannoneer. HISTORICAL FANTASY keeps the Monk, the Viking, the Summoner
 and the Bard for now. Their trials come from the same route generator, proven at 60 Hz, 144 Hz and on uneven frames.
 
+## ELEMENT BENDERS
+
+Eleven figures who move the world with their hands (`js/benders.js`, `js/benders_look.js`, `js/benders_arts.js`,
+`js/benders_story.js`). No weapons: what they hold is the element itself, wrapped round the fist. A thrown Heavy
+costs the element (BREATH, WATER, STONE, FLAME, CHARGE, SPARK, SPIRIT; see Ammo), and while it comes back Heavy is a
+blow of the same element.
+
+| Line (R-ARM) | Light string | Pause branch | Air string | Signature | Heavy (L-ARM) | Special (HEAD) | Legend Art |
+|---|---|---|---|---|---|---|---|
+| Air (Gale Hand) | Gust Palm › Twin Gust › Spiral Kick › Updraft | Vacuum Palm (pulls in, crumple) | Wind Slice › Downdraft | **Gale Force**: Heavy KNOCKs throw them 25% further | Air Blast (8 m) | Gale Step (an invincible dash through them, DIZZY) | Eye of the Storm: a tornado lifts them and she brings them down |
+| Water (Water Whip) | Water Whip › Backlash › Twin Streams › Wave Rise | Ice Shackle (crumple, PINNED) | Spray › Waterfall | **Cold Snap**: Lights +25% on the ROOTED, FROZEN or SLOWED | Water Jet (8.5 m) | Healing Water (12% over 5 s) | Tidal Wave: the sea stands up and comes down on them |
+| Earth (Stone Fist) | Stone Fist › Rock Hook › Earth Knee › Pillar Rise | Rock Armour Bash (crumple) | Stone Kick › Meteor Drop | **Seismic**: Heavies +15% on anyone on the floor | Boulder Toss (7.5 m, breaks a guard) | Quake Stomp (3 m, knocks them flat) | Tectonic: pillars of rock, and the fist |
+| Fire (Flame Fist) | Flame Jab › Fire Fist › Flame Kick › Rising Flame (BURNING) | Flare (dizzy) | Fire Kick › Comet Kick | **Inner Fire**: Lights up to +20% with full Hype | Fireball (8 m, BURNING) | Fire Ring (all round, BURNING) | Inferno: a storm of burning blows and a blast of fire |
+| Blood (Puppeteer's Hand) | Grip › Twist (pulls in) › Wrench › Marionette Lift, all from 1.7 m | Seize (crumple, from 2 m) | Claw › Drag Down | **Puppeteer**: Lights HOBBLE them for a second | Puppet Throw (up to 3 m) | Blood Pull (drags them in from 4.5 m) | Marionette: lifted on strings, a dance, and the floor |
+| Lava (Molten Knuckles) | Magma Fist › Cinder Hook › Slag Knee › Eruption Upper (BURNING) | Basalt Bash (crumple) | Ember Kick › Meteor | **Slag**: +15% on the BURNING, and the fire starts over | Molten Fist (armoured, BURNING) | Magma Spit (7 m, BURNING) | Volcano: the floor erupts and she brings them down into it |
+| Lightning (Spark Hand) | Spark Jab › Arc Cross › Static Knee › Thunder Rise | Jolt (crumple) | Arc Kick › Thunderclap | **Static**: every Light takes 3 Hype from them | Lightning Bolt (11 m, fast) | Thunderstrike (a mark, then the sky strikes it) | Thunderhead: strike after strike, then once more, down |
+| Explosion (Spark Knuckle) | Pop Jab › Snap Hook › Burst Knee › Upblast | Flashbang (dizzy) | Pop Kick › Blast Dive | **Demolition**: his hits break parts 40% faster | Spark Shot (8 m, bursts) | Sticky Charge (goes off 2 s later, through a guard) | Chain Reaction: explosions up their body, then a big one |
+| Metal (Iron Knuckles) | Iron Jab › Steel Hook › Plate Knee › Iron Uppercut | Cable Lash (2.2 m, hauls them in, crumple) | Steel Kick › Anvil Drop | **Forged**: a landed Heavy makes his next Light +30% | Iron Fist (armoured) | Shrapnel (four shards, 7 m) | Foundry: iron plates clamp them and he hammers them out |
+| Spirit (Spirit Hand) | Spirit Palm › Wisp Strike › Soul Kick › Ascend | Soul Grasp (dizzy) | Drift Kick › Descent | **Cleansing Touch**: a Light ends one of their buffs | Spirit Lance (9 m) | Spirit Pulse (pushes away, DIZZY) | Spirit World: lanterns in the dark, spirits strike, and back out, hard |
+| Swamp (Vine Hand) | Vine Lash › Mud Slap › Root Snare › Bog Rise | Mud Toss (dizzy) | Vine Whip › Mire Drop | **Thorns**: every third Light ROOTS them | Thornwhip (2.3 m) | Sinking Mud (a pool that SLOWS) | Swallowing Bog: the mire takes them and spits them into the whip |
+
+Passives: Windstep (Air, +20% for 0.6 s after a dodge), Flow (Water, +3% for every hit already in the combo, to +24%),
+Rooted (Earth, 20% less damage standing still), Stoke (Fire, his burns 40% hotter), Sanguine (Blood, 8% of her damage
+heals her), Molten (Lava, hitting her up close burns), Charged (Lightning, every fifth hit is a +50% DISCHARGE),
+Volatile (Explosion, Heavy KNOCKs +20% but he takes 10% more), Heavy Metal (Metal, 25% less knockback), Serene
+(Spirit, after 3 s unhit she heals 1.5% a second), Bog-Born (Swamp, 25% less damage from shots). In the Arcade each
+lost a keepsake to PROTO-0 (a kite, a drop of real water, a lucky stone, a candle stub, a moon pendant, an obsidian
+egg, a coin battery, a tin of snaps, a magnet, a paper lantern, a frog in a jar); the rivals are Fire and Water, Air
+and Earth, Lightning and Explosion, Blood and Spirit, Lava and Metal (and Swamp has it in for Lava). They are an
+original series: generic elemental benders with their own names, looks and stories. Their trials come from the same
+route generator, proven at 60 Hz, 144 Hz and on uneven frames.
+
 ## Ammo
 
 Guns and bows run dry. Every shot spends one; the last one starts the reload, and until it's done the weapon's
@@ -317,6 +350,13 @@ shows what's left under SPECIAL. Thrown sports balls don't use ammo: those have 
 | Musketeer's musket | 1 cartridge (Musket Shot) | 3 s (1.8 s Drilled) | Musket Butt |
 | Cannoneer's Swivel Gun | 3 shot (Grapeshot, Mortar Drop) | 5 s | Barrel Bash |
 | Archer's bow | 10 arrows (Snap Shot, Volley, Arrow Rain, Power Draw, Plunging Arrow) | 5 s | Bow Jab, Bow Swat, Bracer Bash |
+| Air Bender's Wind Wraps | 3 breaths (Air Blast) | 4 s | Gale Palm |
+| Water Bender's Waterskin | 3 jets (Water Jet) | 4 s | Tide Palm |
+| Earth Bender's Boulder Grip | 2 boulders (Boulder Toss) | 4.5 s | Stone Hammer |
+| Fire Bender's Fireheart Palm | 3 flames (Fireball) | 4 s | Blaze Fist |
+| Lightning Bender's Conductor Bracer | 3 charges (Lightning Bolt) | 4 s | Storm Fist |
+| Explosion Bender's Detonator Glove | 3 sparks (Spark Shot) | 4 s | Blast Palm |
+| Spirit Bender's Spirit Lantern | 3 spirits (Spirit Lance) | 4 s | Lantern Palm |
 
 ## Armoured charge, auto combos and Tech Chase
 
@@ -384,6 +424,17 @@ The move list (pause) shows all four.
 | Marauder | **Pillage**: a command grab that steals 25 Hype | **Hull Breaker**: armoured overhead | **Sunder**: their weakest part's armour, or the part |
 | Musketeer | **Buck and Ball**: a spray | **Prone Shot**: flat on the floor, shots go over her | **Reload Drill**: loaded, and the next hit crumples |
 | Ghost Pirate | **Chains of the Deep**: drags them in | **Haunt**: behind them, SLOWED | **Davy's Toll**: takes 12% of their HP |
+| Air Bender | **Gale Cannon**: blows them across the stage, the next wall breaks | **Vortex**: a whirlwind that drags them in | **Tornado**: rides it up, three hits all round |
+| Water Bender | **Ice Shards**: three, SLOWED | **Water Prison**: frozen solid where they stand | **Riptide**: a whirlpool, dragged in and thrown up |
+| Earth Bender | **Earth Wave**: a ridge along the floor, knocked flat | **Stone Skin**: 35% less damage, no jump or dodge | **Rock Coffin**: PINNED in stone, the next hit shatters it for +50% |
+| Fire Bender | **Fire Stream**: flame from both hands, BURNING | **Heat Haze**: shots pass through him | **Flame Wheel**: a leaping axe kick on fire |
+| Blood Bender | **Puppet Strings**: they walk to her | **Hemorrhage**: every metre they move costs HP | **Puppet Toss**: a grab from 4 m, over her head |
+| Lava Bender | **Lava Flow**: a river of lava rolls out | **Obsidian Shell**: untouchable, then it erupts | **Eruption**: rides a spout up, leaves a pool |
+| Lightning Bender | **Ball Lightning**: drifts after them, zaps three times | **Static Cage**: a ring that shocks | **Lightning Rod**: strikes anyone in the air, down |
+| Explosion Bender | **Blast Mine**: the first foot on it | **Rocket Jump**: blows himself clear | **Detonation**: a huge KNOCK all round, costs him 6% |
+| Metal Bender | **Cable Zip**: 7 m in a blink | **Magnetize**: stuck to the wall | **Iron Spikes**: up from the floor, shatters a guard |
+| Spirit Bender | **Crossing Over**: trades places with them | **Soul Tether**: drinks their HP | **Spirit Ward**: the next blow passes through, she's behind them |
+| Swamp Bender | **Creeping Vines**: roots that follow, ROOTED | **Bog Body**: sinks and comes up under them | **Swamp Gas**: POISONED and DIZZY |
 | Wrestler | **Running Lariat**: armoured | **Powerbomb**: a command grab | **Hulk Up**: heals, full Burst, armour |
 | Baseball | **Line Drive**: the furthest KNOCK there is | **Catch**: shots caught for Hype | **Stolen Base**: an untouchable slide past them |
 | Football | **Stiff Arm**: breaks guards | **Hurdle**: over them, cleats first | **Victory Dance**: a long celebration, 35 Hype |
@@ -630,10 +681,10 @@ results of that Arcade clear. The picker shows all ten fighters on one screen, t
 ## Playsets: every figure's own stage
 
 Every figure comes with its own **playset** (`js/playsets.js`), a stage built from its world, with its own floor,
-walls, light, scenery and drifting particles (cherry blossom, snow, embers, bubbles, rain...). There are 36 of them
+walls, light, scenery and drifting particles (cherry blossom, snow, embers, bubbles, rain...). There are 47 of them
 and they have no hazards (the house stages keep those). In the arena picker the house stages are under THE HOUSE and
 the playsets under a tab for each series. **HOME GROUND** (Versus) fights on the second figure's playset, and in the
-**Arcade** every fight is on the opponent's playset (the bosses still wait on the shelf). RANDOM picks from all 56.
+**Arcade** every fight is on the opponent's playset (the bosses still wait on the shelf). RANDOM picks from all 67.
 
 | Figure | Playset | Figure | Playset |
 |---|---|---|---|
@@ -655,6 +706,12 @@ the playsets under a tab for each series. **HOME GROUND** (Versus) fights on the
 | Lancer | THE LISTS | Archer | ARCHERY RANGE |
 | Pirate | PIRATE SHIP | Skater | SKATE PARK |
 | Captain | QUARTERDECK | Basketball | STREET COURT |
+| Air Bender | SKY TEMPLE | Explosion Bender | SAPPER'S RANGE |
+| Water Bender | FROZEN SHORE | Metal Bender | IRON FOUNDRY |
+| Earth Bender | CANYON RING | Spirit Bender | LANTERN GROVE |
+| Fire Bender | EMBER PALACE | Swamp Bender | THE MIRE |
+| Blood Bender | MOONLIT HOLLOW | Lava Bender | MAGMA CALDERA |
+| Lightning Bender | STORM PEAK | | |
 
 ## Arenas and STAGE HAZARDS
 
@@ -786,6 +843,7 @@ shake** setting (Full, Reduced, Off).
 | `js/edo_story.js`, `js/realm_story.js` | Their Arcade stories (and the Basketball player's) |
 | `js/commands.js` | COMMAND SPECIALS: every figure's three motion Specials (the mechanics are in fighter.js and match.js) |
 | `js/sea.js`, `js/sea_look.js`, `js/sea_arts.js`, `js/sea_story.js` | LOVERS OF THE SEA: the crew's lines, figures, Legend Arts and stories |
+| `js/benders.js`, `js/benders_look.js`, `js/benders_arts.js`, `js/benders_story.js` | ELEMENT BENDERS: the eleven lines and their own rules (through `KB.HOOK` and `KB.EXT`), figures, Legend Arts and stories |
 | `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |
 | `js/arcade.js` | ARCADE: the run, story scenes, VS screen, ranks, continues, the hidden route, endings, STORIES |
 | `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |

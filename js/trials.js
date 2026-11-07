@@ -40,7 +40,7 @@
   function build(line) {
     const S = S0(line), g = chain(S.light), a = chain(S.air), P = KB.MOVES[g[1]].nx && KB.MOVES[g[1]].nx.p;
     const air = a.map(id => ({ m: id, k: 'light', t: 'air' }));
-    const sp = KB.MOVES[S.special], spStep = { m: S.special, k: 'special', t: ['buff', 'summon'].includes(sp.type) ? 'nohit' : '' };
+    const sp = KB.MOVES[S.special], spStep = { m: S.special, k: 'special', t: ['buff', 'summon', 'trap', 'act'].includes(sp.type) ? 'nohit' : '' };
     const T = [];
     T.push({ name: 'The string', stars: 1, note: 'Your Light string, start to finish: press again as each hit lands.', steps: g.map(L) });
     if (P) T.push({ name: 'Pause combo', stars: 2, note: 'Two hits, then let the second one finish, wait a beat, and press Light again for the pause branch.', steps: [L(g[0]), L(g[1]), { m: P, k: 'light', t: 'pause', nohit: ['buff', 'summon'].includes(KB.MOVES[P].type) }] });
@@ -484,6 +484,42 @@
     ghost: ['Drowning rise', 'Undertow', 'Ghostfire', 'Davy Jones', 'Wail', 'Phase', 'Two tides', 'Cold hands', 'The deep', 'Lantern light', 'The locker', 'Undying'],
   };
   const ROUTE_FIX = {};
+  /* ELEMENT BENDERS: their route names, and each one's pause branch as the signature trial */
+  Object.assign(NAMES, {
+    air: ['Updraft', 'Downburst', 'Air blast', 'Eye of the storm', 'Vacuum', 'Gale step', 'Tailwind', 'Crosswind', 'Jet stream', 'Nine winds', 'Cyclone', 'Weightless'],
+    water: ['Wave rise', 'Waterfall', 'Water jet', 'Tidal wave', 'Ice shackle', 'Healing water', 'Undertow', 'Riptide', 'High tide', 'Cold snap', 'The flood', 'Still water'],
+    earth: ['Pillar rise', 'Meteor', 'Boulder', 'Tectonic', 'Rock armour', 'Quake', 'Landslide', 'Fault line', 'Bedrock', 'Avalanche', 'The mountain', 'Unmoved'],
+    flame: ['Rising flame', 'Falling sun', 'Fireball', 'Inferno', 'Flare', 'Fire ring', 'Kindling', 'Firestorm', 'Wildfire', 'Inner fire', 'Blaze', 'Phoenix step'],
+    blood: ['Marionette', 'Drag down', 'Puppet throw', 'Strings', 'Seize', 'Blood pull', 'Heartbeat', 'Full moon', 'The dance', 'Crimson', 'No escape', 'Bow'],
+    lava: ['Eruption', 'Meteor', 'Molten fist', 'Volcano', 'Basalt', 'Magma spit', 'Slag', 'Lava flow', 'Caldera', 'Obsidian', 'Magma core', 'Molten'],
+    storm: ['Thunder rise', 'Strike down', 'Lightning bolt', 'Thunderhead', 'Jolt', 'Thunderstrike', 'Static', 'Forked', 'Chain lightning', 'Overcharge', 'The storm', 'Flash'],
+    blast: ['Upblast', 'Crater', 'Spark shot', 'Chain reaction', 'Flashbang', 'Sticky charge', 'Fuse', 'Powder keg', 'Demolition', 'Shockwave', 'Big bang', 'Aftershock'],
+    metal: ['Iron upper', 'Anvil', 'Iron fist', 'Foundry', 'Cable lash', 'Shrapnel', 'Forged', 'Tempered', 'Heavy metal', 'Rivet', 'The forge', 'Ironhand'],
+    spirit: ['Ascend', 'Descent', 'Spirit lance', 'Spirit world', 'Soul grasp', 'Spirit pulse', 'Lantern', 'Wisps', 'Crossing', 'Two worlds', 'Lost ones', 'Serene'],
+    swamp: ['Bog rise', 'Mire', 'Thornwhip', 'Swallowing bog', 'Mud in the eye', 'Sinking mud', 'Roots', 'Quagmire', 'Undergrowth', 'Bog-born', 'The deep mire', 'Overgrown'],
+  });
+  const BENDER_SIG = { air: ['xaP', 'Vacuum', 'Pause after Twin Gust: the Vacuum Palm sucks them in and folds them up. Then the whole string.'],
+    water: ['xwP', 'Ice shackle', 'Pause after the Backlash: the Ice Shackle folds them up and freezes their feet. Then the whole string.'],
+    earth: ['xeP', 'Rock armour', 'Pause after the Rock Hook: the Rock Armour Bash crumples them. Then the whole string.'],
+    flame: ['xfP', 'Flare', 'Pause after the Fire Fist: the Flare leaves them DIZZY. Then the whole string.'],
+    blood: ['xbP', 'Seize', 'Pause after the Twist: she Seizes them from 2 m and they fold. Then the whole string.'],
+    lava: ['xlP', 'Basalt', 'Pause after the Cinder Hook: the Basalt Bash crumples them. Then the whole string.'],
+    storm: ['xzP', 'Jolt', 'Pause after the Arc Cross: the Jolt locks them up. Then the whole string.'],
+    blast: ['xxP', 'Flashbang', 'Pause after the Snap Hook: the Flashbang leaves them DIZZY. Then the whole string.'],
+    metal: ['xmP', 'Cable lash', 'Pause after the Steel Hook: the Cable Lash hauls them in from 2.2 m and they fold. Then the whole string.'],
+    spirit: ['xsP', 'Soul grasp', 'Pause after the Wisp Strike: the Soul Grasp leaves them DIZZY. Then the whole string.'],
+    swamp: ['xqP', 'Mud in the eye', 'Pause after the Mud Slap: Mud Toss leaves them DIZZY. Then the whole string.'] };
+  for (const [line, [pz, name, note]] of Object.entries(BENDER_SIG)) SIG[line] = (S, g) => ({ name, note, steps: [L(g[0]), L(g[1]), PZ(pz), ...g.map(L)] });
+  // the heavier ones jump low: no second launch after the bounce, a Part Toss and the string instead
+  const benderLow = (adv, pro, k) => { const M = id => KB.MOVES[id].name; adv[6].steps = [...k.spike, ...k.two, PT, ...k.str]; adv[6].note = M(k.S.airHeavy) + ' for the bounce, a Part Toss (a fresh bounce), and the whole string.'; };
+  // a thrown Heavy off the wall: two hits off the rebound, a Part Toss and the string (they're too low to launch again)
+  const benderShot = (adv, pro, k) => { const M = id => KB.MOVES[id].name; pro[2].steps = [...k.two, TW(k.S.heavy), WB, ...k.two, PT, ...k.str]; pro[2].note = M(k.S.heavy) + ' into the wall, two off the rebound, a Part Toss, and the whole string.'; };
+  // their Heavy into the wall: two off the rebound and the launcher (the whole string drifts out of reach at high frame rates)
+  const benderWall = (adv, pro, k) => { const M = id => KB.MOVES[id].name; adv[2].steps = [...k.two, TW(k.S.heavy), WB, ...k.two, H(k.S.launch)]; adv[2].note = M(k.S.heavy) + ' mid-string KNOCKS them into the wall; two hits off the rebound and ' + M(k.S.launch) + '.'; };
+  const both = (...fx) => (adv, pro, k) => fx.forEach(f => f(adv, pro, k));
+  ROUTE_FIX.earth = benderLow; ROUTE_FIX.metal = benderLow; ROUTE_FIX.lava = benderLow; ROUTE_FIX.swamp = both(benderLow, benderWall);
+  ROUTE_FIX.blast = both(benderLow, benderShot); ROUTE_FIX.water = benderShot; ROUTE_FIX.flame = both(benderShot, benderWall);
+  ROUTE_FIX.blood = (adv, pro, k) => { adv[2].steps = [...k.two, TW(k.S.heavy), WB, ...k.two, SPC(k.S.special)]; adv[2].note = 'Puppet Throw mid-string KNOCKS them into the wall; two off the rebound, and BLOOD PULL drags them back in.'; };
   // the KUNOICHI's hairpins KNOCK from so close that she overruns the rebound: her routes stay off the wall
   ROUTE_FIX.kunoichi = (adv, pro, k) => {
     adv[2] = { name: 'Kanzashi', stars: 4, note: 'Needle Kiss poisons them; the string while it burns (+20% to the POISONED), the Rising Fan, and up after them.', steps: [...k.two, PZ('kuP'), ...k.two, H('risingFan'), J, ...k.air] };
@@ -553,7 +589,7 @@
     const P = MV(g[1]).nx && MV(g[1]).nx.p, Pm = P && MV(P), fin = MV(g[g.length - 1]), sp = MV(S.special), slam = Arts.ART[MV(S.super).seq] && Arts.ART[MV(S.super).seq].slam;
     const str = g.map(L), two = [L(g[0]), L(g[1])], air = a.map(A), up = [...two, H(S.launch), J], spike = [...up, A(a[0]), AH(S.airHeavy), GB];
     const otg = OTG(S.dashAtk, 'light'), upFin = fin.launcher ? [J, ...air] : [];
-    const buff = sp.type === 'buff';
+    const buff = ['buff', 'trap', 'act'].includes(sp.type);   // (a Special that doesn't hit: first, then the combo)
     // the pause branch: a crumple or a stagger leads into the string; a launcher into the air string; anything else ends it
     const pz = Pm.crumple || Pm.dizzy || (Pm.type === 'proj' && !Pm.launch) ? [PZ(P), ...str, ...upFin] : Pm.launcher ? [PZ(P), J, ...air] : null;
     const adv = [

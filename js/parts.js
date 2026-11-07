@@ -467,4 +467,11 @@
 
   window.KB = { SLOTS, SLOT_NAME, RARITY, LINES, LINE_ORDER, PARTS: P, MOVES: M, PASSIVE, stats, mintBuild, randomBuild, key, itemName, part,
     THEMES, themeOf, linesOf, mv, PREFIX, OFF, FIN, buildHybrids };
+  /* HOOKS: a series' own rules, run by the engine (fighter.js): pre(att, vic, mv, o, m, dir, at) can stop a hit (return a result);
+     dmg(...) and kb(...) return a multiplier; after(att, vic, mv, o, m, dmg, dir) runs once a hit has landed; tick(f, dt, m)
+     every frame; reset(f) at the start of a round. EXT: its own shot looks (LOOK, SPORT, BALL), floor traps (TRAP), what
+     an act does (ACTS[a](M, f, mv, X)), its own kinds of projectile (PROJS[kind] = { update(M, p, dt, X) -> done, drop(M, p, X) })
+     and buffs (BUFF[id](f, b)) */
+  KB.HOOK = { pre: [], dmg: [], kb: [], after: [], tick: [], reset: [] };
+  KB.EXT = { LOOK: {}, SPORT: {}, BALL: {}, TRAP: {}, ACTS: {}, PROJS: {}, BUFF: {} };
 })();
