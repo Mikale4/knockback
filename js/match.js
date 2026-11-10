@@ -238,6 +238,14 @@
     M.respawn = f => {
       if (M.disposed || M.phase === 'end') return;
       const h = f.hype, b = f.burst, rec = f.records;
+      // an Arcade boss that re-casts itself: a new body for each stock it loses (opts.recast[stocks lost])
+      // its own parts go back on: the ones lying on the stage are taken off it (else they'd go on being thrown about
+      // while they're on the figure), and one the other figure has put on stays theirs (it gets a new one)
+      const own = Object.values(f.fig.own);
+      for (let i = M.picks.length - 1; i >= 0; i--) if (own.includes(M.picks[i].grp)) M.picks.splice(i, 1);
+      const o2 = M.opp(f); for (const n of ['head', 'armL', 'armR']) if (o2 && o2.fig.parts[n] === f.fig.own[n]) f.fig.fresh(n);
+      const lost = opts.stocks - M.stocks[f.idx], rc = f.idx === 1 && opts.recast && opts.recast[lost];
+      if (rc && f.baseBuild !== rc) { f.recast(rc); if (opts.recastCall) M.after(0.9, () => M.call(f, opts.recastCall(lost + 1, rc), 'bad')); }
       f.resetRound(0, 0, f.pos.x > 0 ? -Math.PI / 2 : Math.PI / 2); f.hype = h; f.burst = b; f.records = rec;
       const o = M.opp(f); f.pos.set(U.clamp(-o.pos.x * 0.25, -3, 3), 7.5, 0); f.faceX(o.pos.x - f.pos.x);
       f.gone = false; f.obj.visible = true; f.grounded = false; f.setState('air'); f.spawnFloat = 2.0; f.inv = 2.2; f.respawnInv = true; f.vel.set(0, 0, 0);
@@ -1426,7 +1434,7 @@
       if (M.attract) { M.round++; if (M.round > 3) { opts.onEnd && opts.onEnd({ attract: true }); return; } place(); return; }
       if (M.wins[0] >= need || M.wins[1] >= need) {
         M.phase = 'end';
-        const res = { winner: M.wins[0] >= need ? 0 : 1, wins: M.wins.slice(), mode: opts.mode, records: M.fighters.map(f => f.records), builds: opts.builds, time: M.fightT || 0, stocks: M.stocks.slice(), kos: M.kos.slice(), hpLeft: M.fighters.map((f, i) => Math.max(0, M.stocks[i]) / Math.max(1, opts.stocks)) };
+        const res = { winner: M.wins[0] >= need ? 0 : 1, wins: M.wins.slice(), mode: opts.mode, records: M.fighters.map(f => f.records), builds: opts.builds, time: M.fightT || 0, stocks: M.stocks.slice(), stockMax: opts.stocks, kos: M.kos.slice(), hpLeft: M.fighters.map((f, i) => Math.max(0, M.stocks[i]) / Math.max(1, opts.stocks)) };
         M.results = res; Touch.hide(); opts.onEnd && opts.onEnd(res);
         return;
       }

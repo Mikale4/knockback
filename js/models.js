@@ -671,6 +671,11 @@
       grp.position.copy(rest[name]); grp.quaternion.identity(); grp.scale.setScalar(1); paint(grp, mat);
       parts[LAYOUT[name].parent].add(grp); F.detached[name] = false;
     };
+    /* a new copy of one of its own parts (the other figure is wearing the old one: it keeps it) */
+    F.fresh = name => {
+      const c = F.own[name].clone(true); F.own[name] = c; if (SUBP[name]) F.own[SUBP[name]] = c.getObjectByName(SUBP[name]) || F.own[SUBP[name]];
+      if (parts[name] !== c) { parts[name] = c; if (SUBP[name]) parts[SUBP[name]] = F.own[SUBP[name]]; } F.detached[name] = true;
+    };
     /* a new round: every figure takes its own parts back (reattach then puts them on) */
     F.restore = () => {
       for (const name of ['head', 'armL', 'armR']) {

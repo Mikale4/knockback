@@ -74,7 +74,7 @@
         const pd = (el, k) => { const v = f.broken[k] ? 0 : f.armor[k] / f.armorMax[k]; el.className = el.className.split(' ')[0] + (f.broken[k] ? ' off' : v < 0.35 ? ' red' : v < 0.65 ? ' yel' : ''); };
         pd(R.ph, 'head'); pd(R.pr, 'armR'); pd(R.pl, 'armL'); pd(R.pg, 'legs');
         R.pc.className = 'pd-core' + (hp < 0.3 ? ' red' : hp < 0.6 ? ' yel' : '');
-        R.pips.innerHTML = ''; if (!M.training && M.opts.wins > 1) for (let k = 0; k < Math.min(5, M.opts.wins); k++) R.pips.append(el('i', { class: M.wins[i] > k ? 'on' : '' }));
+        R.pips.innerHTML = ''; if (!M.training && !M.attract && M.opts.wins > 1) for (let k = 0; k < Math.min(5, M.opts.wins); k++) R.pips.append(el('i', { class: M.wins[i] > k ? 'on' : '' }));
         const tags = []; if (f.buffs.momentum) tags.push('MOMENTUM'); if (f.buffs.bulwark) tags.push('BULWARK'); if (f.buffs.fury) tags.push('FURY');
         if (f.st.set === 2) tags.push('MINT SET'); else if (f.st.set === 1) tags.push('PARTIAL SET');
         const t = tags.join(' · '); if (R.tags.textContent !== t) R.tags.textContent = t;

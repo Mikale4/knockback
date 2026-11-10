@@ -140,7 +140,7 @@
   }
 
   function fight(run, st) {
-    App.startMatch({ mode: 'arcade', builds: [run.build, st.build], cpu: [null, st.lvl], arena: st.arena, wins: 2, bonus: true, lvl: st.lvl, stage: st.i, arcKind: st.kind,
+    App.startMatch({ mode: 'arcade', builds: [run.build, st.build], cpu: [null, st.lvl], arena: st.arena, wins: 1, stocks: st.recast ? Math.max(2, st.recast.length) : 2, time: 300, bonus: true, lvl: st.lvl, stage: st.i, arcKind: st.kind,
       mods: [null, st.mods || null], recast: st.recast || null,
       recastCall: st.recast ? (round, b) => round >= 3 ? 'IT BECOMES YOU' : 'RE-CAST: ' + LN(b.core.line).name : null });
   }
@@ -161,13 +161,13 @@
   }
 
   /* ------------------------------------------------------------- ranking
-     a won fight: victory, speed, HP kept, style (combo, bounces, wall breaks), minus rounds lost; the RANK is read
+     a won fight: victory, speed, damage kept off, style (combo, bounces, wall breaks), minus stocks lost; the RANK is read
      before the difficulty multiplier, the SCORE after it (the bosses add a bonus) */
   function scoreOf(res, st, D) {
-    const me = res.records[0], them = res.records[1], lost = res.wins[1], t = res.time || 90;
+    const me = res.records[0], them = res.records[1], lost = res.stocks ? Math.max(0, (res.stockMax || 2) - res.stocks[0]) : res.wins[1], t = res.time || 90;
     const lines = [['VICTORY', 10000], ['SPEED', Math.max(0, Math.round(6000 - t * 40))], ['VITALITY', Math.max(0, Math.round(8000 - them.dmg * 4))],
       ['COMBO ×' + me.maxCombo, me.maxCombo * 150], ['BOUNCES ×' + me.maxBounces, me.maxBounces * 400], ['WALL BREAKS ×' + me.breaks, me.breaks * 800],
-      ['PERFECT', !lost && !them.dmg ? 3000 : 0], ['ROUNDS LOST ×' + lost, -3000 * lost]];
+      ['PERFECT', !lost && !them.dmg ? 3000 : 0], ['STOCKS LOST ×' + lost, -3000 * lost]];
     const raw = lines.reduce((n, [, v]) => n + v, 0);
     const rank = raw >= 26000 ? 'S' : raw >= 20000 ? 'A' : raw >= 14000 ? 'B' : raw >= 9000 ? 'C' : 'D';
     const bonus = st.kind === 'sov' ? 5000 : st.kind === 'proto' ? 10000 : st.kind === 'rival' ? 2000 : 0;
@@ -188,7 +188,7 @@
     const reward = win ? Math.round(PAY[st.i] * D.pay) : 20;
     Auth.record(res, 'arcade', reward);
     const awards = Rewards.fightDone(res, opts);
-    run.lost += res.wins[1]; run.time += res.time || 0; run.tokens += reward;
+    run.lost += res.stocks ? Math.max(0, (res.stockMax || 2) - res.stocks[0]) : res.wins[1]; run.time += res.time || 0; run.tokens += reward;
     const awardEls = awards.map(a => el('div', { class: 'reward gold' }, '★ AWARD: ' + a.name + (a.pay ? '  +' + a.pay : '')));
     if (!win) { save(); return cont(run, st, res, reward, awardEls); }
     const sc = scoreOf(res, st, D); run.score += sc.total; run.ranks.push(sc.rank); run.stage++; save();
