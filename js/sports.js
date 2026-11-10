@@ -147,7 +147,7 @@
   mv('balestra', { name: 'Balestra Lunge', type: 'dash', pose: 'lunge', su: 0.18, ac: 0.12, rc: 0.3, dmg: 80, dist: 4.6, rad: 0.9, kb: [17, 4.5], launch: 1, charge: 1, sfx: 'heavy' });
   mv('priseDeFer', { name: 'Prise de Fer', pose: 'upslash', su: 0.09, ac: 0.08, rc: 0.26, dmg: 36, reach: 1.5, kb: [1.4, 13], launch: 1, launcher: 1 });
   mv('pointDrop', { name: 'Point Drop', pose: 'plunge', su: 0.12, ac: 0.1, rc: 0.25, dmg: 52, kb: [2, -14], launch: 1, spike: 1, air: 1, h: 0.5, reach: 1.3, sfx: 'heavy' });
-  mv('parry', { name: 'Parry', type: 'buff', pose: 'enGarde', su: 0.04, rc: 0.16, buff: { id: 'parry', t: 0.55 }, trail: 0, sfx: 'jguard' });
+  mv('parry', { name: 'Parry', type: 'buff', pose: 'enGarde', su: 0.04, rc: 0.16, buff: { id: 'parry', t: 0.85 }, trail: 0, sfx: 'jguard' });
   mv('fencerFleche', { name: 'Running Flèche', type: 'dash', pose: 'lunge', su: 0.1, ac: 0.12, rc: 0.3, dmg: 44, dist: 4.2, rad: 0.85, kb: [9, 6], launch: 1, sfx: 'slash' });
   mv('touche', { name: 'Touché', type: 'super', pose: 'lunge', su: 0.12, catchType: 'dash', dist: 7.5, rad: 1.2, seq: 'touche', dmg: 290, kb: [22, 7], zone: 'mid' });
 

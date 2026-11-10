@@ -10,7 +10,7 @@
      LAVA       molten fists, a river of lava, a shell of obsidian that erupts
      LIGHTNING  bolts from the hand and from the sky, ball lightning, a rod for anyone airborne
      EXPLOSION  sparks that burst, a charge stuck on you, a mine, a detonation that costs him too
-     METAL      iron fists and shrapnel, a cable zip, a magnet that sticks you to the wall
+     METAL      iron fists and shrapnel, a cable zip, a magnet that sticks you to the wall (or the floor)
      SPIRIT     lantern light, a tether that drinks your health, places traded, a ward
      SWAMP      vines and mud, creeping roots, a body that sinks into the bog and comes up under you
 
@@ -37,7 +37,7 @@
     pal: { main: 0x1a2a5a, second: 0xe8e8f0, accent: 0xffe03a, dark: 0x0a0e1a, metal: 0xc8d8f0, skin: 0xf0c8a8, cloth: 0x2a3a7a, glow: 0x7ae8ff } });
   add('blast', { name: 'EXPLOSION BENDER', css: '#ffa03a', figure: 'Rook Blastwright', blurb: 'Bajiquan: short, explosive power. Sparks that burst, a charge stuck on you that goes off later, mines and a detonation that hurts him too. Walls don\'t survive him.',
     pal: { main: 0x4a4a52, second: 0x2a2a30, accent: 0xff8a1a, dark: 0x121216, metal: 0x8a8a92, skin: 0xd8a47a, cloth: 0x6a3a1a, glow: 0xffb040 } });
-  add('metal', { name: 'METAL BENDER', css: '#a8b4c0', figure: 'Varga Ironhand', blurb: 'The Iron Wire: every muscle locked. Iron fists, shrapnel and a cable he zips along. He magnetises you to the wall, and he barely moves when he\'s hit.',
+  add('metal', { name: 'METAL BENDER', css: '#a8b4c0', figure: 'Varga Ironhand', blurb: 'The Iron Wire: every muscle locked. Iron fists, shrapnel and a cable he zips along. He magnetises you to the wall (or the floor), and he barely moves when he\'s hit.',
     pal: { main: 0x3a4048, second: 0x1a3a2a, accent: 0xc8ccd4, dark: 0x101214, metal: 0xd8dde6, skin: 0xd8a47a, cloth: 0x2a4a3a, glow: 0x9ad8c8 } });
   add('spirit', { name: 'SPIRIT BENDER', css: '#b48aff', figure: 'Ama the Lantern-Keeper', blurb: 'Fujian White Crane: beak and wings. Lantern light and spirit palms. She trades places with you, drinks your health down a tether, and isn\'t there when you swing.',
     pal: { main: 0x4a2a7a, second: 0xe8e0f8, accent: 0xffd86a, dark: 0x140a24, metal: 0xd8d0f0, skin: 0xf0d0b8, cloth: 0x6a4aa8, glow: 0xc8a8ff } });
@@ -232,7 +232,7 @@
   mv('xmDash', { name: 'Steel Slide', pose: 'slide', su: 0.08, ac: 0.14, rc: 0.3, dmg: 38, kb: [3.5, 8.5], launch: 1, lunge: 10, zone: 'low', h: 0.35, trail: 0, sfx: 'heavy' });
   mv('xmSuper', { name: 'Foundry', type: 'super', pose: 'hardBridge', su: 0.12, catchType: 'melee', lunge: 7, reach: 1.25, rad: 1.15, close: 5, seq: 'foundry', dmg: 300, kb: [21, 8], zone: 'mid' });
   mv('xmQF', { name: 'Cable Zip', type: 'dash', pose: 'lunge', su: 0.12, ac: 0.16, rc: 0.3, dmg: 46, dist: 7, rad: 1.0, kb: [14, 5], launch: 1, trail: 0, sfx: 'whoosh', desc: 'A cable fired at the far side and he zips along it, 7 m in a blink: a KNOCK on anyone in the way.' });
-  mv('xmQB', { name: 'Magnetize', pose: 'palm', su: 0.1, ac: 0.07, rc: 0.3, dmg: 20, reach: 1.4, kb: [0, 0], stun: 0.6, magnet: 1, trail: 0, sfx: 'jguard', desc: 'He magnetises them: they slam into the nearest wall and stick there (PINNED for 1.4 s).' });
+  mv('xmQB', { name: 'Magnetize', pose: 'palm', su: 0.1, ac: 0.07, rc: 0.3, dmg: 20, reach: 1.4, kb: [0, 0], stun: 0.6, magnet: 1, trail: 0, sfx: 'jguard', desc: 'He magnetises them: they slam into the nearest wall (on an open stage, down to the floor) and stick there (PINNED for 1.4 s).' });
   mv('xmDP', { name: 'Iron Spikes', type: 'radial', pose: 'stomp', su: 0.06, ac: 0.1, rc: 0.36, dmg: 50, rad: 2.2, kb: [3, 12.5], launch: 1, launcher: 1, gbreak: 1, inv: 1, ringCol: 0xd8dde6, puff: 0x8a8a92, trail: 0, sfx: 'heavy', desc: 'Iron spikes burst from the floor all round him, invincible as they start: anyone within 2.2 m goes up, and a guard they hit shatters.' });
   C('metal', 'xmQF', 'xmQB', 'xmDP');
 
@@ -485,7 +485,7 @@
   E.ACTS.lavaPool = (M, f) => M.placeTrap(f, KB.MOVES.xlPool);
   E.ACTS.detonate = (M, f) => {
     f.hp = Math.max(1, f.hp - Math.round(f.maxHp * 0.06)); M.call(f, 'DETONATION!', 'buff'); FX.addShake(0.8);
-    const c = chest(f); FX.burst(c, { n: 40, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 9, size: 0.14, life: 0.7 }); FX.ring(c.clone().setY(0.1), { r1: 4.2, life: 0.45, color: 0xffa040 });
+    const c = chest(f); FX.burst(c, { n: 40, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 9, size: 0.14, life: 0.7 }); FX.ring(c.clone().setY(f.pos.y + 0.1), { r1: 4.2, life: 0.45, color: 0xffa040 });
   };
   E.ACTS.rod = (M, f, mv, X) => {
     const o = M.opp(f), hand = f.fig.socket('wR', [0, 0, 2]);
@@ -509,7 +509,7 @@
     if (!alive(o) || U.dist(f.pos, o.pos) > mv.range) { M.call(f, 'TOO FAR', 'small'); return; }
     f.bx.tetherT = 5; M.call(o, 'TETHERED', 'bad'); bolt(M, chest(f), chest(o), 0xc8a8ff, 0.04);
   };
-  E.ACTS.bogDive = (M, f) => { f.bx.dive = 0.55; f.inv = Math.max(f.inv, 0.8); f.obj.visible = false; FX.burst(f.pos.clone().setY(0.2), { n: 20, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 3, size: 0.12, life: 0.6 }); M.call(f, 'BOG BODY', 'buff'); };
+  E.ACTS.bogDive = (M, f) => { f.bx.dive = 0.55; f.inv = Math.max(f.inv, 0.8); f.obj.visible = false; FX.burst(f.pos.clone().setY(f.pos.y + 0.2), { n: 20, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 3, size: 0.12, life: 0.6 }); M.call(f, 'BOG BODY', 'buff'); };
   // BALL LIGHTNING: it drifts after them and zaps them three times
   const orbMesh = () => { const g = new VX.Grid(); g.ell(0, 0, 0, 3, 3, 3, (x, y, z) => VX.hash3(x, y, z) > 0.5 ? G(0xffffff) : G(0x7ae8ff)); for (const [x, y, z] of [[4, 0, 0], [-4, 1, 0], [0, 4, 1], [1, -4, 0], [0, 0, 4], [0, 1, -4]]) g.set(x, y, z, G(0xffe83a)); return VX.object(g, 0.06); };
   E.ACTS.ballLightning = (M, f, mv, X) => {
@@ -519,8 +519,8 @@
   E.PROJS.xorb = {
     update(M, p, dt, X) {
       const f = p.f, o = M.opp(f);
-      if (alive(o)) { const tx = o.pos.x - p.pos.x, tz = o.pos.z - p.pos.z, l = Math.hypot(tx, tz); if (l > 0.05) { const a = Math.atan2(p.dir.x, p.dir.z), b = Math.atan2(tx, tz); let d = b - a; d = Math.atan2(Math.sin(d), Math.cos(d)); const na = a + U.clamp(d, -2.6 * dt, 2.6 * dt); p.dir.set(Math.sin(na), 0, Math.cos(na)); } }
-      p.pos.addScaledVector(p.dir, 3.8 * dt); p.pos.y = 1.1 + Math.sin(p.t * 6) * 0.1; X.inside(p.pos); p.mesh.position.copy(p.pos); p.mesh.rotation.y += dt * 7; p.mesh.rotation.x += dt * 3;
+      if (alive(o)) { const tx = o.pos.x - p.pos.x, ty = o.pos.y + 1 - p.pos.y, l = Math.hypot(tx, ty); if (l > 0.05) { const a = Math.atan2(p.dir.y, p.dir.x), b = Math.atan2(ty, tx); let d = b - a; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) > 2.5) d = Math.abs(d) * (Math.cos(a) >= 0 ? 1 : -1); const na = a + U.clamp(d, -2.6 * dt, 2.6 * dt); p.dir.set(Math.cos(na), Math.sin(na), 0); } }   // (right behind it: it loops up and over, never into the floor)
+      p.pos.addScaledVector(p.dir, 3.8 * dt); p.pos.z = 0; p.pos.y = Math.max(p.pos.y, 0.5); X.inside(p.pos); p.mesh.position.copy(p.pos); p.mesh.position.y += Math.sin(p.t * 6) * 0.1; p.mesh.rotation.y += dt * 7; p.mesh.rotation.x += dt * 3;
       if (U.vrand() < 0.5) FX.burst(p.pos, { n: 1, color: [0x7ae8ff, 0xffffff], glow: true, speed: 1.5, size: 0.05, life: 0.25, gravity: 0 });
       p.cd -= dt;
       if (free(o) && o.inv <= 0 && p.cd <= 0 && Math.hypot(o.pos.x - p.pos.x, o.pos.z - p.pos.z) < 1.4 && Math.abs(o.pos.y + 1 - p.pos.y) < 1.6) {
@@ -546,8 +546,8 @@
       const step = 7.5 * dt; p.pos.addScaledVector(p.dir, step); p.dist += step; X.inside(p.pos); p.mesh.position.copy(p.pos); p.mesh.rotation.y = Math.atan2(p.dir.x, p.dir.z);
       if (U.vrand() < 0.6) FX.burst(p.pos.clone().setY(0.1), { n: 1, color: [0x6a5a3a, 0x9ab83a], speed: 1.2, size: 0.07, life: 0.4 });
       if (free(o) && o.inv <= 0 && o.pos.y < 0.4 && Math.hypot(o.pos.x - p.pos.x, o.pos.z - p.pos.z) < 0.75) {
-        FX.burst(o.pos.clone().setY(0.3), { n: 16, color: [0x4a6a2a, 0x9ab83a, 0x6a5a3a], speed: 3, size: 0.09, life: 0.5 });
-        Combat.hit(f, o, KB.MOVES.xqVineHit, { kind: 'special', proj: true, dir: X.shotDir(f, o, p.dir), at: o.pos.clone().setY(0.5), from: p.pos.clone() }); return true;
+        FX.burst(o.pos.clone().setY(o.pos.y + 0.3), { n: 16, color: [0x4a6a2a, 0x9ab83a, 0x6a5a3a], speed: 3, size: 0.09, life: 0.5 });
+        Combat.hit(f, o, KB.MOVES.xqVineHit, { kind: 'special', proj: true, dir: X.shotDir(f, o, p.dir), at: o.pos.clone().setY(o.pos.y + 0.5), from: p.pos.clone() }); return true;
       }
       return p.dist > 11 || p.t > 3 || f.state === 'out';
     },
@@ -635,7 +635,12 @@
     }
     if (b.magnetT > 0) {
       b.magnetT -= dt; let best = null, bd = 99; for (const w of m.arena.walls) if (!w.broken) { const d = w.lim - w.sign * f.pos[w.axis]; if (d < bd) { bd = d; best = w; } }
-      if (!best || out || f.state === 'held') b.magnetT = 0;
+      if (out || f.state === 'held') b.magnetT = 0;
+      else if (!best) {   // an open stage: nothing to stick to but the floor (off the stage, the pull lets go)
+        if (Platform.offStage(f)) b.magnetT = 0;
+        else if (!f.grounded) { f.vel.y = Math.min(f.vel.y, -22); f.vel.x *= 0.5; }
+        else { b.magnetT = 0; f.rootT = Math.max(f.rootT || 0, 1.4); m.call(f, 'STUCK TO THE FLOOR', 'bad'); FX.spark(chest(f), { color: 0xd8dde6, size: 1.2 }); SFX.play('guard'); }
+      }
       else if (bd > 0.55) { f.pos[best.axis] += best.sign * Math.min(bd - 0.5, 15 * dt); f.vel.x = 0; f.vel.z = 0; }
       else { b.magnetT = 0; f.rootT = Math.max(f.rootT || 0, 1.4); m.call(f, 'STUCK TO THE WALL', 'bad'); FX.spark(chest(f), { color: 0xd8dde6, size: 1.2 }); SFX.play('guard'); }
     }
@@ -645,20 +650,20 @@
       else { const x = o.maxHp * 0.016 * dt; if (o.hp > 1) { o.hp = Math.max(1, o.hp - x); f.hp = Math.min(f.maxHp, f.hp + x); } if (U.vrand() < 0.4) { const a = chest(f), c = chest(o), k = U.vrand(); FX.burst(a.lerp(c, k), { n: 1, color: [0xc8a8ff, 0xffffff], glow: true, speed: 0.4, size: 0.06, life: 0.35, gravity: 0 }); } }
     }
     if (b.dive > 0) {
-      b.dive -= dt; if (U.vrand() < 0.5) FX.burst(f.pos.clone().setY(0.1), { n: 1, color: [0x3a2e1a, 0x6a5a3a], speed: 1.5, size: 0.1, life: 0.4 });
+      b.dive -= dt; if (U.vrand() < 0.5) FX.burst(f.pos.clone().setY(f.pos.y + 0.1), { n: 1, color: [0x3a2e1a, 0x6a5a3a], speed: 1.5, size: 0.1, life: 0.4 });
       if (b.dive <= 0) {
         f.obj.visible = true; const o = f.opp;
         if (free(o) && !out) {
           const d = new V3(o.pos.x - f.pos.x, 0, o.pos.z - f.pos.z); if (d.lengthSq() < 0.01) d.copy(f.forward); d.normalize();
           f.pos.set(o.pos.x - d.x * 0.45, 0, o.pos.z - d.z * 0.45); f.clampInside(); f.yaw = U.ang(f.pos, o.pos); f.vel.set(0, 0, 0);
-          FX.burst(f.pos.clone().setY(0.3), { n: 24, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 4, size: 0.12, life: 0.6, up: 1 }); SFX.play('heavy');
+          FX.burst(f.pos.clone().setY(f.pos.y + 0.3), { n: 24, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 4, size: 0.12, life: 0.6, up: 1 }); SFX.play('heavy');
           if (o.inv <= 0 && o.pos.y < 2) Combat.hit(f, o, KB.MOVES.xqBogUp, { kind: 'special', dir: d, at: chest(o), from: f.pos.clone() });
         }
       }
     }
     if (b.shellOn && !f.buffs.shell) {
       b.shellOn = false; const o = f.opp, c = chest(f);
-      FX.burst(c, { n: 30, color: [0xff6a1a, 0xffd040, 0x1a1414], glow: true, speed: 7, size: 0.12, life: 0.6 }); FX.ring(c.clone().setY(0.1), { r1: 3.2, life: 0.4, color: 0xff6a1a }); SFX.play('boom'); FX.addShake(0.4);
+      FX.burst(c, { n: 30, color: [0xff6a1a, 0xffd040, 0x1a1414], glow: true, speed: 7, size: 0.12, life: 0.6 }); FX.ring(c.clone().setY(f.pos.y + 0.1), { r1: 3.2, life: 0.4, color: 0xff6a1a }); SFX.play('boom'); FX.addShake(0.4);
       if (free(o) && o.inv <= 0 && U.dist(f.pos, o.pos) < 2.8 && Math.abs(o.pos.y - f.pos.y) < 2) { const d = new V3(o.pos.x - f.pos.x, 0, o.pos.z - f.pos.z); if (d.lengthSq() < 0.01) d.copy(f.forward); d.normalize(); Combat.hit(f, o, KB.MOVES.xlErupt, { kind: 'special', dir: d, at: chest(o), from: f.pos.clone() }); }
     }
   });

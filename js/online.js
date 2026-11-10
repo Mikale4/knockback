@@ -280,7 +280,7 @@
       if (!(r.n >= 1 && r.n <= ROOM_MAX && r.max >= 2 && r.max <= ROOM_MAX) || !['open', 'full', 'fight', 'locked'].includes(r.state)) return;
       if (!(Math.abs(Date.now() - r.ts) < 45000)) return;
       const old = Dir.rooms.get(code); if (old && old.ts > r.ts) return;
-      Dir.rooms.set(code, { code, name: r.name.slice(0, 24), host: r.host.slice(0, 24), line: r.line, n: r.n | 0, max: r.max | 0, priv: !!r.priv, state: r.state, wins: r.wins | 0, time: r.time | 0, figs: r.figs === 'base' ? 'base' : 'any', ts: r.ts, seen: performance.now() });
+      Dir.rooms.set(code, { code, name: r.name.slice(0, 24), host: r.host.slice(0, 24), line: r.line, n: r.n | 0, max: r.max | 0, priv: !!r.priv, state: r.state, wins: r.wins | 0, stocks: r.stocks | 0, time: r.time | 0, figs: r.figs === 'base' ? 'base' : 'any', ts: r.ts, seen: performance.now() });
       Dir.changed();
     },
     prune() { const now = performance.now(); let ch = false; for (const [k, r] of Dir.rooms) if (now - r.seen > 35000) { Dir.rooms.delete(k); ch = true; } if (ch) Dir.changed(); },
@@ -350,7 +350,7 @@
   /* ---- the host's side */
   function newRoom(o, code, id) {
     return { code, hostId: id, name: String(o.name || '').trim().slice(0, 24) || (Auth.user.user + '\'s room'), priv: !!o.priv, listed: o.listed !== false, locked: false,
-      max: U.clamp(o.max | 0 || ROOM_MAX, 2, ROOM_MAX), rules: { arena: 'random', wins: 2, time: 99, bonus: false, figs: 'any', hazards: true }, rot: 'winner', auto: true, chat: 'on', muted: [],
+      max: U.clamp(o.max | 0 || ROOM_MAX, 2, ROOM_MAX), rules: { arena: 'random', wins: 1, stocks: 3, time: 300, bonus: false, figs: 'any', hazards: true }, rot: 'winner', auto: true, chat: 'on', muted: [],
       members: [], queue: [], fight: null, cd: null, last: null };
   }
   function listing() {
@@ -492,7 +492,7 @@
     R.cd = null;
     const rules = R.rules, arena = rules.arena === 'random' || !Arena.THEMES[rules.arena] ? U.pick(Arena.LIST) : rules.arena;
     const fid = 'f' + (N.fidN = (N.fidN || 0) + 1) + rid().slice(0, 4);
-    const cfg = { fid, seed: seed != null ? seed : (U.vrand() * 4294967296) >>> 0, arena, wins: rules.wins, time: rules.time, bonus: rules.bonus,
+    const cfg = { fid, seed: seed != null ? seed : (U.vrand() * 4294967296) >>> 0, arena, wins: 1, stocks: rules.stocks || 3, time: rules.time, bonus: rules.bonus,
       ids: pair.map(m => m.id), builds: pair.map(m => m.info.build), names: pair.map(m => m.name), track: pair.map(m => !!(m.info && m.info.track)),   // (each fighter's TARGET TRACKING)
       hazards: rules.hazards !== false };   // (the room's STAGE HAZARDS rule: every screen plays it the same)
     R.fight = { fid, ids: cfg.ids, names: cfg.names, lines: pair.map(m => m.info.line), state: 'connecting' };
@@ -697,7 +697,7 @@
     Input.mode = 'solo';
     const builds = cfg.builds.map((b, i) => Object.assign({}, b, { name: cfg.names[i] }));
     // the end of the match waits for its frame to be settled (a guessed KO can still be taken back)
-    const opts = { mode: 'online', online: true, local: Math.max(0, local), builds, cpu: [null, null], arena: cfg.arena, wins: cfg.wins, time: cfg.time || 99, bonus: cfg.bonus, inputs: net,
+    const opts = { mode: 'online', online: true, local: Math.max(0, local), builds, cpu: [null, null], arena: cfg.arena, wins: 1, stocks: cfg.stocks || 3, time: cfg.time || 300, bonus: cfg.bonus, inputs: net,
       track: Array.isArray(cfg.track) ? [cfg.track[0] === true, cfg.track[1] === true] : [false, false],   // (an older replay: no tracking, as it was played)
       hazards: cfg.hazards === true,   // (an older replay: no hazards -- its arenas had none)
       onEnd: res => { if (!G) return; if (G.replay) replayEnd(res); else if (G.watch) watchEnd(res); else if (!G.ended && !G.endQ) G.endQ = { f: G.simF, res }; } };
@@ -993,7 +993,7 @@
     S.records.bestCombo = Math.max(S.records.bestCombo, rec.maxCombo); S.records.maxBounces = Math.max(S.records.maxBounces, rec.maxBounces); S.records.wallBreaks += rec.breaks;
     S.tokens += reward; Auth.save();
     const awards = window.Rewards ? Rewards.fightDone(res, opts) : [];
-    const recs = { maxCombo: rec.maxCombo, maxBounces: rec.maxBounces, breaks: rec.breaks, dmg: rec.dmg }, wins = res.wins.slice();
+    const recs = { maxCombo: rec.maxCombo, maxBounces: rec.maxBounces, breaks: rec.breaks, dmg: rec.dmg }, wins = (res.kos || res.wins).slice();   // (the score: KOs)
     toHost({ t: 'fover', fid: cfg.fid, winner: res.winner, wins });
     const saved = Replays.add(buildReplay(cfg, local, G.rec.inputs, G.rec.snaps, G.rec.fp, endF, res));
     const g = G;
@@ -1223,8 +1223,8 @@
           el('div', { class: 'olset' }, el('h3', null, 'RULES' + (host ? '' : ' (the host sets these)')),
             Menu.arenaRow('ARENA', rules.arena, v => H.rule('arena', v), () => {}, { random: true, locked: !host, note: 'Stages marked ⚠ have a STAGE HAZARD; the STAGE HAZARDS rule turns them on or off for the whole room.' }),
             seg('STAGE HAZARDS', rules.hazards !== false, [[true, 'On'], [false, 'Off']], v => H.rule('hazards', v === true || v === 'true'), host),
-            seg('ROUNDS', rules.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => H.rule('wins', +v), host),
-            seg('ROUND TIME', rules.time, [[60, '60 s'], [99, '99 s'], [180, '180 s']], v => H.rule('time', +v), host),
+            seg('STOCKS', rules.stocks || 3, [1, 2, 3, 4, 5].map(n => [n, String(n)]), v => H.rule('stocks', +v), host),
+            seg('TIME', rules.time, [[180, '3 min'], [300, '5 min'], [480, '8 min'], [9999, 'No limit']], v => H.rule('time', +v), host),
             seg('RARITY BONUS', rules.bonus, [[false, 'Off (fair)'], [true, 'On']], v => H.rule('bonus', v === true || v === 'true'), host),
             seg('FIGHTERS', rules.figs, [['any', 'Any (custom or base)'], ['base', 'Base characters only']], v => H.rule('figs', v), host),
             seg('ROTATION', R.rot, ROT_TXT, v => H.set('rot', v), host),
@@ -1264,7 +1264,7 @@
         if (pass) pass.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
         N.listEl.append(el('div', { class: 'olroom' + (cant ? ' off' : ''), style: { '--lc': KB.LINES[r.line].css } },
           el('img', { src: Models.figIcon(KB.mintBuild(r.line, 0)), alt: '' }),
-          el('div', { class: 'olroomt' }, el('b', null, r.name), el('small', null, 'Host ' + r.host + ' · first to ' + r.wins + ' · ' + r.time + ' s · ' + (r.figs === 'base' ? 'base characters only' : 'custom fighters OK'))),
+          el('div', { class: 'olroomt' }, el('b', null, r.name), el('small', null, 'Host ' + r.host + ' · ' + (r.stocks || 3) + ' stocks · ' + (r.time >= 9999 ? 'no time limit' : Math.round(r.time / 60) + ' min') + ' · ' + (r.figs === 'base' ? 'base characters only' : 'custom fighters OK'))),
           r.priv ? el('em', { class: 'olt priv' }, 'PRIVATE') : null,
           el('span', { class: 'olroomn' }, r.n + '/' + r.max),
           el('em', { class: 'olt st-' + r.state }, STATE_TXT[r.state]),

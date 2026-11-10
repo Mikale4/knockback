@@ -125,7 +125,7 @@
   /* attract mode behind the title and login */
   function attract() {
     if (App.view && App.view.attract) return;
-    const m = Match.create({ mode: 'attract', builds: [KB.randomBuild(3), KB.randomBuild(3)], cpu: [2, 2], arena: U.pick(Arena.LIST), wins: 9, time: 999, onEnd: () => setTimeout(() => { if (App.view === m) { App.view = null; attract(); } }, 0) });
+    const m = Match.create({ mode: 'attract', builds: [KB.randomBuild(3), KB.randomBuild(3)], cpu: [2, 2], arena: U.pick(Arena.LIST), wins: 9, stocks: 2, time: 999, onEnd: () => setTimeout(() => { if (App.view === m) { App.view = null; attract(); } }, 0) });
     App.setView(m);
   }
 
@@ -548,7 +548,7 @@
        Three ways to fight: you against the CPU, two players, or CPU vs CPU (watch). */
     versus(cfg) {
       Music.play('menu');
-      cfg = cfg || Menu._vs || (S().vs ? Object.assign({}, S().vs) : null) || { mode: 'cpu', p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, w1: 'random', w2: 'random', l1: 2, l2: 2, arena: 'random', wins: 2, bonus: true };
+      cfg = cfg || Menu._vs || (S().vs ? Object.assign({}, S().vs) : null) || { mode: 'cpu', p1: S().active || 0, p2: 'random', p2b: 0, lvl: 1, w1: 'random', w2: 'random', l1: 2, l2: 2, arena: 'random', stocks: 3, time: 300, bonus: true };
       Menu._vs = cfg; S().vs = Object.assign({}, cfg); if (S().vs.p1 >= S().builds.length) S().vs.p1 = 0; Auth.save();
       const mine = S().builds, watch = cfg.mode === 'watch', two = cfg.mode === 'two';
       // each figure picks its own series (a fantasy figure against a sports one): the side's own tab, or the series of
@@ -578,7 +578,8 @@
             two ? null : seg('CPU LEVEL', cfg.lvl, lvls, v => cfg.lvl = +v),
           ],
           arenaRow('ARENA', cfg.arena, v => { cfg.arena = v; }, () => Menu.versus(cfg), { random: true, home: true }),
-          seg('ROUNDS', cfg.wins, [[1, 'First to 1'], [2, 'First to 2'], [3, 'First to 3']], v => cfg.wins = +v),
+          seg('STOCKS', cfg.stocks || 3, [1, 2, 3, 4, 5].map(n => [n, String(n)]), v => cfg.stocks = +v),
+          seg('TIME', cfg.time || 300, [[180, '3 min'], [300, '5 min'], [480, '8 min'], [9999, 'No limit']], v => cfg.time = +v),
           seg('RARITY BONUS', cfg.bonus, [[true, 'On'], [false, 'Off (fair)']], v => cfg.bonus = v === true || v === 'true'),
           two ? el('p', { class: 'note' }, 'P1: arrows + Z X C / A S D / F, Space, L-Shift · P2: I J K L + Numpad 1-7, Num 0, Num . (or , . / ; \' ] R-Shift \\) · Controllers: the first pad is P1, the second P2 (swap them, and rebind anything, in OPTIONS).') : null,
           watch ? el('p', { class: 'note' }, 'Sit back and watch two CPUs fight. Random figures are re-rolled every fight. Esc pauses. No tokens for watching.') : null,
@@ -591,7 +592,7 @@
       let arena = cfg.arena === 'random' || cfg.arena === 'home' || !Arena.THEMES[cfg.arena] ? U.pick(Arena.LIST) : cfg.arena;
       if (cfg.mode === 'watch') {
         const w1 = pick(cfg.w1, cfg.l1), w2 = pick(cfg.w2, cfg.l2); if (cfg.arena === 'home') arena = home(w2);
-        App.startMatch({ mode: 'watch', builds: [w1, w2], cpu: [cfg.l1, cfg.l2], arena, wins: cfg.wins, bonus: cfg.bonus, cfg });
+        App.startMatch({ mode: 'watch', builds: [w1, w2], cpu: [cfg.l1, cfg.l2], arena, wins: 1, stocks: cfg.stocks || 3, time: cfg.time || 300, bonus: cfg.bonus, cfg });
         return;
       }
       const b1 = painted(Inv.levelled(mine[cfg.p1]), myPaint());
@@ -599,7 +600,7 @@
       if (cfg.mode === 'two') b2 = painted(String(cfg.p2b).startsWith('mint:') ? KB.mintBuild(cfg.p2b.slice(5), 0) : Inv.levelled(mine[+cfg.p2b]), cfg.c2);
       else b2 = cfg.p2 === 'random' ? KB.randomBuild(Math.min(3, cfg.lvl)) : KB.mintBuild(cfg.p2, Math.min(3, cfg.lvl));
       if (cfg.arena === 'home') arena = home(b2);
-      App.startMatch({ mode: cfg.mode === 'two' ? 'versus' : 'cpu', builds: [b1, b2], cpu: [null, cfg.mode === 'two' ? null : cfg.lvl], arena, wins: cfg.wins, bonus: cfg.bonus, lvl: cfg.lvl });
+      App.startMatch({ mode: cfg.mode === 'two' ? 'versus' : 'cpu', builds: [b1, b2], cpu: [null, cfg.mode === 'two' ? null : cfg.lvl], arena, wins: 1, stocks: cfg.stocks || 3, time: cfg.time || 300, bonus: cfg.bonus, lvl: cfg.lvl, cfg });
     },
     /* ----------------------------------------------------------- arcade
        THE TOP SHELF: each fighter's story, rivals, two bosses and two endings (arcade.js, story.js) */
@@ -656,7 +657,7 @@
           sec('THE WALL CAN BREAK', 'Each bounce cracks the wall (watch the cracks, and the wall map under the timer). When it gives out, or on a 4th bounce in one combo, it is a WALL BREAK: big damage, they fly out of the arena (RING OUT), and you get MOMENTUM (+10% damage, faster Hype). The wall snaps back after a few seconds.'),
           sec('MOVING', 'DOWN DASH: hold Guard and press Dodge in the air to dive straight to the floor, steering with the stick. It uses your air dodge and gives no invincibility: it is for getting back down fast (to carry on a combo, or to get out of a juggle you saw coming).'),
           sec('GETTING OUT OF IT', 'SPRING BURST: press Snap while being hit with a full Burst gauge to blow them away. If they are guarding, it is blocked: they can bait it.', 'WALL TECH: from the second bounce of a combo, press Dodge just before you hit the wall to kick off it. Mashing locks you out for a moment.', 'Combos DECAY: each hit is worth less, hitstun shortens and gravity grows the longer a combo runs. QUICK RISE: Dodge as you land. RECOVER: any button once hitstun ends in the air.'),
-          sec('YOUR PARTS', 'Your figure is six parts. HEAD gives the Special (3 uses a round, one comes back every 16 s). R-ARM is your Light string. L-ARM is the Heavy KNOCK, the Launcher and your guard. LEGS: speed, jumps, the dash attack. CORE: HP. LEGEND CARD: the super (Legend Art, 100 Hype).', 'Limbs have armour: break it and the part POPS OFF the figure. Walk over it to SNAP it back on. Broken arms fall back on weak stump attacks; no head, no Special; cracked legs slow you down.'),
+          sec('YOUR PARTS', 'Your figure is six parts. HEAD gives the Special (about 5 uses, one comes back every 5 s). R-ARM is your Light string. L-ARM is the Heavy KNOCK, the Launcher and your guard. LEGS: speed, jumps, the dash attack. CORE: HP. LEGEND CARD: the super (Legend Art, 100 Hype).', 'Limbs have armour: break it and the part POPS OFF the figure. Walk over it to SNAP it back on. Broken arms fall back on weak stump attacks; no head, no Special; cracked legs slow you down.'),
           sec('OFFENCE', 'Light string, then Heavy to launch, then Jump to follow and air Lights; air Heavy spikes for a ground bounce. Hold Heavy to charge a KNOCK. Guard + Light is a throw. Snap Cancel (Snap, 50 Hype) cancels any move\'s recovery to keep a combo going. Hitting someone as they start a move is a COUNTER.'),
           HUD.moveList(activeBuild(), 0))));
     },
@@ -746,8 +747,8 @@
         el('div', { class: 'panel resp ' + (win || watch ? 'win' : 'lose') },
           el('h1', null, watch ? 'CPU ' + (res.winner + 1) + ' WINS' : opts.mode === 'versus' ? 'PLAYER ' + (res.winner + 1) + ' WINS' : win ? 'YOU WIN' : 'YOU LOSE'),
           watch ? el('div', { class: 'note' }, res.builds[res.winner].name) : null,
-          el('div', { class: 'score' }, res.wins[0] + ' — ' + res.wins[1]),
-          el('div', { class: 'recs' }, stat('BEST COMBO', me.maxCombo), stat('MOST BOUNCES', me.maxBounces), stat('WALL BREAKS', me.breaks), stat('DAMAGE', Math.round(me.dmg))),
+          el('div', { class: 'score' }, (res.kos || res.wins)[0] + ' — ' + (res.kos || res.wins)[1], el('small', null, ' KOs')),
+          el('div', { class: 'recs' }, stat('BEST COMBO', me.maxCombo), stat('MOST BOUNCES', me.maxBounces), stat('WALL BREAKS', me.breaks), stat('DAMAGE DEALT', Math.round(me.dmg * Platform.PCT) + '%')),
           reward ? el('div', { class: 'reward' }, el('i', { class: 'coin' }), '+' + reward + ' TOKENS') : null,
           wq ? el('blockquote', { class: 'ar-quote', style: { '--lc': KB.LINES[wl].css } }, el('b', null, res.builds[res.winner].name), '“' + wq + '”') : null,
           ...awards.map(a => el('div', { class: 'reward gold' }, '★ AWARD: ' + a.name + (a.pay ? '  +' + a.pay : ''))),

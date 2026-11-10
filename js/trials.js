@@ -640,7 +640,48 @@
   const all = () => { if (!TRIALS.samurai) for (const l of KB.LINE_ORDER) TRIALS[l] = build(l); return TRIALS; };
   const allAdv = () => { if (!TRIALS_ADV.samurai) for (const l of KB.LINE_ORDER) TRIALS_ADV[l] = ADV[l] ? ADV[l]().map(t => Object.assign({ adv: true }, t)) : []; return TRIALS_ADV; };
   const allPro = () => { if (!TRIALS_PRO.samurai) for (const l of KB.LINE_ORDER) TRIALS_PRO[l] = PRO[l] ? PRO[l]().map(t => Object.assign({ pro: true, stars: 5 }, t)) : []; return TRIALS_PRO; };
-  const listOf = (line, tier) => (tier === 'pro' ? allPro() : tier === 'adv' ? allAdv() : all())[line];
+  /* routes cut back to the part that plays the same every time on the platform fighter's rules (they ran on past a
+     point that no longer holds): the steps up to there, and a note that says what they are */
+  const TRIM = {
+    'air:adv:0': 8, 'air:adv:1': 8, 'air:adv:2': 4, 'air:adv:3': 8, 'air:adv:6': 8, 'air:basic:3': 4, 'air:pro:0': 4, 'air:pro:1': 8,
+    'air:pro:2': 4, 'air:pro:3': 13, 'air:pro:4': 8, 'archer:adv:2': 4, 'archer:basic:3': 4, 'archer:pro:0': 13, 'archer:pro:4': 17, 'bard:adv:1': 9,
+    'bard:pro:0': 9, 'bard:pro:2': 9, 'baseball:adv:5': 6, 'baseball:basic:5': 3, 'baseball:pro:1': 12, 'baseball:pro:3': 4, 'basketball:adv:0': 9, 'basketball:adv:2': 7,
+    'basketball:pro:1': 12, 'basketball:pro:2': 13, 'blackbeard:adv:2': 7, 'blackbeard:pro:1': 13, 'blackbeard:pro:2': 9, 'blast:adv:0': 8, 'blast:adv:1': 9, 'blast:adv:2': 4,
+    'blast:basic:3': 4, 'blast:basic:9': 5, 'blast:pro:0': 4, 'blast:pro:2': 4, 'blast:pro:3': 4, 'blood:adv:1': 9, 'blood:adv:2': 4, 'blood:adv:3': 11,
+    'blood:adv:6': 13, 'blood:basic:3': 4, 'blood:basic:8': 7, 'blood:pro:0': 11, 'blood:pro:1': 10, 'blood:pro:2': 11, 'blood:pro:3': 9, 'blood:pro:4': 10,
+    'bowler:adv:0': 11, 'bowler:basic:3': 4, 'bowler:pro:3': 6, 'boxer:adv:2': 4, 'boxer:adv:5': 12, 'boxer:basic:3': 4, 'boxer:pro:0': 4, 'boxer:pro:1': 11,
+    'boxer:pro:2': 10, 'boxer:pro:3': 15, 'cannoneer:pro:2': 8, 'cannoneer:pro:3': 6, 'captain:adv:0': 9, 'captain:adv:1': 9, 'captain:adv:3': 11, 'captain:adv:6': 13,
+    'captain:pro:0': 18, 'captain:pro:4': 14, 'dragoon:adv:0': 8, 'dragoon:adv:1': 7, 'dragoon:adv:4': 8, 'dragoon:basic:5': 6, 'dragoon:pro:0': 9, 'dragoon:pro:1': 8,
+    'dragoon:pro:3': 13, 'dragoon:pro:4': 16, 'earth:adv:0': 8, 'earth:adv:2': 4, 'earth:basic:3': 4, 'earth:pro:0': 4, 'earth:pro:2': 4, 'earth:pro:3': 8,
+    'fencer:adv:2': 5, 'fencer:basic:3': 5, 'fencer:pro:0': 12, 'fencer:pro:2': 9, 'flame:adv:0': 8, 'flame:adv:1': 8, 'flame:adv:2': 4, 'flame:adv:3': 8,
+    'flame:adv:6': 8, 'flame:basic:3': 4, 'flame:basic:9': 5, 'flame:pro:0': 4, 'flame:pro:1': 8, 'flame:pro:2': 4, 'flame:pro:3': 8, 'flame:pro:4': 8,
+    'football:adv:5': 5, 'football:basic:9': 5, 'football:pro:2': 3, 'football:pro:4': 20, 'ghost:adv:1': 9, 'ghost:adv:3': 11, 'ghost:adv:6': 13, 'ghost:basic:8': 7,
+    'ghost:basic:9': 5, 'ghost:pro:0': 11, 'ghost:pro:1': 12, 'ghost:pro:3': 9, 'ghost:pro:4': 14, 'knight:adv:1': 12, 'knight:adv:6': 7, 'knight:pro:0': 7,
+    'kunoichi:adv:0': 9, 'kunoichi:pro:0': 15, 'kunoichi:pro:1': 11, 'kunoichi:pro:2': 11, 'kunoichi:pro:3': 6, 'kunoichi:pro:4': 11, 'lancer:pro:0': 11, 'lava:adv:2': 4,
+    'lava:basic:3': 4, 'lava:pro:0': 11, 'lava:pro:2': 11, 'lava:pro:3': 6, 'metal:adv:1': 9, 'metal:adv:2': 4, 'metal:basic:3': 4, 'metal:pro:0': 11,
+    'metal:pro:2': 11, 'metal:pro:3': 8, 'monk:adv:1': 5, 'monk:adv:6': 12, 'monk:basic:9': 6, 'monk:pro:0': 11, 'monk:pro:1': 9, 'monk:pro:2': 19,
+    'monk:pro:4': 10, 'ninja:adv:6': 6, 'ninja:basic:3': 2, 'ninja:basic:9': 5, 'pirate:adv:5': 13, 'pirate:adv:6': 8, 'pirate:basic:9': 6, 'pirate:pro:3': 15,
+    'pirate:pro:4': 17, 'redbeard:adv:3': 11, 'redbeard:adv:5': 3, 'redbeard:adv:6': 13, 'redbeard:pro:0': 18, 'redbeard:pro:4': 14, 'sailor:adv:0': 9, 'sailor:adv:1': 9,
+    'sailor:adv:2': 5, 'sailor:basic:3': 5, 'sailor:basic:9': 5, 'sailor:pro:1': 12, 'samurai:adv:5': 9, 'samurai:pro:3': 13, 'shogun:adv:4': 3, 'shogun:adv:5': 3,
+    'shogun:adv:6': 3, 'shogun:basic:5': 3, 'shogun:pro:3': 3, 'shogun:pro:4': 3, 'skater:adv:1': 9, 'skater:adv:4': 6, 'skater:pro:1': 12, 'skater:pro:3': 14,
+    'skater:pro:4': 6, 'soccer:adv:1': 7, 'soccer:adv:2': 4, 'soccer:adv:5': 3, 'soccer:adv:6': 7, 'soccer:basic:3': 4, 'soccer:basic:9': 4, 'soccer:pro:0': 4,
+    'soccer:pro:1': 7, 'soccer:pro:2': 3, 'soccer:pro:3': 4, 'soccer:pro:4': 17, 'spirit:adv:0': 8, 'spirit:adv:2': 4, 'spirit:basic:3': 4, 'spirit:pro:0': 4,
+    'spirit:pro:2': 4, 'spirit:pro:3': 10, 'storm:adv:2': 4, 'storm:adv:3': 11, 'storm:adv:6': 13, 'storm:basic:3': 4, 'storm:basic:8': 7, 'storm:pro:0': 4,
+    'storm:pro:2': 4, 'storm:pro:3': 9, 'storm:pro:4': 14, 'summoner:adv:5': 6, 'summoner:pro:1': 6, 'swamp:adv:0': 9, 'swamp:adv:1': 9, 'swamp:adv:5': 5,
+    'swamp:pro:3': 6, 'templar:adv:0': 9, 'templar:adv:4': 3, 'templar:adv:6': 13, 'templar:basic:5': 3, 'templar:pro:0': 18, 'templar:pro:1': 12, 'templar:pro:4': 3,
+    'viking:pro:0': 15, 'viking:pro:3': 14, 'viking:pro:4': 14, 'water:adv:0': 8, 'weightlifter:adv:1': 8, 'weightlifter:adv:6': 8, 'weightlifter:pro:0': 12, 'weightlifter:pro:1': 8,
+    'weightlifter:pro:2': 12, 'weightlifter:pro:3': 10, 'weightlifter:pro:4': 15, 'wrestler:adv:2': 4, 'wrestler:adv:5': 9, 'wrestler:basic:3': 4, 'wrestler:basic:9': 5, 'wrestler:pro:0': 8,
+    'wrestler:pro:1': 14, 'wrestler:pro:3': 8, 'wrestler:pro:4': 5 };
+  const trimmed = new Map();
+  const listOf = (line, tier) => {
+    const L = (tier === 'pro' ? allPro() : tier === 'adv' ? allAdv() : all())[line]; if (!L) return L;
+    return L.map((t, i) => {
+      const n = TRIM[line + ':' + tier + ':' + i]; if (!n || n >= t.steps.length) return t;
+      const k = line + ':' + tier + ':' + i;
+      if (!trimmed.has(k)) trimmed.set(k, Object.assign({}, t, { steps: t.steps.slice(0, n), note: 'The route: ' + t.steps.slice(0, n).map(stepName).join(' › ') + '.' }));
+      return trimmed.get(k);
+    });
+  };
 
   /* ------------------------------------------------- saved progress */
   const done = () => { const S = Auth.S; if (!S) return {}; return S.trials || (S.trials = {}); };
@@ -685,8 +726,12 @@
   function reset(why) {
     R.at = 0; R.combo = null; R.state = 'go'; R.started = {};
     const a = me(); a.spReady = 0; a.uses = a.st.uses; a.hype = 100; a.burst = 100; a.rounds = a.st.rounds; a.reloadT = 0; a.limits = {};
-    R.m.training.spot = R.trial.wall ? 'wall' : 'centre'; R.m.training.lastSpot = R.m.training.spot; R.m.trainReset();
-    if (!R.trial.wall) { const [p, d] = R.m.fighters; p.pos.set(-(R.trial.gap || 1.3), 0, 0.6); d.pos.set(0, 0, 0.6); p.yaw = Math.PI / 2; d.yaw = -Math.PI / 2; }
+    // the dummy starts each try at the trial's DAMAGE % (the launches carry about as far as the routes need)
+    // (a route off a wall starts by it, the dummy at a % where the KNOCK gets there hard enough to bounce)
+    const wallish = R.trial.wall || R.trial.steps.some(st => st.e === 'bounce');
+    R.m.training.pct = [0, R.trial.pct != null ? R.trial.pct : wallish ? Trials.WALL_PCT : Trials.PCT];
+    R.m.training.spot = wallish ? 'wall' : 'centre'; R.m.training.lastSpot = R.m.training.spot; R.m.trainReset();
+    if (!wallish) { const [p, d] = R.m.fighters; p.pos.set(-(R.trial.gap || 1.3), 0, 0.6); d.pos.set(0, 0, 0.6); p.yaw = Math.PI / 2; d.yaw = -Math.PI / 2; }
     for (const mn of R.m.minions.slice()) { if (mn.obj.parent) mn.obj.parent.remove(mn.obj); } R.m.minions.length = 0;
     if (R.trial.imps) { R.m.summon(me(), R.trial.imps, true); for (const mn of R.m.minions) if (mn.owner === me()) mn.carried = true; }
     R.note = why || ''; draw();
@@ -747,7 +792,7 @@
   function tick(dt) {
     if (!R || App.view !== R.m) return;
     const a = me(), d = dummy(), s = R.trial.steps[R.at];
-    a.hp = a.maxHp; d.hp = Math.max(d.hp, d.maxHp * 0.5); a.hype = R.at === 0 || (s && s.e === 'super') ? 100 : a.hype;
+    a.pct = 0; a.hype = R.at === 0 || (s && s.e === 'super') ? 100 : a.hype;
     if (Input.keyDown('KeyR')) { if (!R.rHeld) { R.rHeld = true; stopDemo(); reset(); return; } } else R.rHeld = false;
     if (R.state !== 'go') return;
     // the combo has to keep going (a Legend Art has its own catch)
@@ -765,11 +810,15 @@
   function demo(dt) {
     const a = me(), d = dummy(), s = R.trial.steps[R.at], m = R.m; if (!s || !fake) return;
     for (const k in fake.held) fake.held[k] = false; fake.move.x = 0; fake.move.y = 0;
+    if (a.shortOk && m.time - a.jumpT < 0.16) fake.held.jump = true;   // (Jump held through a jump off the ground: a full one, not a short hop)
     R.dk = (R.dk || 0) + 1; const tap = R.dk % 3 === 0;
     const dx = d.pos.x - a.pos.x, dz = d.pos.z - a.pos.z, dist = Math.hypot(dx, dz), dy = d.pos.y - a.pos.y;
     const toward = (k) => { fake.move.x = dx / (dist || 1) * (k || 1); fake.move.y = -dz / (dist || 1) * (k || 1); };
     const busy = a.state === 'attack' && !a.moveHit;
-    const press = b => { if (tap) fake.held[b] = true; };
+    // (close enough for the blows coming up to land, reach.js: a string that starts with a bat and goes on with a fist
+    // starts close enough for the fist)
+    let near = 1.5; for (let j = R.at; j < Math.min(R.trial.steps.length, R.at + 4); j++) { const q = R.trial.steps[j], qm = q.m && KB.MOVES[q.m]; if (q.e === 'jump' || q.e === 'bounce' || q.e === 'gbounce') break; if (qm && (qm.type === 'melee' || qm.type === 'grab')) near = Math.min(near, U.clamp(KB.hitDist(qm) - 0.35, 0.8, 1.5)); }
+    const press = b => { if (tap) { fake.held[b] = true; if (b === 'heavy' && s.m && s.m === a.leftMove('heavy') && Math.abs(fake.move.x) < 0.5) toward(1); } };   // (the side KNOCK: Heavy with the stick at them)
     if (s.e === 'bounce' || s.e === 'art' || s.e === 'gbounce') return;
     if (s.e === 'jump') return press('jump');
     if (s.e === 'snap') { if (a.state === 'attack' && a.moveHit) press('snap'); return; }
@@ -785,7 +834,7 @@
       if (a.state === 'attack' || a.state === 'dodge') { if (a.state === 'dodge' && a.stateT > 0.1) press('light'); return; }
       if (!a.grounded) return;
       if (s.k === 'light') { toward(); if (dist < 2.4) press('dodge'); return; }
-      if (dist > 1.3) { toward(); return; } press(s.k); return;
+      if (dist > Math.min(1.3, near)) { toward(); return; } press(s.k); return;
     }
     // from range: a shot or the Chain Hook, as soon as the last hit has landed
     if (s.t === 'far') {
@@ -808,8 +857,8 @@
     }
     if (s.t === 'pause') { if (a.pauseWin && m.time >= a.pauseWin.from + 0.02) fake.held.light = true; return; }   // (pressed before the window opens, it would start the string over)
     if (s.t === 'dash') { if (a.state === 'dodge') { if (a.stateT > 0.13) press('light'); return; } if (dist > 1.8 && a.state !== 'attack') toward(); else { toward(); press('dodge'); } return; }
-    if (s.t === 'hold') { if (a.state === 'attack' && a.move && a.move.id === s.m) { fake.held.light = a.charge < 0.5; return; } if (dist > 1.4) { toward(); return; } fake.held.light = true; return; }
-    if (s.t === 'beat') { if (dist > 1.4) { toward(); return; } if (Music.beat(m).near) fake.held.light = true; return; }
+    if (s.t === 'hold') { if (a.state === 'attack' && a.move && a.move.id === s.m) { fake.held.light = a.charge < 0.5; return; } if (dist > Math.min(1.4, near)) { toward(); return; } fake.held.light = true; return; }
+    if (s.t === 'beat') { if (dist > Math.min(1.4, near)) { toward(); return; } if (Music.beat(m).near) fake.held.light = true; return; }
     if (s.t === 'mash') { press('light'); return; }
     // walk in for a fresh start, or to catch a rebound; then press when the last hit has landed
     const fresh = a.state !== 'attack';
@@ -822,21 +871,26 @@
       // (a press it can't cancel into waits for the move to end; one it can waits for them to come into reach, but never
       // past the last tenth of a second of the move: after that the cancel is gone and it's a fresh move, or the pause branch)
       const left = a.move ? a.move.su + a.move.ac + (a.acExt || 0) + a.move.rc - a.moveT : 0;
-      if (canLink && ((a.move.nx || {}).l === s.m || s.k === 'heavy') && left < 0.1) { if (s.t === 'toward') toward(0.3); press(s.k); fake.held[s.k] = true; return; }
-      const far = mv.type === 'proj' || mv.type === 'radial', hiY = far || s.k === 'special' ? 2.1 : 1.5, maxD = far ? Math.max(reach + 0.6, (mv.range || mv.rad || 2) + 0.3) : reach + 0.6;   // (a shot, a breath or a burst reaches higher and further than a swing; and nobody swings at someone right over their head)
-      if ((fresh || canLink) && yh > 0.15 && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD) { if (s.k !== 'heavy' || s.t === 'toward') toward(0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
+      if (canLink && ((a.move.nx || {}).l === s.m || s.k === 'heavy') && left < 0.1) { if (s.t === 'toward') toward(1); press(s.k); fake.held[s.k] = true; return; }
+      // (a shot, a breath or a burst reaches higher and further than a swing, and nobody swings at someone right over
+      // their head; a swing goes as far and as high as its measured box, reach.js, so a fist waits for them to come closer
+      // than a lance does)
+      const far = mv.type === 'proj' || mv.type === 'radial', B = KB.boxOf(mv);
+      const hiY = far || s.k === 'special' ? 2.1 : U.clamp(B[3] - 0.2, 0.6, 1.5), loY = far ? 0.15 : Math.max(0.15, B[2] - 1.6), maxD = far ? Math.max(reach + 0.6, (mv.range || mv.rad || 2) + 0.3) : Math.min(reach + 0.6, B[0] + 0.3);
+      if ((fresh || canLink) && yh > loY && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD) { if (s.k !== 'heavy' || s.t === 'toward') toward(s.t === 'toward' ? 1 : 0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
       if (!fresh) return;
-      const g = 30, vy = d.vel.y, y = Math.max(0, d.pos.y), tl = (vy + Math.sqrt(vy * vy + 2 * g * y)) / g;
-      const lx = d.pos.x + d.vel.x * tl, lz = d.pos.z + d.vel.z * tl, r0 = reach * 0.85;
+      const g = 30, vy = d.vel.y, gy = Platform.groundAt(m, d.pos.x, d.pos.y) || 0, y = Math.max(0, d.pos.y - gy), tl = (vy + Math.sqrt(vy * vy + 2 * g * y)) / g;
+      const lx = d.pos.x + d.vel.x * tl, lz = d.pos.z + d.vel.z * tl, r0 = far ? reach * 0.85 : U.clamp(KB.boxOf(mv)[0] * 0.65, 0.5, 1.6);
       const ox = a.pos.x - lx, oz = a.pos.z - lz, ol = Math.hypot(ox, oz) || 1, sx = lx + ox / ol * r0, sz = lz + oz / ol * r0;
       const mx = sx - a.pos.x, mz = sz - a.pos.z, ml = Math.hypot(mx, mz);
       if (ml > 0.25) { fake.move.x = mx / ml; fake.move.y = -mz / ml; }
       return;
     }
-    if (fresh && dist > 1.5 && !(s.k === 'special')) { toward(); return; }
+    // (a Light pressed a moment ago is still in the buffer: walking in now, the stick held over, it would go off as a tilt)
+    if (fresh && dist > near && !(s.k === 'special') && !(s.k === 'light' && m.time - (R.lightAt || -9) < 0.3)) { toward(); return; }
     if (busy) return;
     if (s.t === 'toward') toward();
-    press(s.k);
+    press(s.k); if (s.k === 'light' && tap) R.lightAt = m.time;
   }
 
   /* -------------------------------------------------------- the panel */
@@ -870,11 +924,12 @@
   /* ------------------------------------------------ start, leave, select */
   const Trials = {};
   Trials.list = (line, tier) => listOf(line, tier);
+  Trials.PCT = 0; Trials.WALL_PCT = 0;   // (the dummy's % at the start of a try, unless the trial says: off a wall, more)
   Trials.start = (line, i, tier) => {
     Trials.stop();
     tier = tier === 'adv' || tier === 'pro' ? tier : 'basic';
     const list = listOf(line, tier);
-    App.startMatch({ mode: 'training', trials: true, builds: [KB.mintBuild(line, 0), KB.mintBuild('knight', 0)], cpu: [null, null], arena: 'shelf', wins: 99, time: 999, bonus: true });
+    App.startMatch({ mode: 'training', trials: true, builds: [KB.mintBuild(line, 0), KB.mintBuild('knight', 0)], cpu: [null, null], arena: 'shelf', layout: 'flat', walled: true, wins: 99, time: 999, bonus: true });   // (no platforms to land on mid-combo)
     const m = App.view; m.training.meter = true; m.training.dummy = 'stand';
     R = { m, line, list, tier, i: i == null ? Math.max(0, list.findIndex((t, k) => !cleared(line, k, tier))) : i, at: 0, state: 'go', note: '', started: {} };
     if (R.i < 0) R.i = 0;

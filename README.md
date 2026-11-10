@@ -1,14 +1,18 @@
 # KNOCK//BACK
 
-A voxel arena fighter where the fighters are **action figures**, in series of their own: **HISTORICAL FANTASY**
+A voxel **platform fighter** where the fighters are **action figures**, in series of their own: **HISTORICAL FANTASY**
 (Monk, Viking, Summoner, Bard), **EDO JAPAN** (Samurai, Shinobi, Ronin, Kunoichi, Shogun, Daimyo), **KNIGHTS OF THE
 REALM** (Knight, Paladin, Dragoon, Templar, Crusader, Lancer), **LOVERS OF THE SEA** (Pirate, Captain, Cannoneer,
 Blackbeard, Redbeard, Sailor, Marauder, Musketeer, Ghost Pirate), **ELEMENT BENDERS** (Air, Water, Earth, Fire,
 Blood, Lava, Lightning, Explosion, Metal, Spirit and Swamp) and **MODERN SPORTS** (eleven athletes) — 47 lines,
 and every figure is six snap-on parts you can mix freely.
 
-**The gimmick is the name:** launch someone into a wall and they **bounce back off it**, still helpless, so you can keep
-the combo going and knock them back into the wall again. The ways out of that loop are taken from Guilty Gear.
+**How it plays:** the way the big party platform fighters do, in a game of its own. Every hit adds to the other
+figure's **damage %**, and the higher it is the further they fly; knock them past the edge of the screen (the **blast
+zone**) and they lose a **stock**. Off the stage, you jump, use your **↑ + Special recovery** and catch the **ledge**
+to get back. Some stages keep **walls**, and there the name comes back: a KNOCK sends them into the wall and they
+**bounce back off it**, still helpless, so the combo keeps going (the ways out of that loop are taken from Guilty
+Gear).
 
 **Play:** https://mikale4.github.io/knockback/ (keyboard, any controller, or touch). Your collector and collection are saved in your browser.
 
@@ -54,20 +58,27 @@ player's own setting travels in the fight's setup (and its replay), so the two s
 | Move | Arrow keys | I J K L | Left stick / d-pad | Left stick / d-pad |
 | Light (R-ARM string) | Z | Num 1 or `,` | X | □ |
 | Heavy / KNOCK (L-ARM) | X (hold to charge) | Num 2 or `.` | Y | △ |
-| Guard (+ Light = Grab) | C | Num 3 or `/` | RB | R1 |
+| Shield (+ Light = Grab) | C | Num 3 or `/` | RB | R1 |
 | Head Special | A | Num 5 or `;` | LB | L1 |
 | Snap Cancel / Spring Burst | D | Num 4 or `'` | RT | R2 |
 | Legend Art (super) | S | Num 6 or `]` | LT | L2 |
 | Part Toss | F | Num 7 or `[` | RS (click) | R3 |
-| Jump | Space | Num 0 or R-Shift | A | ✕ |
-| Dodge / Tech | L-Shift | Num . or `\` | B | ○ |
+| Jump (tap: short hop) | Space | Num 0 or R-Shift | A | ✕ |
+| Dodge / Tech (Quick Rise) | L-Shift | Num . or `\` | B | ○ |
 | Down Dash (in the air) | Guard + Dodge | Guard + Dodge | RB + B | R1 + ○ |
 | Pause / move list | Esc | | Menu | Options |
 
-**Command Specials:** hold a direction and press Head Special. It's read on the screen: **→ is the side of the
-screen (left or right) your opponent is on**, flipping when you swap sides, so it's the same anywhere on the stage:
-**→ + Special**, **← + Special** and **↑ + Special** (the diagonals count as → or ←). The Special then turns to face
-them wherever they are. Special with the stick at rest (or pulled straight down) is still the head's own Special. See
+**On the stage:** tap Jump and let go at once for a **short hop**, hold it for the full jump, and jump again in the
+air. Hold **↓** as you come down to **fast fall**, and ↓ on a floating platform to drop through it. Run off the side
+and you can catch the **ledge**: from it, toward the stage climbs up, Jump jumps up, Light climbs with an attack and
+Dodge rolls in.
+
+**Light and Heavy take the stick:** Light on its own is your string, and with the stick held it's a **tilt** (→, ↑ or
+↓). Heavy is one of the **four KNOCKs**: on its own a slam into the floor, **→** the side KNOCK that sends them flying,
+**↑** the launcher, **↓** a low blow all round. In the air, Light is the air string and **Heavy is the spike**.
+
+**Specials take the stick too:** Head Special on its own is the head's own Special; **← / → + Special** is the side
+Special (you face the way you press), **↓ + Special** the down Special, **↑ + Special** your **recovery**. See
 [Command Specials](#command-specials) for every figure's three.
 
 **Everything can be rebound in Options.** Each action takes two keys per player (a key that already does something
@@ -88,42 +99,65 @@ view; on Android the game goes fullscreen and holds landscape when you tap the t
 
 ## The fighting system
 
-- **Combos:** Light string → Heavy = **Launcher** (Jump to follow, air Lights, air Heavy spikes for a ground bounce).
-  Light string → *toward* + Heavy = the **KNOCK** instead, straight back into the wall. Dodge → Light is the legs'
-  dash attack. Hitting someone as they start a move is a **COUNTER**.
-- **KNOCK//BACK (wall bounce):** a tumbling figure that hits a wall fast enough bounces back off it in hitstun. Each
-  bounce in a combo hits harder. Hold a direction as a launcher lands to aim it.
-- **Wall stress and WALL BREAK:** bounces crack the wall (cracks spread and glow; the wall map under the timer shows
-  all four). At full stress, or on a 4th bounce in one combo, the wall **breaks**: big damage, the target flies out of
-  the arena (**RING OUT**, -8% HP, they drop back in), the attacker gets **MOMENTUM** (+10% damage, faster Hype). The
-  wall snaps back together after a few seconds.
+- **Damage % and stocks:** every hit adds to their %, shown by their portrait. A blow that launches them (a KNOCK, a
+  launcher, a throw) sends them further the higher it is; past a **blast zone** (the edges of the screen) they're
+  **KNOCKED OUT** with an explosion where they left, and lose a stock. They drop back in from above, invincible for a
+  moment. Lose every stock and the fight is over.
+- **Recovery and the ledge:** knocked off the stage, use your air jump and your **↑ + Special**: every figure's is its
+  own (a grapnel, a smoke bomb, a column of light, a siege ladder, a geyser...), and it's free: once each time you
+  leave the ground, and a hit gives it back. Catch the **ledge** as you come in: the first grab since you last touched
+  down makes you invincible for a moment; only one figure can hang on a ledge at a time. Shots can't keep pushing
+  someone who is off the stage out to the blast zone (each shot in a row pushes less, and off the stage they push
+  little and give the air jump back).
+- **Combos:** the Light string; **↑ + Heavy** is the launcher (Jump to follow, air Lights, the air Heavy spikes them
+  for a ground bounce). **→ + Heavy** is the side KNOCK. Dodge → Light is the legs' dash attack. Hitting someone as
+  they start a move is a **COUNTER**. Hitboxes are boxes taken from the figures' real poses (Training shows them).
+- **The SHIELD:** hold Shield for a see-through bubble in your colour. It shrinks while you hold it and faster when
+  it's hit; let go and it grows back. If it pops: **SHIELD BREAK**, you're sent up and come down dazed (stars round
+  your head), wide open. Shield just as a blow lands for a **JUST GUARD** (no chip, the attacker is shoved off).
+  A **grab** (Shield + Light) beats a shield.
+- **Teching and tech chasing:** knocked down, press **Dodge** as you hit the floor for a **QUICK RISE**: you roll back
+  up (the way you hold the stick; on its own, away from them) instead of lying there. Miss it and you lie there, then
+  get up. Either way you can't be hit while you roll or rise, so the one who knocked you down **tech chases**: reads
+  which way you went, gets there, and hits you the moment you're done. In the air, any button once hitstun runs out
+  **recovers** you.
+- **KNOCK//BACK (wall bounce):** on a stage with walls (the Shelf, the Desk, the Chest and some others), a tumbling
+  figure that hits a wall fast enough bounces back off it in hitstun. Each bounce in a combo hits harder, and walled
+  stages KO off the top, at a high %.
+- **Wall stress and WALL BREAK:** bounces crack the wall (cracks spread and glow). At full stress, or on a 4th bounce
+  in one combo, the wall **breaks**: big damage, the target flies out (**RING OUT**, they drop back in), the attacker
+  gets **MOMENTUM** (+10% damage, faster Hype). The wall snaps back together after a few seconds.
 - **Breakers (the Guilty Gear part):**
-  - **Spring Burst** — Snap while being hit, with a full Burst gauge: blow the attacker away. A guarding attacker
+  - **Spring Burst** — Snap while being hit, with a full Burst gauge: blow the attacker away. A shielding attacker
     blocks it, so it can be baited.
   - **Wall Tech** — from the 2nd bounce of a combo, press Dodge just before you reach the wall to kick off it.
     Mashing locks you out briefly.
   - **Combo decay** — every hit is worth less (shown as % VALUE), hitstun shortens and gravity grows the longer a
     combo runs; past ~5.5 s the target recovers on its own.
-  - **Recover** (any button once hitstun ends in the air), **Quick Rise** (Dodge as you land), **Just Guard** (guard
-    at the last moment: no chip, attacker shoved), **Guard Crush** when the guard gauge empties, **Throw tech**.
+  - **Throw tech**, and **mashing** out of a grab (GRAB BREAK).
 - **Snap Cancel** — Snap during your own move with 50 Hype: cancel its recovery to extend a combo.
-- **Grabs** (Guard + Light, beats guard) — you hold them. **Light** pummels (each one counts in the combo), and then
+- **Instant moves show first:** a teleport, a blink behind them or a swap always takes a beat to come out (unless it's
+  part of your own combo), and the spot it'll come out at shows a dark portal closing in. Counters give their user
+  about 0.9 s to read the blow, a parry 0.85 s.
+- **Grabs** (Shield + Light, beats a shield) — you hold them. **Light** pummels (each one counts in the combo), and then
   you throw: **tilt the stick** (or Heavy + a direction) to throw them that way (behind you is the strongest, a spin
   throw), **Jump** throws them straight up for a juggle, **Heavy** alone **slams** them into the floor for a ground
-  bounce. Throw them at a wall and they bounce off it like any KNOCK. The one being held can **mash** to break free
-  (GRAB BREAK); the more hurt they are, the longer you can hold them.
+  bounce. The one being held can **mash** to break free (GRAB BREAK); the more hurt they are, the longer you can hold
+  them.
 - **OTG (off the ground)** — twice a combo, a hit can pick a knocked-down opponent back up off the floor ("OTG!", then
-  "OTG 2!", which pops them a little lower and for less time): a
-  Heavy, a dash attack, a dive (air Heavy), a sweep or a downward shot. They're scooped into the air and the combo
-  carries on (the first one hangs them there a moment, so you can get to them). Quick Rise (Dodge as you land) gets out
-  of it.
-- **Down Dash** — in the air, hold Guard and press Dodge: a dive straight to the floor, steered with the stick. It uses
-  your air dodge and has no invincibility (it's for getting down fast); you can act the moment you land.
-- **Part Toss** (its own button: F, or click the right stick) — pull a part off your own figure and throw it: the head first, then the L-arm, then
-  the R-arm. It works as a cancel off any hit. A toss that lands **extends the combo** ("EXTEND 1/2"): its clock and
-  decay start over, and you get a fresh OTG and ground bounce; it pops them up a little and **hangs them there a
-  moment**, time to follow the throw. Twice a combo at most: combo, toss, combo, toss, final combo. The part lands on
-  the floor; go and snap it back on (before they take it, see Parts).
+  "OTG 2!", which pops them a little lower and for less time): a low blow (↓ + Heavy), a dash attack, the air Heavy
+  or a downward shot. They're scooped into the air and the combo carries on. A Quick Rise gets out of it.
+- **Down Dash** — in the air, hold Shield and press Dodge: a dive straight to the floor, steered with the stick. It
+  uses your air dodge and has no invincibility (it's for getting down fast); you can act the moment you land.
+- **Part Toss** (its own button: F, or click the right stick) — pull a part off your own figure and throw it: the head
+  first, then the L-arm, then the R-arm. It works as a cancel off any hit. A toss that lands **extends the combo**
+  ("EXTEND 1/2"): its clock and decay start over, and you get a fresh OTG and ground bounce. Twice a combo at most.
+  The part lands on the floor; go and snap it back on (before they take it, see Parts). A part that falls off the
+  stage drops back in from the sky a few seconds later.
+- **Specials** have uses (about five, shown under SPECIAL) and a used one comes back every 5 s (3.5 s with the Devotion
+  passive; the Shinobi's and the Shogun's heads are slower). The ↑ + Special recovery doesn't use them. A buff Special
+  shows on its user for as long as it lasts (a beating outline for a counter or a parry, a plate at the feet for
+  armour, embers for a power-up).
 
 ## Legend Arts (supers)
 
@@ -195,7 +229,7 @@ the Ninja's kunai (they stick in walls), the Summoner's spirit bolts and her Hex
 notes riding on them, and the Ninja's **Chain Hook** (the weighted chain flies out, whips round them, and the Ninja
 yanks them in along the floor; twice in any 5 s, and a third try says how long to wait). Projectiles stop short of
 the walls (the chain's weight, the hex glyph and the Bard's sonic boom burst or clank before them). Every one is aimed: it leads a moving target, finds them high, low or on the floor,
-and the Part Toss homes in. The Ninja's **Shadow Step** works twice a round, 3 seconds apart.
+and the Part Toss homes in. The Ninja's **Shadow Step** has fewer uses than most, 1.5 seconds apart and slow to come back.
 
 ## MODERN SPORTS (the second series)
 
@@ -376,7 +410,7 @@ shows what's left under SPECIAL. Thrown sports balls don't use ammo: those have 
 | Explosion Bender's Detonator Glove | 3 sparks (Spark Shot) | 4 s | Blast Palm |
 | Spirit Bender's Spirit Lantern | 3 spirits (Spirit Lance) | 4 s | Lantern Palm |
 
-## Armoured charge, auto combos and Tech Chase
+## Armoured charge, auto combos and the Chase Dash
 
 - **Holding Heavy** to charge it gives **one hit of armour**, for every figure. The first hit taken while charging
   is shrugged off and the charge carries on; a second one gets through.
@@ -397,73 +431,74 @@ shows what's left under SPECIAL. Thrown sports balls don't use ammo: those have 
   | Redbeard | Kalkan Charge › Kilij Draw › Kalkan Smash |
   | Sailor | Haymaker › Bar-Room Jab › Knockout Swing |
 
-- **Tech Chase:** when your KNOCK sends them flying, hold the stick toward them and press **Snap**. For half a bar
+- **Chase Dash:** when your KNOCK sends them flying, hold the stick toward them and press **Snap**. For half a bar
   of Hype your recovery is cancelled and your dash runs them down, stopping a step short so you can keep the combo
   going (catch the wall rebound, meet them as they land). Snap without the stick toward them is the plain Snap
-  Cancel. The CPU tech chases too.
+  Cancel. The CPU uses it too, and it tech chases: it reads where a knocked-down figure will roll or stand and is
+  there as it does.
 
 ## Command Specials
 
-Every figure has three more Specials on fighting-game motions with Head Special, and each one is something only that
+Every figure has three more Specials, with the stick and Head Special, and each one is something only that
 figure would do: a Daimyo bribes, a Summoner throws her own imps, a Captain's ship lurches, a Pirate's parrot pecks,
 a Ronin gets more dangerous the closer he is to losing. The motions are just the buttons: what each does is the
 figure's own, and a rising anti-air is there only where it's the figure's signature (the boxer's uppercut, the
 bicycle kick, the alley-oop, a horse rearing, a cannon fired at the deck to fly).
 
-Motions are read on the screen like a 2D fighter's: **↓ is down and → is the side of the screen they're on**
-(it flips when you swap sides), and the Special then turns to face them. They belong to the HEAD (wear someone's
-head, use their Specials) and share its uses with the plain Special: every head has one more use a round for them.
-The move list (pause) shows all four.
+**← / →** is the side Special (you face the way you press), **↓** the down Special and **↑** the **recovery**:
+each figure's own way back to the stage, free (once each time it leaves the ground, and a hit gives it back). They
+belong to the HEAD (wear someone's head, use their Specials); the side and down Specials share its uses with the plain
+Special. The move list (pause) shows all four.
 
-| Figure | → + Special | ← + Special | ↑ + Special |
+| Figure | ← / → + Special (side) | ↓ + Special (down) | ↑ + Special (recovery) |
 |---|---|---|---|
-| Monk | **Dim Mak**: a pressure point, SEALED (no Special) 6 s | **Iron Shirt**: three hits don't stagger him | **Ki Burst**: destroys every enemy shot within 4.5 m |
-| Viking | **Hurled Axe**: shatters a guard it hits | **Shield Wall**: shots bounce back | **Berserkergang**: 10% HP for +25% damage and armour on every attack |
-| Summoner | **Imp Bomb**: one of her imps, thrown, bursts | **Soul Swap**: trades places with an imp | **Blood Pact**: her imps burst to heal her and give Hype |
-| Bard | **Lullaby**: ASLEEP | **Allegro**: 30% faster 6 s | **Encore**: his last Special again |
-| Samurai | **Kiai**: a shout, FROZEN in place (even in the air) | **Mikiri**: reads the blow, a crumpling draw | **Nōtō**: blade sheathed, the next hit +60% and crumples |
-| Shinobi | **Shuriken**: three stars | **Makibishi**: caltrops, SLOWED | **Smoke Bomb**: vanishes for 3 s |
-| Ronin | **Drunken Stagger**: an untouchable stumbling cut | **Sake Spit**: in their eyes, DIZZY | **Last Stand**: harder the lower his HP (up to ×2.6) |
-| Kunoichi | **Poison Mist**: POISONED | **Charm**: a blown kiss, their stick works backwards | **Senbon Pin**: PINNED, can't move or jump |
-| Shogun | **Siege Ram**: the next wall they hit breaks | **Shogun's Decree**: WEAKENED and SLOWED all round | **Kabuto Stance**: nothing staggers him for 5 s (the Shogun's Kabuto allows one Special a round, plain or command, and it doesn't come back) |
-| Daimyo | **Returning Tessen**: the fan comes back, hits both ways | **Castle Gate**: a wall no shot or figure passes | **Bribe**: their next hit does nothing |
-| Knight | **Shield Charge**: armoured, breaks guards | **Mordhau**: the crossguard as a hammer, crumple | **Chivalry**: frontal blows guarded on their own |
-| Paladin | **Judgment**: a pillar of light on the marked spot | **Lay on Hands**: heal 12% | **Divine Shield**: untouchable 1.5 s, can't attack |
-| Dragoon | **Dragon Fang**: a 2.3 m fiery thrust | **High Jump**: lands on them from the sky | **Lance Vault**: over them, down behind, spikes |
-| Templar | **Templar's Brand**: his hits on them heal him | **Consecrate**: holy ground, heals him and burns them | **Scourge**: his own HP for 40 Hype |
-| Crusader | **Flail Wrap**: DISARMED, no Lights 3 s | **Holy Relic**: every status lifted, none takes | **Flail Storm**: a whirling walk, four hits |
-| Lancer | **Trample**: the horse runs them down | **Wheel About**: hooves all round, armoured | **Rear Up**: the horse rears (anti-air) |
-| Pirate | **Rope Swing**: boots first, over low attacks | **Spilled Rum**: a trap, slip and burn | **Polly!**: the parrot pecks them three times |
-| Captain | **Ship's Guns**: a cannonball on the marked spot | **Hard to Port!**: the deck lurches, they're thrown (unguardable) | **Raise the Colours**: her hits heal her and give Hype |
-| Cannoneer | **Hot Shot**: BURNING | **Powder Trail**: a trap that blows them sky-high | **Recoil Jump**: rides the gun's blast up |
-| Blackbeard | **Grenado**: bursts 2 m wide | **Lit Fuses**: his blows burn, hitting him burns | **No Quarter**: double damage under 30% HP |
-| Redbeard | **Kalkan Toss**: the shield bounces off two walls | **Greek Fire**: a burning pool | **Crescent Wave**: passes through them |
-| Sailor | **Belaying Pin**: DIZZY | **Lasso Knot**: HOBBLED, no jump or dodge | **Anchor Drop**: hits them even lying down |
-| Marauder | **Pillage**: a command grab that steals 25 Hype | **Hull Breaker**: armoured overhead | **Sunder**: their weakest part's armour, or the part |
-| Musketeer | **Buck and Ball**: a spray | **Prone Shot**: flat on the floor, shots go over her | **Reload Drill**: loaded, and the next hit crumples |
-| Ghost Pirate | **Chains of the Deep**: drags them in | **Haunt**: behind them, SLOWED | **Davy's Toll**: takes 12% of their HP |
-| Air Bender | **Gale Cannon**: blows them across the stage, the next wall breaks | **Vortex**: a whirlwind that drags them in | **Tornado**: rides it up, three hits all round |
-| Water Bender | **Ice Shards**: three, SLOWED | **Water Prison**: frozen solid where they stand | **Riptide**: a whirlpool, dragged in and thrown up |
-| Earth Bender | **Earth Wave**: a ridge along the floor, knocked flat | **Stone Skin**: 35% less damage, no jump or dodge | **Rock Coffin**: PINNED in stone, the next hit shatters it for +50% |
-| Fire Bender | **Fire Stream**: flame from both hands, BURNING | **Heat Haze**: shots pass through him | **Flame Wheel**: a leaping axe kick on fire |
-| Blood Bender | **Puppet Strings**: they walk to her | **Hemorrhage**: every metre they move costs HP | **Puppet Toss**: a grab from 4 m, over her head |
-| Lava Bender | **Lava Flow**: a river of lava rolls out | **Obsidian Shell**: untouchable, then it erupts | **Eruption**: rides a spout up, leaves a pool |
-| Lightning Bender | **Ball Lightning**: drifts after them, zaps three times | **Static Cage**: a ring that shocks | **Lightning Rod**: strikes anyone in the air, down |
-| Explosion Bender | **Blast Mine**: the first foot on it | **Rocket Jump**: blows himself clear | **Detonation**: a huge KNOCK all round, costs him 6% |
-| Metal Bender | **Cable Zip**: 7 m in a blink | **Magnetize**: stuck to the wall | **Iron Spikes**: up from the floor, shatters a guard |
-| Spirit Bender | **Crossing Over**: trades places with them | **Soul Tether**: drinks their HP | **Spirit Ward**: the next blow passes through, she's behind them |
-| Swamp Bender | **Creeping Vines**: roots that follow, ROOTED | **Bog Body**: sinks and comes up under them | **Swamp Gas**: POISONED and DIZZY |
-| Wrestler | **Running Lariat**: armoured | **Powerbomb**: a command grab | **Hulk Up**: heals, full Burst, armour |
-| Baseball | **Line Drive**: the furthest KNOCK there is | **Catch**: shots caught for Hype | **Stolen Base**: an untouchable slide past them |
-| Football | **Stiff Arm**: breaks guards | **Hurdle**: over them, cleats first | **Victory Dance**: a long celebration, 35 Hype |
-| Soccer | **Slide Tackle**: down hard | **Simulation**: the dive, a YELLOW CARD | **Bicycle Kick**: spikes them |
-| Boxer | **Dempsey Roll**: five hooks | **Rope-a-Dope**: soaks hits for Hype | **Gazelle Punch**: the leaping uppercut |
-| Fencer | **Flèche**: 6 m in a flash | **Touché**: three win the bout, DIZZY | **Passata Sotto**: ducks under, thrusts up |
-| Weightlifter | **Plate Roll**: along the floor, jump it | **Barbell Spin**: armoured, all round | **Protein Shake**: more damage, less knockback |
-| Bowler | **7-10 Split**: two pins a hair apart, DIZZY | **Pin Setter**: a rack of pins, down hard | **Spare**: his ball rolls back through them |
-| Archer | **Rain of Arrows**: on the marked spot | **Disengage**: a backflip and an arrow | **Skyward Volley**: three arrows up |
-| Skater | **Board Toss**: the board like a frisbee | **Handplant**: low, legs sweeping round | **McTwist**: the spinning 540 |
-| Basketball | **Ankle Breaker**: the crossover, DIZZY | **Take the Charge**: their foul, they crumple | **Alley-Oop**: the leap |
+| Monk | **Dim Mak**: a pressure point, SEALED (no Special) 6 s | **Iron Shirt**: three hits don't stagger him | **Ki Ascent**: a ki burst (shots near him break), then three kicking steps up the air |
+| Viking | **Hurled Axe**: shatters a guard it hits | **Shield Wall**: shots bounce back | **Skeggøx Hook**: the axe hooked over the ledge, and he hauls himself in |
+| Summoner | **Imp Bomb**: one of her imps, thrown, bursts | **Soul Swap**: trades places with an imp | **Imp Lift**: two imps fly her where the stick points |
+| Bard | **Lullaby**: ASLEEP | **Allegro**: 30% faster 6 s | **Crescendo**: a rising chord, higher on the beat |
+| Samurai | **Kiai**: a shout, FROZEN in place (even in the air) | **Mikiri**: reads the blow, a crumpling draw | **Nōtō Draw**: a rising draw; his next hit deals more |
+| Shinobi | **Shuriken**: three stars | **Makibishi**: caltrops, SLOWED | **Smoke Bomb**: gone, and back 7 m the way the stick points |
+| Ronin | **Drunken Stagger**: an untouchable stumbling cut | **Sake Spit**: in their eyes, DIZZY | **Last Stand**: a leaping cut, higher the more he is hurt |
+| Kunoichi | **Poison Mist**: POISONED | **Charm**: a blown kiss, their stick works backwards | **Wall Run**: straight up the side of the stage to the ledge |
+| Shogun | **Siege Ram**: the next wall they hit breaks | **Shogun's Decree**: WEAKENED and SLOWED all round | **Siege Ladder**: a slow, unstoppable climb and a yari thrust |
+| Daimyo | **Returning Tessen**: the fan comes back, hits both ways | **Castle Gate**: a wall no shot or figure passes | **Gunbai Glide**: a rise on the war fan, then a long glide |
+| Knight | **Shield Charge**: armoured, breaks guards | **Mordhau**: the crossguard as a hammer, crumple | **Shield Rush**: 4 m any of eight ways in armour, a KNOCK |
+| Paladin | **Judgment**: a pillar of light on the marked spot | **Lay on Hands**: heal 12% | **Divine Ascent**: a column of light lifts him, untouchable |
+| Dragoon | **Dragon Fang**: a 2.3 m fiery thrust | **High Jump**: lands on them from the sky | **Lance Vault**: up on the lance, and the point spikes on the way down |
+| Templar | **Templar's Brand**: his hits on them heal him | **Consecrate**: holy ground, heals him and burns them | **Martyr’s Leap**: 4% of his own, for the highest leap of all |
+| Crusader | **Flail Wrap**: DISARMED, no Lights 3 s | **Holy Relic**: every status lifted, none takes | **Flail Rotor**: the flail as a rotor, a second of hang time |
+| Lancer | **Trample**: the horse runs them down | **Wheel About**: hooves all round, armoured | **Capriole**: the horse leaps and kicks out behind |
+| Pirate | **Rope Swing**: boots first, over low attacks | **Spilled Rum**: a trap, slip and burn | **Grapnel**: a grappling hook to the ledge, and he swings in |
+| Captain | **Ship's Guns**: a cannonball on the marked spot | **Hard to Port!**: the deck lurches, they're thrown (unguardable) | **Lifeline**: her crew haul her in on a line from the ship |
+| Cannoneer | **Hot Shot**: BURNING | **Powder Trail**: a trap that blows them sky-high | **Recoil Jump**: the swivel gun fired the other way |
+| Blackbeard | **Grenado**: bursts 2 m wide | **Lit Fuses**: his blows burn, hitting him burns | **Powder Keg**: a lit keg under his boots, then sky-high |
+| Redbeard | **Kalkan Toss**: the shield bounces off two walls | **Greek Fire**: a burning pool | **Crescent Rise**: up, back and over with the kilij, three cuts |
+| Sailor | **Belaying Pin**: DIZZY | **Lasso Knot**: HOBBLED, no jump or dodge | **Anchor Haul**: the anchor flung onto the stage, and he hauls up its line |
+| Marauder | **Pillage**: a command grab that steals 25 Hype | **Hull Breaker**: armoured overhead | **Boarding Leap**: a spiking axe leap, and again off their head |
+| Musketeer | **Buck and Ball**: a spray | **Prone Shot**: flat on the floor, shots go over her | **Recoil Shot**: the musket fired down, a spike, and the kick sends her up |
+| Ghost Pirate | **Chains of the Deep**: drags them in | **Haunt**: behind them, SLOWED | **Phantom Drift**: mist, drifting where the stick points, untouchable |
+| Air Bender | **Gale Cannon**: blows them across the stage, the next wall breaks | **Vortex**: a whirlwind that drags them in | **Cyclone**: a steered cyclone, about 6 m up |
+| Water Bender | **Ice Shards**: three, SLOWED | **Water Prison**: frozen solid where they stand | **Geyser**: a geyser under her, as long as Special is held |
+| Earth Bender | **Earth Wave**: a ridge along the floor, knocked flat | **Stone Skin**: 35% less damage, no jump or dodge | **Stone Pillar**: a pillar shoots up under him and stays to stand on |
+| Fire Bender | **Fire Stream**: flame from both hands, BURNING | **Heat Haze**: shots pass through him | **Fire Jets**: steered jets of flame from his feet, BURNING |
+| Blood Bender | **Puppet Strings**: they walk to her | **Hemorrhage**: every metre they move costs HP | **Puppet Strings**: a string hooked into them, and she yanks herself to them |
+| Lava Bender | **Lava Flow**: a river of lava rolls out | **Obsidian Shell**: untouchable, then it erupts | **Eruption**: a spout of magma straight up, BURNING |
+| Lightning Bender | **Ball Lightning**: drifts after them, zaps three times | **Static Cage**: a ring that shocks | **Lightning Step**: 6.5 m in an instant, the way the stick points |
+| Explosion Bender | **Blast Mine**: the first foot on it | **Rocket Jump**: blows himself clear | **Combustion**: three blasts behind him, each one steered |
+| Metal Bender | **Cable Zip**: 7 m in a blink | **Magnetize**: stuck to the wall | **Iron Cable**: a cable to the ledge, reeled in fast |
+| Spirit Bender | **Crossing Over**: trades places with them | **Soul Tether**: drinks their HP | **Spirit Lantern**: a little rise, then a slow float down |
+| Swamp Bender | **Creeping Vines**: roots that follow, ROOTED | **Bog Body**: sinks and comes up under them | **Bog Bubble**: a bubble of marsh gas carries her up, then bursts |
+| Wrestler | **Running Lariat**: armoured | **Powerbomb**: a command grab | **Springboard**: a flying crossbody, higher off the side of the stage |
+| Baseball | **Line Drive**: the furthest KNOCK there is | **Catch**: shots caught for Hype | **Robbing the Homer**: a leap, glove up, catching shots |
+| Football | **Stiff Arm**: breaks guards | **Hurdle**: over them, cleats first | **Juke**: two short steered dashes, a fake and the real one |
+| Soccer | **Slide Tackle**: down hard | **Simulation**: the dive, a YELLOW CARD | **Bicycle Kick**: up and backward, a spike |
+| Boxer | **Dempsey Roll**: five hooks | **Rope-a-Dope**: soaks hits for Hype | **Gazelle Punch**: an invincible leaping uppercut |
+| Fencer | **Flèche**: 6 m in a flash | **Touché**: three win the bout, DIZZY | **Flèche**: 4.8 m in a flash any of eight ways, a KNOCK |
+| Weightlifter | **Plate Roll**: along the floor, jump it | **Barbell Spin**: armoured, all round | **Clean and Jerk**: hold to set, let go: the longer, the higher |
+| Bowler | **7-10 Split**: two pins a hair apart, DIZZY | **Pin Setter**: a rack of pins, down hard | **Loft**: the ball lofted under his feet, and it drops on anyone below |
+| Archer | **Rain of Arrows**: on the marked spot | **Disengage**: a backflip and an arrow | **Rope Arrow**: an arrow into the ledge, and she’s reeled in |
+| Skater | **Board Toss**: the board like a frisbee | **Handplant**: low, legs sweeping round | **McTwist**: a spinning 540 that keeps all his speed |
+| Basketball | **Ankle Breaker**: the crossover, DIZZY | **Take the Charge**: their foul, they crumple | **Alley-Oop**: the ball thrown up, the leap and the dunk |
 
 What they leave on someone: SEALED (no Special), CHARMED (the stick backwards), PINNED (can't move), HOBBLED (no
 jump or dodge), DISARMED (no Lights), FROZEN (stopped dead), BRIBED (the next hit does nothing), BRANDED, TOUCHÉ,
@@ -500,7 +535,7 @@ So a Viking axe with a Pirate flintlock goes **Hack › Hew › Pistol Pop › A
 
 | Slot | What it gives |
 |---|---|
-| HEAD | Your Special (3 uses a round; one returns every 16 s) and the head's armour |
+| HEAD | Your Specials (about 5 uses; one returns every 5 s) and the head's armour |
 | CORE | HP, defence, weight, guard |
 | R-ARM | The Light string and air Light |
 | L-ARM | The Heavy KNOCK, the Launcher, the air Heavy spike, and your guard strength |
@@ -606,15 +641,19 @@ fight live** and waits for their turn.
 ## Tutorial
 
 New collectors are offered it right after opening their first figure, and it's in the hub (**TUTORIAL**) and HOW TO
-PLAY any time after (`js/tutorial.js`). It's a real fight in the Toy Shelf against a Knight dummy where nothing happens
-until you do it: a card over the fight gives one lesson at a time, in your own keys (or your controller's buttons, or
-the touch buttons), and the next opens once you've done it (or SKIP). Up to nineteen lessons:
-move, jump, your string, the Launcher into an air combo, the KNOCK//BACK and catching the rebound, a Tech Chase,
-guard, dodge, the armoured charge, your Heavy's auto combo (if it has one), grab-pummel-throw, your Special, your
-three Command Specials (it names each one and wants each direction once), your weapon's ammo and reload (if it has
-any), an OTG, a Part Toss, a Spring Burst, your Legend Art, and a last round where the dummy fights back. A figure
-without an auto combo or ammo skips those lessons, and the count shows only the lessons yours gets. The dummy only
-swings when a lesson wants it to and nobody can lose. Finishing it the first time is worth **900 Tokens**.
+PLAY any time after (`js/tutorial.js`). It's a real fight on the Playroom Shelf against a Knight dummy where nothing
+happens until you do it: a card over the fight gives one lesson at a time, in your own keys (or your controller's
+buttons, or the touch buttons), and the next opens once you've done it (or SKIP). Up to twenty-seven lessons:
+move, jump, the short hop and fast fall, the floating platforms (up through one, ↓ to drop back down), your string,
+the four KNOCKs, the launcher into an air combo, the spike, damage % and a KO past the blast zone, your recovery and
+the ledge, the shield, dodging, grab-pummel-throw, **teching** a knockdown (QUICK RISE, both ways), **tech chasing**
+(the dummy techs left or right at random, or lies there and gets up: be there and hit it as it's done), the Chase Dash,
+the armoured charge, your Heavy's auto combo (if it has one), your Special, the side, up and down Specials, your
+weapon's ammo (if it has any), an OTG, a Part Toss, a Spring Burst, your Legend Art, the **wall bounce** (the Shelf is
+rebuilt with its walls up for it), and a last round where the dummy fights back and you KO it. A figure without an
+auto combo or ammo skips those lessons, and the count shows only the lessons yours gets. The dummy only swings when a
+lesson wants it to, and your damage stays at 0% until the last round. Finishing it the first time is worth **900
+Tokens**.
 
 ## Combo Trials
 
@@ -740,8 +779,11 @@ the playsets under a tab for each series. **HOME GROUND** (Versus) fights on the
 
 ## Arenas and STAGE HAZARDS
 
-**Twenty arenas** (`js/arena.js`, the newer seventeen in `js/arenas.js`), all the same size (a 16 × 12 floor and four
-walls that stress, crack and break), each somewhere in the house at toy scale, so the room around the figures is huge:
+**Twenty stages** (`js/arena.js`, the newer seventeen in `js/arenas.js`), each a main platform 16 m across, most
+with floating platforms over it (you jump up through them and stand on them; ↓ drops back through) and blast zones all
+round. A few keep **walls** that stress, crack and break (the Shelf, the Desk and the Chest always, about a third of the
+others): there a KNOCK bounces off the wall, and KOs come off the top. Each is somewhere in the house at toy scale, so
+the room around the figures is huge:
 PLAYROOM SHELF, STUDY DESK, TOY CHEST, TRAIN SET, KITCHEN COUNTER, BATH TIME, CANDY SHOP, RAINY WINDOWSILL (with a
 sleeping cat the size of a hill), INSIDE THE FRIDGE, CHECKMATE, ALARM CLOCK, RECORD PLAYER, PINBALL TABLE, NEON ARCADE,
 SPEEDWAY, SNOW GLOBE, FISH TANK, DINO DIG, SCIENCE FAIR VOLCANO and MOON BASE. Some have life of their own (rain and
@@ -767,7 +809,7 @@ lightning, drifting snow, fish and bubbles, a turning radar dish, a steaming ket
 The lanes and squares favour wherever someone is standing. A hazard is nobody's attack: it **never breaks into a
 combo** (it skips anyone being comboed, in a Legend Art, invincible or already down), hits the same figure once a
 second at most, can finish a fight, and a figure it launches can be caught by the other one. CPUs see hazards coming
-and step out of the way or jump (the better the CPU, the more often). A hazard hit spoils a perfect round.
+and step out of the way or jump over them in one go (the better the CPU, the more often). A hazard hit spoils a perfect round.
 
 **STAGE HAZARDS** in OPTIONS turns them all off (every arena is then just its floor and walls). Training never has them.
 Online, the room's host sets a **STAGE HAZARDS** rule next to the arena, and it travels in the fight's setup (replays
@@ -844,13 +886,16 @@ shake** setting (Full, Reduced, Off).
 | `js/parts.js` | Lines, slots, rarities, every move's frame data, part stats, `KB.stats(build)` |
 | `js/models.js` | The voxel art for every part, the shared peg skeleton, icons, Legend Card art |
 | `js/anim.js` | Stances and per-move poses |
-| `js/fighter.js` | The fighter state machine, Legend Art catches, and `Combat` (hits, guard, wall bounce/tech/break, part breaks) |
+| `js/fighter.js` | The fighter state machine, Legend Art catches, and `Combat` (hits, the box hitboxes and hurtboxes, the shield, wall bounce/tech/break, part breaks, ranged limits) |
+| `js/platform.js` | The platform rules: knockback scaling by %, the stage and platforms underfoot, the ledge, blast zones, temporary platforms |
+| `js/recovery.js` | Every figure's ↑ + Special recovery: the shared engine (rise, dash, warp, tether, glide, pillar...) and each one's look |
+| `js/reach.js` | Every move's measured hitbox reach (`KB.VBOX`) and the hit predictor `KB.willHit` the CPU and the trial demos share |
 | `js/arts.js` | Each Legend Art's cinematic: its choreography, camera shots, props, lighting |
-| `js/match.js` | Rounds, camera, projectiles, the Summoner's imps, dropped parts, ring outs, training |
-| `js/arena.js` | Building an arena (floor, walls, light, scenery) and the walls' stress/cracks/breaks |
+| `js/match.js` | Stocks and KOs (the blast), camera, projectiles, the Summoner's imps, dropped parts, ring outs, the shield bubble, blink tells, buff looks, training |
+| `js/arena.js` | Building a stage (the main platform, the floating ones, walls where it has them, light, scenery) and the walls' stress/cracks/breaks |
 | `js/arenas.js` | The seventeen newer arenas, every STAGE HAZARD (sim, CPU warning, meshes), and the arena pictures for the menus |
 | `js/lab.js` | Training's lab: the input history, the frame meter and frame advantage, the dummy recording |
-| `js/ai.js` | The CPU (plays through the same inputs as a human; picks a combo route and plays it out, takes OTGs and rebounds, steers along walls) |
+| `js/ai.js` | The CPU (plays through the same inputs as a human; predicts its hits, picks a combo route and plays it out, tech chases, recovers to the ledge, jumps hazards, fetches its parts) |
 | `js/gacha.js` | Capsule rates, pity, the 3D machine and reveal |
 | `js/auth.js` | Local accounts and the save (tokens, collection, builds, records) |
 | `js/input.js` | Keyboard, controllers (type detection, prompts, rebinding, hat d-pads), the input buffer, pad menu navigation |
@@ -866,10 +911,10 @@ shake** setting (Full, Reduced, Off).
 | `js/edo_look.js`, `js/realm_look.js` | Their voxel parts and stances (the Lancer's warhorse, `Anim.mounted`) |
 | `js/edo_arts.js`, `js/realm_arts.js` | Their Legend Arts (and the Basketball player's) |
 | `js/edo_story.js`, `js/realm_story.js` | Their Arcade stories (and the Basketball player's) |
-| `js/commands.js` | COMMAND SPECIALS: every figure's three direction Specials (→, ←, ↑ + Special) (the mechanics are in fighter.js and match.js) |
+| `js/commands.js` | COMMAND SPECIALS: every figure's side and down Specials (the ↑ recoveries are in recovery.js; the mechanics in fighter.js and match.js) |
 | `js/sea.js`, `js/sea_look.js`, `js/sea_arts.js`, `js/sea_story.js` | LOVERS OF THE SEA: the crew's lines, figures, Legend Arts and stories |
 | `js/benders.js`, `js/benders_look.js`, `js/benders_arts.js`, `js/benders_story.js` | ELEMENT BENDERS: the eleven lines and their own rules (through `KB.HOOK` and `KB.EXT`), figures, Legend Arts and stories |
 | `js/story.js` | The Arcade's script: prologues, rivals, the Sovereign, PROTO-0, both endings, taunts and win quotes |
 | `js/arcade.js` | ARCADE: the run, story scenes, VS screen, ranks, continues, the hidden route, endings, STORIES |
-| `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events |
+| `js/tutorial.js` | The TUTORIAL: lesson cards over a live fight, listening to the match's events (the stage rebuilt with walls for the wall lesson) |
 | `tools/harness.js` | Test helpers: step the game at a fixed rate, script inputs, log callouts |

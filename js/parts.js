@@ -291,7 +291,7 @@
       card: { name: 'Ragnarök', super: 'ragnarok', passive: 'fury', desc: 'LEGEND ART: Ragnarök, a leaping quake. PASSIVE (Fury): up to +12% damage as HP falls.' },
     },
     ninja: {
-      head: { name: 'Shinobi Hood', armor: 95, weight: 0.85, special: 'shadowStep', uses: 2, noRegen: 1, spCd: 3, hype: 1.05, desc: 'SPECIAL: Shadow Step. Vanish behind them and stab. Twice a round, 3 s apart.' },
+      head: { name: 'Shinobi Hood', armor: 95, weight: 0.85, special: 'shadowStep', uses: 2, noRegen: 1, spCd: 1.5, hype: 1.05, desc: 'SPECIAL: Shadow Step. Vanish behind them and stab. 1.5 s apart, and slow to come back.' },
       core: { name: 'Shinobi Shōzoku', hp: 880, def: 0.02, weight: 0.8, guard: -10, desc: 'Barely there. The lightest core: fast, but you fly far.' },
       armR: { name: 'Tantō', armor: 110, weight: 0.8, light: 'taA', air: 'taAirA', sig: 'airdash', sigName: 'Shadow Dash', sigDesc: 'Dodge after an air hit: dash at them through the air and keep the combo going (twice a jump).', trail: 0xd9b8ff, desc: 'Flick › Backflick › Vanishing Stab (blinks behind them) › Shadow Slash. Pause after Backflick: Kunai Toss. Air ends in Kunai Rain. SIGNATURE: air-dash after an air hit.' },
       armL: { name: 'Kusarigama', armor: 110, weight: 0.85, heavy: 'chainHook', launch: 'sickleRise', airHeavy: 'chainDrop', guard: 70, chip: 1.1, trail: 0xd9b8ff, desc: 'HEAVY: Chain Hook, drag them in from 5 m (twice in any 5 s). Guard: weak.' },
@@ -358,7 +358,7 @@
       speed: G.speed * (1.08 - 0.08 * weight), jump: G.jump, airJumps: G.airJumps, perk: G.perk,
       airDodges: G.perk === 'cloudstep' ? 2 : 1,
       dodgeDist: G.perk === 'sealegs' ? 1.3 : 1, dodgeCd: G.perk === 'dancer' ? 0.5 : 1, airDodgeDist: G.perk === 'skyward' ? 1.35 : 1,
-      minions: 2, impHp: 2, impLife: 5, impDmg: K.passive === 'legion' ? 1.3 : 1, healMult: K.passive === 'devotion' ? 1.4 : 1, useRegen: H.noRegen ? 1e9 : K.passive === 'devotion' ? 11 : 16, spCd: H.spCd || 0,
+      minions: 2, impHp: 2, impLife: 5, impDmg: K.passive === 'legion' ? 1.3 : 1, healMult: K.passive === 'devotion' ? 1.4 : 1, useRegen: H.noRegen ? 9 : K.passive === 'devotion' ? 3.5 : 5, spCd: H.spCd || 0,
       guard: Math.round((100 + L.guard + C.guard) * (K.passive === 'plateFaith' ? 1.4 : 1)),
       chip: L.chip * (K.passive === 'plateFaith' ? 0.7 : 1),
       hypeGain: H.hype * (1 + (C.hypeBonus || 0)) * (K.passive === 'plunder' ? 1.35 : 1),
@@ -366,7 +366,7 @@
       dmgR: m('armR'), dmgL: m('armL'), dmgH: m('head'), dmgG: m('legs'), dmgK: m('card'),
       set, setDmg: set === 2 ? 1.08 : set === 1 ? 1.04 : 1,
       armor: { head: Math.round(H.armor * m('head')), armR: Math.round(R.armor * m('armR')), armL: Math.round(L.armor * m('armL')), legs: Math.round(G.armor * m('legs')) },
-      passive: K.passive, special: H.special, cmd: H.cmd || null, uses: H.usesMax || H.uses + (H.cmd ? 1 : 0), super: K.super,   // (COMMAND SPECIALS share the uses: one more for them; usesMax caps a head outright)
+      passive: K.passive, special: H.special, cmd: H.cmd || null, uses: (H.usesMax || H.uses + (H.cmd ? 1 : 0)) + 1, super: K.super,   // (COMMAND SPECIALS share the uses: one more for them, and one more on top; usesMax caps a head outright)
       ...(() => { const mixed = b.armR.line !== b.armL.line && M['hx:' + b.armR.line + ':' + b.armL.line + ':0']; return { mixed: !!mixed, light: mixed ? 'hx:' + b.armR.line + ':' + b.armL.line + ':0' : R.light, air: mixed ? 'hxa:' + b.armR.line + ':' + b.armL.line + ':0' : R.air }; })(),
       lightPure: R.light, airPure: R.air, spear: !!R.spear, sig: R.sig, ripMove: R.ripMove, ripName: R.ripName, sigName: R.sigName, sigDesc: R.sigDesc, gunCancel: L.gunCancel, heavy: L.heavy, launch: L.launch, airHeavy: L.airHeavy, dashAtk: G.dashAtk,
       trailR: R.trail, trailL: L.trail,

@@ -1,7 +1,7 @@
 /* ============================================================================
-   hud.js -- the in-fight overlay (DOM): HP with a damage trail, the part
-   diagram (each limb's armour), Burst, Hype, Special uses, the combo counter,
-   the wall stress map, banners, the Legend Art cut-in, pause and training.
+   hud.js -- the in-fight overlay (DOM): the DAMAGE % and the stocks left, the
+   part diagram (each limb's armour), Burst, Hype, Special uses, the combo
+   counter, banners, the Legend Art cut-in, pause and training.
    ========================================================================== */
 (function () {
   'use strict';
@@ -16,7 +16,7 @@
       el('div', { class: 'prow' },
         el('div', { class: 'pname' }, el('b', null, M.ai[i] && !M.training ? (M.ai[1 - i] ? 'CPU ' + (i + 1) : 'CPU') : 'P' + (i + 1)), ' ', f.name),
         R.pips = el('div', { class: 'pips' })),
-      el('div', { class: 'hpwrap' }, R.trail = el('div', { class: 'hptrail' }), R.hp = el('div', { class: 'hp' }), R.hpn = el('span', { class: 'hpn' })),
+      el('div', { class: 'pctwrap' }, R.pct = el('b', { class: 'pct' }, '0', el('small', null, '%')), R.stk = el('div', { class: 'stocks' })),
       el('div', { class: 'prow2' }, parts,
         el('div', { class: 'gauges' },
           el('div', { class: 'glabel' }, 'BURST'), el('div', { class: 'bar burst' }, R.burst = el('i')),
@@ -28,7 +28,7 @@
       el('div', { class: 'uses' }, el('span', null, 'SPECIAL'), R.uses = el('span', { class: 'usepips' })),
       f.st.rounds ? R.rnd = el('div', { class: 'rounds' }, el('span', null, f.st.ammo), R.rounds = el('span', { class: 'usepips' })) : null,
       R.combo = el('div', { class: 'combo' }, R.cn = el('b'), R.cl = el('span'), R.cb = el('em'), R.cd = el('small')));
-    R.box = box; R.low = low; R.f = f; R.lastHp = f.hp; R.trailHp = f.hp;
+    R.box = box; R.low = low; R.f = f; R.lastPct = -1; R.lastStk = -1;
     return R;
   }
 
@@ -38,8 +38,7 @@
       const [a, b] = M.fighters;
       refs = [side(0, a), side(1, b)];
       refs.timer = el('div', { class: 'timer' }, '99');
-      refs.walls = el('div', { class: 'wallmap' }, ...['N', 'E', 'S', 'W'].map(id => el('i', { class: 'w' + id, 'data-w': id })), refs.dots = el('div', { class: 'wm-dots' }, el('b', { class: 'd1' }), el('b', { class: 'd2' })));
-      root.append(el('div', { class: 'top' }, refs[0].box, el('div', { class: 'mid' }, refs.timer, refs.walls), refs[1].box), refs[0].low, refs[1].low,
+      root.append(el('div', { class: 'top' }, refs[0].box, el('div', { class: 'mid' }, refs.timer), refs[1].box), refs[0].low, refs[1].low,
         refs.banner = el('div', { class: 'banner' }), refs.cut = el('div', { class: 'supercut' }),
         refs.cine = el('div', { class: 'cine' }, refs.cTint = el('div', { class: 'ctint' }), el('i', { class: 'cbar t' }), el('i', { class: 'cbar b' }), refs.cFlash = el('div', { class: 'cflash' }), refs.cTitle = el('div', { class: 'ctitle' })));
       root.classList.remove('cinema');
@@ -54,12 +53,15 @@
       for (let i = 0; i < 2; i++) {
         const R = refs[i], f = R.f;
         const hp = Math.max(0, f.hp / f.maxHp);
-        R.hp.style.width = (hp * 100) + '%';
-        if (f.hp < R.lastHp) R.hold = 0.7; R.lastHp = f.hp;
-        R.hold = (R.hold || 0) - dt; if (R.hold <= 0) R.trailHp = U.smooth(R.trailHp, f.hp, 4, dt); if (R.trailHp < f.hp) R.trailHp = f.hp;
-        R.trail.style.width = (Math.max(0, R.trailHp / f.maxHp) * 100) + '%';
-        R.hp.classList.toggle('low', hp < 0.3);
-        R.hpn.textContent = Math.ceil(f.hp);
+        // the DAMAGE %: white at 0, through yellow and orange to a deep red past 150; it jolts when it goes up
+        const pc = Math.floor(f.pct);
+        if (pc !== R.lastPct) {
+          if (pc > R.lastPct && R.lastPct >= 0) { R.pct.classList.remove('jolt'); void R.pct.offsetWidth; R.pct.classList.add('jolt'); }
+          R.lastPct = pc; R.pct.firstChild.textContent = f.gone ? '' : String(pc);
+          const k = U.clamp(pc / 150, 0, 1); R.pct.style.color = 'hsl(' + Math.round(55 - k * 55) + ',' + Math.round(k * 95) + '%,' + Math.round(96 - k * 46) + '%)';
+        }
+        const stk = M.training ? -2 : M.stocks[i];
+        if (stk !== R.lastStk) { R.lastStk = stk; R.stk.innerHTML = ''; if (stk === -2) R.stk.append(el('span', null, '∞')); else for (let k = 0; k < Math.max(0, stk); k++) R.stk.append(el('i')); }
         R.burst.style.width = f.burst + '%'; R.burst.parentNode.classList.toggle('full', f.burst >= 100);
         R.guard.style.width = (f.guardHp / f.guardMax * 100) + '%';
         R.hype.style.width = f.hype + '%'; R.hypen.textContent = Math.floor(f.hype); R.hype.parentNode.classList.toggle('max', f.hype >= 100); R.hype.parentNode.classList.toggle('half', f.hype >= 50);
@@ -72,22 +74,21 @@
         const pd = (el, k) => { const v = f.broken[k] ? 0 : f.armor[k] / f.armorMax[k]; el.className = el.className.split(' ')[0] + (f.broken[k] ? ' off' : v < 0.35 ? ' red' : v < 0.65 ? ' yel' : ''); };
         pd(R.ph, 'head'); pd(R.pr, 'armR'); pd(R.pl, 'armL'); pd(R.pg, 'legs');
         R.pc.className = 'pd-core' + (hp < 0.3 ? ' red' : hp < 0.6 ? ' yel' : '');
-        R.pips.innerHTML = ''; if (!M.training) for (let k = 0; k < Math.min(5, M.opts.wins); k++) R.pips.append(el('i', { class: M.wins[i] > k ? 'on' : '' }));
+        R.pips.innerHTML = ''; if (!M.training && !M.attract && M.opts.wins > 1) for (let k = 0; k < Math.min(5, M.opts.wins); k++) R.pips.append(el('i', { class: M.wins[i] > k ? 'on' : '' }));
         const tags = []; if (f.buffs.momentum) tags.push('MOMENTUM'); if (f.buffs.bulwark) tags.push('BULWARK'); if (f.buffs.fury) tags.push('FURY');
         if (f.st.set === 2) tags.push('MINT SET'); else if (f.st.set === 1) tags.push('PARTIAL SET');
         const t = tags.join(' · '); if (R.tags.textContent !== t) R.tags.textContent = t;
         comboT[i] -= dt; R.combo.classList.toggle('on', comboT[i] > 0);
       }
-      const c = Math.ceil(M.clock); refs.timer.textContent = M.training ? '∞' : c; refs.timer.classList.toggle('low', c <= 10 && !M.training);
-      for (const w of M.arena.walls) { const e = refs.walls.querySelector('.w' + w.id); e.style.setProperty('--s', (w.broken ? 100 : w.stress) + '%'); e.classList.toggle('broken', w.broken); e.classList.toggle('hot', w.stress > 65); }
-      const A = M.arena; M.fighters.forEach((f, i) => { const d = refs.dots.children[i]; d.style.left = (50 + f.pos.x / A.W * 50) + '%'; d.style.top = (50 + f.pos.z / A.D * 50) + '%'; });
+      const c = Math.ceil(M.clock), ct = M.training ? '∞' : c >= 100 ? Math.floor(c / 60) + ':' + String(c % 60).padStart(2, '0') : String(c);
+      if (refs.timer.textContent !== ct) refs.timer.textContent = ct; refs.timer.classList.toggle('low', c <= 10 && !M.training);
       if (M.lab) Lab.draw(M, refs);
-      if (M.training && refs.tr) { const v = M.fighters[1].combo, p = M.fighters[0].combo; const c2 = v.hits ? v : refs.lastC || v; if (v.hits) refs.lastC = { hits: v.hits, dmg: v.dmg, bounces: v.bounces }; refs.tr.textContent = 'LAST COMBO  ' + (c2.hits || 0) + ' hits · ' + Math.round(c2.dmg || 0) + ' dmg · ' + (c2.bounces || 0) + ' bounces'; }
+      if (M.training && refs.tr) { const v = M.fighters[1].combo, p = M.fighters[0].combo; const c2 = v.hits ? v : refs.lastC || v; if (v.hits) refs.lastC = { hits: v.hits, dmg: v.dmg }; refs.tr.textContent = 'LAST COMBO  ' + (c2.hits || 0) + ' hits · ' + Math.round((c2.dmg || 0) * Platform.PCT) + '%'; }
     },
     combo(attIdx, c) {
       if (!refs || U.quiet) return; const R = refs[attIdx];
       R.cn.textContent = c.hits; R.cl.textContent = c.hits === 1 ? 'HIT' : 'HITS';
-      R.cb.textContent = c.bounces ? 'KNOCK//BACK ×' + c.bounces : ''; R.cd.textContent = Math.round(c.dmg) + ' DMG  ·  ' + Math.round(Combat.prorate({ combo: c }) * 100) + '% VALUE';
+      R.cb.textContent = ''; R.cd.textContent = Math.round(c.dmg * Platform.PCT) + '%  ·  ' + Math.round(Combat.prorate({ combo: c }) * 100) + '% VALUE';
       R.combo.classList.remove('pop'); void R.combo.offsetWidth; R.combo.classList.add('pop');
       comboT[attIdx] = 1.6;
     },
@@ -166,16 +167,16 @@
         row(k('light') + '… toward + ' + k('heavy'), nm(S.heavy), 'KNOCK them back into the wall mid-combo'),
         row(k('heavy') + ' (hold)', nm(S.heavy), 'the KNOCK: aim it at a wall; one hit of armour while you hold it'),
         KB.MOVES[S.heavy] && KB.MOVES[S.heavy].auto ? row(k('heavy') + ' ' + k('heavy'), 'Auto combo', [S.heavy, KB.MOVES[S.heavy].auto, KB.MOVES[KB.MOVES[S.heavy].auto].auto].map(nm).join(' \u203a ') + ': Heavy again before it lands') : null,
-        row('toward + ' + k('snap'), 'Tech Chase', 'after your KNOCK sends them flying: half a bar of Hype, and your dash runs them down'),
+        row('toward + ' + k('snap'), 'Chase Dash', 'after your KNOCK sends them flying: half a bar of Hype, and your dash runs them down'),
         row('air ' + k('light') + ' ×' + A.length, A.map(nm).join(' › '), S.mixed ? 'mixed air string, one per jump' : 'air string, one per jump'),
         S.gunCancel ? row(k('light') + ' ' + k('heavy'), nm(S.gunCancel), 'one Light, then Heavy: a gun cancel (Flintlock), once a combo; then Light starts the string again') : null,
         S.rounds ? row('\u25cf'.repeat(S.rounds), S.rounds + ' ' + S.ammo.toLowerCase(), 'every shot spends one; empty, you reload (' + +S.reload.toFixed(1) + ' s)' + (S.dry.heavy ? ' and Heavy is the ' + nm(S.dry.heavy) : '')) : null,
         S.sig ? row('★ ' + S.sigName, S.sigDesc, 'R-ARM signature') : null,
         row('air ' + k('heavy'), nm(S.airHeavy), 'spike: ground bounce'),
         row(k('dodge') + ' › ' + k('light'), nm(S.dashAtk), 'dash attack (LEGS)'),
-        row(k('special'), nm(S.special), S.uses + ' uses a round (HEAD)'),
-        ...(S.cmd ? [['qcf', '→ +'], ['qcb', '← +'], ['dp', '↑ +']].filter(([c]) => S.cmd[c] && KB.MOVES[S.cmd[c]]).map(([c, a]) => row(a + ' ' + k('special'), nm(S.cmd[c]), KB.MOVES[S.cmd[c]].desc || '')) : []),
-        S.cmd ? row('→ ← ↓', 'Command motions', 'like a 2D fighter: ↓ is down, → is the side of the screen they’re on; all four Specials share the uses') : null,
+        row(k('special'), nm(S.special), S.uses + ' uses, one back every ' + S.useRegen + ' s (HEAD)'),
+        ...(S.cmd ? [['qcf', '← / → +'], ['dp', '↑ +'], ['qcb', '↓ +']].filter(([c]) => S.cmd[c] && KB.MOVES[S.cmd[c]]).map(([c, a]) => row(a + ' ' + k('special'), nm(S.cmd[c]), KB.MOVES[S.cmd[c]].desc || '')) : []),
+        S.cmd ? row('→ ← ↓', 'Command motions', 'like a 2D fighter: ↓ is down, → is the side of the screen they’re on; the Specials share the uses; ↑ (the recovery) is free, once each time you leave the ground') : null,
         row(k('super'), nm(S.super), '100 Hype (LEGEND CARD)'),
         row(k('guard') + ' + ' + k('light'), 'Grab', 'beats guard. Then ' + k('light') + ' pummel, tilt or ' + k('heavy') + ' throw that way (' + k('heavy') + ' alone slams), ' + k('jump') + ' throws up'),
         row(k('toss'), 'Part Toss', 'throw one of your parts: in a combo it EXTENDS it (twice a combo)'),
