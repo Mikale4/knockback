@@ -902,6 +902,32 @@
       }
     }
 
+    /* ---------------------------------------------------- THE TELL of a blink
+       While a teleport, a blink behind them or a swap winds up, the spot it'll come out at shows: a dark portal facing
+       the camera with a bright rim in the figure's colour, closing in as the moment comes, and a shimmer of light up from
+       it (wisps gather on the figure too: Fighter.blinkLook). Looks only, kept off the fight (Fighter.blinkAt says where) */
+    const TEL = [];
+    function updTells() {
+      M.fighters.forEach((f, i) => {
+        let T = TEL[i];
+        if (!T) {
+          const g = new THREE.Group(), mat = (c, op, add) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, depthWrite: false, depthTest: false, side: THREE.DoubleSide, toneMapped: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
+          const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 36), mat(0x1a0e26, 0.7)), rim = new THREE.Mesh(new THREE.RingGeometry(0.86, 1, 40), mat(0xffffff, 0.9, true)), swirl = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.8, 5, 1, 0, Math.PI * 1.4), mat(0xffffff, 0.35, true));
+          const column = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, 2.2, 16, 1, true), mat(0xffffff, 0.22, true)); column.position.y = 0.2;
+          disc.renderOrder = 990; rim.renderOrder = 991; swirl.renderOrder = 991; column.renderOrder = 990; g.add(disc, rim, swirl, column); scene.add(g);
+          T = TEL[i] = { g, rim, swirl, column, col: new THREE.Color(KB.LINES[f.build.core.line].pal.glow) };
+          rim.material.color.copy(T.col); swirl.material.color.copy(T.col); column.material.color.copy(T.col);
+        }
+        const at = !f.gone && f.blinkAt();
+        T.g.visible = !!at;
+        if (at) {
+          const k = Math.min(1, f.moveT / (f.move.su || 0.1));
+          T.g.position.set(at.x, at.y + 0.95, 0.1); T.g.scale.setScalar(1.25 - k * 0.55);
+          T.swirl.rotation.z = M.time * 9; T.rim.material.opacity = 0.6 + 0.4 * Math.sin(M.time * 40); T.column.material.opacity = 0.12 + 0.18 * k;
+        }
+      });
+    }
+
     /* ---------------------------------------------------- the SHIELD bubble
        A see-through ball in the player's colour (P1 orange, P2 blue) round the body while it shields: a glossy shell and
        a wire sphere, as big as what's left of the shield (Combat.shieldR: the very size the game tests for a shield
@@ -1153,7 +1179,7 @@
       arena.draw(M, dt);   // (the hazard's meshes and the stage's ambient life: drawn frames only)
       if (M.training || HB.n) drawHitboxes();
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
-      updKoBlasts(rawDt); updShields(rawDt);
+      updKoBlasts(rawDt); updShields(rawDt); updTells();
       sweepTrails();
       updCamera(rawDt); FX.update(dt);
       if (!M.attract) HUD.update(M);
@@ -1587,7 +1613,7 @@
       }
     }
     M.dispose = () => {
-      M.disposed = true; for (const e of KOFX) scene.remove(e.g); KOFX.length = 0; for (const b of SHB) if (b) { scene.remove(b.g); scene.remove(b.stars); } SHB.length = 0; if (M.cine) Arts.end(M.cine);
+      M.disposed = true; for (const e of KOFX) scene.remove(e.g); KOFX.length = 0; for (const b of SHB) if (b) { scene.remove(b.g); scene.remove(b.stars); } SHB.length = 0; for (const T of TEL) if (T) scene.remove(T.g); TEL.length = 0; if (M.cine) Arts.end(M.cine);
       for (const f of M.fighters) f.dispose();
       for (const p of M.picks) if (p.grp.parent) p.grp.parent.remove(p.grp);
       arena.dispose(); HUD.hide(M); if (!M.attract) Touch.hide();

@@ -177,7 +177,8 @@
 
     /* ---------------------------------------------------------------- main */
     update(dt) {
-      if (this.rec && (this.state !== 'attack' || !this.upB)) this.recClear();   // (the ↑ Special's rope and the like, once it's over: recovery.js)
+      if (this.rec && (this.state !== 'attack' || !this.upB)) this.recClear();
+      if (!U.quiet && this.state === 'attack' && this.move && this.moveT < (this.move.su || 0) && (this.move.type === 'teleport' || this.move.cross || this.move.act === 'swap' || this.move.act === 'soulSwap')) this.blinkLook();   // (a blink's tell)   // (the ↑ Special's rope and the like, once it's over: recovery.js)
       if (this.hitstop > 0) { this.hitstop -= dt; this.shakeFig(); this.stopped = true; return; }
       this.stopped = false;   // (Training's frame meter skips the frames a figure stands frozen in a hit's hitstop)
       if (this.slowT > 0) { this.slowT -= dt; dt *= 0.45; }
@@ -663,6 +664,12 @@
       if (mv.limit && !this.useLimited(id, mv)) return;   // (a move with a limit: n uses in any t seconds)
       if (kind === 'special' && !mv.encore) this.lastSp = id;
       if (this.buffs.invis && kind !== 'special') { delete this.buffs.invis; }   // (SMOKE BOMB: attacking gives him away)
+      // A BLINK (a teleport, a blink behind them, trading places): never out of nowhere. Thrown cold (not in our own
+      // combo) it takes at least 0.22 s to come out, and all the while the place it'll come out shows (blinkLook)
+      if (mv.type === 'teleport' || mv.cross || mv.act === 'swap' || mv.act === 'soulSwap') {
+        const o = this.opp, ours = o && o.comboing && o.combo.by === this;
+        if (!ours && (mv.su || 0) < 0.22) mv = Object.assign({}, mv, { su: 0.22 });
+      }
       if (mv.prone) this.proneT = mv.su + mv.ac + mv.rc;
       this.moveGround = this.grounded;
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
@@ -678,6 +685,27 @@
       if (kind === 'air' || kind === 'airHeavy') { this.vel.y = Math.max(this.vel.y, kind === 'air' ? (this.st.sig === 'hangtime' ? 4.2 : 2.2) : 3); }   // (BASKETBALL: hang time)
       if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.giveArmor(mv.su + mv.ac, mv.oneArmor || this.st.perk === 'unstoppable');
       if (mv.inv) this.inv = Math.max(this.inv, mv.su + mv.ac + 0.04);
+    }
+    /* THE TELL of a blink, while it winds up (looks only): a ring of shadow closing in on the spot it'll come out at
+       (behind them for a blink behind, on them for a swap, on the imp for a Soul Swap), wisps gathering on the user, and a
+       ping as it starts */
+    /* where a blink winding up will come out (null: not a blink, or past its wind-up) */
+    blinkAt() {
+      const mv = this.move, o = this.opp;
+      if (this.state !== 'attack' || !mv || this.moveT >= (mv.su || 0) || !(mv.type === 'teleport' || mv.cross || mv.act === 'swap' || mv.act === 'soulSwap')) return null;
+      if (mv.act === 'soulSwap') { let best = null, bd = -1; for (const mn of this.m.minions) if (mn.owner === this) { const e = Math.abs(mn.pos.x - this.pos.x); if (e > bd) { bd = e; best = mn; } } return best ? best.pos.clone() : null; }
+      if (!o || ['out', 'ko'].includes(o.state)) return null;
+      return mv.act === 'swap' ? o.pos.clone() : new V3(o.pos.x + (o.pos.x >= this.pos.x ? 1 : -1) * 1.0, o.pos.y, 0);
+    }
+    blinkLook() {
+      const mv = this.move, t = this.moveT, su = mv.su || 0.1, at = this.blinkAt();
+      const k = Math.min(1, t / su), col = KB.LINES[this.build.core.line].pal.glow;
+      if (t < 0.02) SFX.play('jguard');
+      if (at) {
+        if (U.vrand() < 0.5) FX.ring(_v.set(at.x, at.y + 0.9, 0).clone(), { r0: 1.5 - k * 1.1, r1: 0.25, life: 0.12, normal: new V3(0, 0, 1), color: 0x2a1a3a });
+        if (U.vrand() < 0.7) FX.burst(_v.set(at.x + U.vrnd(-0.5, 0.5), at.y + U.vrnd(0, 1.8), 0).clone(), { n: 1, color: [0x30243f, col], glow: true, speed: 0.6, size: 0.12, gravity: -3, life: 0.35 });
+      }
+      if (U.vrand() < 0.7) FX.burst(_v.set(this.pos.x + U.vrnd(-0.4, 0.4), this.pos.y + U.vrnd(0.2, 1.7), 0).clone(), { n: 1, color: [0x30243f, col], speed: 0.8, size: 0.1, gravity: 2, life: 0.3 });
     }
     /* turn toward the stick, then snap onto the opponent if they are in front and close. TARGET TRACKING (an option,
        opts.track; off for a trial's demo): every attack turns you to face them, wherever you were facing or aiming */
@@ -1649,7 +1677,7 @@
       // SHIELD POKE: the bubble shrinks as the shield wears down, and a blow that touches the body outside it gets through
       if (guarding && shielded && mv.type !== 'grab') { const p = o.poke || (o.at && Combat.outsideShield(vic, o.at) ? o.at : null); if (p) { guarding = false; o.at = p; m.call(vic, 'SHIELD POKE', 'bad'); } }
       if (guarding && mv.type !== 'grab') {
-        let just = vic.state === 'guard' && m.time - (vic.guardStart || -9) < 0.12;
+        let just = vic.state === 'guard' && m.time - (vic.guardStart || -9) < 0.18;   // (JUST GUARD: shield the moment it lands)
         const overShield = att.st.sig === 'flail' && (o.kind === 'light' || o.kind === 'air');   // (CRUSADER: no Just Guard, twice the guard)
         if (overShield) just = false;
         const cpu = vic.input.cpu; if (just && cpu && cpu.lv != null && !cpu.dummy && U.rand() > [0.1, 0.22, 0.35, 0.5][cpu.lv]) just = false;

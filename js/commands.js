@@ -56,7 +56,7 @@
   // SAMURAI: the shout, the reading of a blow, the blade sheathed
   mv('cSamF', { name: 'Kiai', type: 'radial', pose: 'roar', su: 0.12, ac: 0.08, rc: 0.36, dmg: 10, rad: 3.2, kb: [0, 0], stun: 0.3, freeze: 0.9, puff: 0xe8f0ff, trail: 0, sfx: 'boom', desc: 'A battle shout: anyone within 3.2 m is FROZEN in place for 0.9 s, even in the air.' });
   mv('cSamR', { name: 'Mikiri Draw', pose: 'iai', su: 0.03, ac: 0.08, rc: 0.3, dmg: 72, reach: 1.5, rad: 1.0, kb: [3, 0], crumple: 1.0, lunge: 6, sfx: 'slash' });
-  mv('cSamB', { name: 'Mikiri', type: 'buff', pose: 'sheathe', su: 0.04, ac: 0.02, rc: 0.5, buff: { id: 'counter', t: 0.6, rip: 'cSamR', call: 'MIKIRI' }, trail: 0, sfx: 'jguard', desc: 'He reads the blow: hit him in the next 0.6 s and it misses, and he draws and cuts (crumple).' });
+  mv('cSamB', { name: 'Mikiri', type: 'buff', pose: 'sheathe', su: 0.04, ac: 0.02, rc: 0.5, buff: { id: 'counter', t: 0.9, rip: 'cSamR', call: 'MIKIRI' }, trail: 0, sfx: 'jguard', desc: 'He reads the blow: hit him in the next 0.9 s and it misses, and he draws and cuts (crumple).' });
   BUFF('cSamD', 'Nōtō', 'sheathe', { id: 'empower', t: 4, call: 'NŌTŌ' }, 'He slides the blade home: his next hit within 4 s deals +60% and crumples.');
   C('samurai', 'cSamF', 'cSamB', 'cSamD');
   // SHINOBI (the ninja line): stars, caltrops, smoke
@@ -189,7 +189,7 @@
   // SOCCER: the tackle, the dive, the bicycle kick
   mv('cSocF', { name: 'Slide Tackle', type: 'dash', pose: 'slide', su: 0.1, ac: 0.18, rc: 0.32, dmg: 44, dist: 6, rad: 0.9, kb: [4, 8], launch: 1, trip: 1, zone: 'low', sfx: 'whoosh', desc: 'A slide, 6 m, under high attacks: they trip and go down hard.' });
   mv('cSocR', { name: 'Yellow Card', type: 'radial', pose: 'point', su: 0.05, ac: 0.08, rc: 0.3, dmg: 12, rad: 2.6, kb: [3, 0], dizzy: 1.0, weaken: 8, trail: 0, sfx: 'jguard' });
-  mv('cSocB', { name: 'Simulation', type: 'buff', pose: 'weave', su: 0.04, ac: 0.02, rc: 0.5, buff: { id: 'counter', t: 0.6, rip: 'cSocR', call: 'YELLOW CARD' }, trail: 0, sfx: 'jguard', desc: 'Hit him in the next 0.6 s and he goes down theatrically: the ref books them (DIZZY, WEAKENED for 8 s).' });
+  mv('cSocB', { name: 'Simulation', type: 'buff', pose: 'weave', su: 0.04, ac: 0.02, rc: 0.5, buff: { id: 'counter', t: 0.9, rip: 'cSocR', call: 'YELLOW CARD' }, trail: 0, sfx: 'jguard', desc: 'Hit him in the next 0.9 s and he goes down theatrically: the ref books them (DIZZY, WEAKENED for 8 s).' });
   RISE('cSocD', { name: 'Bicycle Kick', pose: 'bicycle', rise: 9, dmg: 60, kb: [6, -10], spike: 1, launcher: 0, desc: 'An invincible bicycle kick: spikes them back down for a bounce.' });
   C('soccer', 'cSocF', 'cSocB', 'cSocD');
   // BOXER: the roll, the ropes, the uppercut
@@ -226,7 +226,7 @@
   // BASKETBALL: the crossover, the charge, the alley-oop
   mv('cBbaF', { name: 'Ankle Breaker', type: 'dash', pose: 'weave', su: 0.06, ac: 0.18, rc: 0.24, dmg: 22, dist: 4.5, rad: 0.9, kb: [2, 0], stun: 0.5, dizzy: 1.4, inv: 1, trail: 0, sfx: 'whoosh', desc: 'An invincible crossover through them: their ankles go, DIZZY.' });
   mv('cBbaR', { name: 'Offensive Foul', type: 'radial', pose: 'point', su: 0.04, ac: 0.08, rc: 0.3, dmg: 24, rad: 2.2, kb: [3, 0], crumple: 1.2, trail: 0, sfx: 'jguard' });
-  mv('cBbaB', { name: 'Take the Charge', type: 'buff', pose: 'weave', su: 0.04, ac: 0.02, rc: 0.5, buff: { id: 'counter', t: 0.6, rip: 'cBbaR', call: 'OFFENSIVE FOUL' }, trail: 0, sfx: 'jguard', desc: 'Feet set: hit him in the next 0.6 s and it’s their foul (they crumple).' });
+  mv('cBbaB', { name: 'Take the Charge', type: 'buff', pose: 'weave', su: 0.04, ac: 0.02, rc: 0.5, buff: { id: 'counter', t: 0.9, rip: 'cBbaR', call: 'OFFENSIVE FOUL' }, trail: 0, sfx: 'jguard', desc: 'Feet set: hit him in the next 0.9 s and it’s their foul (they crumple).' });
   RISE('cBbaD', { name: 'Alley-Oop', pose: 'bashUp', rise: 12, dmg: 58, desc: 'An invincible leap for the alley-oop: launches.' });
   C('basketball', 'cBbaF', 'cBbaB', 'cBbaD');
 

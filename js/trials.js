@@ -642,8 +642,36 @@
   const allPro = () => { if (!TRIALS_PRO.samurai) for (const l of KB.LINE_ORDER) TRIALS_PRO[l] = PRO[l] ? PRO[l]().map(t => Object.assign({ pro: true, stars: 5 }, t)) : []; return TRIALS_PRO; };
   /* routes cut back to the part that plays the same every time on the platform fighter's rules (they ran on past a
      point that no longer holds): the steps up to there, and a note that says what they are */
-  const TRIM = { 'samurai:adv:5': 9, 'knight:adv:1': 12, 'monk:pro:4': 14, 'wrestler:pro:3': 13, 'football:pro:4': 20, 'boxer:adv:5': 12, 'fencer:pro:0': 12,
-    'weightlifter:pro:2': 13, 'bowler:pro:3': 6, 'basketball:adv:2': 7, 'cannoneer:pro:2': 8, 'blackbeard:pro:2': 9, 'storm:pro:2': 9, 'monk:pro:0': 11, 'monk:pro:2': 19, 'boxer:pro:2': 10, 'fencer:pro:2': 13, 'bowler:adv:0': 11, 'storm:adv:2': 6 };
+  const TRIM = {
+    'air:adv:0': 8, 'air:adv:1': 8, 'air:adv:2': 4, 'air:adv:3': 8, 'air:adv:6': 8, 'air:basic:3': 4, 'air:pro:0': 4, 'air:pro:1': 8,
+    'air:pro:2': 4, 'air:pro:3': 13, 'air:pro:4': 8, 'archer:adv:2': 4, 'archer:basic:3': 4, 'archer:pro:0': 13, 'archer:pro:4': 17, 'bard:adv:1': 9,
+    'bard:pro:0': 9, 'bard:pro:2': 9, 'baseball:adv:5': 6, 'baseball:basic:5': 3, 'baseball:pro:1': 12, 'baseball:pro:3': 4, 'basketball:adv:0': 9, 'basketball:adv:2': 7,
+    'basketball:pro:1': 12, 'basketball:pro:2': 13, 'blackbeard:adv:2': 7, 'blackbeard:pro:1': 13, 'blackbeard:pro:2': 9, 'blast:adv:0': 8, 'blast:adv:1': 9, 'blast:adv:2': 4,
+    'blast:basic:3': 4, 'blast:basic:9': 5, 'blast:pro:0': 4, 'blast:pro:2': 4, 'blast:pro:3': 4, 'blood:adv:1': 9, 'blood:adv:2': 4, 'blood:adv:3': 11,
+    'blood:adv:6': 13, 'blood:basic:3': 4, 'blood:basic:8': 7, 'blood:pro:0': 11, 'blood:pro:1': 10, 'blood:pro:2': 11, 'blood:pro:3': 9, 'blood:pro:4': 10,
+    'bowler:adv:0': 11, 'bowler:basic:3': 4, 'bowler:pro:3': 6, 'boxer:adv:2': 4, 'boxer:adv:5': 12, 'boxer:basic:3': 4, 'boxer:pro:0': 4, 'boxer:pro:1': 11,
+    'boxer:pro:2': 10, 'boxer:pro:3': 15, 'cannoneer:pro:2': 8, 'cannoneer:pro:3': 6, 'captain:adv:0': 9, 'captain:adv:1': 9, 'captain:adv:3': 11, 'captain:adv:6': 13,
+    'captain:pro:0': 18, 'captain:pro:4': 14, 'dragoon:adv:0': 8, 'dragoon:adv:1': 7, 'dragoon:adv:4': 8, 'dragoon:basic:5': 6, 'dragoon:pro:0': 9, 'dragoon:pro:1': 8,
+    'dragoon:pro:3': 13, 'dragoon:pro:4': 16, 'earth:adv:0': 8, 'earth:adv:2': 4, 'earth:basic:3': 4, 'earth:pro:0': 4, 'earth:pro:2': 4, 'earth:pro:3': 8,
+    'fencer:adv:2': 5, 'fencer:basic:3': 5, 'fencer:pro:0': 12, 'fencer:pro:2': 9, 'flame:adv:0': 8, 'flame:adv:1': 8, 'flame:adv:2': 4, 'flame:adv:3': 8,
+    'flame:adv:6': 8, 'flame:basic:3': 4, 'flame:basic:9': 5, 'flame:pro:0': 4, 'flame:pro:1': 8, 'flame:pro:2': 4, 'flame:pro:3': 8, 'flame:pro:4': 8,
+    'football:adv:5': 5, 'football:basic:9': 5, 'football:pro:2': 3, 'football:pro:4': 20, 'ghost:adv:1': 9, 'ghost:adv:3': 11, 'ghost:adv:6': 13, 'ghost:basic:8': 7,
+    'ghost:basic:9': 5, 'ghost:pro:0': 11, 'ghost:pro:1': 12, 'ghost:pro:3': 9, 'ghost:pro:4': 14, 'knight:adv:1': 12, 'knight:adv:6': 7, 'knight:pro:0': 7,
+    'kunoichi:adv:0': 9, 'kunoichi:pro:0': 15, 'kunoichi:pro:1': 11, 'kunoichi:pro:2': 11, 'kunoichi:pro:3': 6, 'kunoichi:pro:4': 11, 'lancer:pro:0': 11, 'lava:adv:2': 4,
+    'lava:basic:3': 4, 'lava:pro:0': 11, 'lava:pro:2': 11, 'lava:pro:3': 6, 'metal:adv:1': 9, 'metal:adv:2': 4, 'metal:basic:3': 4, 'metal:pro:0': 11,
+    'metal:pro:2': 11, 'metal:pro:3': 8, 'monk:adv:1': 5, 'monk:adv:6': 12, 'monk:basic:9': 6, 'monk:pro:0': 11, 'monk:pro:1': 9, 'monk:pro:2': 19,
+    'monk:pro:4': 10, 'ninja:adv:6': 6, 'ninja:basic:3': 2, 'ninja:basic:9': 5, 'pirate:adv:5': 13, 'pirate:adv:6': 8, 'pirate:basic:9': 6, 'pirate:pro:3': 15,
+    'pirate:pro:4': 17, 'redbeard:adv:3': 11, 'redbeard:adv:5': 3, 'redbeard:adv:6': 13, 'redbeard:pro:0': 18, 'redbeard:pro:4': 14, 'sailor:adv:0': 9, 'sailor:adv:1': 9,
+    'sailor:adv:2': 5, 'sailor:basic:3': 5, 'sailor:basic:9': 5, 'sailor:pro:1': 12, 'samurai:adv:5': 9, 'samurai:pro:3': 13, 'shogun:adv:4': 3, 'shogun:adv:5': 3,
+    'shogun:adv:6': 3, 'shogun:basic:5': 3, 'shogun:pro:3': 3, 'shogun:pro:4': 3, 'skater:adv:1': 9, 'skater:adv:4': 6, 'skater:pro:1': 12, 'skater:pro:3': 14,
+    'skater:pro:4': 6, 'soccer:adv:1': 7, 'soccer:adv:2': 4, 'soccer:adv:5': 3, 'soccer:adv:6': 7, 'soccer:basic:3': 4, 'soccer:basic:9': 4, 'soccer:pro:0': 4,
+    'soccer:pro:1': 7, 'soccer:pro:2': 3, 'soccer:pro:3': 4, 'soccer:pro:4': 17, 'spirit:adv:0': 8, 'spirit:adv:2': 4, 'spirit:basic:3': 4, 'spirit:pro:0': 4,
+    'spirit:pro:2': 4, 'spirit:pro:3': 10, 'storm:adv:2': 4, 'storm:adv:3': 11, 'storm:adv:6': 13, 'storm:basic:3': 4, 'storm:basic:8': 7, 'storm:pro:0': 4,
+    'storm:pro:2': 4, 'storm:pro:3': 9, 'storm:pro:4': 14, 'summoner:adv:5': 6, 'summoner:pro:1': 6, 'swamp:adv:0': 9, 'swamp:adv:1': 9, 'swamp:adv:5': 5,
+    'swamp:pro:3': 6, 'templar:adv:0': 9, 'templar:adv:4': 3, 'templar:adv:6': 13, 'templar:basic:5': 3, 'templar:pro:0': 18, 'templar:pro:1': 12, 'templar:pro:4': 3,
+    'viking:pro:0': 15, 'viking:pro:3': 14, 'viking:pro:4': 14, 'water:adv:0': 8, 'weightlifter:adv:1': 8, 'weightlifter:adv:6': 8, 'weightlifter:pro:0': 12, 'weightlifter:pro:1': 8,
+    'weightlifter:pro:2': 12, 'weightlifter:pro:3': 10, 'weightlifter:pro:4': 15, 'wrestler:adv:2': 4, 'wrestler:adv:5': 9, 'wrestler:basic:3': 4, 'wrestler:basic:9': 5, 'wrestler:pro:0': 8,
+    'wrestler:pro:1': 14, 'wrestler:pro:3': 8, 'wrestler:pro:4': 5 };
   const trimmed = new Map();
   const listOf = (line, tier) => {
     const L = (tier === 'pro' ? allPro() : tier === 'adv' ? allAdv() : all())[line]; if (!L) return L;
@@ -787,7 +815,9 @@
     const dx = d.pos.x - a.pos.x, dz = d.pos.z - a.pos.z, dist = Math.hypot(dx, dz), dy = d.pos.y - a.pos.y;
     const toward = (k) => { fake.move.x = dx / (dist || 1) * (k || 1); fake.move.y = -dz / (dist || 1) * (k || 1); };
     const busy = a.state === 'attack' && !a.moveHit;
-    const near = s.m && KB.MOVES[s.m] ? U.clamp(KB.hitDist(KB.MOVES[s.m]) - 0.3, 0.9, 1.5) : 1.5;   // (close enough for this blow to land: reach.js)
+    // (close enough for the blows coming up to land, reach.js: a string that starts with a bat and goes on with a fist
+    // starts close enough for the fist)
+    let near = 1.5; for (let j = R.at; j < Math.min(R.trial.steps.length, R.at + 4); j++) { const q = R.trial.steps[j], qm = q.m && KB.MOVES[q.m]; if (q.e === 'jump' || q.e === 'bounce' || q.e === 'gbounce') break; if (qm && (qm.type === 'melee' || qm.type === 'grab')) near = Math.min(near, U.clamp(KB.hitDist(qm) - 0.35, 0.8, 1.5)); }
     const press = b => { if (tap) { fake.held[b] = true; if (b === 'heavy' && s.m && s.m === a.leftMove('heavy') && Math.abs(fake.move.x) < 0.5) toward(1); } };   // (the side KNOCK: Heavy with the stick at them)
     if (s.e === 'bounce' || s.e === 'art' || s.e === 'gbounce') return;
     if (s.e === 'jump') return press('jump');
@@ -823,12 +853,7 @@
       if (a.grounded && a.state !== 'attack') return; if (dist > 0.8) toward(0.6);
       // a DIVE drives you down: it waits until they've come down to you (from below, it passes under them)
       const sm = KB.MOVES[s.m], down = sm && sm.type !== 'proj' && sm.dive && !sm.multi, top = down ? 1.0 : 1.5;   // (a spinning drill hits all round: it can go early)
-      if (a.state === 'air' || (a.state === 'attack' && a.moveHit)) {
-        const lead = a.state === 'attack' && a.move ? Math.max(0, a.move.su + (a.curAc || a.move.ac) * 0.3 - a.moveT) : 0, leftA = a.move ? a.move.su + (a.curAc || a.move.ac) + a.move.rc - a.moveT : 1;
-        if (sm && (sm.type === 'melee' || sm.type === 'grab') && !down) { if (KB.willHit(a, d, s.m, lead) || (a.state === 'attack' && leftA < 0.08 && dy < top && dy > -1.5 && dist < 2.2)) press(s.k); }
-        else if (dy < top && dy > -1.5 && dist < 2.2) press(s.k);
-      }
-      return;
+      if (a.state === 'air' || (a.state === 'attack' && a.moveHit)) if (dy < top && dy > -1.5 && dist < 2.2) press(s.k); return;
     }
     if (s.t === 'pause') { if (a.pauseWin && m.time >= a.pauseWin.from + 0.02) fake.held.light = true; return; }   // (pressed before the window opens, it would start the string over)
     if (s.t === 'dash') { if (a.state === 'dodge') { if (a.stateT > 0.13) press('light'); return; } if (dist > 1.8 && a.state !== 'attack') toward(); else { toward(); press('dodge'); } return; }
@@ -847,10 +872,12 @@
       // past the last tenth of a second of the move: after that the cancel is gone and it's a fresh move, or the pause branch)
       const left = a.move ? a.move.su + a.move.ac + (a.acExt || 0) + a.move.rc - a.moveT : 0;
       if (canLink && ((a.move.nx || {}).l === s.m || s.k === 'heavy') && left < 0.1) { if (s.t === 'toward') toward(1); press(s.k); fake.held[s.k] = true; return; }
-      const far = mv.type === 'proj' || mv.type === 'radial', hiY = far || s.k === 'special' ? 2.1 : 1.5, maxD = far ? Math.max(reach + 0.6, (mv.range || mv.rad || 2) + 0.3) : reach + 0.6;   // (a shot, a breath or a burst reaches higher and further than a swing; and nobody swings at someone right over their head)
-      const lead = canLink ? Math.max(0, a.move.su + (a.curAc || a.move.ac) * 0.3 - a.moveT) : 0;
-      const lands = far ? yh > 0.15 && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD : KB.willHit(a, d, s.m, lead);   // (a swing: its measured box against their body, reach.js)
-      if ((fresh || canLink) && lands) { if (s.k !== 'heavy' || s.t === 'toward') toward(s.t === 'toward' ? 1 : 0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
+      // (a shot, a breath or a burst reaches higher and further than a swing, and nobody swings at someone right over
+      // their head; a swing goes as far and as high as its measured box, reach.js, so a fist waits for them to come closer
+      // than a lance does)
+      const far = mv.type === 'proj' || mv.type === 'radial', B = KB.boxOf(mv);
+      const hiY = far || s.k === 'special' ? 2.1 : U.clamp(B[3] - 0.2, 0.6, 1.5), loY = far ? 0.15 : Math.max(0.15, B[2] - 1.6), maxD = far ? Math.max(reach + 0.6, (mv.range || mv.rad || 2) + 0.3) : Math.min(reach + 0.6, B[0] + 0.3);
+      if ((fresh || canLink) && yh > loY && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD) { if (s.k !== 'heavy' || s.t === 'toward') toward(s.t === 'toward' ? 1 : 0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
       if (!fresh) return;
       const g = 30, vy = d.vel.y, gy = Platform.groundAt(m, d.pos.x, d.pos.y) || 0, y = Math.max(0, d.pos.y - gy), tl = (vy + Math.sqrt(vy * vy + 2 * g * y)) / g;
       const lx = d.pos.x + d.vel.x * tl, lz = d.pos.z + d.vel.z * tl, r0 = far ? reach * 0.85 : U.clamp(KB.boxOf(mv)[0] * 0.65, 0.5, 1.6);
@@ -859,16 +886,11 @@
       if (ml > 0.25) { fake.move.x = mx / ml; fake.move.y = -mz / ml; }
       return;
     }
-    if (fresh && dist > near && !(s.k === 'special')) { toward(); return; }
+    // (a Light pressed a moment ago is still in the buffer: walking in now, the stick held over, it would go off as a tilt)
+    if (fresh && dist > near && !(s.k === 'special') && !(s.k === 'light' && m.time - (R.lightAt || -9) < 0.3)) { toward(); return; }
     if (busy) return;
-    const sm2 = KB.MOVES[s.m];
-    if (!fresh && a.move && a.moveHit && sm2 && (sm2.type === 'melee' || sm2.type === 'grab') && (s.k === 'light' || s.k === 'air')) {
-      const lead = Math.max(0, a.move.su + (a.curAc || a.move.ac) * 0.3 - a.moveT), leftL = a.move.su + (a.curAc || a.move.ac) + a.move.rc - a.moveT;
-      if (!KB.willHit(a, d, s.m, lead) && leftL > 0.12) return;   // (wait for it to land; the window's last moments press anyway)
-    }
-    if (fresh && sm2 && sm2.type === 'melee' && !KB.willHit(a, d, s.m, 0) && dist > 0.6) { toward(0.6); return; }
     if (s.t === 'toward') toward();
-    press(s.k);
+    press(s.k); if (s.k === 'light' && tap) R.lightAt = m.time;
   }
 
   /* -------------------------------------------------------- the panel */
