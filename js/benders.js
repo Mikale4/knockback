@@ -485,7 +485,7 @@
   E.ACTS.lavaPool = (M, f) => M.placeTrap(f, KB.MOVES.xlPool);
   E.ACTS.detonate = (M, f) => {
     f.hp = Math.max(1, f.hp - Math.round(f.maxHp * 0.06)); M.call(f, 'DETONATION!', 'buff'); FX.addShake(0.8);
-    const c = chest(f); FX.burst(c, { n: 40, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 9, size: 0.14, life: 0.7 }); FX.ring(c.clone().setY(0.1), { r1: 4.2, life: 0.45, color: 0xffa040 });
+    const c = chest(f); FX.burst(c, { n: 40, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 9, size: 0.14, life: 0.7 }); FX.ring(c.clone().setY(f.pos.y + 0.1), { r1: 4.2, life: 0.45, color: 0xffa040 });
   };
   E.ACTS.rod = (M, f, mv, X) => {
     const o = M.opp(f), hand = f.fig.socket('wR', [0, 0, 2]);
@@ -509,7 +509,7 @@
     if (!alive(o) || U.dist(f.pos, o.pos) > mv.range) { M.call(f, 'TOO FAR', 'small'); return; }
     f.bx.tetherT = 5; M.call(o, 'TETHERED', 'bad'); bolt(M, chest(f), chest(o), 0xc8a8ff, 0.04);
   };
-  E.ACTS.bogDive = (M, f) => { f.bx.dive = 0.55; f.inv = Math.max(f.inv, 0.8); f.obj.visible = false; FX.burst(f.pos.clone().setY(0.2), { n: 20, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 3, size: 0.12, life: 0.6 }); M.call(f, 'BOG BODY', 'buff'); };
+  E.ACTS.bogDive = (M, f) => { f.bx.dive = 0.55; f.inv = Math.max(f.inv, 0.8); f.obj.visible = false; FX.burst(f.pos.clone().setY(f.pos.y + 0.2), { n: 20, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 3, size: 0.12, life: 0.6 }); M.call(f, 'BOG BODY', 'buff'); };
   // BALL LIGHTNING: it drifts after them and zaps them three times
   const orbMesh = () => { const g = new VX.Grid(); g.ell(0, 0, 0, 3, 3, 3, (x, y, z) => VX.hash3(x, y, z) > 0.5 ? G(0xffffff) : G(0x7ae8ff)); for (const [x, y, z] of [[4, 0, 0], [-4, 1, 0], [0, 4, 1], [1, -4, 0], [0, 0, 4], [0, 1, -4]]) g.set(x, y, z, G(0xffe83a)); return VX.object(g, 0.06); };
   E.ACTS.ballLightning = (M, f, mv, X) => {
@@ -546,8 +546,8 @@
       const step = 7.5 * dt; p.pos.addScaledVector(p.dir, step); p.dist += step; X.inside(p.pos); p.mesh.position.copy(p.pos); p.mesh.rotation.y = Math.atan2(p.dir.x, p.dir.z);
       if (U.vrand() < 0.6) FX.burst(p.pos.clone().setY(0.1), { n: 1, color: [0x6a5a3a, 0x9ab83a], speed: 1.2, size: 0.07, life: 0.4 });
       if (free(o) && o.inv <= 0 && o.pos.y < 0.4 && Math.hypot(o.pos.x - p.pos.x, o.pos.z - p.pos.z) < 0.75) {
-        FX.burst(o.pos.clone().setY(0.3), { n: 16, color: [0x4a6a2a, 0x9ab83a, 0x6a5a3a], speed: 3, size: 0.09, life: 0.5 });
-        Combat.hit(f, o, KB.MOVES.xqVineHit, { kind: 'special', proj: true, dir: X.shotDir(f, o, p.dir), at: o.pos.clone().setY(0.5), from: p.pos.clone() }); return true;
+        FX.burst(o.pos.clone().setY(o.pos.y + 0.3), { n: 16, color: [0x4a6a2a, 0x9ab83a, 0x6a5a3a], speed: 3, size: 0.09, life: 0.5 });
+        Combat.hit(f, o, KB.MOVES.xqVineHit, { kind: 'special', proj: true, dir: X.shotDir(f, o, p.dir), at: o.pos.clone().setY(o.pos.y + 0.5), from: p.pos.clone() }); return true;
       }
       return p.dist > 11 || p.t > 3 || f.state === 'out';
     },
@@ -650,20 +650,20 @@
       else { const x = o.maxHp * 0.016 * dt; if (o.hp > 1) { o.hp = Math.max(1, o.hp - x); f.hp = Math.min(f.maxHp, f.hp + x); } if (U.vrand() < 0.4) { const a = chest(f), c = chest(o), k = U.vrand(); FX.burst(a.lerp(c, k), { n: 1, color: [0xc8a8ff, 0xffffff], glow: true, speed: 0.4, size: 0.06, life: 0.35, gravity: 0 }); } }
     }
     if (b.dive > 0) {
-      b.dive -= dt; if (U.vrand() < 0.5) FX.burst(f.pos.clone().setY(0.1), { n: 1, color: [0x3a2e1a, 0x6a5a3a], speed: 1.5, size: 0.1, life: 0.4 });
+      b.dive -= dt; if (U.vrand() < 0.5) FX.burst(f.pos.clone().setY(f.pos.y + 0.1), { n: 1, color: [0x3a2e1a, 0x6a5a3a], speed: 1.5, size: 0.1, life: 0.4 });
       if (b.dive <= 0) {
         f.obj.visible = true; const o = f.opp;
         if (free(o) && !out) {
           const d = new V3(o.pos.x - f.pos.x, 0, o.pos.z - f.pos.z); if (d.lengthSq() < 0.01) d.copy(f.forward); d.normalize();
           f.pos.set(o.pos.x - d.x * 0.45, 0, o.pos.z - d.z * 0.45); f.clampInside(); f.yaw = U.ang(f.pos, o.pos); f.vel.set(0, 0, 0);
-          FX.burst(f.pos.clone().setY(0.3), { n: 24, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 4, size: 0.12, life: 0.6, up: 1 }); SFX.play('heavy');
+          FX.burst(f.pos.clone().setY(f.pos.y + 0.3), { n: 24, color: [0x3a2e1a, 0x6a5a3a, 0x9ab83a], speed: 4, size: 0.12, life: 0.6, up: 1 }); SFX.play('heavy');
           if (o.inv <= 0 && o.pos.y < 2) Combat.hit(f, o, KB.MOVES.xqBogUp, { kind: 'special', dir: d, at: chest(o), from: f.pos.clone() });
         }
       }
     }
     if (b.shellOn && !f.buffs.shell) {
       b.shellOn = false; const o = f.opp, c = chest(f);
-      FX.burst(c, { n: 30, color: [0xff6a1a, 0xffd040, 0x1a1414], glow: true, speed: 7, size: 0.12, life: 0.6 }); FX.ring(c.clone().setY(0.1), { r1: 3.2, life: 0.4, color: 0xff6a1a }); SFX.play('boom'); FX.addShake(0.4);
+      FX.burst(c, { n: 30, color: [0xff6a1a, 0xffd040, 0x1a1414], glow: true, speed: 7, size: 0.12, life: 0.6 }); FX.ring(c.clone().setY(f.pos.y + 0.1), { r1: 3.2, life: 0.4, color: 0xff6a1a }); SFX.play('boom'); FX.addShake(0.4);
       if (free(o) && o.inv <= 0 && U.dist(f.pos, o.pos) < 2.8 && Math.abs(o.pos.y - f.pos.y) < 2) { const d = new V3(o.pos.x - f.pos.x, 0, o.pos.z - f.pos.z); if (d.lengthSq() < 0.01) d.copy(f.forward); d.normalize(); Combat.hit(f, o, KB.MOVES.xlErupt, { kind: 'special', dir: d, at: chest(o), from: f.pos.clone() }); }
     }
   });

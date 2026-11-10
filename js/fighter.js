@@ -177,6 +177,7 @@
 
     /* ---------------------------------------------------------------- main */
     update(dt) {
+      if (this.rec && (this.state !== 'attack' || !this.upB)) this.recClear();   // (the ↑ Special's rope and the like, once it's over: recovery.js)
       if (this.hitstop > 0) { this.hitstop -= dt; this.shakeFig(); this.stopped = true; return; }
       this.stopped = false;   // (Training's frame meter skips the frames a figure stands frozen in a hit's hitstop)
       if (this.slowT > 0) { this.slowT -= dt; dt *= 0.45; }
@@ -191,7 +192,7 @@
       if (!this.comboing && this.state !== 'ko') this.burst = Math.min(100, this.burst + 2.6 * S.burstRate * dt);
       if (this.uses < S.uses && !this.broken.head) { this.useRegen += dt; if (this.useRegen > S.useRegen) { this.useRegen = 0; this.uses++; } }
       // BARD signature: the beat pulses under your feet
-      if (S.sig === 'beat' && !this.broken.armR) { const b = Music.beat(this.m); if (b.n !== this.lastBeat) { this.lastBeat = b.n; if (this.state !== 'ko' && !this.m.cine) FX.ring(_c.copy(this.pos).setY(0.06), { r0: 0.3, r1: 1.0, life: 0.22, color: 0xff8ad8 }); } }
+      if (S.sig === 'beat' && !this.broken.armR) { const b = Music.beat(this.m); if (b.n !== this.lastBeat) { this.lastBeat = b.n; if (this.state !== 'ko' && !this.m.cine) FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.06), { r0: 0.3, r1: 1.0, life: 0.22, color: 0xff8ad8 }); } }
       if (this.m.training && this.m.training.meter) { this.hype = 100; this.burst = 100; this.uses = S.uses; }
       if (this.combo.hits && this.inHitstun) this.combo.t += dt;
       if (this.reloadT > 0) {   // AMMO: reloading, and all of it back when it's done
@@ -204,7 +205,7 @@
       if (this.toucheT > 0) { this.toucheT -= dt; if (this.toucheT <= 0) this.touche = 0; }
       for (const h of KB.HOOK.tick) h(this, dt, this.m);
       if (!!this.buffs.invis !== this.invisOn) { this.invisOn = !!this.buffs.invis; this.obj.visible = !this.invisOn; if (!this.invisOn) FX.burst(_c.copy(this.pos).setY(1), { n: 10, color: [0x8a8a90, 0xd8d8e0], speed: 2, size: 0.12, gravity: -1, life: 0.5 }); }
-      if (this.invisOn && U.vrand() < 0.08) FX.burst(_c.copy(this.pos).setY(0.2), { n: 1, color: [0x8a8a90], speed: 0.5, size: 0.1, gravity: -1, life: 0.5 });   // (a wisp of smoke gives him away, just)
+      if (this.invisOn && U.vrand() < 0.08) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.2), { n: 1, color: [0x8a8a90], speed: 0.5, size: 0.1, gravity: -1, life: 0.5 });   // (a wisp of smoke gives him away, just)
       if (this.buffs.regen && this.state !== 'ko' && this.state !== 'out') this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.regenRate * dt);
       if (this.beanT > 0) {   // BASEBALL: beaned, and seeing stars as soon as they're on their feet
         this.beanWin -= dt;
@@ -322,9 +323,10 @@
       Platform.ledge(this);
     }
     land() {
-      this.airJumps = this.st.airJumps; this.airDodges = this.st.airDodges; this.airStr = 0; this.airDashes = 0; this.pogos = 0; this.ledgeUsed = false; this.fastFell = false; this.shortOk = false; this.upUsed = false;
+      this.airJumps = this.st.airJumps; this.airDodges = this.st.airDodges; this.airStr = 0; this.airDashes = 0; this.pogos = 0; this.ledgeUsed = false; this.fastFell = false; this.shortOk = false;
+      if (!(this.plat && this.plat.temp)) this.upUsed = false;   // (a stone pillar to stand on doesn't give the ↑ Special back)
       this.setState('idle'); this.groundT = 0;
-      if (this.vel.y < -8) { SFX.play('land'); FX.burst(_c.copy(this.pos).setY(0.05), { n: 5, color: this.m.arena.dust, speed: 2, size: 0.07, life: 0.4, up: 0.4 }); }
+      if (this.vel.y < -8) { SFX.play('land'); FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.05), { n: 5, color: this.m.arena.dust, speed: 2, size: 0.07, life: 0.4, up: 0.4 }); }
     }
 
     /* the buttons, from neutral (ground or air) */
@@ -455,7 +457,7 @@
         const dx = tx - this.pos.x, dz = tz - this.pos.z, d = Math.hypot(dx, dz);
         if (!o || ['ko', 'out'].includes(o.state) || d < 1.25 || this.stateT > 0.7) { this.chasing = false; this.vel.x *= 0.15; this.vel.z *= 0.15; this.lastDodgeEnd = -9; this.setState(this.grounded ? 'idle' : 'air'); return; }
         const sp = 21; this.vel.x = dx / d * sp; this.vel.z = dz / d * sp; this.yaw = Math.atan2(dx, dz); this.dodgeDir.set(dx / d, 0, dz / d);
-        if (U.vrand() < 0.5) FX.burst(_c.copy(this.pos).setY(0.15), { n: 1, color: [0x7cf9ff, this.m.arena.dust], speed: 1, size: 0.08, life: 0.3 });
+        if (U.vrand() < 0.5) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.15), { n: 1, color: [0x7cf9ff, this.m.arena.dust], speed: 1, size: 0.08, life: 0.3 });
         this.physics(dt, 0); return;
       }
       const T = 0.3, dist = 3.3 * this.st.dodgeDist * (this.dodgeAir ? 0.8 * this.st.airDodgeDist : 1);
@@ -481,8 +483,8 @@
       if (this.stateT < 0.35 && U.vrand() < 0.7) FX.burst(_c.copy(this.pos).setY(this.pos.y + 1.2), { n: 1, color: 0xdfe8ff, glow: true, speed: 0.3, size: 0.1, gravity: -14, life: 0.16 });   // the streak
       this.physics(dt, 0);
       if (this.grounded) {
-        this.land(); SFX.play('land'); FX.ring(_c.copy(this.pos).setY(0.06), { r0: 0.3, r1: 1.4, life: 0.25 });
-        FX.burst(_c.copy(this.pos).setY(0.05), { n: 10, color: this.m.arena.dust, speed: 3, size: 0.08, life: 0.4, up: 0.4 });
+        this.land(); SFX.play('land'); FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.06), { r0: 0.3, r1: 1.4, life: 0.25 });
+        FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.05), { n: 10, color: this.m.arena.dust, speed: 3, size: 0.08, life: 0.4, up: 0.4 });
         return;
       }
       if (this.stateT > 0.5) this.setState('air');
@@ -622,13 +624,14 @@
     startLeap(mv) {
       const o = this.opp, T = mv.air || 0.6, R = mv.range || 8;
       const tgt = o && !['out', 'ko'].includes(o.state) && U.dist(this.pos, o.pos) < R ? _w.copy(o.pos) : _w.copy(this.pos).addScaledVector(this.forward, R * 0.6);
+      const St = this.m.arena.stage; if (this.grounded && !Platform.offStage(this)) { tgt.x = U.clamp(tgt.x, -St.W + 0.6, St.W - 0.6); tgt.y = Math.max(tgt.y, St.top); }   // (from the stage, a leap comes down on it)
       this.vel.set((tgt.x - this.pos.x) / T, GRAV * T / 2, (tgt.z - this.pos.z) / T); this.grounded = false;
       if (o) this.yaw = U.ang(this.pos, o.pos);
     }
     leapLand(mv) {
       const o = this.opp; this.vel.set(0, 0, 0);
-      FX.addShake(0.35); FX.ring(_c.copy(this.pos).setY(0.06), { r1: mv.rad + 0.8, life: 0.4 }); FX.burst(_c.copy(this.pos).setY(0.1), { n: 16, color: this.m.arena.dust, speed: 4, size: 0.1, life: 0.5 }); SFX.play('boom');
-      this.m.hitMinions(this, _c.copy(this.pos).setY(0.6), mv.rad, this.moveSerial * 10 + 7);
+      FX.addShake(0.35); FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.06), { r1: mv.rad + 0.8, life: 0.4 }); FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.1), { n: 16, color: this.m.arena.dust, speed: 4, size: 0.1, life: 0.5 }); SFX.play('boom');
+      this.m.hitMinions(this, _c.copy(this.pos).setY(this.pos.y + 0.6), mv.rad, this.moveSerial * 10 + 7);
       if (o && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < mv.rad + BODY && o.pos.y - this.pos.y < 1.8 && !this.hitSet.has(o)) {
         this.hitSet.add(o); Combat.hit(this, o, mv, { kind: this.kind, dir: _v.subVectors(o.pos, this.pos).setY(0).normalize().clone(), at: _c.copy(o.pos).setY(o.pos.y + 0.6).clone() });
       }
@@ -658,11 +661,12 @@
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
       this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1; this.riseAir = false; this.leapDone = false; this.autoArm = false;
       this.beatOn = !!(mv.beat && this.st.sig === 'beat' && (kind === 'light' || kind === 'air') && Music.beat(this.m).near); this.beatShown = false;
-      if (this.beatOn) FX.ring(_c.copy(this.pos).setY(0.08), { r0: 1.0, r1: 1.7, life: 0.25, color: 0xfff27a });
+      if (this.beatOn) FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.08), { r0: 1.0, r1: 1.7, life: 0.25, color: 0xfff27a });
       if (mv.armorSU) this.giveArmor(mv.su, mv.oneArmor);
       if (this.buffs.berserk && kind !== 'super') this.giveArmor(mv.su + (mv.ac || 0), true);   // (BERSERKERGANG: every attack takes one hit of armour)
       if (kind === 'special') { if (this.upAir(id)) this.upUsed = true; else { this.uses--; this.spReady = this.m.time + (this.st.spCd || 0); } }
-      this.upB = kind === 'special' && !!(this.st.cmd && id === this.st.cmd.dp);   // (the ↑ Special: a recovery)
+      this.upB = kind === 'special' && !!(this.st.cmd && id === this.st.cmd.dp);   // (the ↑ Special: a recovery, each figure's own: recovery.js)
+      if (this.upB) this.recBegin(mv); else if (this.rec) this.recClear();
       this.setState('attack'); this.aim(mv); this.m.event('move', { f: this, id, kind });
       if (kind === 'air' || kind === 'airHeavy') { this.vel.y = Math.max(this.vel.y, kind === 'air' ? (this.st.sig === 'hangtime' ? 4.2 : 2.2) : 3); }   // (BASKETBALL: hang time)
       if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.giveArmor(mv.su + mv.ac, mv.oneArmor || this.st.perk === 'unstoppable');
@@ -727,8 +731,7 @@
       if (mv.auto && this.kind === 'heavy' && !this.autoArm && t < su + 0.02 && I.take('heavy', 0.2)) { this.autoArm = true; this.flash = 0.15; this.flashCol = 0xffd060; }   // (acExt: unset until a first move; a Legend Art as your first move never ended)
       const F = this.forward;
       // movement through the move
-      if (this.upB && t0 < su && t >= su) { this.vel.y = Math.max(this.vel.y, 15.5); this.grounded = false; this.riseAir = true; }   // the ↑ Special: up you go
-      if (this.upB && t >= su && t < su + ac + 0.1) this.vel.y = Math.max(this.vel.y, 4);
+      if (this.upB && this.rec && this.recMove(mv, t0, t, su, ac, dt)) return;   // the ↑ Special: its own way back (recovery.js)
       if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; if (!this.grounded && !mv.hop && !this.upB) this.vel.y = 0; }
       else if (mv.lunge && mv.type !== 'leap' && t > su * 0.4 && t < su + ac) {   // (a leap flies its own arc)
         // lunge in, but stop short of running past them
@@ -739,7 +742,8 @@
       if (!this.grounded && (this.kind === 'air') && t < su + ac) this.vel.y = Math.max(this.vel.y, 0.6);
       if (this.kind === 'airHeavy' && t >= su) this.vel.y = Math.min(this.vel.y, -6);
       if (mv.dive && t >= su && !this.grounded) { this.vel.x = F.x * 7; this.vel.z = F.z * 7; this.vel.y = -12; }
-      this.physics(dt, 0);
+      this.physics(dt, 0, 0, this.upB && this.rec ? this.rec.g : undefined);
+      if (this.upB && this.rec && this.recAfter(mv, t, su)) return;   // (landed, or caught a ledge)
       // COMMAND SPECIALS: a rising move is committed until it lands (a beat to recover); a leap hits where it comes down
       if (mv.rise && t >= su) { if (!this.grounded) this.riseAir = true; else if (this.riseAir) { this.riseAir = false; const lag = mv.landLag || 0.2; if (t >= end - lag) { this.moveT = end - lag; SFX.play('land'); } } }
       if (mv.type === 'leap' && !this.leapDone && t > su + 0.1 && this.grounded) { this.leapDone = true; this.leapLand(mv); if (this.moveT < su + ac) this.moveT = su + ac; }
@@ -750,8 +754,8 @@
       // cancels
       if (this.cancels(mv, t, su, ac)) return;
       const diving = this.kind === 'airHeavy' || mv.dive;
-      if ((t >= end && !(this.yankT > 0) && !((mv.rise || mv.type === 'leap') && !this.grounded)) || (diving && this.grounded && t > su)) {
-        if (diving && this.grounded) { this.land(); FX.ring(_c.copy(this.pos).setY(0.05), { r1: 1.6, life: 0.3 }); SFX.play('land'); this.setState('idle'); this.vel.set(0, 0, 0); this.recoverT = 0.15; return; }
+      if ((t >= end && !(this.yankT > 0) && !((mv.rise || mv.type === 'leap') && !this.grounded) && !(this.upB && this.rec && t < this.rec.end)) || (diving && this.grounded && t > su)) {
+        if (diving && this.grounded) { this.land(); FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.05), { r1: 1.6, life: 0.3 }); SFX.play('land'); this.setState('idle'); this.vel.set(0, 0, 0); this.recoverT = 0.15; return; }
         // a string move with a pause branch: wait a beat, then Light
         const pw = this.kind === 'light' && mv.nx && mv.nx.p ? { id: mv.nx.p, from: this.m.time + 0.03, to: this.m.time + 0.6 } : null;
         const helpless = this.upB && !this.grounded; this.upB = false;
@@ -820,7 +824,7 @@
       if (mv.act) this.m.act(this, mv);   // (UNIQUE SPECIALS: imps, a gate, a parrot, the deck lurching...)
       if (mv.type === 'proj') { this.m.fire(this, mv, this.charge); if (mv.round && this.st.rounds) this.spendRound(); }
       else if (mv.type === 'radial') {
-        FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.1, life: 0.35, color: mv.ringCol || 0xffe0a0 });
+        FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: mv.rad * 1.1, life: 0.35, color: mv.ringCol || 0xffe0a0 });
         this.m.hitMinions(this, _c.copy(this.pos).setY(this.pos.y + 0.5), mv.rad, this.moveSerial * 10);
         if (o && U.dist(this.pos, o.pos) < mv.rad + BODY && Math.abs(o.pos.y - this.pos.y) < 2) Combat.hit(this, o, mv, { kind: this.kind, dir: _v.subVectors(o.pos, this.pos).setY(0).normalize().clone() });
         if (mv.holy) FX.burst(_c.copy(this.pos).setY(1), { n: 24, color: [0xfff07a, 0xffffff], glow: true, speed: 5, gravity: -2, size: 0.08, life: 0.6 });
@@ -838,7 +842,7 @@
         }
       } else if (mv.type === 'dash') {
         this.dashFrom = this.pos.clone();
-        FX.burst(_c.copy(this.pos).setY(0.9), { n: 8, color: 0xffffff, speed: 2, size: 0.06, life: 0.3 });
+        FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.9), { n: 8, color: 0xffffff, speed: 2, size: 0.06, life: 0.3 });
       }
       // NINJA Vanishing Stab: blink to their far side, so the hit carries them back the other way
       // the Vanishing Stab blinks behind them once a combo; after that it's just a stab
@@ -895,21 +899,21 @@
       if (b.id === 'vow') { this.buffs.vow = b.t; this.m.call(this, 'VOW OF THE TEMPLE', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, normal: new V3(0, 1, 0), color: 0xffffff }); }
       if (b.id === 'zeal') { this.buffs.zeal = b.t; this.m.call(this, 'DEUS VULT!', 'buff'); }
       // LOVERS OF THE SEA
-      if (b.id === 'spot') { const o = this.opp; if (o && U.dist(this.pos, o.pos) < 12 && !['ko', 'out'].includes(o.state)) { o.buffs.spotted = b.t; this.m.call(o, 'SPOTTED!', 'bad'); FX.ring(_c.copy(o.pos).setY(0.08), { r0: 0.3, r1: 1.2, life: 0.4, color: 0xd8a830 }); } else this.m.call(this, 'NOTHING IN SIGHT', 'small'); }
+      if (b.id === 'spot') { const o = this.opp; if (o && U.dist(this.pos, o.pos) < 12 && !['ko', 'out'].includes(o.state)) { o.buffs.spotted = b.t; this.m.call(o, 'SPOTTED!', 'bad'); FX.ring(_c.copy(o.pos).setY(o.pos.y + 0.08), { r0: 0.3, r1: 1.2, life: 0.4, color: 0xd8a830 }); } else this.m.call(this, 'NOTHING IN SIGHT', 'small'); }
       if (b.id === 'hornpipe') { this.buffs.valor = b.t; this.m.call(this, 'HORNPIPE!', 'buff'); for (let i = 0; i < 2; i++) FX.ring(_c.copy(this.pos).setY(0.2 + i * 0.4), { r1: 1.3 + i * 0.3, life: 0.35, color: 0x7ad8ff }); }
       if (b.id === 'phase') { this.inv = Math.max(this.inv, b.t); this.buffs.phase = b.t; this.m.call(this, 'PHASE', 'buff'); FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 14, color: [0x6affb0, 0xd8fff0], glow: true, speed: 2, size: 0.08, gravity: -1, life: 0.6 }); }
       if (b.id === 'parry') { this.buffs.parry = b.t; this.m.call(this, 'EN GARDE', 'buff'); FX.spark(this.fig.socket('wR', [0, 0, 8]), { color: 0x9ad8ff, size: 1.2 }); }
       // COMMAND SPECIALS
       if (b.id === 'counter') { this.buffs.counter = b.t; this.counterRip = b.rip; this.counterCall = b.call || 'COUNTER'; FX.ring(_c.copy(this.pos).setY(1), { r1: 1.3, life: 0.3, normal: new V3(0, 1, 0), color: 0xffffff }); }
       if (b.id === 'reflect') { this.buffs.reflect = b.t; this.m.call(this, b.call || 'REFLECT', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, life: 0.35, normal: new V3(0, 1, 0), color: 0x9ad8ff }); }
-      if (b.id === 'haste') { this.buffs.haste = b.t; this.m.call(this, b.call || 'HASTE', 'buff'); FX.burst(_c.copy(this.pos).setY(0.3), { n: 12, color: [0xffffff, 0x9ad8ff], speed: 3, size: 0.07, life: 0.4 }); }
+      if (b.id === 'haste') { this.buffs.haste = b.t; this.m.call(this, b.call || 'HASTE', 'buff'); FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.3), { n: 12, color: [0xffffff, 0x9ad8ff], speed: 3, size: 0.07, life: 0.4 }); }
       if (b.id === 'regen') { this.buffs.regen = b.t; this.regenRate = b.hp / b.t; this.m.call(this, b.call || 'REGEN', 'heal'); FX.burst(_c.copy(this.pos).setY(1), { n: 16, color: [0x66ffcc, 0xffffff], glow: true, speed: 2, gravity: -3, life: 0.7, size: 0.07 }); }
       if (b.id === 'iron') { this.armorT = b.t; this.armorHits = b.hits || 3; this.buffs.iron = b.t; this.m.call(this, b.call || 'IRON SHIRT', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, life: 0.35, normal: new V3(0, 1, 0), color: 0xd8a830 }); }
       // UNIQUE SPECIALS
       if (b.id === 'berserk') { this.hp -= Math.round(this.maxHp * (b.cost || 0.1)); this.buffs.berserk = b.t; this.m.call(this, 'BERSERKERGANG', 'buff'); this.flash = 0.5; this.flashCol = 0xff3010; FX.burst(_c.copy(this.pos).setY(1.3), { n: 16, color: [0xff3010, 0xffd060], speed: 3, size: 0.09, life: 0.5 }); }
       if (b.id === 'empower') { this.buffs.empower = b.t; this.m.call(this, b.call || 'EMPOWERED', 'buff'); FX.spark(this.fig.socket('wR', [0, 0, 8]), { color: 0xffffff, size: 1.4 }); }
       if (b.id === 'invis') { this.buffs.invis = b.t; this.m.call(this, 'VANISHED', 'buff'); }
-      if (b.id === 'immov') { this.buffs.immov = b.t; this.armorT = Math.max(this.armorT, b.t); this.armorHits = 99; this.m.call(this, b.call || 'IMMOVABLE', 'buff'); FX.ring(_c.copy(this.pos).setY(0.1), { r1: 1.8, life: 0.4, normal: new V3(0, 1, 0), color: 0xd8a830 }); }
+      if (b.id === 'immov') { this.buffs.immov = b.t; this.armorT = Math.max(this.armorT, b.t); this.armorHits = 99; this.m.call(this, b.call || 'IMMOVABLE', 'buff'); FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 1.8, life: 0.4, normal: new V3(0, 1, 0), color: 0xd8a830 }); }
       if (b.id === 'autoGuard') { this.buffs.autoGuard = b.t; this.m.call(this, b.call || 'GUARDED', 'buff'); }
       if (b.id === 'bubble') { this.buffs.bubble = b.t; this.inv = Math.max(this.inv, b.t); this.m.call(this, 'DIVINE SHIELD', 'buff'); }
       if (b.id === 'morale') { this.buffs.morale = b.t; this.m.call(this, 'COLOURS UP!', 'buff'); }
@@ -1053,8 +1057,8 @@
         if (U.rand() < 0.7) FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.8), { n: 1, color: [0xffd080, 0xff6020], glow: true, speed: 0.6, size: 0.08, gravity: -2, life: 0.35 });
         if (t > 0.1 && this.grounded) {
           this.vel.set(0, 0, 0);
-          FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.2, life: 0.45, color: 0xffd080 }); FX.addShake(0.9); SFX.play('boom');
-          FX.burst(_c.copy(this.pos).setY(0.1), { n: 30, color: this.m.arena.dust, speed: 7, size: 0.14, life: 0.8 });
+          FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: mv.rad * 1.2, life: 0.45, color: 0xffd080 }); FX.addShake(0.9); SFX.play('boom');
+          FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.1), { n: 30, color: this.m.arena.dust, speed: 7, size: 0.14, life: 0.8 });
           if (can && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < mv.rad + BODY) return true;
           return 'miss';
         }
@@ -1075,8 +1079,8 @@
         this.physics(dt, 0, 0, 0.01);
         FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 2, color: [col, 0xffd080], glow: true, speed: 1, size: 0.09, gravity: 0, life: 0.3 });
         if (this.grounded) {
-          FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 2.2, life: 0.4, color: col }); FX.addShake(0.8); SFX.play('heavy');
-          FX.burst(_c.copy(this.pos).setY(0.2), { n: 24, color: [col, 0xffd080, this.m.arena.dust], glow: true, speed: 6, size: 0.1, life: 0.6 });
+          FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: mv.rad * 2.2, life: 0.4, color: col }); FX.addShake(0.8); SFX.play('heavy');
+          FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.2), { n: 24, color: [col, 0xffd080, this.m.arena.dust], glow: true, speed: 6, size: 0.1, life: 0.6 });
           if (can && Math.hypot(o.pos.x - this.markAt.x, o.pos.z - this.markAt.z) < mv.rad + BODY && o.pos.y < 2.6) return true;
           return 'miss';
         }
@@ -1100,7 +1104,7 @@
         // JUDGMENT OF DAWN: a burst of light all around her
         this.physics(dt, 14);
         if (t >= 0.06) {
-          FX.ring(_c.copy(this.pos).setY(0.1), { r1: mv.rad * 1.15, life: 0.4, color: 0xfff07a }); FX.ring(_c.copy(this.pos).setY(1), { r1: mv.rad, life: 0.35, normal: this.m.camDir(), color: 0xffffff });
+          FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: mv.rad * 1.15, life: 0.4, color: 0xfff07a }); FX.ring(_c.copy(this.pos).setY(1), { r1: mv.rad, life: 0.35, normal: this.m.camDir(), color: 0xffffff });
           FX.burst(_c.copy(this.pos).setY(1), { n: 30, color: [0xfff07a, 0xffffff], glow: true, speed: 7, size: 0.08, gravity: 0, life: 0.5 }); SFX.play('jguard'); FX.addShake(0.4);
           if (can && U.dist(this.pos, o.pos) < mv.rad + BODY && Math.abs(o.pos.y - this.pos.y) < 3.2) return true;
           return 'miss';
@@ -1111,7 +1115,7 @@
         // GRAND FINALE: a ring of sound rolls out; anyone it passes is in the show
         this.physics(dt, 14);
         const T = 0.4, r0 = this.waveR, r = mv.rad * U.easeOut(Math.min(1, t / T)); this.waveR = r;
-        if (t - dt <= 0) { FX.ring(_c.copy(this.pos).setY(0.4), { r0: 0.2, r1: mv.rad, life: T, color: 0xff8ad8 }); FX.ring(_c.copy(this.pos).setY(1.2), { r0: 0.2, r1: mv.rad, life: T, color: 0xfff27a }); SFX.play('chord'); }
+        if (t - dt <= 0) { FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.4), { r0: 0.2, r1: mv.rad, life: T, color: 0xff8ad8 }); FX.ring(_c.copy(this.pos).setY(1.2), { r0: 0.2, r1: mv.rad, life: T, color: 0xfff27a }); SFX.play('chord'); }
         if (can) { const d = U.dist(this.pos, o.pos); if (d >= r0 - 0.7 && d <= r + 0.7 && o.pos.y < 3.2) return true; }
         return t > T ? 'miss' : false;
       }
@@ -1226,7 +1230,7 @@
       if (!o || o.state !== 'held') return;
       o.held = null; if (k === 'd') o.pos.y = 0; this.m.event('throw', { f: this, vic: o, kind: k });
       Combat.hit(this, o, mv, { kind: 'throw', dir: this.forward.clone(), force: true, at: _c.copy(o.pos).setY(o.pos.y + 0.9).clone() });
-      if (k === 'd') { FX.ring(_c.copy(o.pos).setY(0.06), { r1: 1.8, life: 0.3 }); FX.addShake(0.3); }
+      if (k === 'd') { FX.ring(_c.copy(o.pos).setY(o.pos.y + 0.06), { r1: 1.8, life: 0.3 }); FX.addShake(0.3); }
     }
     /* held too long (or they mashed out): both pushed apart, and the combo is over */
     grabBreak() {
@@ -1253,7 +1257,7 @@
       this.dodgeDir = _v.subVectors(o.pos, this.pos).setY(0).normalize().clone(); this.dodgeAir = false; this.chasing = true; this.setState('dodge');
       this.yaw = Math.atan2(this.dodgeDir.x, this.dodgeDir.z); this.inv = Math.max(this.inv, 0.12);
       SFX.play('dodge'); this.m.call(this, 'TECH CHASE!', 'snap'); this.m.event('chase', { f: this, vic: o });
-      FX.ring(_c.copy(this.pos).setY(0.1), { r1: 1.6, life: 0.3, normal: new V3(0, 1, 0), color: 0x7cf9ff }); this.flash = 0.2; this.flashCol = 0x7cf9ff;
+      FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 1.6, life: 0.3, normal: new V3(0, 1, 0), color: 0x7cf9ff }); this.flash = 0.2; this.flashCol = 0x7cf9ff;
     }
     snapCancel() {
       this.hype -= 50; this.move = null; this.setState(this.grounded ? 'idle' : 'air');
@@ -1307,7 +1311,7 @@
           this.vel.y = 8.5; this.vel.x *= 0.5; this.vel.z *= 0.5; this.hitstun = 0.55 * Combat.decay(this);
           if (this.artBounce) { this.artBounce = false; this.vel.y = 8; this.hitstun = Math.max(this.hitstun, 0.8); }   // (a raw Legend Art's: chest high as you recover, no air recovery)
           Combat.bounceDamage(this, 12); SFX.play('heavy'); FX.addShake(0.35);
-          FX.burst(_c.copy(this.pos).setY(0.05), { n: 14, color: this.m.arena.dust, speed: 4, size: 0.1 }); FX.ring(_c.copy(this.pos).setY(0.06), { r1: 1.8, life: 0.3 });
+          FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.05), { n: 14, color: this.m.arena.dust, speed: 4, size: 0.1 }); FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.06), { r1: 1.8, life: 0.3 });
           this.m.call(this, 'GROUND BOUNCE', 'bounce'); this.m.event('gbounce', { vic: this, by: this.combo.by });
           return;
         }
@@ -1317,7 +1321,7 @@
           this.dodgeDir = d.clone(); this.dodgeAir = false; this.setState('dodge'); this.m.call(this, 'QUICK RISE', 'small'); SFX.play('tech'); return;
         }
         this.setState('down'); this.vel.x *= 0.3; this.vel.z *= 0.3; SFX.play('land'); FX.addShake(0.15);
-        FX.burst(_c.copy(this.pos).setY(0.05), { n: 8, color: this.m.arena.dust, speed: 2.5, size: 0.08 });
+        FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.05), { n: 8, color: this.m.arena.dust, speed: 2.5, size: 0.08 });
       }
     }
 
@@ -1645,7 +1649,7 @@
       if (mv.holy) { FX.ring(atPos.clone(), { r1: 1.6, life: 0.3, normal: m.camDir(), color: 0xfff07a }); FX.burst(atPos, { n: 10, color: [0xfff07a, 0xffffff], glow: true, speed: 4, size: 0.07, gravity: -2, life: 0.5 }); }
       if (mv.blast) { FX.burst(atPos, { n: 22, color: [0xffd040, 0xff6a20, 0x3a3a3a], glow: true, speed: 6, size: 0.11, life: 0.5 }); FX.spark(atPos, { color: 0xffb040, size: 2 }); FX.ring(atPos.clone(), { r1: 1.6, life: 0.3, normal: m.camDir(), color: 0xffa040 }); SFX.play('boom'); FX.addShake(0.4); }
       if (mv.hexfx) { const hc = KB.LINES.summoner.pal.glow; FX.ring(atPos.clone(), { r1: 1.5, life: 0.35, normal: m.camDir(), color: hc }); FX.burst(atPos, { n: 12, color: [hc, 0xffffff], glow: true, speed: 4, size: 0.07, life: 0.4, gravity: 0 }); }
-      if (mv.quake) { FX.addShake(0.5); FX.ring(_c.copy(vic.pos).setY(0.06), { r1: 2.4, life: 0.4 }); FX.burst(_c.copy(vic.pos).setY(0.1), { n: 14, color: m.arena.dust, speed: 4, size: 0.1 }); }
+      if (mv.quake) { FX.addShake(0.5); FX.ring(_c.copy(vic.pos).setY(vic.pos.y + 0.06), { r1: 2.4, life: 0.4 }); FX.burst(_c.copy(vic.pos).setY(vic.pos.y + 0.1), { n: 14, color: m.arena.dust, speed: 4, size: 0.1 }); }
       if (mv.hybrid && !o.multiHit) m.call(att, mv.name.toUpperCase() + '!', 'buff');
       if (mv.notes) { FX.burst(atPos, { n: 6, color: [0xff8ad8, 0xfff27a, 0x7cf9ff], glow: true, speed: 3, size: 0.09, gravity: -2.5, life: 0.6 }); m.noteFX(atPos.clone(), 2); }
       vic.flash = 0.7; vic.flashCol = counter ? 0xff5050 : 0xffffff;
@@ -1669,6 +1673,19 @@
       let kbk = vic.st.kbTaken * (vic.buffs.pumped ? 0.75 : 1) * (o.charge ? 1 + o.charge * 0.75 : 1) * (1 + vic.combo.hits * 0.008);
       for (const h of KB.HOOK.kb) kbk *= h(att, vic, mv, o);
       const decay = Combat.decay(vic);
+      // RANGED HITS (a shot, a thrown part, an imp) on an open stage: each one within 2.5 s of the last counts for less
+      // (x0.7 each time), and on someone off the stage they only nudge (a third of the push, never a spike, a short stun,
+      // and a jump back), so nobody can be shot off the screen. Any hit gives back the ↑ Special (a recovery that was
+      // interrupted isn't the end)
+      const ranged = !!(o.proj || o.kind === 'minion' || o.kind === 'toss') && !m.arena.stage.walled && o.kind !== 'trap';
+      let rk = 1, offR = false;
+      if (ranged) {
+        if (m.time - (vic.rangedT || -9) > 2.5) vic.rangedN = 0;
+        rk = Math.pow(0.7, vic.rangedN || 0); vic.rangedN = (vic.rangedN || 0) + 1; vic.rangedT = m.time;
+        offR = !vic.grounded && Platform.offStage(vic);
+        if (offR) vic.airJumps = Math.max(vic.airJumps, 1);
+      }
+      vic.upUsed = false;
       if (otg) {
         // OFF THE GROUND: scooped back up off the floor, twice a combo, and the combo carries on; the second pop is a
         // little lower and shorter, so it buys a hit or two, not a whole new combo
@@ -1676,7 +1693,7 @@
         vic.hardKD = false; vic.kdT = 0; vic.spiked = false; vic.chained = null;
         vic.vel.set(dir.x * (again ? 2 : 2.5), again ? 6.2 : 8, dir.z * (again ? 2 : 2.5)); vic.pos.y = Math.max(vic.pos.y, 0.05); vic.grounded = false;
         vic.setState('tumble'); vic.hitstun = (again ? 0.42 : 0.55) * Math.max(0.6, decay); vic.yaw = Math.atan2(-dir.x, -dir.z); vic.spin.position.y = 0.95; if (!again) vic.floatT = 0.3;
-        m.call(vic, again ? 'OTG 2!' : 'OTG!', 'bounce'); m.event('otg', { att, vic, n }); FX.ring(_c.copy(vic.pos).setY(0.06), { r1: 1.5, life: 0.3 }); FX.burst(_c.copy(vic.pos).setY(0.1), { n: 12, color: m.arena.dust, speed: 3.5, size: 0.09 });
+        m.call(vic, again ? 'OTG 2!' : 'OTG!', 'bounce'); m.event('otg', { att, vic, n }); FX.ring(_c.copy(vic.pos).setY(vic.pos.y + 0.06), { r1: 1.5, life: 0.3 }); FX.burst(_c.copy(vic.pos).setY(vic.pos.y + 0.1), { n: 12, color: m.arena.dust, speed: 3.5, size: 0.09 });
         if (vic.combo.hits >= 2) m.comboShow(att, vic);
         return 'hit';
       }
@@ -1693,16 +1710,19 @@
         let h = mv.kb[0] * kbk * (mv.launch ? Platform.scaleH(pc, wl) : (wl ? 1 : 0.55) + pc / 300) * mark * (att.st.sig === 'warlord' && mv.launch && !m.arena.stage.walled ? 1.1 : 1), v = mv.kb[1];
         if (!mv.launch) { h *= 0.6; v = Math.max(v, 4.5); }
         if (mv.spike) { v = mv.kb[1] * ((wl ? 1 : 0.8) + pc / 250); vic.spiked = true; } else { vic.spiked = false; v *= mv.launch ? Platform.scaleV(pc, wl) * mark : (wl ? 1 : 0.92) + pc / 400; }
+        if (ranged) { h *= rk; if (v > 0) v *= rk; }
+        if (offR) { h = Math.sign(h) * Math.min(Math.abs(h) * 0.35, 5); v = v < 2 ? 2 : Math.min(v * 0.5, 7); vic.spiked = false; }
         vic.vel.set(dir.x * h, v * (v > 0 ? Math.min(1.15, kbk) : 1), 0);
         Platform.influence(vic, vic.vel);
         vic.setState('tumble'); vic.grounded = v <= 0 && vic.grounded; if (v > 0) vic.pos.y += 0.02, vic.grounded = false;
         if (mv.trip) vic.hardKD = true;   // (tripped: they go down hard)
-        vic.hitstun = Math.min(1.6, (0.26 + 0.026 * Math.hypot(h, v)) * decay);
-        vic.hardKD = !!(mv.spike || o.kind === 'super' || o.kind === 'throw'); vic.kdT = 0;
+        vic.hitstun = Math.min(1.6, (0.26 + 0.026 * Math.hypot(h, v)) * decay) * (ranged ? Math.max(0.5, rk) : 1);
+        if (offR) vic.hitstun = Math.min(vic.hitstun, 0.3);
+        vic.hardKD = !!((mv.spike && !offR) || o.kind === 'super' || o.kind === 'throw'); vic.kdT = 0;
         vic.yaw = Math.atan2(-dir.x, -dir.z);
       } else {
-        vic.setState('hit'); vic.hitstun = (mv.stun || 0.3) * (counter ? 1.3 : 1) * Math.max(0.6, decay);
-        vic.vel.x = dir.x * mv.kb[0] * kbk; vic.vel.z = dir.z * mv.kb[0] * kbk; vic.yaw = Math.atan2(-dir.x, -dir.z);
+        vic.setState('hit'); vic.hitstun = (mv.stun || 0.3) * (counter ? 1.3 : 1) * Math.max(0.6, decay) * (ranged ? Math.max(0.5, rk) : 1);
+        vic.vel.x = dir.x * mv.kb[0] * kbk * rk; vic.vel.z = dir.z * mv.kb[0] * kbk * rk; vic.yaw = Math.atan2(-dir.x, -dir.z);
         // CRUMPLE (they fold up, then fall down) and DIZZY (they stand there rubbing their eyes)
         const crumple = mv.crumple || (emp ? 1.0 : 0) || (mv.chargeL && (o.charge || 0) >= 0.45 ? 0.9 : 0);
         let bout = 0; if (mv.touche) { vic.touche++; vic.toucheT = 10; m.call(vic, 'TOUCH\u00c9 ' + vic.touche, 'counter'); if (vic.touche >= 3) { vic.touche = 0; bout = 2.0; m.call(att, 'BOUT!', 'buff'); } }   // (the FENCER: three touchés win the bout)
@@ -1819,7 +1839,7 @@
     breakPart(vic, part, dir) {
       const m = vic.m; vic.broken[part] = true; vic.armor[part] = 0;
       SFX.play('partbreak'); m.call(vic, { head: 'HEAD OFF!', armR: 'R-ARM BROKEN!', armL: 'L-ARM BROKEN!', legs: 'LEGS CRACKED!' }[part], 'part');
-      if (part === 'legs') { vic.setLegMat(true); FX.burst(_c.copy(vic.pos).setY(0.5), { n: 12, color: [0x6a6a72, 0x9a9aa2], speed: 3, size: 0.07 }); return; }
+      if (part === 'legs') { vic.setLegMat(true); FX.burst(_c.copy(vic.pos).setY(vic.pos.y + 0.5), { n: 12, color: [0x6a6a72, 0x9a9aa2], speed: 3, size: 0.07 }); return; }
       if (part === 'armR' && vic.spearOut) vic.catchSpear(true);
       const grp = vic.fig.detach(part, m.scene); if (!grp) return;
       if (part === 'armR') vic.trailR.pts.length = 0; if (part === 'armL') vic.trailL.pts.length = 0;

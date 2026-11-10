@@ -209,7 +209,7 @@
       const g = new VX.Grid(); // a giant alphabet block and a ball
       g.box(-4, 0, -4, 4, 8, 4, 0xe0343f); g.box(-3, 1, 5, 3, 7, 5, 0xf6efe2); g.box(-1, 2, 6, 1, 6, 6, 0x3f7fe0);
       add(g, 0.9, -16, T.outY, -18, 0.4);
-      const b = new VX.Grid(); b.ell(0, 0, 0, 6, 6, 6, (x, y, z) => (Math.floor((Math.atan2(z, x) + 3.2) * 1.3) % 2 ? 0xf2c230 : 0x3f7fe0)); add(b, 0.8, 18, T.outY + 5, -16);
+      const b = new VX.Grid(); b.ell(0, 0, 0, 6, 6, 6, (x, y, z) => (Math.floor((Math.atan2(z, x) + 3.2) * 1.3) % 2 ? 0xf2c230 : 0x3f7fe0)); add(b, 0.8, 27, T.outY + 3, -27);   // (well back: off the side of the stage is where the recoveries are)
       const wall = new THREE.Mesh(new THREE.PlaneGeometry(120, 50), new THREE.MeshLambertMaterial({ color: 0xf0d8b8 })); wall.position.set(0, 10, -34); group.add(wall);
       for (let i = -6; i <= 6; i++) { const s = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 50), new THREE.MeshLambertMaterial({ color: 0xe6c6a0 })); s.position.set(i * 9, 10, -33.9); group.add(s); }
     } else if (id === 'desk') {

@@ -86,9 +86,11 @@
         const below = f.pos.y < St.top - 0.4, far = Math.abs(f.pos.x) - St.W, C = f.st.cmd;
         if (f.vel.y < 1.5 && f.airJumps > 0 && !f.broken.legs && (below || far > 2.2)) { this.press('jump'); return true; }
         if (C && C.qcf && far > 4 && f.vel.y < 0.5 && ['dash', 'teleport'].includes((KB.MOVES[C.qcf] || {}).type) && f.canSpecial(C.qcf)) { f.faceX(tx); this.cmd = 'qcf'; this.press('special'); return true; }
-        if (C && C.dp && f.vel.y < 0.5 && (f.airJumps <= 0 || f.broken.legs) && (below || far > 1) && f.canSpecial(C.dp)) { f.faceX(tx); this.cmd = 'dp'; this.press('special'); return true; }
+        if (C && C.dp && f.vel.y < 0.5 && (f.airJumps <= 0 || f.broken.legs) && (below || far > 1) && f.canSpecial(C.dp) && f.recUseful()) { f.faceX(tx); this.cmd = 'dp'; this.press('special'); return true; }   // (a rope waits until the ledge is in reach)
         return true;
       }
+      // on a stone pillar off the stage (it won't last): jump for the stage
+      if (f.grounded && f.plat && f.plat.temp && ['idle', 'run'].includes(f.state)) { this.move.x = f.pos.x > 0 ? -1 : 1; this.move.y = 0; if (r() < 0.25) this.press('jump'); return true; }
       if (!['idle', 'run'].includes(f.state) || !f.grounded) return false;
       // they're off the stage, coming back: wait at the edge for them (the better the CPU, the closer)
       if (o && !o.grounded && Platform.offStage(o) && o.state !== 'ko' && lv >= 1 && !o.gone) {

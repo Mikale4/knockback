@@ -1,4 +1,6 @@
 /* commands.js -- COMMAND SPECIALS: three more Specials for every figure, each one something only that figure would do.
+   (The ↑ Special, the dp slot, is each figure's RECOVERY now: recovery.js puts its own move in that slot. The ones
+   here under dp are kept for anything that still names them.)
 
    A direction held with Special, read on the screen: → is the side of the screen (left or right) the opponent is on,
    flipping when you swap sides, ↑ is the stick pushed up; the Special then turns to face them:

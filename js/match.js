@@ -19,7 +19,7 @@
     const arena = Arena.build(scene, opts.arena, { layout: opts.layout, walled: opts.walled });
     const M = {
       opts, scene, camera, arena, time: 0, phase: 'intro', phaseT: 0, round: 1, wins: [0, 0], clock: opts.time,
-      frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [], minions: [], cine: null, camShot: null,
+      frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [], minions: [], tplats: [], cine: null, camShot: null,
       training: opts.mode === 'training' ? { dummy: 'stand', meter: true, godP2: false, reset: 0, spot: 'centre', hitboxes: !!U.read('kb.lab', {}).hitboxes } : null,
       attract: opts.mode === 'attract', results: null, camT: new V3(0, 1.5, 0), camP: new V3(0, 4, 20), camShake: 0,
       stocks: [opts.stocks, opts.stocks], kos: [0, 0],
@@ -200,7 +200,7 @@
       for (const mn of M.minions.slice()) poof(mn, true);
       arena.reset(); FX.clear();
       for (const p of M.picks) { if (p.grp.parent) p.grp.parent.remove(p.grp); }
-      M.picks = []; M.projs.forEach(dropProj); M.projs = []; M.camShot = null; M.clones.forEach(c => c.f.dispose()); M.clones = [];
+      M.picks = []; M.projs.forEach(dropProj); M.projs = []; M.camShot = null; M.clones.forEach(c => c.f.dispose()); M.clones = []; Platform.tick(M, true);
       // an Arcade boss that re-casts itself: a new body for each round after the first (opts.recast[round - 1])
       const rc = M.round > 1 && opts.recast && opts.recast[M.round - 1];
       if (rc && M.fighters[1].baseBuild !== rc) { M.fighters[1].recast(rc); M.recastNow = rc; } else M.recastNow = null;
@@ -496,10 +496,12 @@
     M.placeTrap = (f, mv) => {
       const T = mv.trap, F = f.forward;
       for (let i = M.projs.length - 1; i >= 0; i--) { const q = M.projs[i]; if (q.kind === 'trap' && q.f === f && q.mv.id === mv.id) { killTrap(q); M.projs.splice(i, 1); } }   // (one of each at a time)
-      const at = inside(f.pos.clone().addScaledVector(F, mv.reach || 1.6)); at.y = 0;
-      const mesh = TRAP_MAKE[T.look](T.col, T.r); mesh.position.copy(at).setY(0.02); mesh.rotation.y = f.yaw; scene.add(mesh);
+      const at = inside(f.pos.clone().addScaledVector(F, mv.reach || 1.6)), gy = Platform.groundAt(M, at.x, f.pos.y + 0.1);
+      if (gy == null) { if (!U.quiet) FX.burst(at.clone().setY(f.pos.y + 0.3), { n: 8, color: [0xffffff, 0x9a9aa2], speed: 2, size: 0.07, life: 0.4 }); return; }   // (nothing under it: it falls away)
+      at.y = gy;
+      const mesh = TRAP_MAKE[T.look](T.col, T.r); mesh.position.copy(at).setY(at.y + 0.02); mesh.rotation.y = f.yaw; scene.add(mesh);
       M.projs.push({ kind: 'trap', f, mv, pos: at, dir: F.clone(), mesh, t: 0, tick: 0, id: 's' + (++M.shotId) });
-      FX.burst(at.clone().setY(0.2), { n: 8, color: arena.dust, speed: 2, size: 0.07, life: 0.4 }); SFX.play('whoosh');
+      FX.burst(at.clone().setY(at.y + 0.2), { n: 8, color: arena.dust, speed: 2, size: 0.07, life: 0.4 }); SFX.play('whoosh');
     };
     /* ---- UNIQUE SPECIALS: the things only one figure does (fighter.js onActive calls M.act for a move with act) */
     const myImps = f => M.minions.filter(mn => mn.owner === f);
@@ -535,7 +537,7 @@
         // DAIMYO: a castle gate rises in front of him for 6 s
         for (let i = M.projs.length - 1; i >= 0; i--) { const q = M.projs[i]; if (q.kind === 'gate' && q.f === f) { scene.remove(q.mesh); M.projs.splice(i, 1); } }
         const at = inside(f.pos.clone().addScaledVector(F, mv.reach || 1.8)); at.y = 0; const mesh = gateMesh(); mesh.position.copy(at); mesh.rotation.y = f.yaw; scene.add(mesh);
-        M.projs.push({ kind: 'gate', f, mv, pos: at, yaw: f.yaw, mesh, t: 0, id: 's' + (++M.shotId) }); FX.addShake(0.3); SFX.play('boom'); FX.burst(at.clone().setY(0.3), { n: 16, color: arena.dust, speed: 3, size: 0.1, life: 0.5 });
+        M.projs.push({ kind: 'gate', f, mv, pos: at, yaw: f.yaw, mesh, t: 0, id: 's' + (++M.shotId) }); FX.addShake(0.3); SFX.play('boom'); FX.burst(at.clone().setY(at.y + 0.3), { n: 16, color: arena.dust, speed: 3, size: 0.1, life: 0.5 });
       } else if (a === 'parrot') {
         // PIRATE: his parrot flies at them and pecks three times
         const mesh = parrotMesh(), from = f.pos.clone().setY(f.pos.y + 1.9); mesh.position.copy(from); scene.add(mesh);
@@ -558,7 +560,7 @@
         const h = Math.round(f.maxHp * 0.08 * f.st.healMult); f.hp = Math.min(f.maxHp, f.hp + h); f.burst = 100; f.giveArmor(2); M.call(f, 'HULK UP! +' + h, 'buff'); FX.addShake(0.3); FX.ring(_q2.copy(f.pos).setY(1), { r1: 2, life: 0.4, normal: new V3(0, 1, 0), color: 0xffd23a });
       } else if (a === 'spare') {
         // BOWLER: the ball on the floor rolls back to him, through anything in its way
-        const b = f.balls.bowling; if (!b) return; const from = b.pos.clone().setY(0.25), to = f.pos.clone().setY(0.25), d = to.clone().sub(from), len = d.length();
+        const b = f.balls.bowling; if (!b) return; const from = b.pos.clone().setY(0.25), to = f.pos.clone().setY(f.pos.y + 0.25), d = to.clone().sub(from), len = d.length();
         if (len > 0.5) dart(f, mv, 'bowling', from, d.normalize(), len, { grp: { done: false } }); pickBall(b, 'quiet'); SFX.play('whoosh'); M.call(f, 'SPARE!', 'small');
       } else if (a === 'safe') {
         // BASEBALL: a stolen base: past them in the slide, and the crowd loves it
@@ -754,7 +756,7 @@
         const S = mv.smite, R = mv.range || 8, at = o && !['out', 'ko'].includes(o.state) && U.dist(f.pos, o.pos) < R + 0.5 ? o.pos.clone() : f.pos.clone().addScaledVector(F, R * 0.7);
         at.y = 0; inside(at);
         const mark = new THREE.Mesh(new THREE.RingGeometry(S.rad * 0.8, S.rad, 28), new THREE.MeshBasicMaterial({ color: S.col, transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false, side: THREE.DoubleSide }));
-        mark.rotation.x = -Math.PI / 2; mark.position.copy(at).setY(0.03); scene.add(mark);
+        mark.rotation.x = -Math.PI / 2; mark.position.copy(at).setY(at.y + 0.03); scene.add(mark);
         M.projs.push({ kind: 'smite', f, mv, k: f.kind, at, mesh: mark, t: 0, fell: false, struck: false, id: 's' + (++M.shotId) }); SFX.play('whoosh');
       } else if (mv.proj === 'breath') {
         M.projs.push({ kind: 'breath', f, mv, k: f.kind, t: 0, n: 0, id: 's' + (++M.shotId) }); SFX.play('boom');
@@ -819,7 +821,7 @@
         const tip = _v.copy(s.at).setY(-0.25), d = new V3(h.x * 0.57, -0.82, h.z * 0.57);
         g.position.copy(tip).addScaledVector(d, -1.3); g.lookAt(tip);
       } else { g.position.set(s.at.x - h.x * 0.4, 0.07, s.at.z - h.z * 0.4); g.lookAt(_v.copy(g.position).add(h)); }
-      FX.burst(_v.copy(s.at).setY(0.05), { n: 8, color: arena.dust, speed: 2.5, size: 0.07, life: 0.4, up: 0.5 }); SFX.play('land');
+      FX.burst(_v.copy(s.at).setY(s.at.y + 0.05), { n: 8, color: arena.dust, speed: 2.5, size: 0.07, life: 0.4, up: 0.5 }); SFX.play('land');
     }
     function updSpears(dt) {
       for (const f of M.fighters) {
@@ -857,7 +859,7 @@
 
     /* ---------------------------------------------------- dropped parts */
     M.dropPart = (vic, part, grp, dir) => {
-      const vel = new V3(dir.x * 5 + U.rnd(-1, 1), 6 + U.rnd(0, 2), dir.z * 5 + U.rnd(-1, 1));
+      const vel = new V3(dir.x * 5 + U.rnd(-1, 1), 6 + U.rnd(0, 2), 0); grp.position.z = 0;   // (on the fighting plane, where a figure can walk over it)
       M.picks.push({ owner: vic, part, grp, vel, spin: new V3(U.rnd(-9, 9), U.rnd(-9, 9), U.rnd(-9, 9)), t: 0, rest: false, item: vic.build[part] });
       FX.burst(grp.position.clone(), { n: 10, color: [0xffffff, 0x9a9aa2], speed: 4, size: 0.06 });
     };
@@ -865,18 +867,31 @@
       for (let i = M.picks.length - 1; i >= 0; i--) {
         const p = M.picks[i], g = p.grp; p.t += dt;
         if (!p.rest) {
+          const py = g.position.y; p.vel.z = 0; g.position.z = 0;
           p.vel.y -= 26 * dt; g.position.addScaledVector(p.vel, dt);
           g.rotation.x += p.spin.x * dt; g.rotation.y += p.spin.y * dt; g.rotation.z += p.spin.z * dt;
-          const inside = Math.abs(g.position.x) < arena.W && Math.abs(g.position.z) < arena.D;
           for (const w of arena.walls) if (!w.broken && w.sign * g.position[w.axis] > w.lim - 0.2) { g.position[w.axis] = w.sign * (w.lim - 0.2); p.vel[w.axis] *= -0.5; }
-          if (inside && g.position.y < 0.15 && p.vel.y < 0) { g.position.y = 0.15; p.vel.y *= -0.35; p.vel.x *= 0.6; p.vel.z *= 0.6; p.spin.multiplyScalar(0.5); if (Math.abs(p.vel.y) < 1.2) { p.rest = true; g.rotation.x = Math.PI / 2 * Math.round(g.rotation.x / (Math.PI / 2)); g.rotation.z = Math.PI / 2 * Math.round(g.rotation.z / (Math.PI / 2)); } }
-          if (g.position.y < arena.outY) { scene.remove(g); M.picks.splice(i, 1); continue; }
-        } else { g.position.y = 0.15 + Math.abs(Math.sin(M.time * 3 + i)) * 0.06; }
-        if (p.t < 0.6) continue;
+          // it lands on whatever is under it: the stage, a platform, a stone pillar
+          const gy = p.backAt == null ? Platform.groundAt(M, g.position.x, py - 0.14) : null;
+          if (gy != null && g.position.y < gy + 0.15 && p.vel.y < 0) { g.position.y = gy + 0.15; p.floorY = gy; p.vel.y *= -0.35; p.vel.x *= 0.6; p.vel.z *= 0.6; p.spin.multiplyScalar(0.5); if (Math.abs(p.vel.y) < 1.2) { p.rest = true; g.rotation.x = Math.PI / 2 * Math.round(g.rotation.x / (Math.PI / 2)); g.rotation.z = Math.PI / 2 * Math.round(g.rotation.z / (Math.PI / 2)); } }
+          // off the stage: it's gone a few seconds, then it falls back onto the stage out of the sky
+          const St = arena.stage, off = g.position.y < arena.outY || (St && g.position.y < St.top - 4 && Math.abs(g.position.x) > St.W - 0.2);
+          if (off && p.backAt == null) { p.backAt = M.time + 3; g.visible = false; p.vel.set(0, 0, 0); }
+          if (p.backAt != null) {
+            if (M.time < p.backAt) continue;
+            const W = St ? St.W : arena.W; p.backAt = null; g.visible = true; g.position.set(U.rnd(-W + 1.5, W - 1.5), (St ? St.top : 0) + 13, 0); p.vel.set(0, -2, 0); p.t = 0.6;
+            if (!U.quiet) { FX.burst(g.position.clone(), { n: 12, color: [0xffffff, 0xfff27a], glow: true, speed: 3, size: 0.07, life: 0.5, gravity: -1 }); M.call(p.owner, ({ head: 'HEAD', armL: 'L-ARM', armR: 'R-ARM', legs: 'LEGS' }[p.part] || 'PART') + ' FALLING BACK IN', 'small'); }
+            continue;
+          }
+        } else {
+          const fy = p.floorY || 0; g.position.y = fy + 0.15 + Math.abs(Math.sin(M.time * 3 + i)) * 0.06;
+          if (Platform.groundAt(M, g.position.x, fy + 0.05) !== fy) { p.rest = false; p.vel.set(0, 0, 0); }   // (the pillar it lay on is gone)
+        }
+        if (p.t < 0.6 || p.backAt != null) continue;
         for (const f of M.fighters) {
           if (!f.grounded || f.inHitstun || f.state === 'ko' || f.state === 'out') continue;
           const d = Math.hypot(f.pos.x - g.position.x, f.pos.z - g.position.z);
-          if (d > 0.85) continue;
+          if (d > 0.85 || Math.abs(f.pos.y - g.position.y) > 1.4) continue;   // (on a platform above it, you can't reach it)
           if (f.broken[p.part]) {
             // missing that part? snap it on: your own, or theirs (and its moves come with it)
             const swapped = f.wearPart(p); if (swapped) M.event('steal', { f, part: p.part });
@@ -884,8 +899,8 @@
             FX.burst(g.position.clone(), { n: 12, color: [0xffffff, 0x9dff9a], glow: true, speed: 3, size: 0.06, life: 0.4 });
             M.picks.splice(i, 1); break;
           } else if (p.rest || p.t > 1) { // kick it away
-            const k = _v.set(g.position.x - f.pos.x, 0, g.position.z - f.pos.z).normalize();
-            p.vel.set(k.x * 7, 5, k.z * 7); p.rest = false; p.t = 0.3; SFX.play('land');
+            const k = g.position.x - f.pos.x >= 0 ? 1 : -1;
+            p.vel.set(k * 7, 5, 0); p.rest = false; p.t = 0.3; SFX.play('land');
           }
         }
       }
@@ -977,12 +992,20 @@
        (activeFrames: its reach, height and radius, or round the fighter for a spinning one, for as long as it's live;
        YELLOW for a grab; drawn over the blue). ORANGE a shot, as wide as it hits (it hits anyone whose body it passes within that of, from
        ankle to head), and a trap's or a strike from the sky's circle on the floor. */
-    const HB = { pool: [], n: 0, geo: null };
+    // (drawn flat on the fighting plane, the way a side-on fighter shows them: a see-through disc with a solid rim; a
+    // trap's or a strike from the sky's zone on the floor is a flat bar as wide as it reaches)
+    const HB = { pool: [], n: 0, fill: null, rim: null };
     function hbShape(at, r, col, op, flat) {
-      if (!HB.geo) HB.geo = new THREE.SphereGeometry(1, 16, 10);
-      let m = HB.pool[HB.n];
-      if (!m) { m = new THREE.Mesh(HB.geo, new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, depthTest: false, depthWrite: false, toneMapped: false })); m.renderOrder = 998; scene.add(m); HB.pool.push(m); }
-      m.material.color.setHex(col); m.material.opacity = op; m.renderOrder = col === 0x3ab8ff ? 998 : 999; m.position.copy(at); if (flat) m.scale.set(r, 0.04, r); else m.scale.setScalar(r); m.visible = true; HB.n++;
+      if (!HB.fill) { HB.fill = new THREE.CircleGeometry(1, 32); HB.rim = new THREE.RingGeometry(0.9, 1, 32); }
+      let g = HB.pool[HB.n];
+      if (!g) {
+        const mk = geo => new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ transparent: true, depthTest: false, depthWrite: false, toneMapped: false, side: THREE.DoubleSide }));
+        g = new THREE.Group(); g.add(mk(HB.fill), mk(HB.rim)); scene.add(g); HB.pool.push(g);
+      }
+      const [fi, rim] = g.children, ord = col === 0x3ab8ff ? 998 : 999;
+      fi.material.color.setHex(col); rim.material.color.setHex(col); fi.material.opacity = op * 0.3; rim.material.opacity = Math.min(1, op + 0.05);
+      fi.renderOrder = ord; rim.renderOrder = ord + 0.5;
+      g.position.set(at.x, at.y, at.z); if (flat) g.scale.set(r, 0.16, 1); else g.scale.set(r, r, 1); g.visible = true; HB.n++;
     }
     function drawHitboxes() {
       HB.n = 0;
@@ -1000,8 +1023,8 @@
         }
         for (const p of M.projs) {
           if (p.kind === 'dart' && !p.visual && p.pos) hbShape(p.pos, p.w || 0.4, 0xffa030, 0.85);
-          else if (p.kind === 'trap' && p.pos && p.mv && p.mv.trap) hbShape(_v.copy(p.pos).setY(0.05), p.mv.trap.r || 1, 0xffa030, 0.6, true);
-          else if (p.kind === 'smite' && p.at && p.mv && p.mv.smite) hbShape(_v.copy(p.at).setY(0.05), p.mv.smite.rad || 1, p.struck ? 0xff3a3a : 0xffa030, 0.7, true);
+          else if (p.kind === 'trap' && p.pos && p.mv && p.mv.trap) hbShape(_v.copy(p.pos).setY(p.pos.y + 0.05), p.mv.trap.r || 1, 0xffa030, 0.6, true);
+          else if (p.kind === 'smite' && p.at && p.mv && p.mv.smite) hbShape(_v.copy(p.at).setY(p.at.y + 0.05), p.mv.smite.rad || 1, p.struck ? 0xff3a3a : 0xffa030, 0.7, true);
           else if (p.pos && p.kind !== 'part') hbShape(p.pos, 0.5, 0xffa030, 0.6);
         }
       }
@@ -1027,12 +1050,13 @@
       for (let i = 0; i < 2; i++) if (M.ai[i]) M.ai[i].think(dt);
       // phases
       if (M.phase === 'intro') {
-        for (const f of M.fighters) { f.vel.y -= 30 * dt; f.pos.y = Math.max(0, f.pos.y + f.vel.y * dt); if (f.pos.y <= 0 && f.dropIn) { f.dropIn = false; f.vel.y = 0; f.grounded = true; SFX.play('land'); FX.burst(_v.copy(f.pos).setY(0.05), { n: 10, color: arena.dust, speed: 3, size: 0.09 }); } f.animate(dt); }
+        for (const f of M.fighters) { f.vel.y -= 30 * dt; f.pos.y = Math.max(0, f.pos.y + f.vel.y * dt); if (f.pos.y <= 0 && f.dropIn) { f.dropIn = false; f.vel.y = 0; f.grounded = true; SFX.play('land'); FX.burst(_v.copy(f.pos).setY(f.pos.y + 0.05), { n: 10, color: arena.dust, speed: 3, size: 0.09 }); } f.animate(dt); }
         if (M.phaseT > 1.6) { M.phase = 'fight'; M.phaseT = 0; for (const f of M.fighters) f.setState('idle'); if (!M.attract) { HUD.banner('FIGHT!', 'fight', 0.8); SFX.play('bell'); } }
       } else {
         for (const f of M.fighters) f.update(dt);
         separate();
         if (M.phase === 'fight') for (const f of M.fighters) if (!f.gone && Platform.out(f)) M.ko(f, f.lastBy, null, null);
+        Platform.tick(M);
         // the STAGE HAZARD: its clock runs while the round does (it waits out a Legend Art)
         if (M.haz && (M.phase === 'fight' || M.phase === 'ko') && !M.cine) { M.haz.t += dt; for (const f of M.fighters) if (f.hazT > 0) f.hazT = Math.max(0, f.hazT - dt); HZ.step(M, M.haz, dt); }
         if (M.phase === 'fight' && !M.training && !M.attract && !M.cine) {
@@ -1287,18 +1311,18 @@
             if (d < T.r + 1.6 && d > 0.25) { const s = Math.min(d, T.aura.pull * dt); o.pos.x += dx / d * s; o.pos.z += dz / d * s; }
           }
           if (T.aura && T.aura.slow && o && o.inv <= 0 && Math.hypot(o.pos.x - p.pos.x, o.pos.z - p.pos.z) < T.r && o.pos.y < 0.5) o.slowT = Math.max(o.slowT || 0, 0.15);
-          const inR = g => g && Math.hypot(g.pos.x - p.pos.x, g.pos.z - p.pos.z) < T.r && g.pos.y < 0.5 && !['ko', 'out', 'down', 'getup', 'held'].includes(g.state);
+          const inR = g => g && Math.hypot(g.pos.x - p.pos.x, g.pos.z - p.pos.z) < T.r && g.pos.y > p.pos.y - 0.3 && g.pos.y < p.pos.y + 0.5 && !['ko', 'out', 'down', 'getup', 'held'].includes(g.state);
           if (T.aura) {
             p.tick -= dt; if (p.tick > 0) continue; p.tick = 0.5;
-            if (T.aura.heal && inR(f) && f.hp < f.maxHp) { const h = Math.round(f.maxHp * T.aura.heal); f.hp = Math.min(f.maxHp, f.hp + h); M.call(f, '+' + h, 'heal'); FX.burst(_q2.copy(f.pos).setY(0.4), { n: 6, color: [T.col, 0xffffff], speed: 1.5, gravity: -3, life: 0.5, size: 0.06 }); }
+            if (T.aura.heal && inR(f) && f.hp < f.maxHp) { const h = Math.round(f.maxHp * T.aura.heal); f.hp = Math.min(f.maxHp, f.hp + h); M.call(f, '+' + h, 'heal'); FX.burst(_q2.copy(f.pos).setY(f.pos.y + 0.4), { n: 6, color: [T.col, 0xffffff], speed: 1.5, gravity: -3, life: 0.5, size: 0.06 }); }
             if (T.aura.burn && inR(o) && o.inv <= 0 && !o.burn) { const b = T.aura.burn; o.burn = { t: b[1], left: Math.round(b[1] / 0.5), tick: 0, dps: b[0] * f.dmgMult('trap'), by: f, poison: false }; M.call(o, 'BURNING', 'bad'); }
-            if (T.aura.hit && inR(o) && o.inv <= 0) Combat.hit(f, o, KB.MOVES[T.aura.hit], { kind: 'trap', force: true, multiHit: true, dir: _q2.subVectors(o.pos, p.pos).setY(0).normalize().clone(), at: _q2.copy(o.pos).setY(0.5).clone(), from: p.pos.clone(), proj: true });
+            if (T.aura.hit && inR(o) && o.inv <= 0) Combat.hit(f, o, KB.MOVES[T.aura.hit], { kind: 'trap', force: true, multiHit: true, dir: _q2.subVectors(o.pos, p.pos).setY(0).normalize().clone(), at: _q2.copy(o.pos).setY(o.pos.y + 0.5).clone(), from: p.pos.clone(), proj: true });
             continue;
           }
           if (p.t < 0.35 || !o || o.inv > 0 || !inR(o)) continue;
           const d = Math.hypot(o.vel.x, o.vel.z) > 0.7 ? new V3(o.vel.x, 0, o.vel.z).normalize() : _q2.subVectors(o.pos, p.pos).setY(0).normalize().clone();
-          Combat.hit(f, o, KB.MOVES[T.hit], { kind: 'trap', force: true, dir: d, at: _q2.copy(o.pos).setY(0.4).clone(), from: p.pos.clone(), proj: true });
-          FX.burst(_q2.copy(p.pos).setY(0.2), { n: 14, color: [T.col || 0xffffff, arena.dust], speed: 3.5, size: 0.09, life: 0.5 }); SFX.play(T.sfx || 'heavy'); if (T.call) M.call(o, T.call, 'counter');
+          Combat.hit(f, o, KB.MOVES[T.hit], { kind: 'trap', force: true, dir: d, at: _q2.copy(o.pos).setY(o.pos.y + 0.4).clone(), from: p.pos.clone(), proj: true });
+          FX.burst(_q2.copy(p.pos).setY(p.pos.y + 0.2), { n: 14, color: [T.col || 0xffffff, arena.dust], speed: 3.5, size: 0.09, life: 0.5 }); SFX.play(T.sfx || 'heavy'); if (T.call) M.call(o, T.call, 'counter');
           killTrap(p); M.projs.splice(i, 1);
         } else if (p.kind === 'parrot') {
           // PIRATE: Polly flies at them, pecks three times, and flies off
@@ -1325,8 +1349,8 @@
           if (!p.struck && p.t >= D) {
             p.struck = true;
             if (S.pillar) { const pil = new THREE.Mesh(new THREE.CylinderGeometry(S.rad * 0.55, S.rad * 0.7, 9, 16, 1, true), new THREE.MeshBasicMaterial({ color: S.col, transparent: true, opacity: 0.75, depthWrite: false, toneMapped: false, side: THREE.DoubleSide })); pil.position.copy(p.at).setY(4.5); scene.add(pil); M.fx.push({ m: pil, t: 0, life: 0.4 }); }
-            FX.ring(p.at.clone().setY(0.06), { r1: S.rad + 0.6, life: 0.35, color: S.col }); FX.burst(p.at.clone().setY(0.3), { n: 18, color: [S.col, 0xffffff, arena.dust], speed: 4.5, size: 0.09, life: 0.5, up: 0.6 }); FX.addShake(0.25); SFX.play(S.sfx || 'boom');
-            M.hitMinions(f, p.at.clone().setY(0.6), S.rad, p.id);
+            FX.ring(p.at.clone().setY(p.at.y + 0.06), { r1: S.rad + 0.6, life: 0.35, color: S.col }); FX.burst(p.at.clone().setY(p.at.y + 0.3), { n: 18, color: [S.col, 0xffffff, arena.dust], speed: 4.5, size: 0.09, life: 0.5, up: 0.6 }); FX.addShake(0.25); SFX.play(S.sfx || 'boom');
+            M.hitMinions(f, p.at.clone().setY(p.at.y + 0.6), S.rad, p.id);
             if (o && o.inv <= 0 && Math.hypot(o.pos.x - p.at.x, o.pos.z - p.at.z) < S.rad + 0.35 && o.pos.y < 3.2) {
               const d = _q2.subVectors(o.pos, p.at).setY(0); Combat.hit(f, o, p.mv, { kind: p.k, at: o.pos.clone().setY(o.pos.y + 0.9), from: p.at.clone(), dir: d.lengthSq() > 0.01 ? d.normalize().clone() : f.forward.clone(), proj: true, otg: o.state === 'down' });
             }
@@ -1351,7 +1375,7 @@
             p.vel.set(-p.vel.x * 0.2, 4.5, -p.vel.z * 0.2);
           }
           for (const w of arena.walls) if (!w.broken && w.sign * p.pos[w.axis] > w.lim - 0.2) { p.pos[w.axis] = w.sign * (w.lim - 0.2); p.vel[w.axis] *= -0.4; land = true; }
-          if (land) { M.picks.push({ owner: f, part: p.part, grp: p.grp, vel: p.vel.clone(), spin: p.spin.clone().multiplyScalar(0.6), t: 0, rest: false, item: p.item }); M.projs.splice(i, 1); }
+          if (land) { p.grp.position.z = 0; M.picks.push({ owner: f, part: p.part, grp: p.grp, vel: p.vel.clone().setZ(0), spin: p.spin.clone().multiplyScalar(0.6), t: 0, rest: false, item: p.item }); M.projs.splice(i, 1); }
         } else if (p.kind === 'chain') {
           // out: the weight flies -- wrap: it whips round them -- pull: they're dragged in -- back: a miss, it's reeled in
           const f = p.f, o = M.opp(f), hand = chainHand(f); p.T += dt; p.t += dt;
@@ -1387,8 +1411,8 @@
                 const k = U.clamp(p.T / 0.2, 0, 1), e = k * k;
                 v.pos.lerpVectors(p.vicFrom, p.pullTo, e); v.pos.y = p.vicFrom.y * (1 - e); v.vel.set(0, 0, 0); v.grounded = v.pos.y <= 0.01;
                 v.yaw = Math.atan2(f.pos.x - v.pos.x, f.pos.z - v.pos.z);
-                if (U.rand() < 0.8) FX.burst(_q.copy(v.pos).setY(0.05), { n: 1, color: arena.dust, speed: 1.2, size: 0.08, life: 0.35 });
-                if (k >= 1) { v.chained = null; p.vic = null; FX.burst(_q.copy(v.pos).setY(0.05), { n: 8, color: arena.dust, speed: 2.5, size: 0.08 }); SFX.play('land'); endChain(p); M.projs.splice(i, 1); continue; }
+                if (U.rand() < 0.8) FX.burst(_q.copy(v.pos).setY(v.pos.y + 0.05), { n: 1, color: arena.dust, speed: 1.2, size: 0.08, life: 0.35 });
+                if (k >= 1) { v.chained = null; p.vic = null; FX.burst(_q.copy(v.pos).setY(v.pos.y + 0.05), { n: 8, color: arena.dust, speed: 2.5, size: 0.08 }); SFX.play('land'); endChain(p); M.projs.splice(i, 1); continue; }
               }
             }
           }

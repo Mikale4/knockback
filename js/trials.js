@@ -643,7 +643,7 @@
   /* routes cut back to the part that plays the same every time on the platform fighter's rules (they ran on past a
      point that no longer holds): the steps up to there, and a note that says what they are */
   const TRIM = { 'samurai:adv:5': 9, 'knight:adv:1': 12, 'monk:pro:4': 14, 'wrestler:pro:3': 13, 'football:pro:4': 20, 'boxer:adv:5': 12, 'fencer:pro:0': 12,
-    'weightlifter:pro:2': 13, 'bowler:pro:3': 6, 'basketball:adv:2': 7, 'cannoneer:pro:2': 8, 'blackbeard:pro:2': 9, 'storm:pro:2': 9 };
+    'weightlifter:pro:2': 13, 'bowler:pro:3': 6, 'basketball:adv:2': 7, 'cannoneer:pro:2': 8, 'blackbeard:pro:2': 9, 'storm:pro:2': 9, 'monk:pro:0': 11, 'monk:pro:2': 19, 'boxer:pro:2': 10, 'fencer:pro:2': 13, 'bowler:adv:0': 11, 'storm:adv:2': 6 };
   const trimmed = new Map();
   const listOf = (line, tier) => {
     const L = (tier === 'pro' ? allPro() : tier === 'adv' ? allAdv() : all())[line]; if (!L) return L;

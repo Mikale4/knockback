@@ -41,7 +41,11 @@
       let land = null;
       if (!noFloor && f.vel.y <= 0) {
         if (x >= -St.W && x <= St.W && py >= St.top - 0.06 && f.pos.y <= St.top) land = { y: St.top, p: null };
-        else if (!(f.dropT > 0)) for (const p of St.plats) if (x >= p.x1 && x <= p.x2 && py >= p.y - 0.06 && f.pos.y <= p.y) { land = { y: p.y, p }; break; }
+        else if (!(f.dropT > 0)) {
+          for (const p of St.plats) if (x >= p.x1 && x <= p.x2 && py >= p.y - 0.06 && f.pos.y <= p.y) { land = { y: p.y, p }; break; }
+          // a TEMPORARY platform (a column of stone an Earth figure raised: recovery.js), while it lasts
+          if (!land && f.m.tplats) for (const p of f.m.tplats) if (p.till > f.m.time && x >= p.x1 && x <= p.x2 && py >= p.y - 0.06 && f.pos.y <= p.y) { land = { y: p.y, p }; break; }
+        }
       }
       if (land) {
         if (!was && f.vel.y < -1) f.landSpeed = f.vel.y;
@@ -68,7 +72,7 @@
         const ax = side * f.pos.x;
         if (ax < St.W - 0.05 || ax > St.W + 1.05 || f.pos.y > St.top - 0.55 || f.pos.y < St.top - 2.5) continue;
         const o = f.opp; if (o && o.state === 'ledge' && o.ledgeSide === side) continue;   // (someone's on it)
-        f.setState('ledge'); f.move = null; f.ledgeSide = side; f.vel.set(0, 0, 0);
+        f.setState('ledge'); f.move = null; f.upB = false; if (f.rec) f.recClear(); f.ledgeSide = side; f.vel.set(0, 0, 0);
         f.pos.set(side * (St.W + 0.3), St.top - 1.5, 0); f.yaw = side > 0 ? -HALF : HALF;
         f.airJumps = f.st.airJumps; f.airDodges = f.st.airDodges; f.airStr = 0; f.upUsed = false;
         if (!f.ledgeUsed) f.inv = Math.max(f.inv, 0.6); f.ledgeUsed = true;   // (the first grab since you last touched down: a moment of invincibility)
@@ -77,6 +81,27 @@
         return true;
       }
       return false;
+    },
+    /* the temporary platforms: gone when their time is up (and every one at a new round) */
+    tick(m, all) {
+      const T = m.tplats; if (!T || !T.length) return;
+      for (let i = T.length - 1; i >= 0; i--) {
+        const p = T[i], left = p.till - m.time;
+        if (all || left <= 0) { if (p.mesh && p.mesh.parent) p.mesh.parent.remove(p.mesh); T.splice(i, 1); if (!all && !U.quiet) FX.burst(new THREE.Vector3((p.x1 + p.x2) / 2, p.y, 0), { n: 14, color: [0x8a7a5a, 0xc8b898], speed: 3, size: 0.12, gravity: 14, life: 0.6 }); }
+        else if (p.mesh) {
+          // (it shoots up out of the depths in a sixth of a second, and shakes before it goes; on the fight's clock, so a
+          // rollback's replay draws it the same)
+          if (p.h) { const k = Math.min(1, (m.time - p.born) / 0.16); p.mesh.scale.y = Math.max(0.01, p.h * k); p.mesh.position.y = p.y - p.h + p.h * k / 2; }
+          p.mesh.position.x = (p.x1 + p.x2) / 2 + (left < 0.6 ? Math.sin(m.time * 60) * 0.03 : 0);
+        }
+      }
+    },
+    /* the ground under x, at or below y: the stage top, a platform, a stone pillar (null: nothing, off the stage) */
+    groundAt(m, x, y) {
+      const St = m.arena.stage; let best = null;
+      if (Math.abs(x) <= St.W && y >= St.top - 0.05) best = St.top;
+      for (const p of St.plats.concat(m.tplats || [])) if ((!p.temp || p.till > m.time) && x >= p.x1 && x <= p.x2 && p.y <= y + 0.05 && (best == null || p.y > best)) best = p.y;
+      return best;
     },
     /* past a BLAST ZONE */
     out(f) { const B = f.m.arena.stage.blast; return f.pos.x < -B.x || f.pos.x > B.x || f.pos.y > B.top || f.pos.y < B.bot; },
