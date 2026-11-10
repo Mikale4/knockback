@@ -40,6 +40,25 @@
       const f = this.f, St = this.m.arena.stage;
       if (!raw && f.grounded && !f.plat && Math.abs(f.pos.x) > St.W - 0.8 && Math.sign(this.move.x) === Math.sign(f.pos.x)) this.move.x = 0;
       if (!raw && f.plat && (f.pos.x < f.plat.x1 + 0.4 && this.move.x < 0 || f.pos.x > f.plat.x2 - 0.4 && this.move.x > 0) && Math.abs(f.opp.pos.y - f.pos.y) < 0.6) this.move.x = 0;
+      // a stage hazard on the floor just ahead (a bumper) is in the way: cross it with a committed jump if there's room to
+      // land past it (the jump keeps going the same way all the way over: think), else wait short of it
+      if (f.grounded && this.move.x && !(this.crossT > 0)) {
+        const dir = Math.sign(this.move.x), z = this.zoneNear(dir, 1.4);
+        if (z) {
+          const far = dir > 0 ? z.x1 : z.x0, gap = dir > 0 ? z.x0 - f.pos.x : f.pos.x - z.x1, o = f.opp, room = o ? dir * (o.pos.x - far) : 9;
+          if (room > 1.3 && Math.random() < [0.4, 0.7, 0.9, 1][this.lv]) { this.press('jump'); this.crossT = 0.95; this.crossDir = dir; }
+          else if (gap < 0.45) this.move.x = 0;
+        }
+      }
+    }
+    /* the floor zones a stage hazard has right now (arenas.js: zones), or null */
+    zones() { const H = this.m.haz && Arena.HAZ[this.m.arena.haz]; return H && H.zones ? H.zones(this.m, this.m.haz) : null; }
+    /* the nearest floor zone starting within `reach` ahead (dir: ±1), or null */
+    zoneNear(dir, reach) { const Z = this.zones(); if (!Z) return null; const x = this.f.pos.x; let best = null, bd = reach; for (const z of Z) { const a = dir > 0 ? z.x0 - x : x - z.x1; if (a > -0.3 && a < bd) { bd = a; best = z; } } return best; }
+    /* is a floor zone within `reach` ahead (dir: ±1), or (to) anywhere between here and x `to` */
+    zoneAhead(dir, reach, to) {
+      const Z = this.zones(); if (!Z) return false; const x = this.f.pos.x, far = to != null ? Math.abs(to - x) : reach;
+      return Z.some(z => { const a = dir > 0 ? z.x0 - x : x - z.x1; return a > -0.3 && a < far; });
     }
     steer(dx, dz) {
       const f = this.f, A = this.m.arena;
@@ -94,7 +113,7 @@
       if (!['idle', 'run'].includes(f.state) || !f.grounded) return false;
       // they're off the stage, coming back: wait at the edge for them (the better the CPU, the closer)
       if (o && !o.grounded && Platform.offStage(o) && o.state !== 'ko' && lv >= 1 && !o.gone) {
-        const side = o.pos.x > 0 ? 1 : -1, spot = side * (St.W - [2.5, 1.8, 1.2, 0.8][lv]), dx = spot - f.pos.x;
+        const side = o.pos.x > 0 ? 1 : -1, spot = this.clearSpot(side * (St.W - [2.5, 1.8, 1.2, 0.8][lv]), -side), dx = spot - f.pos.x;
         if (Math.abs(dx) > 0.4) { this.move.x = Math.sign(dx); this.move.y = 0; return true; }
         f.faceX(side); this.stop();
         if (Math.abs(o.pos.x - f.pos.x) < 2.6 && o.pos.y > St.top - 1.5 && o.pos.y < St.top + 2.5 && r() < 0.25 + lv * 0.15) { this.move.x = side; this.press(o.pos.y > St.top + 0.6 ? 'jump' : 'heavy'); }
@@ -105,6 +124,12 @@
       if (f.plat && o && f.pos.y - o.pos.y > 1.3 && Math.abs(o.pos.x - f.pos.x) < 5 && r() < 0.05 + lv * 0.02) { this.move.x = 0; this.move.y = -1; return true; }
       return false;
     }
+    /* a place to stand that's clear of the stage hazard's floor zones (a bumper): moved inward (dir) past any it's in */
+    clearSpot(x, dir) {
+      const H = this.m.haz && Arena.HAZ[this.m.arena.haz], Z = H && H.zones ? H.zones(this.m, this.m.haz) : null; if (!Z) return x;
+      for (let k = 0; k < 3; k++) { const z = Z.find(q => x > q.x0 && x < q.x1); if (!z) break; x = dir > 0 ? z.x1 + 0.2 : z.x0 - 0.2; }
+      return x;
+    }
     /* how far away a Legend Art can still catch them */
     /* COMMAND SPECIALS: which of the three suits the distance (null: none of them) */
     pickCmd(C, d, o) {
@@ -113,23 +138,27 @@
         if (mv.type === 'act') return mv.act === 'parrot' || mv.act === 'shove' ? d > 3 : mv.act === 'impBomb' ? d > 3 && d < 8 : mv.act === 'gate' ? d > 4 : mv.encore ? !!this.f.lastSp : d > 3.5;
         if (k === 'dp') return d < 2 && Math.random() < 0.3;
         if (mv.type === 'proj') return mv.proj === 'breath' ? d < 3.2 : d > 3 && d < (mv.range || 8) + 0.5;
-        if (mv.type === 'dash') return d > 2 && d < (mv.dist || 5) + 1;
+        if (mv.type === 'dash') return d > 2 && d < (mv.dist || 5) + 1 && !this.zoneAhead(Math.sign(o.pos.x - this.f.pos.x) || 1, 0, o.pos.x);   // (not through a bumper)
         if (mv.type === 'leap' || mv.type === 'teleport') return d > 3 && d < (mv.range || 8);
         if (mv.type === 'trap') return d > 2.5 && d < 7;
         if (mv.type === 'grab') return d < 1.6;
         if (mv.type === 'radial') return d < (mv.rad || 2) + 0.3;
         if (mv.type === 'buff') return mv.buff.id === 'counter' ? d < 2.4 && o.state === 'attack' : d > 4;
-        return d < (mv.reach || 1.2) + 0.8;
+        return d < KB.hitDist(mv);
       };
       const ks = ['qcf', 'qcb', 'dp'].filter(fits); return ks.length ? ks[Math.floor(Math.random() * ks.length)] : null;
     }
     superReach(mv) { return { dash: (mv.dist || 6) * 1.25, melee: (mv.close || 2) + 1.6, proj: (mv.range || 8) - 0.5, leap: 12, jump: 14, mark: 9, wave: mv.rad - 0.3, radial: mv.rad + 0.2 }[mv.catchType] || 3.5; }
     /* how close the first Light of the string reaches (a lance reaches further than a tantō) */
-    range() { const mv = KB.MOVES[this.f.lightRoot()] || {}; return U.clamp((mv.reach || 1.2) + 0.3, 1.45, 2.1); }
+    range() { const mv = KB.MOVES[this.f.lightRoot()] || {}; return U.clamp(KB.hitDist(mv) - 0.3, 1.0, 2.2); }   // (a little inside where it really lands: reach.js)
     /* the string from its first Light: how long, and whether it has a pause branch */
     stringInfo() { let id = this.f.lightRoot(), n = 0, pause = false; while (id && n < 8) { const mv = KB.MOVES[id]; n++; if (mv.nx && mv.nx.p) pause = true; id = mv.nx && mv.nx.l; } return { n, pause }; }
 
     think(dt) {
+      this.crossT = (this.crossT || 0) - dt; this.thinkMain(dt);
+      if (this.crossT > 0 && !this.f.grounded && !this.f.inHitstun) { this.move.x = this.crossDir; this.held.jump = true; }   // (over a hazard: all the way)
+    }
+    thinkMain(dt) {
       // a press lasts one frame: release last frame's pulses
       for (const a of Input.ACTIONS) this.held[a] = false;
       for (const a of this.pulse) this.held[a] = true; this.pulse.clear();
@@ -138,6 +167,7 @@
       if (m.cine) { this.stop(); this.guardT = 0; return; }
       if (this.play) return this.playThink(dt);   // TRAINING: the dummy plays your recording (lab.js)
       if (this.guardT > 0) { this.guardT -= dt; this.held.guard = true; }
+      if (this.f.guardHp < this.f.guardMax * (0.22 + this.lv * 0.04)) { this.held.guard = false; this.guardT = 0; }   // (a shield nearly gone: let it fill back up)
       if (!f.grounded && Math.abs(f.pos.x) > m.arena.stage.W - 2.5 && f.state !== 'attack') this.held.guard = false;   // (no down dash off an edge)
       if (this.dummy && this.dummy !== 'cpu') return this.dummyThink(dt);
       if (m.phase !== 'fight') { this.stop(); return; }
@@ -158,11 +188,13 @@
     hazardThink() {
       const f = this.f, m = this.m, H = Arena.HAZ[m.arena.haz];
       if (!H || !H.danger || !['idle', 'run', 'air', 'guard'].includes(f.state)) return false;
-      const d = H.danger(m, m.haz, f); if (!d) { this.hazRoll = null; return false; }
+      let d = H.danger(m, m.haz, f); if (!d) { this.hazRoll = null; return false; }
+      // one plane: a way out that's all sideways (off the fighting line) can't be taken, so it's a jump; else left or right
+      if (d !== 'jump' && Math.abs(d.x) < 0.35) d = 'jump'; else if (d !== 'jump') d = { x: Math.sign(d.x), z: 0, jump: d.jump };
       if (this.hazRoll == null) this.hazRoll = Math.random() < [0.3, 0.55, 0.8, 0.92][this.lv];
       if (!this.hazRoll) return false;
       if (d === 'jump') { if (f.grounded) this.press('jump'); return false; }   // (and carries on fighting in the air)
-      this.guardT = 0; this.held.guard = false; this.stickTo(d.x, d.z, 1); return true;
+      this.guardT = 0; this.held.guard = false; if (d.jump && f.grounded) this.press('jump'); this.stickTo(d.x, d.z, 1, true); return true;   // (raw: committed, it doesn't swerve back toward them mid-jump)
     }
     /* ---- a BOWLER's ball lying in our path: hop over it rather than trip (the better the CPU, the more often) */
     trapThink() {
@@ -319,9 +351,9 @@
       if (this.wait > 0) return;
 
       // ---- defence: they're swinging at us
-      const threat = o.state === 'attack' && o.move && d < (o.move.reach || 1.2) + (o.move.lunge || 0) * 0.3 + 1.6 && o.moveT < o.move.su + 0.05;
+      const threat = o.state === 'attack' && o.move && d < KB.hitDist(o.move) + (o.move.lunge || 0) * 0.3 + 0.6 && o.moveT < o.move.su + 0.05;
       if (threat && r() < L.guard[lv] * 0.5) {
-        if (o.move.type === 'grab' || r() < 0.25) { this.press('dodge'); this.stickTo(f.pos.x - o.pos.x + this.strafe * 2, f.pos.z - o.pos.z); }
+        if ((o.move.type === 'grab' || r() < 0.25) && !this.zoneAhead(Math.sign(f.pos.x - o.pos.x) || 1, 2.6)) { this.press('dodge'); this.stickTo(f.pos.x - o.pos.x + this.strafe * 2, f.pos.z - o.pos.z); }
         else { this.guardT = 0.25 + r() * 0.3; this.held.guard = true; }
         this.wait = L.react[lv]; return;
       }
@@ -372,7 +404,7 @@
       if (heavy.type === 'proj' && !(heavy.ball && f.ballOut(heavy.ball)) && !(heavy.round && !f.gunReady()) && d > 2.5 && d < heavy.range + 1 && r() < 0.012 * (lv + 1)) { this.press('heavy'); this.wait = 0.5; return; }
       if (d > 3.2) {
         this.stickTo(o.pos.x - f.pos.x + this.strafe * 0.6, o.pos.z - f.pos.z);
-        if (d < 4.6 && r() < 0.02 * (lv + 1)) { this.press('dodge'); this.dashing = 0.35; }
+        if (d < 4.6 && r() < 0.02 * (lv + 1) && !this.zoneAhead(Math.sign(o.pos.x - f.pos.x) || 1, 0, o.pos.x)) { this.press('dodge'); this.dashing = 0.35; }
         return;
       }
       if (this.dashing > 0) { this.dashing -= dt; if (d < 2.6) { this.press('light'); this.dashing = 0; this.wait = L.react[lv]; } return; }

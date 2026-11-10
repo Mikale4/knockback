@@ -188,7 +188,7 @@
       this.techLock = Math.max(0, this.techLock - dt); this.dropT = Math.max(0, this.dropT - dt); this.ledgeCd = Math.max(0, this.ledgeCd - dt);
       for (const k in this.buffs) { this.buffs[k] -= dt; if (this.buffs[k] <= 0) delete this.buffs[k]; }
       if (this.burn) this.updBurn(dt);
-      if (this.state !== 'guard' && this.state !== 'guardstun') { this.guardIdle += dt; if (this.guardIdle > 0.8) this.guardHp = Math.min(this.guardMax, this.guardHp + this.guardMax * 0.22 * dt); }
+      if (this.state !== 'guard' && this.state !== 'guardstun' && this.state !== 'gbreak') { this.guardIdle += dt; if (this.guardIdle > 0.3) this.guardHp = Math.min(this.guardMax, this.guardHp + this.guardMax * Combat.SHIELD.regen * dt); }
       if (!this.comboing && this.state !== 'ko') this.burst = Math.min(100, this.burst + 2.6 * S.burstRate * dt);
       if (this.uses < S.uses && !this.broken.head) { this.useRegen += dt; if (this.useRegen > S.useRegen) { this.useRegen = 0; this.uses++; } }
       // BARD signature: the beat pulses under your feet
@@ -228,7 +228,12 @@
         case 'attack': this.updAttack(dt); break;
         case 'guard': this.updGuard(dt); break;
         case 'guardstun': this.physics(dt, 14); if (this.riposte()) break; if (this.stateT > this.hitstun) this.setState(this.input.held.guard ? 'guard' : 'idle'); break;
-        case 'gbreak': this.physics(dt, 10); if (this.stateT > 1.1) this.setState('idle'); break;
+        case 'gbreak': {
+          this.physics(dt, this.grounded ? 10 : 0);
+          if (this.grounded) { const I = this.input; for (const b of ['light', 'heavy', 'special', 'jump', 'guard', 'dodge']) if (I.take(b)) this.gbreakT = Math.max(0, this.gbreakT - Combat.SHIELD.mash); }
+          if (this.stateT > 0.3 && this.grounded && (this.gbreakT -= dt) <= 0) { this.setState('idle'); this.dizzy = false; }
+          break;
+        }
         case 'dodge': this.updDodge(dt); break;
         case 'ddash': this.updDownDash(dt); break;
         case 'hit': this.physics(dt, 9); if (this.stateT > this.hitstun) { if (this.crumpled && this.grounded) { this.crumpled = false; this.hardKD = false; this.setState('down'); } else { this.endCombo(); this.crumpled = this.dizzy = false; this.setState(this.grounded ? 'idle' : 'air'); } } break;
@@ -513,6 +518,8 @@
     updGuard(dt) {
       const I = this.input;
       this.guardIdle = 0;
+      // THE SHIELD wears down while it's held (a full one lasts about 6 s), and breaks when it's gone
+      this.guardHp -= this.guardMax * Combat.SHIELD.drain * dt; if (this.guardHp <= 0) { Combat.shieldBreak(this, null); return; }
       if (this.riposte()) return;
       this.vel.x = U.smooth(this.vel.x, 0, 18, dt); this.vel.z = U.smooth(this.vel.z, 0, 18, dt);
       this.faceOpp(1 - Math.exp(-10 * dt));
@@ -667,7 +674,7 @@
       if (kind === 'special') { if (this.upAir(id)) this.upUsed = true; else { this.uses--; this.spReady = this.m.time + (this.st.spCd || 0); } }
       this.upB = kind === 'special' && !!(this.st.cmd && id === this.st.cmd.dp);   // (the ↑ Special: a recovery, each figure's own: recovery.js)
       if (this.upB) this.recBegin(mv); else if (this.rec) this.recClear();
-      this.setState('attack'); this.aim(mv); this.m.event('move', { f: this, id, kind });
+      this.setState('attack'); this.aim(mv); Combat.strikeStart(this); this.m.event('move', { f: this, id, kind });
       if (kind === 'air' || kind === 'airHeavy') { this.vel.y = Math.max(this.vel.y, kind === 'air' ? (this.st.sig === 'hangtime' ? 4.2 : 2.2) : 3); }   // (BASKETBALL: hang time)
       if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.giveArmor(mv.su + mv.ac, mv.oneArmor || this.st.perk === 'unstoppable');
       if (mv.inv) this.inv = Math.max(this.inv, mv.su + mv.ac + 0.04);
@@ -826,7 +833,8 @@
       else if (mv.type === 'radial') {
         FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: mv.rad * 1.1, life: 0.35, color: mv.ringCol || 0xffe0a0 });
         this.m.hitMinions(this, _c.copy(this.pos).setY(this.pos.y + 0.5), mv.rad, this.moveSerial * 10);
-        if (o && U.dist(this.pos, o.pos) < mv.rad + BODY && Math.abs(o.pos.y - this.pos.y) < 2) Combat.hit(this, o, mv, { kind: this.kind, dir: _v.subVectors(o.pos, this.pos).setY(0).normalize().clone() });
+        const rb = [{ x0: this.pos.x - mv.rad, x1: this.pos.x + mv.rad, y0: this.pos.y - 0.3, y1: this.pos.y + 2.3 }]; Combat.note(this, rb, 'hit', 0.15);
+        if (o && Combat.touch(rb, o)) Combat.hit(this, o, mv, { kind: this.kind, dir: _v.subVectors(o.pos, this.pos).setY(0).normalize().clone() });
         if (mv.holy) FX.burst(_c.copy(this.pos).setY(1), { n: 24, color: [0xfff07a, 0xffffff], glow: true, speed: 5, gravity: -2, size: 0.08, life: 0.6 });
         if (mv.buff) this.addBuff(mv.buff);
       } else if (mv.type === 'buff') this.addBuff(mv.buff);
@@ -867,22 +875,25 @@
       }
       if (this.hitSet.has(o)) return;
       if (mv.type === 'melee' || mv.type === 'teleport' || mv.type === 'grab') {
+        // the HITBOXES: whatever strikes (the blade and the arm, a fist, a foot), as it's posed this frame (Combat.strikeBoxes)
         const F = this.forward, c = mv.around ? _c.set(this.pos.x, this.pos.y + 1, this.pos.z) : _c.set(this.pos.x + F.x * mv.reach, this.pos.y + mv.h, this.pos.z + F.z * mv.reach);
         this.m.hitMinions(this, c, mv.rad, this.moveSerial * 10 + Math.max(0, this.lastSub));
+        const hb = Combat.strikeBoxes(this, mv); Combat.note(this, hb, mv.type === 'grab' ? 'grab' : 'hit');
         const otg = mv.groundHit ? o.state === 'down' : Combat.otgOk(this, o, use, this.kind);
-        if (Combat.overlap(c, mv.rad, o, otg)) {
+        const at = Combat.lying(o) && !(otg && o.state === 'down') ? null : Combat.touch(hb, o);
+        if (at) {
           this.hitSet.add(o);
           if (mv.type === 'grab') return this.tryGrab(o);
-          const dir = mv.around ? _v.subVectors(o.pos, this.pos).setY(0).normalize().clone() : null;
-          Combat.hit(this, o, use, { kind: this.kind, charge: this.charge, at: c.clone(), dir: dir && dir.lengthSq() > 0.5 ? dir : null, multiHit: use !== mv, otg });
+          const dir = mv.around ? _v.subVectors(o.pos, this.pos).setY(0).normalize().clone() : null, poke = o.state === 'guard' || o.state === 'guardstun' ? Combat.pokeAt(hb, o) : null;
+          Combat.hit(this, o, use, { kind: this.kind, charge: this.charge, at, poke, dir: dir && dir.lengthSq() > 0.5 ? dir : null, multiHit: use !== mv, otg });
         }
       } else if (mv.type === 'dash' && !mv.noHit) {
-        // anything along the dash path
+        // a charge hits with the whole body, anywhere along the way it has come (from where it started to here)
         const a = this.dashFrom || this.pos, b = this.pos;
         this.m.hitMinionsSeg(this, a, b, mv.rad, this.moveSerial * 10);
-        const p = Combat.closestOnSeg(a, b, _w.copy(o.pos).setY(o.pos.y + 0.9)), otg = Combat.otgOk(this, o, mv, this.kind);
-        const near = otg ? Math.hypot(p.x - o.pos.x, p.z - o.pos.z) < mv.rad + BODY + 0.3 : p.distanceTo(_v.copy(o.pos).setY(o.pos.y + 0.9)) < mv.rad + BODY;
-        if (near) { this.hitSet.add(o); Combat.hit(this, o, mv, { kind: this.kind, at: otg ? p.clone().setY(o.pos.y + 0.3) : p.clone(), otg }); }
+        const hb = Combat.bodyBoxes(this, a.x - b.x, a.y - b.y); Combat.note(this, hb, 'hit');
+        const otg = Combat.otgOk(this, o, mv, this.kind), at = Combat.lying(o) && !(otg && o.state === 'down') ? null : Combat.touch(hb, o);
+        if (at) { this.hitSet.add(o); Combat.hit(this, o, mv, { kind: this.kind, at, otg }); }
       }
       // weapon trail
       if (mv.trail) { const w = this.isLeftMove() ? 'wL' : 'wR', T = this.isLeftMove() ? this.trailL : this.trailR; if (!this.fig.detached[w === 'wL' ? 'armL' : 'armR']) T.push(this.fig.socket(w, [0, 0, 3]), this.fig.socket(w, [0, 0, w === 'wR' ? 14 : 10])); }
@@ -1001,7 +1012,7 @@
       if (!o || !(o.state === 'guard' || o.state === 'guardstun' || (o.buffs.autoGuard && ['idle', 'run'].includes(o.state)))) return false;
       o.guardHp -= o.guardMax * 0.6; o.guardIdle = 0; o.hype = Math.min(100, o.hype + 8);
       const at = _c.copy(o.pos).setY(o.pos.y + 1).clone(); FX.spark(at, { color: 0x9fe8ff, size: 2.2 }); FX.ring(at, { r1: 2.2, life: 0.35, normal: new V3(0, 0, 1), color: 0x9fe8ff }); FX.addShake(0.4);
-      if (o.guardHp <= 0) { o.guardHp = 0; o.setState('gbreak'); SFX.play('gbreak'); this.m.call(o, 'GUARD CRUSH', 'bad'); }
+      if (o.guardHp <= 0) Combat.shieldBreak(o, this);
       else { o.setState('guardstun'); o.hitstun = 0.32; o.vel.x = (o.pos.x >= this.pos.x ? 1 : -1) * 6; SFX.play('jguard'); this.m.call(o, 'BLOCKED!', 'tech'); }
       this.m.event('artblock', { f: o, by: this });
       this.superMiss(); this.missT = -0.3; return true;
@@ -1438,6 +1449,7 @@
   }
 
   /* =========================================================== COMBAT ======= */
+  const _PB = [], _HB = [], DRAWN = new WeakMap();
   const Combat = {
     /* OTG (off the ground): a Heavy, a dash attack, a dive, a sweep or a downward shot may hit a downed opponent,
        once a combo, and scoops them back up into the air */
@@ -1446,18 +1458,130 @@
       if (kind === 'super' || kind === 'throw' || kind === 'minion' || (mv && mv.type === 'grab')) return false;
       return !!(mv && (mv.otg || mv.spike || mv.dive || mv.zone === 'low') || kind === 'heavy' || kind === 'airHeavy' || kind === 'dash' || kind === 'toss');
     },
-    /* a hit sphere against a figure (two hurt spheres up its body, one when tumbling; low ones along the floor for an OTG) */
+    /* ---- THE SHIELD, as a platform fighter has it: a bubble round the body as big as what's left of it (it wears down
+       while it's held, faster as it's hit, and fills back slowly once you let go); a blow that touches the body outside
+       the bubble gets through (a shield poke); when it runs out it BREAKS: popped up off the floor, then dazed for a long
+       moment (mash buttons to shake it off sooner; a hit ends it), and it comes back a little over a third full */
+    SHIELD: { drain: 0.16, regen: 0.11, rMin: 0.45, rMax: 1.45, daze: 3.2, mash: 0.12, after: 0.375 },
+    shieldR(f) { const S = Combat.SHIELD; return S.rMin + (S.rMax - S.rMin) * Math.sqrt(U.clamp(f.guardHp / (f.guardMax || 1), 0, 1)); },   // (it shrinks slowly at first, fast near the end)
+    shieldC(f) { return _w.set(f.pos.x, f.pos.y + 0.95, 0); },
+    outsideShield(f, p) { const c = Combat.shieldC(f); return Math.hypot(p.x - c.x, p.y - c.y) > Combat.shieldR(f); },
+    /* a blow whose hitboxes touch the body somewhere the bubble doesn't cover: where (or null) */
+    pokeAt(hb, f) {
+      const H = Combat.hurtBoxes(f, _HB), c = Combat.shieldC(f), R = Combat.shieldR(f); let best = null, bd = R;
+      for (const a of hb) for (const b of H) {
+        const x0 = Math.max(a.x0, b.x0), x1 = Math.min(a.x1, b.x1), y0 = Math.max(a.y0, b.y0), y1 = Math.min(a.y1, b.y1); if (x0 >= x1 || y0 >= y1) continue;
+        const px = (x0 + x1) / 2, py = (y0 + y1) / 2, d = Math.hypot(px - c.x, py - c.y);   // (the middle of where it touches the body: outside the bubble, it's through)
+        if (d > bd) { bd = d; best = new V3(px, py, 0); }
+      }
+      return best;
+    },
+    shieldBreak(f, att) {
+      const m = f.m; f.guardHp = f.guardMax * Combat.SHIELD.after; f.guardIdle = 0; f.move = null;
+      f.setState('gbreak'); f.dizzy = true; f.gbreakT = Combat.SHIELD.daze; if (f.grounded) { f.vel.set(0, 13, 0); f.grounded = false; }
+      m.call(f, 'SHIELD BREAK!', 'bad'); m.event('shieldbreak', { f, by: att });
+      if (!U.quiet) { SFX.play('gbreak'); FX.addShake(0.6); const c = Combat.shieldC(f).clone(); FX.burst(c, { n: 34, color: [0x9fd0ff, 0xffffff, KB.LINES[f.build.core.line].pal.glow], glow: true, speed: 8, size: 0.12, gravity: 6, life: 0.7 }); FX.ring(c, { r1: 2.2, life: 0.35, normal: new V3(0, 0, 1), color: 0xffffff }); }
+    },
+    /* ---- HITBOXES AND HURTBOXES: boxes on the fighting plane ({x0, x1, y0, y1}: x across, y up), read off the figures
+       as they're posed (Models: partBoxes). A figure's HURTBOXES are its body: the head, the torso, the hips, both arms,
+       both legs, each where it is this frame (crouched, leaning, tumbling, lying down), a long part in pieces; what it
+       holds isn't part of it (a blade can't be hit). A blow's HITBOXES are what strikes with it (strikeBoxes). Lying down,
+       only the blows that hit them on the floor reach them (an OTG). The Training overlay draws these same boxes. */
+    HURT: ['head', 'torso', 'hips', 'armL', 'armR', 'legL', 'legR'],
+    lying(o) { return o.state === 'down' || (o.state === 'ko' && o.grounded); },
+    hurtBoxes(o, out) {
+      out = out || []; out.length = 0; if (o.gone || o.state === 'out') return out;
+      o.fig.poseNow(); const T = o.state === 'tumble' || o.state === 'held' ? Combat.TUMBLE : 0;
+      for (const p of Combat.HURT) for (const b of o.fig.partBoxes(p, _PB)) { if (T) { b.x0 -= T; b.x1 += T; b.y0 -= T; b.y1 += T; } out.push(b); }
+      if (!out.length) out.push({ x0: o.pos.x - 0.4, x1: o.pos.x + 0.4, y0: o.pos.y, y1: o.pos.y + 1.8 });   // (no body left to read)
+      return out;
+    },
+    /* where a set of hitboxes first meets their hurtboxes (the middle of the overlap: the spark goes there), or null */
+    touch(hb, o) {
+      const H = Combat.hurtBoxes(o, _HB);
+      for (const a of hb) for (const b of H) if (a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0) return new V3((Math.max(a.x0, b.x0) + Math.min(a.x1, b.x1)) / 2, (Math.max(a.y0, b.y0) + Math.min(a.y1, b.y1)) / 2, 0);
+      return null;
+    },
+    /* a point hit (a shot, an imp, a strike from the sky...): a square r either way from c */
     overlap(c, r, o, otg) {
       if (o.proneT > 0 && o.state === 'attack' && c.y > o.pos.y + 0.8) return false;   // (PRONE: high blows go over)
-      if (o.state === 'tumble' || o.state === 'held' || o.state === 'out') { for (const y of [0.45, 1.35]) { const h = _v.copy(o.pos); h.y += y; if (c.distanceTo(h) < r + 0.6) return true; } return false; }
-      if (o.state === 'down' || (o.state === 'ko' && o.grounded)) {
-        if (!otg || o.state !== 'down') return false;
-        const F = fwd(o.yaw); for (const s of [0.45, -0.25, -0.95]) { const h = _v.set(o.pos.x + F.x * s, o.pos.y + 0.3, o.pos.z + F.z * s); if (c.distanceTo(h) < r + 0.45) return true; }
-        return false;
-      }
-      for (const y of [0.5, 1.35]) { const h = _v.copy(o.pos); h.y += y; if (c.distanceTo(h) < r + 0.48) return true; }
-      return false;
+      if (Combat.lying(o) && (!otg || o.state !== 'down')) return false;
+      return !!Combat.touch([{ x0: c.x - r, x1: c.x + r, y0: c.y - r, y1: c.y + r }], o);
     },
+    /* WHAT STRIKES: the limb thrown hardest (it moved the most, against the body, from the start of the move to the blow:
+       the blade of a cut, the fist of a punch, the foot of a kick, the head of a header), with what it holds (an arm and
+       its weapon go together); a spinning move strikes with everything; a grab with both arms. Picked at each blow (a
+       flurry's hits are thrown with alternate fists) */
+    LIMBS: ['wR', 'wL', 'armR', 'armL', 'legR', 'legL'],
+    MOVERS: ['wR', 'wL', 'armR', 'armL', 'legR', 'legL', 'head'],
+    PAIR: { wR: 'armR', armR: 'wR', wL: 'armL', armL: 'wL' },
+    MARGIN: 0.18,      // (a blow's boxes reach this much past the limb: the swish of it)
+    TUMBLE: 0.2,       // (someone tumbling is a little bigger to hit: their limbs flail through more than any one pose)
+    /* what a pose strikes with, read off its own keyframes (anim.js): the limb that turns the most from the wind-up to
+       the strike (a leg lifted high counts for more: that's a kick), and a second one that moves nearly as much (both
+       palms, both feet). Kept per pose; null when the pose has no keyframes to read */
+    POSEPART: {},
+    poseStriker(ps) {
+      if (!ps) return null; if (ps in Combat.POSEPART) return Combat.POSEPART[ps];
+      let P = Anim.P[ps]; if (!P && Anim.compose) { try { P = Anim.compose(ps); } catch (e) { P = null; } }
+      const W = (P && P.wind) || {}, S = (P && P.strike) || {};
+      const d = k => { const a = W[k] || [0, 0, 0], b = S[k] || [0, 0, 0]; return Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]); };
+      // (an arm thrown forward counts for more than one swung back for balance; a leg only strikes when it's lifted high:
+      // a lunge's bent front knee isn't a kick)
+      const sc = {}; for (const k of ['armR', 'armL', 'wR', 'wL']) sc[k] = d(k) + 0.35 * Math.max(0, -((S[k] || [0])[0]) - 0.6);
+      for (const k of ['legR', 'legL']) { const up = Math.abs((S[k] || [0])[0]); sc[k] = up > 0.95 ? d(k) + 0.6 * (up - 0.6) : d(k) * 0.35; }
+      // an arm and the weapon in its hand are one striker (the bigger of the two turns)
+      const arms = { R: Math.max(sc.armR, sc.wR), L: Math.max(sc.armL, sc.wL) }, all = [['armR', arms.R], ['armL', arms.L], ['legR', sc.legR], ['legL', sc.legL]].sort((x, y) => y[1] - x[1]);
+      let out = null;
+      if (all[0][1] > 0.12) { out = [all[0][0] === 'armR' && sc.wR > sc.armR ? 'wR' : all[0][0] === 'armL' && sc.wL > sc.armL ? 'wL' : all[0][0]]; const two = all[1]; if (two[1] > all[0][1] * 0.8 && (two[0].startsWith('leg') === all[0][0].startsWith('leg'))) out.push(two[0]); }
+      return Combat.POSEPART[ps] = out;
+    },
+    /* where each part sits against the hips (taken as a move starts, and again at each blow) */
+    partSpots(f) {
+      f.fig.poseNow(); const out = {}, hip = f.fig.partBoxes('hips', _PB)[0], hx = hip ? (hip.x0 + hip.x1) / 2 : f.pos.x, hy = hip ? (hip.y0 + hip.y1) / 2 : f.pos.y + 0.9, F = f.forward.x >= 0 ? 1 : -1;
+      for (const p of Combat.MOVERS) { const B = f.fig.partBoxes(p, _PB); if (!B.length) continue; let x = 0, y = 0; for (const b of B) { x += (b.x0 + b.x1) / 2; y += (b.y0 + b.y1) / 2; } out[p] = [F * (x / B.length - hx), y / B.length - hy]; }
+      return out;
+    },
+    strikeStart(f) { f.hbSpots = Combat.partSpots(f); f.hitPartsFor = -1; f.hbPrev = null; },
+    /* a blow's HITBOXES this frame: what strikes, as posed, a little bigger (MARGIN), each stretched over where it was the
+       frame before, so a fast swing can't pass through someone between two frames */
+    strikeBoxes(f, mv) {
+      f.fig.poseNow();
+      const F = f.forward.x >= 0 ? 1 : -1, cx = mv.around ? f.pos.x : f.pos.x + F * mv.reach, cy = f.pos.y + (mv.around ? 1 : mv.h);
+      const blow = f.moveSerial * 100 + Math.max(0, f.lastSub);
+      if (f.hitPartsFor !== blow) {
+        if (mv.around) f.hitParts = Combat.LIMBS.slice();
+        else if (mv.type === 'grab') f.hitParts = ['armR', 'armL'];
+        else {
+          // what kind of blow the pose is: a kick (a leg), a body blow (the torso, the head and the arms), a header, or a
+          // blow with an arm (the arm thrown hardest, and what it holds)
+          const ps = (f.pose2 || mv.pose || ''), body = /tackle|shoulder|splash|spear|kaoLean/i.test(ps), head = /header|headbutt/i.test(ps), pp = Combat.poseStriker(ps);
+          const now = Combat.partSpots(f), was = f.hbSpots || now, pick = c => { let best = null, bd = -1; for (const p of c) { const a = now[p]; if (!a) continue; const b = was[p] || a, d = Math.hypot(a[0] - b[0], a[1] - b[1]) + Math.max(0, a[0]) * 0.15; if (d > bd) { bd = d; best = p; } } return best; };
+          if (body) f.hitParts = ['torso', 'head', 'armR', 'armL'];
+          else if (head) f.hitParts = ['head', 'torso'];
+          else if (pp) { f.hitParts = []; for (const p of pp) { f.hitParts.push(p); if (Combat.PAIR[p] && !pp.includes(Combat.PAIR[p])) f.hitParts.push(Combat.PAIR[p]); } }
+          else { const best = pick(['wR', 'wL', 'armR', 'armL']) || pick(Combat.MOVERS); f.hitParts = best ? (Combat.PAIR[best] ? [best, Combat.PAIR[best]] : [best]) : []; }
+          f.hbSpots = now;   // (the next blow of a flurry is measured from this one)
+        }
+        f.hitPartsFor = blow; f.hbPrev = null;
+      }
+      const out = [], M = Combat.MARGIN, now = [];
+      for (const p of f.hitParts) for (const b of f.fig.partBoxes(p, _PB)) now.push({ x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y1 });
+      const prev = f.hbPrev && f.hbPrev.length === now.length ? f.hbPrev : null;
+      now.forEach((b, i) => { const q = prev ? prev[i] : b; out.push({ x0: Math.min(b.x0, q.x0) - M, x1: Math.max(b.x1, q.x1) + M, y0: Math.min(b.y0, q.y0) - M, y1: Math.max(b.y1, q.y1) + M }); });
+      f.hbPrev = now;
+      if (!out.length) { const r = Math.min(mv.rad, 0.55); out.push({ x0: cx - r, x1: cx + r, y0: cy - r, y1: cy + r }); }   // (nothing left to strike with: the blow where it was meant to land)
+      return out;
+    },
+    /* a charge's HITBOXES: the whole body and what it holds, stretched back over the way it came (dx, dy) */
+    bodyBoxes(f, dx, dy) {
+      f.fig.poseNow(); const out = [], M = Combat.MARGIN;
+      for (const p of Combat.HURT.concat(['wR', 'wL'])) for (const b of f.fig.partBoxes(p, _PB)) out.push({ x0: Math.min(b.x0, b.x0 + dx) - M, x1: Math.max(b.x1, b.x1 + dx) + M, y0: Math.min(b.y0, b.y0 + dy) - M, y1: Math.max(b.y1, b.y1 + dy) + M });
+      return out;
+    },
+    /* the boxes a figure just tested (for the Training overlay only: kept off the fight) */
+    note(f, boxes, kind, hold) { if (!U.quiet) DRAWN.set(f, { boxes, kind, t: f.m.time, hold: hold || 0 }); },
+    drawn(f) { const d = DRAWN.get(f); return d && f.m.time - d.t <= Math.max(1 / 30, d.hold) ? d : null; },
     closestOnSeg(a, b, p) { const ab = _c.subVectors(b, a), l2 = ab.lengthSq(); const t = l2 ? U.clamp(_v.subVectors(p, a).dot(ab) / l2, 0, 1) : 0; return new V3().copy(a).addScaledVector(ab, t).setY(a.y + 0.9); },
     facing(f, from) { const a = U.ang(f.pos, from); return Math.abs(U.wrap(a - f.yaw)) < 1.9; },
     decay(v) { return Math.max(0.42, 1 - v.combo.t * 0.07 - (v.combo.hits - (v.combo.dh || 0)) * 0.012); },
@@ -1519,7 +1643,10 @@
         return 'miss';
       }
       // ---- guard
-      const guarding = (vic.state === 'guard' || vic.state === 'guardstun' || (vic.buffs.autoGuard && ['idle', 'run'].includes(vic.state))) && !o.force;   // (CHIVALRY: guards on its own; a guard covers both sides)
+      const shielded = vic.state === 'guard' || vic.state === 'guardstun';
+      let guarding = (shielded || (vic.buffs.autoGuard && ['idle', 'run'].includes(vic.state))) && !o.force;   // (CHIVALRY: guards on its own; a guard covers both sides)
+      // SHIELD POKE: the bubble shrinks as the shield wears down, and a blow that touches the body outside it gets through
+      if (guarding && shielded && mv.type !== 'grab') { const p = o.poke || (o.at && Combat.outsideShield(vic, o.at) ? o.at : null); if (p) { guarding = false; o.at = p; m.call(vic, 'SHIELD POKE', 'bad'); } }
       if (guarding && mv.type !== 'grab') {
         let just = vic.state === 'guard' && m.time - (vic.guardStart || -9) < 0.12;
         const overShield = att.st.sig === 'flail' && (o.kind === 'light' || o.kind === 'air');   // (CRUSADER: no Just Guard, twice the guard)
@@ -1538,16 +1665,14 @@
         vic.hp -= chip; vic.guardHp -= raw * (mv.launch ? 1.0 : 0.7) * (overShield ? 2 : 1) * (mv.crush || 1); vic.guardIdle = 0; if (mv.gbreak) vic.guardHp = 0;   // (the VIKING's axe shatters it)
         if (vic.broken.armL === false) vic.armor.armL = Math.max(1, vic.armor.armL - raw * 0.25);
         att.hype = Math.min(100, att.hype + raw * 0.04 * att.st.hypeGain);
-        if (vic.guardHp <= 0) {
-          vic.guardHp = 0; vic.setState('gbreak'); SFX.play('gbreak'); m.call(vic, 'GUARD CRUSH', 'bad'); FX.addShake(0.5);
-          FX.burst(atPos, { n: 16, color: [0x66aaff, 0xffffff], glow: true, speed: 6, size: 0.08 }); vic.hitstop = att.hitstop = 0.1; return 'gcrush';
-        }
+        if (vic.guardHp <= 0) { vic.hitstop = att.hitstop = 0.1; Combat.shieldBreak(vic, att); return 'gcrush'; }
         vic.setState('guardstun'); vic.hitstun = 0.12 + raw * 0.0016; vic.vel.x = dir.x * (mv.kb[0] * 0.35 + 1.5); vic.vel.z = dir.z * (mv.kb[0] * 0.35 + 1.5);
         att.hitstop = vic.hitstop = 0.05; SFX.play('guard'); FX.spark(atPos, { color: 0x9fd0ff, size: 0.9 });
         return 'blocked';
       }
 
       // ---- the hit lands
+      if (vic.state === 'gbreak') { vic.gbreakT = 0; vic.dizzy = false; }
       const counter = vic.state === 'attack' && vic.move && vic.moveT < vic.move.su && !o.noCombo;
       if (!vic.comboing || vic.combo.by !== att) { if (!o.noCombo) vic.combo = vic.freshCombo(); }
       const pr = o.kind === 'super' ? Math.max(0.55, Combat.prorate(vic)) : Combat.prorate(vic);

@@ -61,7 +61,8 @@
     const o = this.opp, m2 = KB.MOVES[id]; if (!o || !m2) return false;
     const key = 'rec:' + id + (again ? ':' + again : ''); if (this.hitSet.has(key)) return false;
     this.m.hitMinions(this, at, rad, this.moveSerial * 10 + 7);
-    if (!Combat.overlap(at, rad, o, false)) return false;
+    const hb = [{ x0: at.x - rad, x1: at.x + rad, y0: at.y - rad, y1: at.y + rad }]; Combat.note(this, hb, 'hit', 0.15);
+    if (!Combat.touch(hb, o) || Combat.lying(o)) return false;
     this.hitSet.add(key);
     Combat.hit(this, o, m2, { kind: 'special', at: at.clone(), dir: _b.set(o.pos.x - this.pos.x || this.forward.x, 0, 0).normalize().clone() });
     return true;

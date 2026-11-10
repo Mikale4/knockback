@@ -614,6 +614,15 @@
     wL: { parent: 'armL', at: [0, -8.5, 0] }, wR: { parent: 'armR', at: [0, -8.5, 0] },
     legL: { parent: 'hips', at: [2, -1, 0] }, legR: { parent: 'hips', at: [-2, -1, 0] },
   };
+  /* a part group's own bounds (its meshes, not the parts hanging off it), kept per group: a part worn by another figure
+     brings its bounds along */
+  const LBOX = new WeakMap(), _bs = new THREE.Vector3(), _bp = new THREE.Vector3();
+  function localBox(grp) {
+    if (LBOX.has(grp)) return LBOX.get(grp);
+    let b = new THREE.Box3();
+    for (const o of grp.children) if (o.isMesh && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); b.union(o.geometry.boundingBox); }
+    if (b.isEmpty()) b = null; LBOX.set(grp, b); return b;
+  }
   /* a whole figure from a build: { root, parts, mat, socket(), detach(), reattach(), flash() } */
   function figure(build) {
     const mat = plasticMat().clone(); mat.emissive = new THREE.Color(0, 0, 0);
@@ -647,6 +656,28 @@
       const p = parts[name] || root, v = target || new THREE.Vector3();
       v.set((off ? off[0] : 0) * S, (off ? off[1] : 0) * S, (off ? off[2] : 0) * S);
       p.updateWorldMatrix(true, false); return p.localToWorld(v);
+    };
+    /* PART BOXES: where a part of the figure is right now, as boxes on the fighting plane ({x0, x1, y0, y1}), from its
+       own voxels turned and moved with the pose. A long part (a sword, a lance, a leg) is cut into pieces along its
+       length, so a blade swung at an angle is a few tight boxes, not one big one. [] when the part isn't on the
+       figure. F.poseNow() first: the pose as it is (it reads the matrices) */
+    F.poseNow = () => { root.updateWorldMatrix(true, true); };
+    F.partBoxes = (name, out) => {
+      out = out || []; out.length = 0;
+      const grp = parts[name]; if (!grp || F.detached[name] || !grp.parent) return out;
+      const lb = localBox(grp); if (!lb) return out;
+      const sz = lb.getSize(_bs), ax = sz.x >= sz.y && sz.x >= sz.z ? 'x' : sz.y >= sz.z ? 'y' : 'z';
+      const n = Math.max(1, Math.min(4, Math.round(sz[ax] * grp.matrixWorld.getMaxScaleOnAxis() / 0.32))), m = grp.matrixWorld;
+      for (let k = 0; k < n; k++) {
+        const lo = lb.min[ax] + sz[ax] * k / n, hi = lb.min[ax] + sz[ax] * (k + 1) / n;
+        let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+        for (let i = 0; i < 8; i++) {
+          _bp.set(i & 1 ? lb.max.x : lb.min.x, i & 2 ? lb.max.y : lb.min.y, i & 4 ? lb.max.z : lb.min.z); _bp[ax] = i & (ax === 'x' ? 1 : ax === 'y' ? 2 : 4) ? hi : lo;
+          _bp.applyMatrix4(m); if (_bp.x < x0) x0 = _bp.x; if (_bp.x > x1) x1 = _bp.x; if (_bp.y < y0) y0 = _bp.y; if (_bp.y > y1) y1 = _bp.y;
+        }
+        out.push({ x0, x1, y0, y1, part: name });
+      }
+      return out;
     };
     /* pull a limb off (for a part break): returns the group, now in world space */
     F.detach = (name, scene) => {

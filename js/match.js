@@ -226,9 +226,11 @@
       if (!M.training) M.stocks[vic.idx]--;
       M.kos[att.idx] = (M.kos[att.idx] || 0) + (att !== vic ? 1 : 0);
       if (!U.quiet) {
-        const toward = new V3(-at.x, -at.y + 2, 0).normalize(), col = KB.LINES[vic.build.core.line].pal.glow;
-        FX.burst(at, { n: 46, color: [0xffffff, col, 0xffd040], glow: true, speed: 12, size: 0.16, life: 0.9, dir: toward.multiplyScalar(8), gravity: 0 });
-        FX.ring(at.clone(), { r1: 4.5, life: 0.55, normal: new V3(0, 0, 1), color: col }); FX.addShake(0.8); SFX.play('ko');
+        const col = KB.LINES[vic.build.core.line].pal.glow, p = koBlast(at, col, last);
+        const toward = new V3(-p.x, -p.y + 2, 0).normalize();
+        FX.burst(p, { n: 60, color: [0xffffff, col, 0xffd040], glow: true, speed: 14, size: 0.18, life: 1.0, dir: toward.clone().multiplyScalar(9), gravity: 0 });
+        FX.burst(p, { n: 26, color: [col, 0x3a3a40, 0xffffff], speed: 9, size: 0.22, life: 1.1, gravity: 9 });   // (debris)
+        FX.addShake(last ? 1.2 : 0.9); SFX.play('ko'); SFX.play('boom');
         HUD.banner(last ? 'KNOCK//OUT' : 'KNOCKED OUT', 'ko', last ? 1.8 : 1.0);
       }
       M.event('ko', { vic, att, mv, stocks: M.stocks[vic.idx], last });
@@ -857,6 +859,80 @@
       }
     }
 
+    /* ---------------------------------------------------- the KO BLAST
+       A figure through a blast zone goes off at the edge of the screen where it went out (kept on the screen even when
+       the line itself is past it): a white flash, a blast of its own colour streaking in toward the stage, rings of
+       shock and a starburst, then sparks and debris (FX), and the screen flashes. Looks only, drawn frames only, kept
+       off the fight (an online rollback never sees it). */
+    const KOFX = [];
+    const koMat = (c, op) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false });
+    function koBlast(at, col, big) {
+      // where it shows: the point it went out, pulled onto the screen
+      const cam = M.camera, p = at.clone(); cam.updateMatrixWorld(); const n = p.clone().project(cam);
+      if (Math.abs(n.x) > 0.9 || Math.abs(n.y) > 0.85 || n.z > 1) {
+        const q = new V3(U.clamp(n.x, -0.9, 0.9), U.clamp(n.y, -0.85, 0.85), 0.5).unproject(cam).sub(cam.position);
+        if (Math.abs(q.z) > 1e-4) p.copy(cam.position).addScaledVector(q, -cam.position.z / q.z);
+      }
+      p.z = 0.4;
+      const G = new THREE.Group(); G.position.copy(p); G.renderOrder = 990;
+      const toward = new V3(-p.x, -p.y + 2, 0).normalize(), ang = Math.atan2(toward.y, toward.x), add = (par, geo, c, op) => { const m = new THREE.Mesh(geo, koMat(c, op)); m.renderOrder = 990; m.frustumCulled = false; par.add(m); return m; };
+      const beam = new THREE.Group(); beam.rotation.z = ang - Math.PI / 2; G.add(beam);
+      const outer = add(beam, new THREE.ConeGeometry(2.4, 15, 28, 1, true), col, 0.75); outer.position.y = 7.5;
+      const core = add(beam, new THREE.ConeGeometry(1.0, 12, 20, 1, true), 0xffffff, 0.9); core.position.y = 6;
+      const flash = add(G, new THREE.SphereGeometry(1, 20, 14), 0xffffff, 1);
+      const rings = [0, 1, 2].map(i => add(G, new THREE.RingGeometry(0.86, 1, 48), i === 1 ? 0xffffff : col, 0.9));
+      const star = new THREE.Group(); G.add(star);
+      for (let i = 0; i < 10; i++) { const s = add(star, new THREE.PlaneGeometry(0.22, 1), i % 2 ? 0xffffff : col, 0.9); s.position.y = 0.5; const h = new THREE.Group(); h.rotation.z = i / 10 * Math.PI * 2 + 0.15; h.add(s); star.add(h); }
+      scene.add(G); KOFX.push({ g: G, t: 0, life: big ? 1.2 : 0.95, beam, outer, core, flash, rings, star });
+      // the screen flashes white for a moment
+      let fl = document.getElementById('koflash');
+      if (!fl) { fl = document.createElement('div'); fl.id = 'koflash'; fl.style.cssText = 'position:fixed;inset:0;background:#fff;pointer-events:none;z-index:40;opacity:0;transition:opacity 0.4s ease-out'; document.body.append(fl); }
+      fl.style.transition = 'none'; fl.style.opacity = big ? '0.6' : '0.42'; void fl.offsetWidth; fl.style.transition = 'opacity 0.45s ease-out'; fl.style.opacity = '0';
+      return p;
+    }
+    function updKoBlasts(dt) {
+      for (let i = KOFX.length - 1; i >= 0; i--) {
+        const e = KOFX[i]; e.t += dt; const k = Math.min(1, e.t / e.life);
+        if (k >= 1) { scene.remove(e.g); e.g.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); KOFX.splice(i, 1); continue; }
+        const grow = Math.min(1, e.t / 0.09), w = Math.pow(1 - k, 0.8);
+        e.beam.scale.set(w * (1 + 0.15 * Math.sin(e.t * 70)), grow * (1 + k * 0.25), w); e.outer.material.opacity = 0.75 * w; e.core.material.opacity = 0.9 * w;
+        const f = Math.min(1, e.t / 0.14); e.flash.scale.setScalar(0.5 + f * (e.life > 1 ? 5 : 4)); e.flash.material.opacity = Math.max(0, 1 - e.t / 0.32);
+        e.rings.forEach((r, j) => { const s = 0.8 + (5 + j * 3) * Math.pow(k, 0.55); r.scale.setScalar(s); r.material.opacity = 0.9 * (1 - k) * (j === 1 ? 0.8 : 1); });
+        e.star.scale.setScalar(1 + 6 * Math.pow(k, 0.5)); e.star.rotation.z += dt * 0.8; e.star.traverse(o => { if (o.isMesh) o.material.opacity = 0.9 * (1 - k); });
+      }
+    }
+
+    /* ---------------------------------------------------- the SHIELD bubble
+       A see-through bubble in the figure's colour round its body while it shields, as big as what's left of the shield
+       (Combat.shieldR: the very size the game tests for a shield poke), going red as it runs low, with a bright rim; and
+       stars round the head while a broken shield has them dazed. Looks only. */
+    const SHB = [];
+    function updShields(dt) {
+      M.fighters.forEach((f, i) => {
+        let b = SHB[i];
+        if (!b) {
+          const g = new THREE.Group();
+          const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.32, depthWrite: false, toneMapped: false }));
+          const rim = new THREE.Mesh(new THREE.RingGeometry(0.93, 1.0, 48), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide, toneMapped: false, blending: THREE.AdditiveBlending }));
+          rim.position.z = 1.02; g.add(fill, rim); g.renderOrder = 5; scene.add(g);
+          const stars = new THREE.Group(); for (let k = 0; k < 3; k++) { const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.17, 0), new THREE.MeshBasicMaterial({ color: 0xffe040, toneMapped: false, depthTest: false })); stars.add(s); } scene.add(stars);
+          b = SHB[i] = { g, fill, rim, stars, base: new THREE.Color(KB.LINES[f.build.core.line].pal.glow) };
+        }
+        const on = (f.state === 'guard' || f.state === 'guardstun') && !f.gone;
+        b.g.visible = on;
+        if (on) {
+          const k = U.clamp(f.guardHp / (f.guardMax || 1), 0, 1), R = Combat.shieldR(f), c = Combat.shieldC(f);
+          b.g.position.set(c.x, c.y, 0); b.g.scale.setScalar(R * (1 + 0.025 * Math.sin(M.time * 18)));
+          const col = b.base.clone().lerp(new THREE.Color(0xff2a1a), Math.pow(1 - k, 1.5));
+          b.fill.material.color.copy(col); b.rim.material.color.copy(col).lerp(new THREE.Color(0xffffff), 0.35);
+          b.fill.material.opacity = f.state === 'guardstun' ? 0.5 : 0.3; b.rim.material.opacity = 0.7 + 0.25 * Math.sin(M.time * 9);
+        }
+        const daze = f.state === 'gbreak' && f.grounded && !f.gone;
+        b.stars.visible = daze;
+        if (daze) { const h = f.fig.socket('head', [0, 11, 0]); b.stars.children.forEach((s, j) => { const a = M.time * 5 + j * 2.09; s.position.set(h.x + Math.cos(a) * 0.45, h.y + 0.05 * Math.sin(a * 2), h.z + Math.sin(a) * 0.45); s.rotation.y = a * 2; }); }
+      });
+    }
+
     /* ---------------------------------------------------- dropped parts */
     M.dropPart = (vic, part, grp, dir) => {
       const vel = new V3(dir.x * 5 + U.rnd(-1, 1), 6 + U.rnd(0, 2), 0); grp.position.z = 0;   // (on the fighting plane, where a figure can walk over it)
@@ -986,40 +1062,39 @@
     M.timers = [];
     M.after = (sec, fn) => { M.timers.push({ at: M.time + sec, fn }); };
     const runTimers = () => { if (!M.timers.length) return; const due = M.timers.filter(t => M.time >= t.at); if (!due.length) return; M.timers = M.timers.filter(t => M.time < t.at); for (const t of due) t.fn(); };
-    /* TRAINING · HITBOXES: what the game really tests, drawn as wire shapes (looks only, and only in training).
-       BLUE where a fighter can be hit by a blow (Combat.overlap: two spheres up the body; bigger while tumbling; three
-       along the floor when they're down, which only the moves that hit them there can reach). RED a blow while it's live
-       (activeFrames: its reach, height and radius, or round the fighter for a spinning one, for as long as it's live;
-       YELLOW for a grab; drawn over the blue). ORANGE a shot, as wide as it hits (it hits anyone whose body it passes within that of, from
-       ankle to head), and a trap's or a strike from the sky's circle on the floor. */
-    // (drawn flat on the fighting plane, the way a side-on fighter shows them: a see-through disc with a solid rim; a
-    // trap's or a strike from the sky's zone on the floor is a flat bar as wide as it reaches)
-    const HB = { pool: [], n: 0, fill: null, rim: null };
-    function hbShape(at, r, col, op, flat) {
-      if (!HB.fill) { HB.fill = new THREE.CircleGeometry(1, 32); HB.rim = new THREE.RingGeometry(0.9, 1, 32); }
+    /* TRAINING · HITBOXES: the very boxes the game tests (Combat: hurtBoxes, strikeBoxes), drawn flat on the fighting
+       plane (looks only, and only in training). BLUE a fighter's HURTBOXES, one for each part of its body as it's posed
+       (faint while it's lying down: only the blows that hit them on the floor reach it). RED a blow's HITBOXES on each
+       frame it's live (the limb and what it holds; a burst all round it; a charge's whole body along its way), YELLOW a
+       grab, drawn over the blue. ORANGE a shot as big as it hits, and a trap's or a strike from the sky's zone. */
+    // (each one a see-through box with a solid edge: a fill and four edge strips, the same width whatever its size)
+    const HB = { pool: [], n: 0, geo: null };
+    function hbRect(x0, y0, x1, y1, col, op) {
+      if (!HB.geo) HB.geo = new THREE.PlaneGeometry(1, 1);
       let g = HB.pool[HB.n];
       if (!g) {
-        const mk = geo => new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ transparent: true, depthTest: false, depthWrite: false, toneMapped: false, side: THREE.DoubleSide }));
-        g = new THREE.Group(); g.add(mk(HB.fill), mk(HB.rim)); scene.add(g); HB.pool.push(g);
+        g = new THREE.Group();
+        for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(HB.geo, new THREE.MeshBasicMaterial({ transparent: true, depthTest: false, depthWrite: false, toneMapped: false, side: THREE.DoubleSide })); m.frustumCulled = false; g.add(m); }
+        scene.add(g); HB.pool.push(g);
       }
-      const [fi, rim] = g.children, ord = col === 0x3ab8ff ? 998 : 999;
-      fi.material.color.setHex(col); rim.material.color.setHex(col); fi.material.opacity = op * 0.3; rim.material.opacity = Math.min(1, op + 0.05);
-      fi.renderOrder = ord; rim.renderOrder = ord + 0.5;
-      g.position.set(at.x, at.y, at.z); if (flat) g.scale.set(r, 0.16, 1); else g.scale.set(r, r, 1); g.visible = true; HB.n++;
+      const w = Math.max(0.02, x1 - x0), h = Math.max(0.02, y1 - y0), t = 0.035, ord = col === 0x3ab8ff ? 998 : 999, [fi, top, bot, lf, rt] = g.children;
+      for (const m of g.children) { m.material.color.setHex(col); m.material.opacity = Math.min(1, op + 0.1); m.renderOrder = ord + 0.5; }
+      fi.material.opacity = op * 0.28; fi.renderOrder = ord;
+      g.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0);
+      fi.scale.set(w, h, 1); fi.position.set(0, 0, 0);
+      top.scale.set(w, t, 1); top.position.set(0, h / 2 - t / 2, 0); bot.scale.set(w, t, 1); bot.position.set(0, t / 2 - h / 2, 0);
+      lf.scale.set(t, h, 1); lf.position.set(t / 2 - w / 2, 0, 0); rt.scale.set(t, h, 1); rt.position.set(w / 2 - t / 2, 0, 0);
+      g.visible = true; HB.n++;
     }
+    // a shot: the square it hits with (Combat.overlap); a zone on the floor: a strip that wide
+    const hbShape = (at, r, col, op, flat) => flat ? hbRect(at.x - r, at.y - 0.05, at.x + r, at.y + 0.22, col, op) : hbRect(at.x - r, at.y - r, at.x + r, at.y + r, col, op);
     function drawHitboxes() {
       HB.n = 0;
       if (M.training && M.training.hitboxes) {
         for (const f of M.fighters) {
-          const s = f.state;
-          if (s === 'tumble' || s === 'held' || s === 'out') for (const y of [0.45, 1.35]) hbShape(_v.copy(f.pos).setY(f.pos.y + y), 0.6, 0x3ab8ff, 0.5);
-          else if (s === 'down' || (s === 'ko' && f.grounded)) { const sx = Math.sin(f.yaw), sz = Math.cos(f.yaw); for (const k of [0.45, -0.25, -0.95]) hbShape(_v.set(f.pos.x + sx * k, f.pos.y + 0.3, f.pos.z + sz * k), 0.45, 0x3ab8ff, 0.28); }
-          else for (const y of [0.5, 1.35]) hbShape(_v.copy(f.pos).setY(f.pos.y + y), 0.48, 0x3ab8ff, 0.5);
-          const mv = f.move;
-          if (s === 'attack' && mv && (mv.type === 'melee' || mv.type === 'teleport' || mv.type === 'grab') && f.moveT >= mv.su && f.moveT < mv.su + (f.curAc || mv.ac)) {
-            const F = f.forward, c = mv.around ? _v.set(f.pos.x, f.pos.y + 1, f.pos.z) : _v.set(f.pos.x + F.x * mv.reach, f.pos.y + mv.h, f.pos.z + F.z * mv.reach);
-            hbShape(c, mv.rad, mv.type === 'grab' ? 0xffd040 : 0xff3a3a, 0.95);
-          }
+          for (const b of Combat.hurtBoxes(f, [])) hbRect(b.x0, b.y0, b.x1, b.y1, 0x3ab8ff, Combat.lying(f) ? 0.25 : 0.5);
+          const d = Combat.drawn(f);   // (the blow's boxes as the game tested them, this frame)
+          if (d) for (const b of d.boxes) hbRect(b.x0, b.y0, b.x1, b.y1, d.kind === 'grab' ? 0xffd040 : 0xff3a3a, 0.9);
         }
         for (const p of M.projs) {
           if (p.kind === 'dart' && !p.visual && p.pos) hbShape(p.pos, p.w || 0.4, 0xffa030, 0.85);
@@ -1076,6 +1151,7 @@
       arena.draw(M, dt);   // (the hazard's meshes and the stage's ambient life: drawn frames only)
       if (M.training || HB.n) drawHitboxes();
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
+      updKoBlasts(rawDt); updShields(rawDt);
       sweepTrails();
       updCamera(rawDt); FX.update(dt);
       if (!M.attract) HUD.update(M);
@@ -1509,7 +1585,7 @@
       }
     }
     M.dispose = () => {
-      M.disposed = true; if (M.cine) Arts.end(M.cine);
+      M.disposed = true; for (const e of KOFX) scene.remove(e.g); KOFX.length = 0; for (const b of SHB) if (b) { scene.remove(b.g); scene.remove(b.stars); } SHB.length = 0; if (M.cine) Arts.end(M.cine);
       for (const f of M.fighters) f.dispose();
       for (const p of M.picks) if (p.grp.parent) p.grp.parent.remove(p.grp);
       arena.dispose(); HUD.hide(M); if (!M.attract) Touch.hide();

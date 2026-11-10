@@ -11,7 +11,10 @@
      step(M, S, dt)    the sim. Timing comes from S.t (the round's own clock,
                        which only runs while fighting), choices from U.rand,
                        hits through Combat.hazard
-     danger(M, S, f)   for the CPU: null, 'jump', or a way {x, z} to step
+     danger(M, S, f)   for the CPU: null, 'jump', or a way {x, z} to step (on the side-on stage only x
+                       counts: ai.js turns a way that's all z into a jump)
+     zones(M, S)       for the CPU (optional): stretches of floor [{x0, x1}] to keep out of right now
+                       (it won't stand there to wait for anyone, and jumps them on the way past)
      build(group, A)   its meshes; draw(V, M, S, dt) poses them from S (S is
                        null with hazards off: everything stays at rest)
    STAGE HAZARDS in Options turns them off; online it is the room's rule.
@@ -105,9 +108,11 @@
       }
     },
     danger(M, S, f) {
-      if (S.p < 0 || S.p > TW + TR - 0.3 || Math.abs(f.pos.z - LANE) > 1.7) return null;
-      if (S.p >= TW && (HAZ.train.nose(S) - f.pos.x) * S.dir > 7) return null;
-      return { x: 0, z: f.pos.z >= LANE ? 1 : -1 };
+      // (seen from the side, it runs along the fighting line: jump it just before the engine gets there, and stay off the
+      // floor while the cars go by)
+      if (S.p < TW - 0.2 || S.p > TW + TR - 0.3 || f.pos.y > 1.6) return null;
+      const nose = HAZ.train.nose(S), ahead = (f.pos.x - nose) * S.dir;   // (how far the engine still has to come to reach them)
+      return ahead > -6.6 && ahead < 2.6 ? 'jump' : null;
     },
     build(group) {
       const V = { n: -9, w: -9 }, tg = new VX.Grid();
@@ -259,7 +264,7 @@
   };
 
   /* ===================================================== 4. PINBALL TABLE */
-  const BUMP = [[-6.3, 0], [6.3, 0]], BR = 0.7;   // (on the fighting line, out by the ends: they guard the edges)
+  const BUMP = [[-4.7, 0], [4.7, 0]], BR = 0.7;   // (on the fighting line, out toward the ends, with room between each one and its ledge to climb up onto)
   TH.pinball = {
     name: 'PINBALL TABLE', haz: 'bumper', tag: 'Three pop bumpers: touch one and it fires you off',
     sky: [0x0a0820, 0x3a1a6a, 0x05040e], fog: 0x1a1040, hemi: [0xc8c0ff, 0x1a1030, 0.75], sun: [0xffffff, 0.85],
@@ -308,6 +313,8 @@
         else if (vin < 0) { f.vel.x -= vin * nx; f.vel.z -= vin * nz; }
       } });
     },
+    // (a bumper stands on the floor: the CPU treats it as an obstacle, ai.js: crossed with a committed jump, or waited short of)
+    zones: () => BUMP.map(b => ({ x0: b[0] - BR - 0.6, x1: b[0] + BR + 0.6 })),
     build(group) {
       const V = { b: [] }, g = new VX.Grid();
       g.cyl('y', 0, 0, 4, 0, 4, 0xf4f4f4); g.cyl('y', 0, 0, 5, 1, 2, 0xe02a2a); g.cyl('y', 0, 0, 6, 5, 6, 0xe02a2a); g.cyl('y', 0, 0, 4, 7, 7, G(0xfff0a0));

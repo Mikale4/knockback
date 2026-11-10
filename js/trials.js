@@ -787,6 +787,7 @@
     const dx = d.pos.x - a.pos.x, dz = d.pos.z - a.pos.z, dist = Math.hypot(dx, dz), dy = d.pos.y - a.pos.y;
     const toward = (k) => { fake.move.x = dx / (dist || 1) * (k || 1); fake.move.y = -dz / (dist || 1) * (k || 1); };
     const busy = a.state === 'attack' && !a.moveHit;
+    const near = s.m && KB.MOVES[s.m] ? U.clamp(KB.hitDist(KB.MOVES[s.m]) - 0.3, 0.9, 1.5) : 1.5;   // (close enough for this blow to land: reach.js)
     const press = b => { if (tap) { fake.held[b] = true; if (b === 'heavy' && s.m && s.m === a.leftMove('heavy') && Math.abs(fake.move.x) < 0.5) toward(1); } };   // (the side KNOCK: Heavy with the stick at them)
     if (s.e === 'bounce' || s.e === 'art' || s.e === 'gbounce') return;
     if (s.e === 'jump') return press('jump');
@@ -803,7 +804,7 @@
       if (a.state === 'attack' || a.state === 'dodge') { if (a.state === 'dodge' && a.stateT > 0.1) press('light'); return; }
       if (!a.grounded) return;
       if (s.k === 'light') { toward(); if (dist < 2.4) press('dodge'); return; }
-      if (dist > 1.3) { toward(); return; } press(s.k); return;
+      if (dist > Math.min(1.3, near)) { toward(); return; } press(s.k); return;
     }
     // from range: a shot or the Chain Hook, as soon as the last hit has landed
     if (s.t === 'far') {
@@ -826,8 +827,8 @@
     }
     if (s.t === 'pause') { if (a.pauseWin && m.time >= a.pauseWin.from + 0.02) fake.held.light = true; return; }   // (pressed before the window opens, it would start the string over)
     if (s.t === 'dash') { if (a.state === 'dodge') { if (a.stateT > 0.13) press('light'); return; } if (dist > 1.8 && a.state !== 'attack') toward(); else { toward(); press('dodge'); } return; }
-    if (s.t === 'hold') { if (a.state === 'attack' && a.move && a.move.id === s.m) { fake.held.light = a.charge < 0.5; return; } if (dist > 1.4) { toward(); return; } fake.held.light = true; return; }
-    if (s.t === 'beat') { if (dist > 1.4) { toward(); return; } if (Music.beat(m).near) fake.held.light = true; return; }
+    if (s.t === 'hold') { if (a.state === 'attack' && a.move && a.move.id === s.m) { fake.held.light = a.charge < 0.5; return; } if (dist > Math.min(1.4, near)) { toward(); return; } fake.held.light = true; return; }
+    if (s.t === 'beat') { if (dist > Math.min(1.4, near)) { toward(); return; } if (Music.beat(m).near) fake.held.light = true; return; }
     if (s.t === 'mash') { press('light'); return; }
     // walk in for a fresh start, or to catch a rebound; then press when the last hit has landed
     const fresh = a.state !== 'attack';
@@ -851,7 +852,7 @@
       if (ml > 0.25) { fake.move.x = mx / ml; fake.move.y = -mz / ml; }
       return;
     }
-    if (fresh && dist > 1.5 && !(s.k === 'special')) { toward(); return; }
+    if (fresh && dist > near && !(s.k === 'special')) { toward(); return; }
     if (busy) return;
     if (s.t === 'toward') toward();
     press(s.k);
