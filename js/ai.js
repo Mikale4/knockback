@@ -619,11 +619,21 @@
       if (this.dummy === 'tut') {
         const c = this.cue, o = f.opp; if (!c || !o) return;
         if (U.dist(f.pos, o.pos) > 1.5 && f.state !== 'attack') { this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 0.8); return; }
-        if (this.m.time >= c.next && c.n > 0) { this.press(c.btn); c.n--; c.next = this.m.time + c.gap; }
+        if (this.m.time >= c.next && c.n > 0) { if (c.toward) this.pressWith(c.btn, 'f'); else this.press(c.btn); c.n--; c.next = this.m.time + c.gap; }
         if (c.n <= 0 && f.state !== 'attack') this.cue = null;
         return;
       }
       if (this.dummy === 'guard' && !f.inHitstun) this.held.guard = true;
+      if (this.dummy === 'techer') {
+        if (f.state !== 'tumble') { this.techPick = null; return; }
+        const g = Platform.groundAt(this.m, f.pos.x, f.pos.y + 0.05);
+        if (this.techPick == null && f.hitstun > 0 && f.vel.y < 0 && g != null && f.pos.y - g < 0.5) {
+          const r = U.rand(); this.techPick = r < 0.36 ? -1 : r < 0.72 ? 1 : 0;   // (left, right, or no tech at all)
+          if (this.techPick) this.press('dodge');
+        }
+        if (this.techPick) this.stickTo(this.techPick, 0, 1);
+        return;
+      }
       if (this.dummy === 'jump' && f.grounded && Math.random() < dt * 1.2) this.press('jump');
       if (this.dummy === 'tech') {
         if (f.state === 'tumble') for (const w of this.m.arena.walls) { const v = w.sign * f.vel[w.axis], gap = w.lim - w.sign * f.pos[w.axis] - 0.42; if (v > 6 && gap / v < 0.2) this.press('dodge'); }

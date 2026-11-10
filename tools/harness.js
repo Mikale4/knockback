@@ -477,3 +477,17 @@ window.__visAudit = (lines, secs, dist, only) => {
   } finally { Object.assign(FX, { burst: o0.b, spark: o0.s, ring: o0.r, trail: o0.t }); rec = null; }
   return out;
 };
+/* the TUTORIAL, driven: open it (once), jump to a lesson, and play it with the fake pad. script(i, f, m, a, d, S) runs
+   every frame (f: the pad, cleared each frame). Returns how far it got: S.got of the lesson's need, done or not */
+window.__tutStart = async () => {
+  Tutorial.start({}); for (let k = 0; k < 40 && App.view.phase !== 'fight'; k++) __step(0.25);
+  await new Promise(r => setTimeout(r, 250)); const fake = { held: {}, move: { x: 0, y: 0 } }; Input.players[0].cpu = fake; window.__fake = fake; return Tutorial._t.S.i;
+};
+window.__tutRun = async (id, secs, script) => {
+  const T = Tutorial._t; T.jump(id);
+  for (let k = 0; k < 40 && App.view.phase !== 'fight'; k++) __step(0.25);   // (a stage built again: its intro)
+  await new Promise(r => setTimeout(r, 250));
+  const S = T.S, m = S.m, L0 = S.i; Input.players[0].cpu = window.__fake; let done = false, notes = [];
+  __step(secs, i => { const f = __pad(); f.cmd = null; if (S.i !== L0) return; if (S.ok) done = true; if (S.note && notes[notes.length - 1] !== S.note) notes.push(S.note.slice(0, 60)); script(i, f, m, m.fighters[0], m.fighters[1], S); });
+  return { id, lesson: S.i === L0 ? id : 'moved on', got: S.got, done: done || !!S.ok, walled: S.walled, notes: notes.slice(-3), errs: __errs.slice(0, 2) };
+};

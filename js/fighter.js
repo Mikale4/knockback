@@ -304,8 +304,8 @@
     airDrift(dt, k) {
       const S = this.st, dir = this.stick();
       if (dir) this.vel.x = U.smooth(this.vel.x, dir.x * S.speed * k, 4.5, dt);
-      if (this.shortOk && this.vel.y > 0 && !this.input.held.jump && this.m.time - this.jumpT < 0.14) { this.vel.y *= 0.58; this.shortOk = false; }
-      if (this.vel.y < 1.5 && this.stickY() < -0.7 && this.vel.y > -FASTFALL) { if (!this.fastFell && !U.quiet) FX.ring(_c.copy(this.pos).setY(this.pos.y + 1.6), { r1: 0.5, life: 0.18, color: 0xffffff }); this.fastFell = true; this.vel.y = -FASTFALL; }
+      if (this.shortOk && this.vel.y > 0 && !this.input.held.jump && this.m.time - this.jumpT < 0.14) { this.vel.y *= 0.58; this.shortOk = false; this.m.event('shorthop', { f: this }); }
+      if (this.vel.y < 1.5 && this.stickY() < -0.7 && this.vel.y > -FASTFALL) { if (!this.fastFell && !U.quiet) FX.ring(_c.copy(this.pos).setY(this.pos.y + 1.6), { r1: 0.5, life: 0.18, color: 0xffffff }); if (!this.fastFell) this.m.event('fastfall', { f: this }); this.fastFell = true; this.vel.y = -FASTFALL; }
     }
     /* HANGING ON A LEDGE: Jump jumps off it, toward (or ↑) climbs up, away (or ↓) lets go, Light / Heavy climbs up
        with an attack, Dodge rolls onto the stage. Five seconds and you let go */
@@ -1296,7 +1296,7 @@
       const o = this.opp; this.hype -= 50; this.move = null; this.pauseWin = null;
       this.dodgeDir = _v.subVectors(o.pos, this.pos).setY(0).normalize().clone(); this.dodgeAir = false; this.chasing = true; this.setState('dodge');
       this.yaw = Math.atan2(this.dodgeDir.x, this.dodgeDir.z); this.inv = Math.max(this.inv, 0.12);
-      SFX.play('dodge'); this.m.call(this, 'TECH CHASE!', 'snap'); this.m.event('chase', { f: this, vic: o });
+      SFX.play('dodge'); this.m.call(this, 'CHASE DASH!', 'snap'); this.m.event('chase', { f: this, vic: o });
       FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 1.6, life: 0.3, normal: new V3(0, 1, 0), color: 0x7cf9ff }); this.flash = 0.2; this.flashCol = 0x7cf9ff;
     }
     snapCancel() {
@@ -1358,7 +1358,7 @@
         this.spin.rotation.x = 0;
         if (!this.hardKD && I.take('dodge', 0.3) && this.hp > 0) {
           this.endCombo(); this.inv = 0.35; const d = this.stick() || fwd(this.yaw).multiplyScalar(-1);
-          this.dodgeDir = d.clone(); this.dodgeAir = false; this.setState('dodge'); this.m.call(this, 'QUICK RISE', 'small'); SFX.play('tech'); return;
+          this.dodgeDir = d.clone(); this.dodgeAir = false; this.setState('dodge'); this.m.call(this, 'QUICK RISE', 'small'); SFX.play('tech'); this.m.event('techroll', { f: this }); return;
         }
         this.setState('down'); this.vel.x *= 0.3; this.vel.z *= 0.3; SFX.play('land'); FX.addShake(0.15);
         FX.burst(_c.copy(this.pos).setY(this.pos.y + 0.05), { n: 8, color: this.m.arena.dust, speed: 2.5, size: 0.08 });
