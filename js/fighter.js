@@ -1554,7 +1554,7 @@
         if (vic.buffs.spotted) dmg *= G === 'broadside' && lite ? 1.265 : 1.15;
         if (P === 'quarterdeck' && att.hp > vic.hp) dmg *= 1.12;
         if (G === 'match' && lite && vic.burn && !vic.burn.poison) dmg *= 1.2;
-        if (G === 'cornered' && m.arena.walls.some(w => !w.broken && w.lim - w.sign * vic.pos[w.axis] < 1.5)) dmg *= 1.15;
+        if (G === 'cornered' && (m.arena.walls.some(w => !w.broken && w.lim - w.sign * vic.pos[w.axis] < 1.5) || Math.abs(vic.pos.x) > m.arena.stage.W - 1.5)) dmg *= 1.15;
         if (P === 'steadyaim' && mv.type === 'proj') dmg *= 1.18;
         if (vic.st.passive === 'terror' && dist < 3) dmg *= 0.9;
         if (vic.st.passive === 'scrapper') vic.buffs.scrap = 3; }
@@ -1673,7 +1673,7 @@
       if (mv.launch || vic.airborne || vic.state === 'tumble') {
         // DAMAGE %: a launch goes further the higher it is (platform.js); a MARK (a Siege Ram, a Gale Cannon) adds a third
         const pc = vic.pct, mark = vic.wallBreakNext && mv.launch && !m.arena.stage.walled ? 1.35 : 1; if (mark > 1) vic.wallBreakNext = false;
-        let h = mv.kb[0] * kbk * (mv.launch ? Platform.scaleH(pc) : 0.55 + pc / 300) * mark, v = mv.kb[1];
+        let h = mv.kb[0] * kbk * (mv.launch ? Platform.scaleH(pc) : 0.55 + pc / 300) * mark * (att.st.sig === 'warlord' && mv.launch && !m.arena.stage.walled ? 1.1 : 1), v = mv.kb[1];
         if (!mv.launch) { h *= 0.6; v = Math.max(v, 4.5); }
         if (mv.spike) { v = mv.kb[1] * (0.8 + pc / 250); vic.spiked = true; } else { vic.spiked = false; v *= mv.launch ? Platform.scaleV(pc) * mark : 0.92 + pc / 400; }
         vic.vel.set(dir.x * h, v * (v > 0 ? Math.min(1.15, kbk) : 1), 0);

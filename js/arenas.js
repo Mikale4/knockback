@@ -50,7 +50,7 @@
   const laneFor = (M, n, L) => { const r = U.rand(), k = Math.floor(U.rand() * L.length); if (r > 0.7) return k; const x = M.fighters[n % 2].pos.x; let best = 0; L.forEach((lx, i) => { if (Math.abs(lx - x) < Math.abs(L[best] - x)) best = i; }); return best; };
 
   /* ======================================================== 1. TRAIN SET */
-  const LANE = -1.6, TW = 1.6, TR = 2.7, TS = 22;   // the track's z; the warning, the run, the train's speed
+  const LANE = 0, TW = 1.6, TR = 2.7, TS = 22;   // the track's z (on the fighting line: seen from the side, it runs right through the stage); the warning, the run, the train's speed
   TH.trainset = {
     name: 'TRAIN SET', haz: 'train', tag: 'A toy railway runs through the middle of the floor',
     sky: [0x8ac8ff, 0xe4f2ff, 0x3a5a30], fog: 0xd4e8f4, hemi: [0xffffff, 0x4a6a3a, 0.9], sun: [0xfff4e0, 1.0],
@@ -140,7 +140,7 @@
   };
 
   /* =================================================== 2. KITCHEN COUNTER */
-  const BURN = [[-4.2, -2.2], [4.2, 2.2]];
+  const BURN = [[-4.2, 0], [4.2, 0]];   // (on the fighting line)
   TH.kitchen = {
     name: 'KITCHEN COUNTER', haz: 'burner', tag: 'A stovetop: the two burners take turns heating up',
     sky: [0xfff2d8, 0xf6dcb4, 0x6a4a30], fog: 0xf0d8b4, hemi: [0xfff6e8, 0x6a5040, 0.9], sun: [0xfff4e4, 1.0],
@@ -201,7 +201,7 @@
   };
 
   /* ========================================================= 3. BATH TIME */
-  const DRAIN = [0, -3.0], DAISY = [[-5.6, 3.6, 0xff6aa8], [-2.4, 1.2, 0x9a7aff], [1.6, 3.9, 0x4ad08a], [5.4, 0.8, 0xff8a5a], [-6.0, -2.4, 0x4aa0ff], [4.6, -3.4, 0xff6aa8], [-2.8, -4.6, 0xffb020], [2.6, -0.9, 0xff6aa8], [6.6, 4.4, 0x9a7aff], [-4.4, 0.2, 0xff8a5a]];
+  const DRAIN = [0, 0], DAISY = [[-5.6, 3.6, 0xff6aa8], [-2.4, 1.2, 0x9a7aff], [1.6, 3.9, 0x4ad08a], [5.4, 0.8, 0xff8a5a], [-6.0, -2.4, 0x4aa0ff], [4.6, -3.4, 0xff6aa8], [-2.8, -4.6, 0xffb020], [2.6, -0.9, 0xff6aa8], [6.6, 4.4, 0x9a7aff], [-4.4, 0.2, 0xff8a5a]];
   TH.bathtub = {
     name: 'BATH TIME', haz: 'geyser', tag: 'The bath is draining, and the drain fights back',
     sky: [0x9ad8ff, 0xd8f0ff, 0x5a8aa8], fog: 0xc4e4f6, hemi: [0xf4fbff, 0x6a8aa0, 0.78], sun: [0xfffaf0, 0.82],
@@ -259,7 +259,7 @@
   };
 
   /* ===================================================== 4. PINBALL TABLE */
-  const BUMP = [[-4.6, -2.4], [4.6, -2.4], [0, 3.0]], BR = 0.7;
+  const BUMP = [[-6.3, 0], [6.3, 0]], BR = 0.7;   // (on the fighting line, out by the ends: they guard the edges)
   TH.pinball = {
     name: 'PINBALL TABLE', haz: 'bumper', tag: 'Three pop bumpers: touch one and it fires you off',
     sky: [0x0a0820, 0x3a1a6a, 0x05040e], fog: 0x1a1040, hemi: [0xc8c0ff, 0x1a1030, 0.75], sun: [0xffffff, 0.85],
