@@ -309,7 +309,7 @@
     }
     const shadows = o => { o.traverse(c => { if (c.isMesh) c.castShadow = true; }); return o; };
     /* ---- what flies: aim, the muzzle flash, darts (a bullet, a kunai, a bolt) and the chain */
-    const UP = new V3(0, 1, 0), CHAIN_N = 64, _q = new V3(), _o3 = new THREE.Object3D();
+    const UP = new V3(0, 1, 0), ZAX = new V3(0, 0, 1), CHAIN_N = 64, _q = new V3(), _o3 = new THREE.Object3D();
     // things that turn to face you (notes, the hex glyph) face the usual camera angle, never the camera itself: the fight
     // must come out the same however the camera moves (a replay after a rollback runs with it standing still)
     const FACE_Q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new V3(0, 0.62, 0.79), new V3(0, 0, 0), new V3(0, 1, 0)));
@@ -579,6 +579,7 @@
     function disposeGroup(g) { scene.remove(g); g.traverse(o => { if (o.isMesh && !o.userData.keep) { o.geometry.dispose(); o.material.dispose(); } }); }
     function dart(f, mv, look, from, dir, range, opt) {
       opt = opt || {}; const L = LOOK[look];
+      if (!opt.grp || !opt.grp.depth) { from.z = 0; dir.z = 0; if (dir.lengthSq() < 1e-6) dir.set(f.forward.x >= 0 ? 1 : -1, 0, 0); dir.normalize(); }   // (a shot flies on the fight's plane, from the hand's height; the musket line behind the Shogun is the one exception)
       let mesh, own = true;
       if (look === 'kunai') { mesh = kunaiMesh(); own = false; }
       else if (look === 'bolt') mesh = inked(new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), glowMat(opt.col || 0xffffff, 0.95)), opt.col, 1.75);
@@ -740,15 +741,15 @@
         } else {
           const grp = { done: false };
           if (S.ground) { from.y = 0.22; dir.y = 0; dir.normalize(); }   // (a rolled plate keeps to the floor)
-          for (const a of S.spread || [0]) dart(f, mv, S.look, from, dir.clone().applyAxisAngle(UP, a), range, { grp, charge, ret: S.ret, bounce: S.bounce, pierce: S.pierce, ground: S.ground });
+          for (const a of S.spread || [0]) dart(f, mv, S.look, from, dir.clone().applyAxisAngle(ZAX, a * 0.7), range, { grp, charge, ret: S.ret, bounce: S.bounce, pierce: S.pierce, ground: S.ground });
           if (S.gun) { SFX.play(S.look === 'bullet' || S.look === 'pellet' ? 'shot' : 'boom'); FX.addShake(0.2); muzzleFlash(from, dir); f.kickT = 0.14; }
           SFX.play(S.look === 'arrow' ? 'whoosh' : 'whoosh'); if (S.from === 'feet') FX.burst(from, { n: 6, color: arena.dust, speed: 2, size: 0.07, life: 0.4 });
         }
       } else if (mv.proj === 'volley') {
         // SHOGUN: the war fan comes down and the musket line behind him fires (three muskets, one hit between them)
-        const side = new V3(F.z, 0, -F.x), grp = { done: false };
+        const grp = { done: false, depth: true };
         for (const k of [-1, 0, 1]) {
-          const from = inside(_v.copy(f.pos).addScaledVector(F, -1.3).addScaledVector(side, k * 0.9).setY(f.pos.y + 1.15).clone());
+          const from = inside(_v.copy(f.pos).addScaledVector(F, -1.3 + k * 0.3).setY(f.pos.y + 1.15).clone()); from.z = -0.6 - (k + 1) * 0.55;
           const dir = aimDir(f, o, from, F.clone(), mv.range, 0.35, false, LOOK.bullet.speed);
           dart(f, mv, 'bullet', from, dir, mv.range + 1.5, { grp }); muzzleFlash(from, dir);
         }
@@ -924,6 +925,72 @@
           const k = Math.min(1, f.moveT / (f.move.su || 0.1));
           T.g.position.set(at.x, at.y + 0.95, 0.1); T.g.scale.setScalar(1.25 - k * 0.55);
           T.swirl.rotation.z = M.time * 9; T.rim.material.opacity = 0.6 + 0.4 * Math.sin(M.time * 40); T.column.material.opacity = 0.12 + 0.18 * k;
+        }
+      });
+    }
+
+    /* ---------------------------------------------------- a BUFF on the figure
+       Every Special that leaves something on its user shows it for as long as it lasts (looks only):
+       a READ (a counter, a parry, a slip, Kawarimi, a glove up, on the ropes, a mirror, a phase): a bright outline round
+         the body facing the camera, beating fast (hit them now and it's on you), flickering as it runs out;
+       ARMOUR (Bulwark, stone skin, iron body, ...): a hexagon plate turning at their feet and glints off the body;
+       a POWER-UP (fury, valour, zeal, ...): embers rising off the body in its colour and a ring at the feet;
+       HEALING: green motes and a ring; HASTE: streaks behind them; a BUBBLE: a ball of water; HAZE: a shimmer of heat.
+       Nothing while they've vanished (Smoke Bomb). */
+    const BUFF_LOOK = {
+      counter: ['read', 0xfff0a0], parry: ['read', 0xffffff], slip: ['read', 0x9ad8ff], kawarimi: ['read', 0xb48ae0], catch: ['read', 0xffc070],
+      ropes: ['read', 0xff5a4a], reflect: ['read', 0x8af0ff], phase: ['read', 0xb0a0ff], ward: ['read', 0xfff6c0],
+      bulwark: ['armor', 0xd0d8ea], stoneSkin: ['armor', 0xb89a70], iron: ['armor', 0xf0c860], immov: ['armor', 0xd8a040], autoGuard: ['armor', 0xa8c8ff],
+      shell: ['armor', 0xff7a30], chalk: ['armor', 0xffffff], pure: ['armor', 0xfff4d0], vow: ['armor', 0xffe9a0],
+      fury: ['power', 0xff5030], valor: ['power', 0xffd24a], zeal: ['power', 0xffc040], berserk: ['power', 0xff2020], empower: ['power', 0xe0e8ff],
+      morale: ['power', 0xffd060], pumped: ['power', 0xff8040], sake: ['power', 0xffe0a0], hornpipe: ['power', 0x60c0ff], fuses: ['power', 0xff9020], spot: ['power', 0xfff080],
+      regen: ['heal', 0x6aff8a], haste: ['haste', 0x9aff9a], bubble: ['bubble', 0x9ad8ff], haze: ['haze', 0xff9040],
+    };
+    const BFV = [], _bv = new V3();
+    function updBuffLooks(dt) {
+      M.fighters.forEach((f, i) => {
+        let V = BFV[i];
+        if (!V) {
+          const mat = op => new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide, toneMapped: false, blending: THREE.AdditiveBlending });
+          const halo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 48), mat(0.8)), halo2 = new THREE.Mesh(new THREE.RingGeometry(0.97, 1.0, 48), mat(0.5));
+          const hex = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.8, 6), mat(0.6)), disc = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.78, 40), mat(0.6));
+          const ball = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshPhongMaterial({ color: 0x9ad8ff, emissive: 0x204060, transparent: true, opacity: 0.28, depthWrite: false, shininess: 120, specular: 0xffffff }));
+          halo.renderOrder = halo2.renderOrder = hex.renderOrder = disc.renderOrder = 7; ball.renderOrder = 5;
+          scene.add(halo, halo2, hex, disc, ball);
+          V = BFV[i] = { halo, halo2, hex, disc, ball, emit: 0, all: [halo, halo2, hex, disc, ball] };
+        }
+        const has = { read: null, armor: null, power: null, heal: null, haste: null, bubble: null, haze: null };
+        if (!f.gone && !f.buffs.invis && !['out', 'ko'].includes(f.state)) for (const k in f.buffs) { const L = BUFF_LOOK[k], t = f.buffs[k]; if (L && t > 0 && (!has[L[0]] || t > has[L[0]].t)) has[L[0]] = { c: L[1], t }; }
+        for (const o of V.all) o.visible = false;
+        const x = f.pos.x, y = f.pos.y, T = M.time, end = b => b.t < 0.3 ? 0.4 + 0.6 * (Math.sin(T * 60) > 0 ? 1 : 0) : 1;   // (running out: it flickers)
+        if (has.read) {
+          const b = has.read, beat = 0.5 + 0.5 * Math.sin(T * 26);
+          V.halo.visible = V.halo2.visible = true; V.halo.position.set(x, y + 0.98, 0.32); V.halo2.position.copy(V.halo.position);
+          V.halo.scale.set(0.78 + 0.05 * beat, 1.12 + 0.05 * beat, 1); V.halo2.scale.set(0.9 + 0.25 * (T * 3 % 1), 1.25 + 0.25 * (T * 3 % 1), 1);
+          V.halo.material.color.setHex(b.c); V.halo2.material.color.setHex(b.c);
+          V.halo.material.opacity = (0.55 + 0.4 * beat) * end(b); V.halo2.material.opacity = 0.5 * (1 - T * 3 % 1) * end(b);
+          if (U.vrand() < dt * 10) FX.spark(_bv.set(x + U.vrnd(-0.5, 0.5), y + U.vrnd(0.3, 1.8), 0.3).clone(), { color: b.c, size: 0.4, life: 0.1 });
+        }
+        if (has.armor) {
+          const b = has.armor; V.hex.visible = true; V.hex.position.set(x, y + 0.05, 0); V.hex.rotation.set(-Math.PI / 2, 0, T * 1.6);
+          V.hex.material.color.setHex(b.c); V.hex.material.opacity = (0.5 + 0.2 * Math.sin(T * 8)) * end(b);
+          if (U.vrand() < dt * 5) FX.spark(_bv.set(x + U.vrnd(-0.35, 0.35), y + U.vrnd(0.4, 1.7), 0.25).clone(), { color: b.c, size: 0.55, life: 0.12 });
+        }
+        const glow = has.power || has.heal;
+        if (glow) {
+          V.disc.visible = true; V.disc.position.set(x, y + 0.06, 0); V.disc.rotation.set(-Math.PI / 2, 0, 0); V.disc.scale.setScalar(0.9 + 0.12 * Math.sin(T * 6));
+          V.disc.material.color.setHex(glow.c); V.disc.material.opacity = 0.45 * end(glow);
+        }
+        V.emit += dt * ((has.power ? 18 : 0) + (has.heal ? 12 : 0) + (has.haze ? 14 : 0));
+        while (V.emit >= 1) {
+          V.emit--; const b = has.power && (!has.heal || U.vrand() < 0.6) ? has.power : has.heal && (!has.haze || U.vrand() < 0.6) ? has.heal : has.haze;
+          if (!b) break;
+          FX.burst(_bv.set(x + U.vrnd(-0.35, 0.35), y + U.vrnd(0.1, 1.5), U.vrnd(-0.2, 0.2)).clone(), { n: 1, color: [b.c, 0xffffff], glow: b !== has.haze, speed: 0.5, size: b === has.haze ? 0.14 : 0.08, gravity: b === has.heal ? -3 : -5, life: 0.55, up: 1, floor: -99 });
+        }
+        if (has.haste && Math.abs(f.vel.x) > 1.5 && U.vrand() < dt * 30) FX.burst(_bv.set(x - Math.sign(f.vel.x) * 0.3, y + U.vrnd(0.3, 1.6), 0).clone(), { n: 1, color: [has.haste.c, 0xffffff], glow: true, dir: new V3(-Math.sign(f.vel.x) * 2, 0, 0), speed: 3, size: 0.07, gravity: 0, life: 0.22, up: 0, floor: -99 });
+        if (has.bubble) {
+          const b = has.bubble; V.ball.visible = true; V.ball.position.set(x, y + 0.95, 0); V.ball.scale.set(1.05 + 0.04 * Math.sin(T * 7), 1.15 + 0.04 * Math.sin(T * 7 + 1.5), 1.05);
+          V.ball.material.opacity = 0.28 * end(b); V.ball.rotation.y = T;
         }
       });
     }
@@ -1179,7 +1246,7 @@
       arena.draw(M, dt);   // (the hazard's meshes and the stage's ambient life: drawn frames only)
       if (M.training || HB.n) drawHitboxes();
       for (let i = M.fx.length - 1; i >= 0; i--) { const e = M.fx[i]; e.t += dt; e.m.material.opacity = 1 - e.t / e.life; if (e.t > e.life) { scene.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); M.fx.splice(i, 1); } }
-      updKoBlasts(rawDt); updShields(rawDt); updTells();
+      updKoBlasts(rawDt); updShields(rawDt); updTells(); updBuffLooks(rawDt);
       sweepTrails();
       updCamera(rawDt); FX.update(dt);
       if (!M.attract) HUD.update(M);
@@ -1613,7 +1680,7 @@
       }
     }
     M.dispose = () => {
-      M.disposed = true; for (const e of KOFX) scene.remove(e.g); KOFX.length = 0; for (const b of SHB) if (b) { scene.remove(b.g); scene.remove(b.stars); } SHB.length = 0; for (const T of TEL) if (T) scene.remove(T.g); TEL.length = 0; if (M.cine) Arts.end(M.cine);
+      M.disposed = true; for (const e of KOFX) scene.remove(e.g); KOFX.length = 0; for (const b of SHB) if (b) { scene.remove(b.g); scene.remove(b.stars); } SHB.length = 0; for (const T of TEL) if (T) scene.remove(T.g); TEL.length = 0; for (const V of BFV) if (V) for (const o of V.all) scene.remove(o); BFV.length = 0; if (M.cine) Arts.end(M.cine);
       for (const f of M.fighters) f.dispose();
       for (const p of M.picks) if (p.grp.parent) p.grp.parent.remove(p.grp);
       arena.dispose(); HUD.hide(M); if (!M.attract) Touch.hide();

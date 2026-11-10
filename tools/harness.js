@@ -449,3 +449,31 @@ window.__shotW = (id, t, cam) => {
   const c = m.camera, p = cam || [0, 11, 17, 0.5]; c.position.set(p[0], p[1], p[2]); c.lookAt(0, p[3], -1.5);
   const co = document.getElementById('callouts'); if (co) co.innerHTML = ''; return m.haz ? JSON.stringify(m.haz).slice(0, 140) : 'no hazard';
 };
+/* VISUALS of every Special: each of a line's neutral, side and down Specials thrown at a dummy 3.6 m off; counts the FX and
+   the meshes it adds and how far off the fight plane (z) they go. NOVIS: nothing drawn; OFFZ: off the plane; LOW: under the floor */
+window.__visAudit = (lines, secs, dist, only) => {
+  const out = [], o0 = { b: FX.burst, s: FX.spark, r: FX.ring, t: FX.trail }; let rec = null;
+  const hk = fn => function (p) { if (rec) { rec.fx++; if (p && p.z != null) rec.fz = Math.max(rec.fz, Math.abs(p.z)); } return fn.apply(FX, arguments); };
+  FX.burst = hk(o0.b); FX.spark = hk(o0.s); FX.ring = hk(o0.r); FX.trail = hk(o0.t);
+  try {
+    for (const L of lines) {
+      const S = __train(L, 'knight').fighters[0].st;
+      for (const [k, id] of [['N', S.special], ['S', S.cmd && S.cmd.qcf], ['D', S.cmd && S.cmd.qcb]]) {
+        if (!id || !KB.MOVES[id]) { out.push(L + ' ' + k + ' -'); continue; }
+        if (only && !only.includes(id)) continue;
+        const m = __train(L, 'knight'), [a, b] = m.fighters; const D = (dist || 3.6) / 2; a.pos.set(-D, 0, 0); b.pos.set(D, 0, 0); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2; a.uses = 9;
+        if (KB.MOVES[id].needImp) { a.startSpecial(S.special); __step(1.5); }
+        const sc = m.scene, base = new Set(sc.children); __errs.length = 0;
+        rec = { fx: 0, fz: 0 }; const neu = new Set(), kinds = new Set(); let mz = 0, pz = 0, lowY = 9;
+        a.startSpecial(id); const on = !!a.move;
+        __step(secs || 2, i => { if (i % 5) return;
+          for (const c of sc.children) if (!base.has(c) && c.visible && !c.isLight) { neu.add(c); mz = Math.max(mz, Math.abs(c.getWorldPosition(new THREE.Vector3()).z)); }
+          for (const q of m.projs) if (q.f === a) { kinds.add(q.kind); const p = q.mesh ? q.mesh.position : q.pos; if (p) { pz = Math.max(pz, Math.abs(p.z)); lowY = Math.min(lowY, p.y); } } });
+        const r = rec; rec = null;
+        const flag = (r.fx + neu.size === 0 ? ' NOVIS' : '') + (mz > 1.2 || pz > 1.2 || r.fz > 1.6 ? ' OFFZ' : '') + (lowY < -0.6 ? ' LOW' : '') + (__errs.length ? ' ERR:' + __errs[0].slice(0, 80) : '') + (on ? '' : ' NOSTART');
+        out.push(L + ' ' + k + ' ' + id + ' fx' + r.fx + ' m' + neu.size + (kinds.size ? ' [' + [...kinds].join('/') + ']' : '') + ' z' + Math.max(mz, pz).toFixed(1) + '/' + r.fz.toFixed(1) + flag);
+      }
+    }
+  } finally { Object.assign(FX, { burst: o0.b, spark: o0.s, ring: o0.r, trail: o0.t }); rec = null; }
+  return out;
+};

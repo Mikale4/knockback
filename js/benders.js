@@ -519,8 +519,8 @@
   E.PROJS.xorb = {
     update(M, p, dt, X) {
       const f = p.f, o = M.opp(f);
-      if (alive(o)) { const tx = o.pos.x - p.pos.x, tz = o.pos.z - p.pos.z, l = Math.hypot(tx, tz); if (l > 0.05) { const a = Math.atan2(p.dir.x, p.dir.z), b = Math.atan2(tx, tz); let d = b - a; d = Math.atan2(Math.sin(d), Math.cos(d)); const na = a + U.clamp(d, -2.6 * dt, 2.6 * dt); p.dir.set(Math.sin(na), 0, Math.cos(na)); } }
-      p.pos.addScaledVector(p.dir, 3.8 * dt); p.pos.y = 1.1 + Math.sin(p.t * 6) * 0.1; X.inside(p.pos); p.mesh.position.copy(p.pos); p.mesh.rotation.y += dt * 7; p.mesh.rotation.x += dt * 3;
+      if (alive(o)) { const tx = o.pos.x - p.pos.x, ty = o.pos.y + 1 - p.pos.y, l = Math.hypot(tx, ty); if (l > 0.05) { const a = Math.atan2(p.dir.y, p.dir.x), b = Math.atan2(ty, tx); let d = b - a; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) > 2.5) d = Math.abs(d) * (Math.cos(a) >= 0 ? 1 : -1); const na = a + U.clamp(d, -2.6 * dt, 2.6 * dt); p.dir.set(Math.cos(na), Math.sin(na), 0); } }   // (right behind it: it loops up and over, never into the floor)
+      p.pos.addScaledVector(p.dir, 3.8 * dt); p.pos.z = 0; p.pos.y = Math.max(p.pos.y, 0.5); X.inside(p.pos); p.mesh.position.copy(p.pos); p.mesh.position.y += Math.sin(p.t * 6) * 0.1; p.mesh.rotation.y += dt * 7; p.mesh.rotation.x += dt * 3;
       if (U.vrand() < 0.5) FX.burst(p.pos, { n: 1, color: [0x7ae8ff, 0xffffff], glow: true, speed: 1.5, size: 0.05, life: 0.25, gravity: 0 });
       p.cd -= dt;
       if (free(o) && o.inv <= 0 && p.cd <= 0 && Math.hypot(o.pos.x - p.pos.x, o.pos.z - p.pos.z) < 1.4 && Math.abs(o.pos.y + 1 - p.pos.y) < 1.6) {
