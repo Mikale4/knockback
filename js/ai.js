@@ -1,6 +1,9 @@
 /* ============================================================================
    ai.js -- the CPU. It drives a fighter through the same Input player a human
-   uses (held buttons + a stick), so it plays by exactly the same rules.
+   uses (held buttons + a stick), so it plays by exactly the same rules. On the
+   stage (stageThink): it gets back on it (its jumps, a travelling side Special,
+   the ↑ Special), plays a ledge, won't walk off the edge, follows you up onto
+   the platforms and down off them, and waits at the edge for you to come back.
    Levels 0..3 (Rookie, Fighter, Veteran, Champion) change how fast it reacts,
    how well it guards, techs walls, bursts, and how it plays its combos: a Rookie
    mashes and fumbles links, a Champion picks a route (into the wall, into the
@@ -31,7 +34,12 @@
     stickTo(dx, dz, k, raw) {
       const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
       if (!raw) { const s = this.steer(dx, dz); dx = s[0]; dz = s[1]; }
-      this.move.x = dx * (k || 1); this.move.y = -dz * (k || 1);
+      // one plane: only left and right (up and down on the stick mean something else here)
+      this.move.x = Math.sign(dx) * (k || 1); this.move.y = 0;
+      // never walk off the edge (unless it's to go after them on purpose)
+      const f = this.f, St = this.m.arena.stage;
+      if (!raw && f.grounded && !f.plat && Math.abs(f.pos.x) > St.W - 0.8 && Math.sign(this.move.x) === Math.sign(f.pos.x)) this.move.x = 0;
+      if (!raw && f.plat && (f.pos.x < f.plat.x1 + 0.4 && this.move.x < 0 || f.pos.x > f.plat.x2 - 0.4 && this.move.x > 0) && Math.abs(f.opp.pos.y - f.pos.y) < 0.6) this.move.x = 0;
     }
     steer(dx, dz) {
       const f = this.f, A = this.m.arena;
@@ -51,16 +59,49 @@
       return [dx / l, dz / l];
     }
     stop() { this.move.x = 0; this.move.y = 0; }
-    /* the direction to aim a launch: toward the wall behind the opponent */
+    /* the direction to aim a KNOCK: off the nearer end of the stage, once their % is high enough for it to count */
     wallAim(f, o) {
-      const A = this.m.arena, dx = o.pos.x - f.pos.x, dz = o.pos.z - f.pos.z, l = Math.hypot(dx, dz) || 1;
-      let best = null, bd = 1e9;
-      for (const w of A.walls) {
-        const into = -(w.n.x * dx + w.n.z * dz) / l; if (into < 0.35) continue;
-        const dist = w.lim - w.sign * o.pos[w.axis]; const score = dist / into;
-        if (score < bd) { bd = score; best = w; }
+      const St = this.m.arena.stage, side = o.pos.x >= 0 ? 1 : -1, toEdge = Math.max(0.3, St.W - side * o.pos.x), toBlast = St.blast.x - side * o.pos.x;
+      // a walled stage: into the wall behind them, for the bounce (and in the end the break)
+      if (St.walled) { const w = this.m.arena.walls.find(x => x.sign === side && !x.broken); return w ? { x: side, z: 0, dist: toEdge, w } : null; }
+      return o.pct > toBlast * 4.2 - 10 ? { x: side, z: 0, dist: toEdge, w: null } : null;
+    }
+    /* ---- THE STAGE: off it, on a ledge, at its edge, up and down the platforms */
+    stageThink(dt) {
+      const f = this.f, o = f.opp, St = this.m.arena.stage, lv = this.lv, r = Math.random;
+      if (f.state === 'ledge') {
+        this.stop(); this.ledgeT = (this.ledgeT || 0) + dt;
+        if (this.ledgeT < [0.7, 0.45, 0.28, 0.16][lv]) return true;
+        this.ledgeT = 0; const k = r();
+        if (k < 0.35) this.press('jump'); else if (k < 0.55) this.press('light'); else if (k < 0.72) this.press('dodge'); else this.move.x = -f.ledgeSide;
+        return true;
       }
-      return best && bd < 7 ? { x: -best.n.x, z: -best.n.z, dist: bd, w: best } : null;
+      this.ledgeT = 0;
+      const off = !f.grounded && (Math.abs(f.pos.x) > St.W - 0.1 || f.pos.y < St.top - 0.2);
+      if ((f.state === 'air' || f.state === 'helpless') && off) {
+        // back to the stage: toward it, a jump when falling, then the ↑ Special (or a side Special that travels)
+        const under = Math.abs(f.pos.x) < St.W + 0.7 && f.pos.y < St.top - 0.3, tx = under ? (f.pos.x > 0 ? 1 : -1) : f.pos.x > 0 ? -1 : 1;   // (under the stage: out from under it first)
+        this.move.x = tx; this.move.y = 0; this.held.guard = false; this.guardT = 0;
+        if (f.state === 'helpless') return true;
+        const below = f.pos.y < St.top - 0.4, far = Math.abs(f.pos.x) - St.W, C = f.st.cmd;
+        if (f.vel.y < 1.5 && f.airJumps > 0 && !f.broken.legs && (below || far > 2.2)) { this.press('jump'); return true; }
+        if (C && C.qcf && far > 4 && f.vel.y < 0.5 && ['dash', 'teleport'].includes((KB.MOVES[C.qcf] || {}).type) && f.canSpecial(C.qcf)) { f.faceX(tx); this.cmd = 'qcf'; this.press('special'); return true; }
+        if (C && C.dp && f.vel.y < 0.5 && (f.airJumps <= 0 || f.broken.legs) && (below || far > 1) && f.canSpecial(C.dp)) { f.faceX(tx); this.cmd = 'dp'; this.press('special'); return true; }
+        return true;
+      }
+      if (!['idle', 'run'].includes(f.state) || !f.grounded) return false;
+      // they're off the stage, coming back: wait at the edge for them (the better the CPU, the closer)
+      if (o && !o.grounded && Platform.offStage(o) && o.state !== 'ko' && lv >= 1 && !o.gone) {
+        const side = o.pos.x > 0 ? 1 : -1, spot = side * (St.W - [2.5, 1.8, 1.2, 0.8][lv]), dx = spot - f.pos.x;
+        if (Math.abs(dx) > 0.4) { this.move.x = Math.sign(dx); this.move.y = 0; return true; }
+        f.faceX(side); this.stop();
+        if (Math.abs(o.pos.x - f.pos.x) < 2.6 && o.pos.y > St.top - 1.5 && o.pos.y < St.top + 2.5 && r() < 0.25 + lv * 0.15) { this.move.x = side; this.press(o.pos.y > St.top + 0.6 ? 'jump' : 'heavy'); }
+        return true;
+      }
+      // up after them onto a platform, or down off one to them
+      if (o && o.pos.y - f.pos.y > 1.3 && Math.abs(o.pos.x - f.pos.x) < 3.4 && r() < 0.06 + lv * 0.03) { this.press('jump'); return false; }
+      if (f.plat && o && f.pos.y - o.pos.y > 1.3 && Math.abs(o.pos.x - f.pos.x) < 5 && r() < 0.05 + lv * 0.02) { this.move.x = 0; this.move.y = -1; return true; }
+      return false;
     }
     /* how far away a Legend Art can still catch them */
     /* COMMAND SPECIALS: which of the three suits the distance (null: none of them) */
@@ -94,9 +135,12 @@
       if (m.cine) { this.stop(); this.guardT = 0; return; }
       if (this.play) return this.playThink(dt);   // TRAINING: the dummy plays your recording (lab.js)
       if (this.guardT > 0) { this.guardT -= dt; this.held.guard = true; }
+      if (!f.grounded && Math.abs(f.pos.x) > m.arena.stage.W - 2.5 && f.state !== 'attack') this.held.guard = false;   // (no down dash off an edge)
       if (this.dummy && this.dummy !== 'cpu') return this.dummyThink(dt);
       if (m.phase !== 'fight') { this.stop(); return; }
+      if (f.gone) { this.stop(); return; }
       this.wait -= dt; this.flipT -= dt; this.planT -= dt;
+      if (this.stageThink(dt)) return;
       const d = U.dist(f.pos, o.pos);
       if (this.underFire(dt)) return;
       if (m.haz && this.hazardThink()) return;

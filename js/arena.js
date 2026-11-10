@@ -1,18 +1,40 @@
 /* ============================================================================
-   arena.js -- the stages: an enclosed floor with four walls, built at toy
-   scale (the figures are a hand tall, so the room around them is huge).
+   arena.js -- the stages, built at toy scale (the figures are a hand tall, so
+   the room around them is huge), seen from the side.
 
-   Each wall keeps a STRESS (0..100) that wall bounces add to and that slowly
-   heals. Cracks spread across it as it rises; at 100 it BREAKS: it bursts
-   into blocks, leaves a gap out of the arena for a few seconds, then snaps
-   back together. Walls: E (x = +W), W (x = -W), N (z = -D), S (z = +D, the
-   low one nearest the camera).
+   A stage is a floating MAIN PLATFORM, its top at y 0 from x -W to W (its top
+   painted with the theme's floor, its sides with the theme's wall pattern,
+   narrowing underneath), a LEDGE at each end, and a LAYOUT of pass-through
+   platforms above it. Nothing is below: the BLAST ZONES (A.stage.blast) are
+   where a figure is knocked out (platform.js has the rules). The theme's
+   scenery stands behind it.
+
+   A WALLED stage (the three house stages, and about a third of the rest) has a
+   tall WALL at each end instead of a ledge. Each wall keeps a STRESS (0..100)
+   that wall bounces add to and that slowly heals; cracks spread across its
+   face as it rises, and at 100 it BREAKS: it bursts into blocks and leaves that
+   end open for a few seconds, then snaps back together. On a walled stage the
+   top blast zone comes down (the way out is up), and the side ones come in
+   (out through a broken wall, it's close).
    ========================================================================== */
 (function () {
   'use strict';
   const AS = 0.25;  // world units per arena voxel
-  const W = 8, D = 6;
+  const W = 8, D = 2.5;
   const V3 = THREE.Vector3;
+  /* the pass-through platforms over the main one: [centre x, height, width] */
+  const LAYOUTS = {
+    trio: [[-4.6, 2.7, 3.6], [4.6, 2.7, 3.6], [0, 5.2, 3.8]],
+    duo: [[-3.9, 3.0, 4.2], [3.9, 3.0, 4.2]],
+    high: [[0, 3.4, 6.0]],
+    steps: [[-5.2, 2.4, 3.0], [0, 4.3, 3.6], [5.2, 2.4, 3.0]],
+    flat: [],
+  };
+  const LAYOUT_ORDER = ['trio', 'duo', 'steps', 'high', 'trio', 'duo', 'flat'];
+  const hashOf = id => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+  const layoutOf = id => LAYOUT_ORDER[hashOf(id) % LAYOUT_ORDER.length];
+  const HOUSE_WALLED = ['shelf', 'desk', 'chest'], WALL_H = 48, WALL_T = 6;   // (a wall: 12 m tall, 1.5 m thick)
+  const walledOf = (id, T) => T && T.walled != null ? !!T.walled : HOUSE_WALLED.includes(id) || (Math.floor(hashOf(id) / 7) % 10) < 3;
 
   const THEMES = {
     shelf: {
@@ -45,59 +67,81 @@
     sun.shadow.mapSize.set(U.touch ? 1024 : 2048, U.touch ? 1024 : 2048); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 40 }); sun.shadow.bias = U.touch ? -0.0015 : -0.0008; sun.shadow.normalBias = 0.02;
     group.add(sun); group.add(sun.target);
 
-    // the floor
-    const fg = new VX.Grid(); fg.jit = 0.03;
-    for (let x = -32; x < 32; x++) for (let z = -24; z < 24; z++) fg.set(x, 0, z, T.floor(x + 32, z + 24));
-    for (let x = -32; x < 32; x++) for (let z = -24; z < 24; z++) if (x === -32 || x === 31 || z === -24 || z === 23) fg.set(x, -1, z, T.floor(x + 32, z + 24));
-    const floor = VX.object(fg, AS, { cast: false }); floor.position.set(0.125, -0.125, 0.125); group.add(floor);
-    // what's below the edge (a ring out lands there)
-    // (a stage can size it -- the windowsill's sill -- make it glow -- lava -- or give it its own material)
-    const os = T.outSize || [160, 160, 0];
-    const outM = new THREE.Mesh(new THREE.PlaneGeometry(os[0], os[1]), T.outMat ? T.outMat(T) : T.outGlow ? new THREE.MeshBasicMaterial({ color: T.out, toneMapped: false }) : new THREE.MeshLambertMaterial({ color: T.out }));
-    outM.rotation.x = -Math.PI / 2; outM.position.set(0, T.outY, os[2]); outM.receiveShadow = true; group.add(outM);
-    // a plinth under the arena so it reads as raised
-    const pl = new THREE.Mesh(new THREE.BoxGeometry(16.1, Math.abs(T.outY), 12.1), new THREE.MeshLambertMaterial({ color: T.plinth != null ? T.plinth : Models.shade(T.out, 1.3) }));
-    pl.position.y = T.outY / 2 - 0.13; pl.receiveShadow = true; group.add(pl);
-
-    // the four walls
-    const walls = [
-      { id: 'E', axis: 'x', sign: 1, lim: W, n: { x: -1, z: 0 }, len: 2 * D, h: 10 },
-      { id: 'W', axis: 'x', sign: -1, lim: W, n: { x: 1, z: 0 }, len: 2 * D, h: 10 },
-      { id: 'N', axis: 'z', sign: -1, lim: D, n: { x: 0, z: 1 }, len: 2 * W, h: 10 },
-      { id: 'S', axis: 'z', sign: 1, lim: D, n: { x: 0, z: -1 }, len: 2 * W, h: 3 },
-    ];
+    // THE STAGE: the main platform's top (the theme's floor, the middle of it), its body (the wall pattern down its faces,
+    // narrowing to a keel), and the layout's pass-through platforms
+    const ZD = Math.round(D / AS), DEPTH = 9, wallOf = { id: 'S', axis: 'x', sign: 1, lim: W, n: { x: 0, z: -1 }, len: 2 * W, h: 10 };
     const colors = new Set();
-    for (const w of walls) {
-      const g = new VX.Grid(); g.jit = 0.05; const n = w.len / AS;
-      for (let i = 0; i < n; i++) for (let y = 0; y < w.h; y++) for (let t = 0; t < 2; t++) {
-        let c = T.wall(0, y, i, w); if (c < 0) continue;
-        if (y === w.h - 1 && T.edge && !T.noEdge) c = T.edge;
-        colors.add(c);
-        if (w.axis === 'x') g.set(t, y, i - n / 2, c); else g.set(i - n / 2, y, t, c);
+    const fg = new VX.Grid(); fg.jit = 0.03;
+    for (let x = -32; x < 32; x++) for (let z = -ZD; z < ZD; z++) fg.set(x, 0, z, T.floor(x + 32, z + 24));
+    const top = VX.object(fg, AS, { cast: false }); top.position.set(0.125, -0.125, 0.125); group.add(top);
+    const under = Models.shade(T.out, 1.15);
+    const bg = new VX.Grid(); bg.jit = 0.05;
+    for (let y = 1; y <= DEPTH; y++) {
+      const ins = y <= 2 ? 0 : Math.round((y - 2) * 2.4), zi = Math.min(ins >> 1, ZD - 3);
+      const x0 = -32 + ins, x1 = 31 - ins, z0 = -ZD + zi, z1 = ZD - 1 - zi;
+      for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) {
+        const rim = x === x0 || x === x1 || z === z0 || z === z1;
+        if (!rim && y !== DEPTH) continue;   // (a shell)
+        let c = y <= 3 ? T.wall(0, 9 - y * 2, (z === z0 || z === z1) ? x + 32 : z + ZD, wallOf) : -1;
+        if (c == null || c < 0) c = y <= 3 ? Models.shade(T.floor(Math.max(0, x + 32), 0), 0.72) : Models.shade(under, 1 - y * 0.03);
+        colors.add(c); bg.set(x, -y, z, c);
       }
-      const o = VX.object(g, AS); w.obj = o;
-      if (w.axis === 'x') o.position.set(w.sign > 0 ? W + 0.125 : -W - 0.375, 0.125, 0.125);
-      else o.position.set(0.125, 0.125, w.sign > 0 ? D + 0.125 : -D - 0.375);
-      w.baseY = o.position.y; group.add(o);
-      w.stress = 0; w.broken = false; w.rebuild = 0; w.cracks = new THREE.Group(); group.add(w.cracks);
     }
-    // corner posts
-    const cg = new VX.Grid();
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (let y = 0; y < 11; y++) cg.box(sx > 0 ? 32 : -34, y, sz > 0 ? 24 : -26, sx > 0 ? 33 : -33, y, sz > 0 ? 25 : -25, y === 10 ? T.edge : (T.post != null ? T.post : Models.shade(T.out, 1.6)));
-    const corners = VX.object(cg, AS); corners.position.set(0.125, 0.125, 0.125); group.add(corners);
+    const body = VX.object(bg, AS, { cast: false }); body.position.set(0.125, -0.125, 0.125); group.add(body);
+    const layout = LAYOUTS[T.layout] ? T.layout : layoutOf(id), plats = [];
+    for (const [cx, py, w] of LAYOUTS[layout]) {
+      const n = Math.round(w / AS), x0 = Math.round(cx / AS - n / 2), pg = new VX.Grid(); pg.jit = 0.04;
+      const edge = T.edge != null ? T.edge : Models.shade(T.floor(32, 24), 1.2);
+      for (let x = x0; x < x0 + n; x++) for (let z = -4; z < 4; z++) { pg.set(x, 0, z, x === x0 || x === x0 + n - 1 ? Models.shade(edge, 0.8) : edge); if (z > -3 && z < 3 && (x === x0 + 1 || x === x0 + n - 2)) pg.set(x, -1, z, Models.shade(edge, 0.6)); }
+      const o = VX.object(pg, AS, { cast: true }); o.position.set(0.125, py - 0.125, 0.125); group.add(o);
+      plats.push({ x1: x0 * AS, x2: (x0 + n) * AS, y: py, soft: true, obj: o });
+    }
+    const walled = walledOf(id, T);
+    const stage = { W, top: 0, bot: -DEPTH * AS, plats, layout, walled, blast: walled ? { x: W + 7, top: 13, bot: -9 } : { x: W + 11, top: 17, bot: -9 } };
+    // the walls (a walled stage): the theme's wall pattern up the face the camera sees
+    const walls = [];
+    if (walled) for (const sign of [1, -1]) {
+      const w = { id: sign > 0 ? 'E' : 'W', axis: 'x', sign, lim: W, n: { x: -sign, z: 0 }, len: 2 * D, h: WALL_H };
+      const g = new VX.Grid(); g.jit = 0.05;
+      for (let t = 0; t < WALL_T; t++) for (let y = 0; y < WALL_H; y++) for (let z = -ZD; z < ZD; z++) {
+        if (!(t === 0 || t === WALL_T - 1 || z === -ZD || z === ZD - 1 || y === WALL_H - 1)) continue;   // (a shell)
+        let c = T.wall(0, y % 10, (z + ZD) * 2 + t, w);
+        if (c == null || c < 0) c = Models.shade(T.floor(t * 9 + 4, Math.max(0, z + 24)), 0.82);
+        if (y === WALL_H - 1 && T.edge != null) c = T.edge;
+        colors.add(c); g.set(sign > 0 ? t : -t - 1, y, z, c);
+      }
+      const o = VX.object(g, AS); o.position.set(sign * W + 0.125, 0.125, 0.125); group.add(o);
+      w.obj = o; w.baseY = 0.125; w.stress = 0; w.broken = false; w.rebuild = 0; w.cracks = new THREE.Group(); group.add(w.cracks);
+      walls.push(w);
+    }
     // something big in the background for scale (the newer stages bring their own: arenas.js)
     if (!T.scenery) scenery(group, id, T);
 
     const crackMat = new THREE.MeshBasicMaterial({ color: 0x1a0f08 }), hotMat = new THREE.MeshBasicMaterial({ color: 0xff7a20, toneMapped: false });
     const seg = new THREE.BoxGeometry(1, 1, 1);
     const A = {
-      id, name: T.name, W, D, walls, group, outY: T.outY, dust: T.dust, wallColors: Array.from(colors).slice(0, 6), hemi, sun, base: { hemi: hemi.intensity, sun: sun.intensity },
+      id, name: T.name, W, D, walls, stage, group, outY: stage.blast.bot, dust: T.dust, wallColors: Array.from(colors).slice(0, 6), hemi, sun, base: { hemi: hemi.intensity, sun: sun.intensity },
       haz: T.haz && HAZ[T.haz] ? T.haz : null, props: {},
       /* a bounce adds stress and spreads a crack from where it hit */
       stress(w, add, at) {
         const before = w.stress; w.stress = Math.min(99, w.stress + add);
         if (U.quiet) return;
         const branches = 2 + Math.floor(add / 14);
+        if (stage.walled) {   // (seen from the side: the cracks run over the wall's front)
+          const x0 = w.sign > 0 ? W + 0.05 : -W - WALL_T * AS + 0.05, x1 = x0 + WALL_T * AS - 0.1;
+          for (let b = 0; b < branches; b++) {
+            let px = U.clamp(w.sign * (W + 0.2) + U.vrnd(-0.15, 0.6) * w.sign, x0, x1), py = U.clamp(at.y, 0.3, 7), a = U.vrand() * Math.PI * 2;
+            for (let k = 3 + Math.floor(U.vrand() * 3); k > 0; k--) {
+              const l = U.vrnd(0.18, 0.42); a += U.vrnd(-0.8, 0.8); const du = Math.cos(a) * l * 0.6, dy = Math.sin(a) * l;
+              const m = new THREE.Mesh(seg, w.stress > 65 ? hotMat : crackMat); m.scale.set(Math.abs(du) + 0.05, Math.abs(dy) + 0.05, 0.03);
+              m.position.set(U.clamp(px + du / 2, x0, x1), py + dy / 2, D + 0.02); w.cracks.add(m);
+              px = U.clamp(px + du, x0, x1); py = U.clamp(py + dy, 0.1, 9);
+            }
+          }
+          if (w.stress > 65 && before <= 65) w.cracks.children.forEach(m => m.material = hotMat);
+          if (w.cracks.children.length > 90) w.cracks.children.slice(0, w.cracks.children.length - 90).forEach(m => w.cracks.remove(m));
+          return;
+        }
         for (let b = 0; b < branches; b++) {
           let px = at.x, py = U.clamp(at.y, 0.2, w.h * AS - 0.15), pz = at.z, a = U.vrand() * Math.PI * 2;
           const steps = 3 + Math.floor(U.vrand() * 3);
@@ -183,5 +227,5 @@
   }
 
   const HAZ = {};   // the STAGE HAZARDS (arenas.js)
-  window.Arena = { build, THEMES, HAZ, LIST: ['shelf', 'desk', 'chest'], AS, W, D };
+  window.Arena = { build, THEMES, HAZ, LIST: ['shelf', 'desk', 'chest'], AS, W, D, LAYOUTS, layoutOf, walledOf };
 })();

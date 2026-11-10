@@ -12,7 +12,7 @@
   const _v = new V3(), _w = new V3();
 
   function create(opts) {
-    opts = Object.assign({ mode: 'cpu', wins: 2, time: 99, bonus: true, arena: U.pick(Arena.LIST) }, opts);
+    opts = Object.assign({ mode: 'cpu', wins: 1, stocks: 3, time: 300, bonus: true, arena: U.pick(Arena.LIST) }, opts);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 300);
     FX.init(scene);
@@ -21,7 +21,8 @@
       opts, scene, camera, arena, time: 0, phase: 'intro', phaseT: 0, round: 1, wins: [0, 0], clock: opts.time,
       frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [], minions: [], cine: null, camShot: null,
       training: opts.mode === 'training' ? { dummy: 'stand', meter: true, godP2: false, reset: 0, spot: 'centre', hitboxes: !!U.read('kb.lab', {}).hitboxes } : null,
-      attract: opts.mode === 'attract', results: null, camT: new V3(0, 0, 0), camP: new V3(0, 8, 14), camShake: 0,
+      attract: opts.mode === 'attract', results: null, camT: new V3(0, 1.5, 0), camP: new V3(0, 4, 20), camShake: 0,
+      stocks: [opts.stocks, opts.stocks], kos: [0, 0],
     };
     // the players
     const human = [opts.cpu ? opts.cpu[0] == null : true, opts.cpu ? opts.cpu[1] == null : false];
@@ -203,28 +204,46 @@
       // an Arcade boss that re-casts itself: a new body for each round after the first (opts.recast[round - 1])
       const rc = M.round > 1 && opts.recast && opts.recast[M.round - 1];
       if (rc && M.fighters[1].baseBuild !== rc) { M.fighters[1].recast(rc); M.recastNow = rc; } else M.recastNow = null;
-      M.fighters[0].resetRound(-3.2, 0.6, Math.PI / 2); M.fighters[1].resetRound(3.2, 0.6, -Math.PI / 2);
+      M.fighters[0].resetRound(-3.2, 0, Math.PI / 2); M.fighters[1].resetRound(3.2, 0, -Math.PI / 2);
+      M.stocks = [opts.stocks, opts.stocks]; M.kos = [0, 0];
       for (const f of M.fighters) { f.pos.y = 7; f.grounded = false; f.setState('intro'); f.dropIn = true; }
       for (const f of M.fighters) if (f.st.perk === 'familiar') M.summon(f, 1, true);   // FAMILIAR: an imp from the start
       M.phase = 'intro'; M.phaseT = 0; M.clock = opts.time; M.slow = 1; M.slowT = 0;
       M.haz = M.hazards ? Object.assign({ t: 0 }, HZ.init ? HZ.init(M) : {}) : null;
-      if (!M.attract) HUD.banner(M.training ? (opts.tutorial ? 'TUTORIAL' : opts.trials ? 'COMBO TRIALS' : 'TRAINING') : (M.round === 1 && !opts.final ? 'ROUND 1' : opts.final && M.wins[0] === opts.wins - 1 && M.wins[1] === opts.wins - 1 ? 'FINAL ROUND' : 'ROUND ' + M.round), 'round', 1.2);
+      if (!M.attract) HUD.banner(M.training ? (opts.tutorial ? 'TUTORIAL' : opts.trials ? 'COMBO TRIALS' : 'TRAINING') : opts.wins > 1 ? (opts.final && M.wins[0] === opts.wins - 1 && M.wins[1] === opts.wins - 1 ? 'FINAL GAME' : 'GAME ' + M.round) : opts.stocks + (opts.stocks === 1 ? ' STOCK' : ' STOCKS'), 'round', 1.2);
       if (M.recastNow && opts.recastCall) M.after(0.9, () => M.call(M.fighters[1], opts.recastCall(M.round, M.recastNow), 'bad'));
     }
     M.restart = () => { M.round = 1; M.wins = [0, 0]; for (const f of M.fighters) { f.hype = 0; f.burst = 60; } place(); };
     place();
 
-    M.ko = (vic, att, dir, mv, fromBreak) => {
-      if (M.phase !== 'fight' && M.phase !== 'ko') return;
-      if (M.training) { vic.hp = 1; return; }
-      if (M.phase === 'ko') return;
-      M.phase = 'ko'; M.phaseT = 0; M.winner = att ? att.idx : 1 - vic.idx;
-      vic.endCombo(); vic.state = 'ko'; vic.stateT = 0; vic.move = null; vic.held = null; vic.ko = true;
-      if (!fromBreak && vic.state !== 'out') { vic.vel.set(dir.x * 13, 9, dir.z * 13); vic.grounded = false; }
-      M.slowmo(0.28, 1.3); SFX.play('ko'); FX.addShake(0.9);
-      if (!M.attract) HUD.banner('KNOCK//OUT', 'ko', 1.8);
-      M.wins[M.winner]++;
-      M.event('ko', { vic, att, mv });
+    /* KNOCKED OUT past a blast zone: a stock gone (in training, none), a flash where they went off, and back in a moment
+       on the stage (respawn: invincible, standing on the air until they move); the last stock ends the game */
+    M.ko = (vic, att, dir, mv) => {
+      if (M.phase !== 'fight' || vic.state === 'ko' || vic.gone) return;
+      att = att || vic.lastBy || M.opp(vic);
+      const at = Platform.edgeAt(vic), last = !M.training && M.stocks[vic.idx] <= 1;
+      vic.endCombo(); if (vic.grabbing) vic.dropGrab(); vic.move = null; vic.held = null; vic.gone = true; vic.setState('ko'); vic.vel.set(0, 0, 0); vic.obj.visible = false; vic.burn = null;
+      if (!M.training) M.stocks[vic.idx]--;
+      M.kos[att.idx] = (M.kos[att.idx] || 0) + (att !== vic ? 1 : 0);
+      if (!U.quiet) {
+        const toward = new V3(-at.x, -at.y + 2, 0).normalize(), col = KB.LINES[vic.build.core.line].pal.glow;
+        FX.burst(at, { n: 46, color: [0xffffff, col, 0xffd040], glow: true, speed: 12, size: 0.16, life: 0.9, dir: toward.multiplyScalar(8), gravity: 0 });
+        FX.ring(at.clone(), { r1: 4.5, life: 0.55, normal: new V3(0, 0, 1), color: col }); FX.addShake(0.8); SFX.play('ko');
+        HUD.banner(last ? 'KNOCK//OUT' : 'KNOCKED OUT', 'ko', last ? 1.8 : 1.0);
+      }
+      M.event('ko', { vic, att, mv, stocks: M.stocks[vic.idx], last });
+      if (last) { M.phase = 'ko'; M.phaseT = 0; M.winner = 1 - vic.idx; M.wins[M.winner]++; M.slowmo(0.35, 1.0); return; }
+      M.after(M.training ? 0.9 : 1.4, () => M.respawn(vic));
+    };
+    M.respawn = f => {
+      if (M.disposed || M.phase === 'end') return;
+      const h = f.hype, b = f.burst, rec = f.records;
+      f.resetRound(0, 0, f.pos.x > 0 ? -Math.PI / 2 : Math.PI / 2); f.hype = h; f.burst = b; f.records = rec;
+      const o = M.opp(f); f.pos.set(U.clamp(-o.pos.x * 0.25, -3, 3), 7.5, 0); f.faceX(o.pos.x - f.pos.x);
+      f.gone = false; f.obj.visible = true; f.grounded = false; f.setState('air'); f.spawnFloat = 2.0; f.inv = 2.2; f.respawnInv = true; f.vel.set(0, 0, 0);
+      if (!U.quiet) { SFX.play('snapon'); FX.burst(_v.copy(f.pos).setY(f.pos.y + 1), { n: 20, color: [0xffffff, KB.LINES[f.build.core.line].pal.glow], glow: true, speed: 4, size: 0.08, life: 0.6, gravity: -2 }); }
+      M.after(2.2, () => { f.respawnInv = false; });
+      M.event('respawn', { f });
     };
     M.ringOut = f => {
       if (M.phase === 'ko') { f.vel.set(0, 0, 0); f.pos.y = arena.outY + 0.4; return; }
@@ -920,15 +939,16 @@
         }
         if (best < 0.95) dist *= Math.max(0.55, best);
       } else {
-        const ina = a.state !== 'out', inb = b.state !== 'out';
-        const pa = ina ? a.pos : b.pos, pb = inb ? b.pos : a.pos;
-        target = new V3((pa.x + pb.x) / 2, Math.min(3, (pa.y + pb.y) / 2) * 0.5 + 0.6, (pa.z + pb.z) / 2);
-        target.x = U.clamp(target.x, -arena.W + 2, arena.W - 2); target.z = U.clamp(target.z, -arena.D + 1, arena.D - 1);
-        const sep = Math.hypot(pa.x - pb.x, (pa.z - pb.z) * 1.4);
-        dist = U.clamp(8.5 + sep * 0.62, 10, 17) * U.clamp(1.45 / Math.max(0.4, camera.aspect), 1, 2.1);
-        from = new V3(0, 0.62, 0.79);
-        if (M.attract) { const t = M.time * 0.08; from.set(Math.sin(t) * 0.5, 0.55, Math.cos(t) * 0.8).normalize(); }
-        if (M.phase === 'ko' && M.phaseT < 1.6) { const v = M.fighters[1 - M.winner]; target.lerp(_w.copy(v.pos).setY(1), 0.5); dist *= 0.75; }
+        // a platform fighter's camera: from the side, a little above, pulled back to keep both in frame (and the stage)
+        const B = arena.stage.blast, live = M.fighters.filter(f => !f.gone), L = live.length ? live : M.fighters;
+        let x0 = Math.min(...L.map(f => f.pos.x)), x1 = Math.max(...L.map(f => f.pos.x)), y0 = Math.min(...L.map(f => f.pos.y)), y1 = Math.max(...L.map(f => f.pos.y)) + 1.8;
+        x0 = Math.max(x0, -B.x + 2); x1 = Math.min(x1, B.x - 2); y0 = Math.max(y0, B.bot + 2); y1 = Math.min(y1, B.top - 1);
+        target = new V3((x0 + x1) / 2 * 0.85, U.clamp((y0 + y1) / 2 * 0.8 + 0.9, 0.9, 9), 0);
+        const span = Math.max((x1 - x0) + 7, ((y1 - y0) + 5) * Math.max(1, camera.aspect) * 0.95, 15);
+        dist = U.clamp(span / (2 * Math.tan(camera.fov * Math.PI / 360) * Math.max(0.5, camera.aspect)) * 1.05, 14, 36);
+        from = new V3(0, 0.2, 0.98).normalize();
+        if (M.attract) { const t = M.time * 0.08; from.set(Math.sin(t) * 0.25, 0.24, 0.97).normalize(); }
+        if (M.phase === 'ko' && M.phaseT < 1.6) dist *= 0.92;
       }
       const k = M.frozen ? 10 : 4.5;
       M.camT.x = U.smooth(M.camT.x, target.x, k, dt); M.camT.y = U.smooth(M.camT.y, target.y, k, dt); M.camT.z = U.smooth(M.camT.z, target.z, k, dt);
@@ -1004,6 +1024,7 @@
       } else {
         for (const f of M.fighters) f.update(dt);
         separate();
+        if (M.phase === 'fight') for (const f of M.fighters) if (!f.gone && Platform.out(f)) M.ko(f, f.lastBy, null, null);
         // the STAGE HAZARD: its clock runs while the round does (it waits out a Legend Art)
         if (M.haz && (M.phase === 'fight' || M.phase === 'ko') && !M.cine) { M.haz.t += dt; for (const f of M.fighters) if (f.hazT > 0) f.hazT = Math.max(0, f.hazT - dt); HZ.step(M, M.haz, dt); }
         if (M.phase === 'fight' && !M.training && !M.attract && !M.cine) {
@@ -1393,10 +1414,11 @@
       if (d < min && d > 1e-4) { const push = (min - d) / 2; a.pos.x -= dx / d * push; a.pos.z -= dz / d * push; b.pos.x += dx / d * push; b.pos.z += dz / d * push; }
       else if (d <= 1e-4) { a.pos.x -= 0.2; b.pos.x += 0.2; }
     }
+    /* out of time: more stocks left wins, then the lower damage % */
     function timeUp() {
       if (M.phase !== 'fight') return;
-      const [a, b] = M.fighters, ra = a.hp / a.maxHp, rb = b.hp / b.maxHp;
-      M.phase = 'ko'; M.phaseT = 0; M.winner = ra >= rb ? 0 : 1; M.wins[M.winner]++;
+      const [a, b] = M.fighters, sa = M.stocks[0], sb = M.stocks[1];
+      M.phase = 'ko'; M.phaseT = 0; M.winner = sa !== sb ? (sa > sb ? 0 : 1) : a.pct <= b.pct ? 0 : 1; M.wins[M.winner]++;
       HUD.banner('TIME', 'ko', 1.6); SFX.play('ko');
     }
     function nextRound() {
@@ -1404,7 +1426,7 @@
       if (M.attract) { M.round++; if (M.round > 3) { opts.onEnd && opts.onEnd({ attract: true }); return; } place(); return; }
       if (M.wins[0] >= need || M.wins[1] >= need) {
         M.phase = 'end';
-        const res = { winner: M.wins[0] >= need ? 0 : 1, wins: M.wins.slice(), mode: opts.mode, records: M.fighters.map(f => f.records), builds: opts.builds, time: M.fightT || 0, hpLeft: M.fighters.map(f => Math.max(0, f.hp / f.maxHp)) };
+        const res = { winner: M.wins[0] >= need ? 0 : 1, wins: M.wins.slice(), mode: opts.mode, records: M.fighters.map(f => f.records), builds: opts.builds, time: M.fightT || 0, stocks: M.stocks.slice(), kos: M.kos.slice(), hpLeft: M.fighters.map((f, i) => Math.max(0, M.stocks[i]) / Math.max(1, opts.stocks)) };
         M.results = res; Touch.hide(); opts.onEnd && opts.onEnd(res);
         return;
       }
@@ -1413,15 +1435,15 @@
     /* training: back to the start (the centre, or with the dummy against a wall to practise wall combos) */
     M.trainReset = () => {
       const T = M.training; place(); M.phase = 'fight';
-      for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); f.trailR.pts.length = 0; f.trailL.pts.length = 0; f.trainCombo = false; f.rounds = f.st.rounds; f.reloadT = 0; }
-      if (T.spot === 'wall') { const [a, b] = M.fighters, W = arena.W; a.pos.set(W - 3.4, 0, 0.6); b.pos.set(W - 2.0, 0, 0.6); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2; }
-      else if (T.spot === 'saved' && T.saved) M.fighters.forEach((f, i) => { const s = T.saved[i]; f.pos.set(s.x, 0, s.z); f.yaw = s.yaw; f.obj.rotation.y = s.yaw; });
+      for (const f of M.fighters) { f.pos.y = 0; f.grounded = true; f.setState('idle'); f.trailR.pts.length = 0; f.trailL.pts.length = 0; f.trainCombo = false; f.rounds = f.st.rounds; f.reloadT = 0; f.pct = T.pct ? T.pct[f.idx] || 0 : 0; }
+      if (T.spot === 'wall' || T.spot === 'edge') { const [a, b] = M.fighters, W = arena.W; a.pos.set(W - 3.0, 0, 0); b.pos.set(W - 1.6, 0, 0); a.yaw = Math.PI / 2; b.yaw = -Math.PI / 2; }
+      else if (T.spot === 'saved' && T.saved) M.fighters.forEach((f, i) => { const s = T.saved[i]; f.pos.set(s.x, s.y || 0, 0); f.yaw = s.yaw; f.obj.rotation.y = s.yaw; f.pct = s.pct || 0; });
       if (M.lab) Lab.reset(M);   // (a playback starts over)
     };
     /* SAVE POSITION: where both stand now becomes the start a RESET goes back to */
     M.trainSave = () => {
       const T = M.training; if (!T) return;
-      T.saved = M.fighters.map(f => ({ x: f.pos.x, z: f.pos.z, yaw: f.yaw })); T.spot = 'saved'; T.lastSpot = 'saved';
+      T.saved = M.fighters.map(f => ({ x: f.pos.x, y: f.grounded ? f.pos.y : 0, yaw: f.yaw, pct: f.pct })); T.spot = 'saved'; T.lastSpot = 'saved';
       if (HUD.trainingSpot) HUD.trainingSpot();
       M.call(M.fighters[0], 'POSITION SAVED', 'buff'); SFX.play('ok');
     };
@@ -1434,9 +1456,10 @@
         if (f.state === 'ko') continue;
         // a combo on them just ended: plain training puts their health (and unbroken parts) back at once; the tutorial
         // and the trials keep the slow refill (some lessons start the dummy low)
-        if (f.trainCombo && plain) { f.hp = f.maxHp; for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; }
+        // a combo on them just ended: the % stays (practise at the % you want: RESET clears it), their unbroken parts are mended
+        if (f.trainCombo && plain) { for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; }
         f.trainCombo = false;
-        f.idleT = (f.idleT || 0) + dt; if (f.idleT > 1.2) { f.hp = U.smooth(f.hp, f.maxHp, 6, dt); for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; }
+        f.idleT = (f.idleT || 0) + dt; if (f.idleT > 1.2) { for (const k in f.armor) if (!f.broken[k]) f.armor[k] = f.armorMax[k]; }
       }
       // R / Backspace resets; T saves the position. A pad's Back (View / Share / Create) button: tap to reset, hold to save
       if (Input.keyDown('KeyR') || Input.keyDown('Backspace')) { if (!T.resetHeld) { T.resetHeld = true; M.trainReset(); } } else T.resetHeld = false;

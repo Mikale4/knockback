@@ -953,3 +953,15 @@ body.touch .recbadge { top: 34%; font-size: 11px; padding: 2px 8px; }
 /* narrower, the Hype bars fill the bottom: under the top bars and the frame meter instead */
 @media (max-width: 1299px) { .olrtrain { bottom: auto; top: 232px; } }
 @media (max-width: 700px) { .olrtrain { flex-wrap: wrap; top: 150px; } }
+
+/* the DAMAGE % and the stocks (the platform fighter's HUD) */
+.pctwrap { display: flex; align-items: flex-end; gap: 10px; margin: 2px 0 4px; }
+.pside.p2 .pctwrap { flex-direction: row-reverse; }
+.pct { font: 44px/0.9 var(--head); letter-spacing: 1px; color: #fff; -webkit-text-stroke: 2px #000; paint-order: stroke fill; text-shadow: 0 3px 0 #000; min-width: 92px; }
+.pside.p2 .pct { text-align: right; }
+.pct small { font-size: 22px; margin-left: 2px; }
+.pct.jolt { animation: pctjolt .22s ease-out; }
+@keyframes pctjolt { 0% { transform: scale(1.28) translateY(-3px); } 100% { transform: none; } }
+.stocks { display: flex; gap: 4px; padding-bottom: 6px; }
+.stocks i { width: 14px; height: 14px; border-radius: 50%; background: var(--lc); border: 2px solid #000; box-shadow: inset 0 -3px 0 rgba(0,0,0,.3); }
+.stocks span { font: 900 16px var(--body); color: var(--dim); }

@@ -2,16 +2,23 @@
    fighter.js -- one action figure in a fight: control, moves, physics, and
    everything that happens when a hit lands.
 
-   THE KNOCK//BACK RULES (the wall bounce and the ways out of it)
-   - A launching hit sends the target TUMBLING. Tumble into a wall fast
-     enough and they bounce back off it ("KNOCK//BACK") still in hitstun:
-     you can keep the combo going. Each bounce in a combo hits harder.
-   - From the second bounce of a combo on, the target can WALL TECH: press
-     Dodge just before they hit the wall and they kick off it, free.
-   - Every bounce cracks the wall (its stress shows in the cracks). Full
-     stress, or a 4th bounce in one combo, is a WALL BREAK: big damage, the
-     wall bursts, the target flies out of the arena (RING OUT), and the
-     attacker gets Momentum.
+   THE KNOCK//BACK RULES (a platform fighter: platform.js has the stage)
+   - Hits raise the target's DAMAGE %. A launching hit sends them TUMBLING,
+     and the higher their % the further: knock them past a BLAST ZONE and
+     they lose a stock. Hold the stick as you're launched to bend it.
+   - Off the stage, get back with your jumps, a side Special and the ↑
+     Special (it rises; after it you're HELPLESS until you land or grab a
+     LEDGE). Hold ↓ on a thin platform to drop through it; ↓ in the air
+     falls fast; let go of Jump at once for a short hop.
+   - Light and Heavy take the stick's direction: Light alone is the string,
+     → is the pause move, ↑ the launcher, ↓ the low move. Heavy is a KNOCK
+     (hold it to charge): alone or ←/→ the side KNOCK, ↑ the up KNOCK, ↓ the
+     down KNOCK (low, both sides). In the air, ↓ + Light is the spike. Guard
+     blocks from both sides, a Legend Art too (it costs most of the guard).
+   - WALLED STAGES have a wall at each end: a launch into one bounces back
+     (KNOCK//BACK) for more, a dodge as you hit it from the second bounce on
+     techs it, and enough stress breaks it open (out that end, the blast zone
+     is close). On those the way out is up: the top blast zone is lower.
    - Combos decay: each hit is worth less (proration), hitstun shortens and
      gravity grows the longer it runs.
    - SPRING BURST (Snap while being hit, full Burst gauge): blow the attacker
@@ -23,11 +30,11 @@
 (function () {
   'use strict';
   const V3 = THREE.Vector3;
-  const GRAV = 30, BODY = 0.42, LEAPG = 52;
+  const GRAV = 30, BODY = 0.42, LEAPG = 52, HALF = Math.PI / 2, FASTFALL = 19;
   // the throws out of a grab: how long the throw takes, its pose, its move
   const THROWS = { f: { t: 0.12, pose: 'hurl', mv: 'throwF' }, s: { t: 0.16, pose: 'hurl', mv: 'throwF' }, b: { t: 0.24, pose: 'hurl', mv: 'throwB' }, u: { t: 0.16, pose: 'palmUp', mv: 'throwU' }, d: { t: 0.24, pose: 'overhead', mv: 'throwD' } };
   const GRAPPLER = { throwF: 'wrThrowF', throwB: 'wrThrowB', throwU: 'wrThrowU', throwD: 'wrThrowD' };
-  const _v = new V3(), _w = new V3(), _c = new V3();
+  const _v = new V3(), _w = new V3(), _c = new V3(), _f = new V3();
   const fwd = (yaw, v) => (v || new V3()).set(Math.sin(yaw), 0, Math.cos(yaw));
 
   class Fighter {
@@ -57,8 +64,9 @@
       if (this.build !== this.baseBuild) { this.build = this.baseBuild; this.st = this.calc(this.build); this.ready = Anim.readyFor(this.build); this.newTrails(); }
       this.fig.restore();
       const S = this.st;
-      this.pos.set(x, 0, z); this.vel.set(0, 0, 0); this.yaw = yaw; this.obj.rotation.y = yaw;
-      this.hp = this.maxHp = S.hp;
+      this.pos.set(x, 0, 0); this.vel.set(0, 0, 0); this.yaw = yaw; this.obj.rotation.y = yaw; this.visYaw = yaw;
+      this.pct = 0; this.hp = this.maxHp = S.hp;   // (DAMAGE %: hp is a view of it, platform.js)
+      this.dropT = 0; this.ledgeCd = 0; this.ledgeUsed = false; this.ledgeSide = 0; this.plat = null; this.upB = false; this.shortOk = false; this.spawnFloat = 0; this.respawnT = 0;
       this.armorMax = Object.assign({}, S.armor); this.armor = Object.assign({}, S.armor);
       this.broken = { head: false, armR: false, armL: false, legs: false };
       for (const n of ['head', 'armL', 'armR']) this.fig.reattach(n);
@@ -143,7 +151,9 @@
     /* PART TOSS (its own button, F by default): pull off a part of your own and throw it -- the head first, then the L-arm, then the R-arm.
        A hit extends the combo (twice a combo at most) */
     /* a Special is ready: uses left, a head to use it with, and (Shadow Step) its cooldown over */
-    canSpecial(id) { const sp = KB.MOVES[id || this.st.special]; if (this.sealT > 0 || (sp && sp.needImp && !this.m.minions.some(mn => mn.owner === this)) || (sp && sp.needBall && !this.ballOut(sp.needBall))) return false; return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0) && !(sp && sp.ball && this.ballOut(sp.ball)); }
+    /* the ↑ Special in the air is a recovery: it needs no use, just one go a trip into the air (it comes back when you land or catch a ledge) */
+    upAir(id) { return !this.grounded && !!this.st.cmd && id === this.st.cmd.dp; }
+    canSpecial(id) { const sp = KB.MOVES[id || this.st.special]; if (this.sealT > 0 || (sp && sp.needImp && !this.m.minions.some(mn => mn.owner === this)) || (sp && sp.needBall && !this.ballOut(sp.needBall))) return false; if (this.upAir(id)) return !this.upUsed && !this.broken.head && !(sp && sp.ball && this.ballOut(sp.ball)); return this.uses > 0 && !this.broken.head && this.m.time >= (this.spReady || 0) && !(sp && sp.ball && this.ballOut(sp.ball)); }
     tossable() { return ['head', 'armL', 'armR'].find(p => !this.broken[p] && !this.fig.detached[p]) || null; }
     canToss() { const o = this.opp; return !!(this.hasImp() || this.tossable()) && !(o && o.combo.by === this && o.comboing && o.combo.ext >= 2); }
     /* the SUMMONER carrying an imp throws it, not a part */
@@ -151,7 +161,13 @@
     tossMove() { return this.hasImp() ? 'impToss' : 'partToss'; }
     setLegMat(broken) { for (const n of ['legL', 'legR']) this.fig.parts[n].children.forEach(c => { if (c.isMesh && c.material !== VX.glowMat()) c.material = broken ? this.brokenMat : this.fig.mat; }); }
     get opp() { return this.m.opp(this); }
-    get forward() { return fwd(this.yaw); }
+    /* left or right only: the fight is on one plane (the figure turns to it, the hits go along it) */
+    get forward() { return _f.set(Math.sin(this.yaw) >= 0 ? 1 : -1, 0, 0).clone(); }
+    /* the DAMAGE %, seen as health: maxHp - % / PCT, never under 1 (so a 200% figure still counts as alive), and setting
+       it moves the % by the change (a heal takes % off, damage puts it on, however high it already is) */
+    get hp() { return Math.max(1, this.maxHp - this.pct / Platform.PCT); }
+    set hp(v) { const d = v - this.hp; this.pct = Math.max(0, this.pct - d * Platform.PCT); }
+    faceX(dx) { if (Math.abs(dx) > 1e-3) this.yaw = dx > 0 ? HALF : -HALF; }
     get airborne() { return !this.grounded; }
     get inHitstun() { return this.state === 'hit' || this.state === 'tumble' || this.state === 'guardstun' || this.state === 'gbreak'; }
     get comboing() { return this.combo.hits > 0 && (this.state === 'hit' || this.state === 'tumble' || this.state === 'held' || this.state === 'down'); }
@@ -166,7 +182,7 @@
       const S = this.st, I = this.input;
       // timers
       this.inv = Math.max(0, this.inv - dt); this.armorT = Math.max(0, this.armorT - dt); this.armorCd = Math.max(0, this.armorCd - dt); this.dodgeCd = Math.max(0, this.dodgeCd - dt);
-      this.techLock = Math.max(0, this.techLock - dt);
+      this.techLock = Math.max(0, this.techLock - dt); this.dropT = Math.max(0, this.dropT - dt); this.ledgeCd = Math.max(0, this.ledgeCd - dt);
       for (const k in this.buffs) { this.buffs[k] -= dt; if (this.buffs[k] <= 0) delete this.buffs[k]; }
       if (this.burn) this.updBurn(dt);
       if (this.state !== 'guard' && this.state !== 'guardstun') { this.guardIdle += dt; if (this.guardIdle > 0.8) this.guardHp = Math.min(this.guardMax, this.guardHp + this.guardMax * 0.22 * dt); }
@@ -222,6 +238,8 @@
         case 'ko': this.physics(dt, this.grounded ? 6 : 0); break;
         case 'victory': case 'intro': this.physics(dt, 12); break;
         case 'out': this.updOut(dt); break;
+        case 'ledge': this.updLedge(dt); break;
+        case 'helpless': this.updHelpless(dt); break;
       }
       this.collide();
       this.animate(dt);
@@ -230,36 +248,78 @@
     /* camera-relative stick -> a world direction (the camera looks from +Z) */
     stick() {
       const P = this.bx && this.bx.puppetT > 0 && this.bx.puppetBy;   // (PUPPET STRINGS: their legs walk them to her)
-      if (P && !['ko', 'out'].includes(P.state)) { const dx = P.pos.x - this.pos.x, dz = P.pos.z - this.pos.z, l = Math.hypot(dx, dz); return l < 1.3 ? null : _w.set(dx / l, 0, dz / l).clone(); }
-      const mv = this.input.move; const l = Math.hypot(mv.x, mv.y), c = this.confT > 0 ? -1 : 1; return l < 0.25 ? null : _w.set(mv.x * c, 0, -mv.y * c).normalize().clone(); }   // (CHARMED: backwards)
-    faceOpp(k) { const o = this.opp; if (!o) return; const a = U.ang(this.pos, o.pos); this.yaw = k == null ? a : U.turn(this.yaw, a, k); }
+      if (P && !['ko', 'out'].includes(P.state)) { const dx = P.pos.x - this.pos.x; return Math.abs(dx) < 1.3 ? null : _w.set(Math.sign(dx), 0, 0).clone(); }
+      const mv = this.input.move, c = this.confT > 0 ? -1 : 1; return Math.abs(mv.x) < 0.3 ? null : _w.set(Math.sign(mv.x) * c * Math.min(1, Math.abs(mv.x) * 1.15), 0, 0).clone(); }   // (CHARMED: backwards)
+    /* the stick's up and down (+1 up), and which way it points for an attack: 'f' (the way you face), 'b', 'u', 'd' or null */
+    stickY() { const y = this.input.move.y; return (this.confT > 0 ? -1 : 1) * y; }
+    attackDir() {
+      const mv = this.input.move, c = this.confT > 0 ? -1 : 1, x = mv.x * c, y = mv.y * c;
+      if (Math.hypot(x, y) < 0.45) return null;
+      if (Math.abs(y) > Math.abs(x) * 0.85) return y > 0 ? 'u' : 'd';
+      return (x > 0) === (this.forward.x > 0) ? 'f' : 'b';
+    }
+    faceOpp() { const o = this.opp; if (o) this.faceX(o.pos.x - this.pos.x); }
 
     updGround(dt) {
       const S = this.st, I = this.input, dir = this.stick();
       const legs = this.broken.legs ? 0.68 : 1;
       if (this.tryActions(true)) return;
       const sp = S.speed * legs * (this.buffs.momentum ? 1.06 : 1) * (this.buffs.valor ? 1.1 : 1) * (this.buffs.haste ? 1.3 : 1) * (this.buffs.immov ? 0.6 : 1) * (this.rootT > 0 ? 0 : 1);
-      if (dir) {
-        this.vel.x = U.smooth(this.vel.x, dir.x * sp, 14, dt); this.vel.z = U.smooth(this.vel.z, dir.z * sp, 14, dt);
-        this.yaw = U.turn(this.yaw, Math.atan2(dir.x, dir.z), 1 - Math.exp(-16 * dt));
+      // hold ↓ on a thin platform to drop through it
+      if (this.plat && this.stickY() < -0.65 && !this.input.held.guard) { this.dropT = 0.28; this.grounded = false; this.plat = null; this.pos.y -= 0.05; this.setState('air'); this.m.event('drop', { f: this }); return; }
+      if (dir && this.stickY() > -0.65) {
+        this.vel.x = U.smooth(this.vel.x, dir.x * sp, 14, dt);
+        this.faceX(dir.x);
         if (this.state !== 'run') this.setState('run'); this.runT += dt;
       } else {
-        this.vel.x = U.smooth(this.vel.x, 0, 16, dt); this.vel.z = U.smooth(this.vel.z, 0, 16, dt);
+        this.vel.x = U.smooth(this.vel.x, 0, 16, dt);
         if (this.state !== 'idle') this.setState('idle'); this.runT = 0;
-        const o = this.opp; if (o && U.dist(this.pos, o.pos) < 9) this.faceOpp(1 - Math.exp(-6 * dt));
+        const o = this.opp; if (o && Math.abs(o.pos.x - this.pos.x) < 9 && this.stateT > 0.12) this.faceOpp();
       }
       this.physics(dt, 0);
       if (!this.grounded) this.setState('air');
     }
     updAir(dt) {
       const S = this.st, dir = this.stick();
+      // respawned: you stand on the air a moment (or until you move)
+      if (this.spawnFloat > 0) { this.spawnFloat -= dt; this.vel.set(0, 0, 0); if (dir || this.stickY() < -0.5 || this.input.peek('jump') || this.input.peek('light') || this.input.peek('heavy') || this.input.peek('special') || this.input.peek('dodge')) this.spawnFloat = 0; else return; }
       if (this.tryActions(false)) return;
-      if (dir) { this.vel.x = U.smooth(this.vel.x, dir.x * S.speed * 0.85, 4.5, dt); this.vel.z = U.smooth(this.vel.z, dir.z * S.speed * 0.85, 4.5, dt); this.yaw = U.turn(this.yaw, Math.atan2(dir.x, dir.z), 1 - Math.exp(-6 * dt)); }
+      this.airDrift(dt, 0.85);
       this.physics(dt, 0);
-      if (this.grounded) { this.land(); }
+      if (this.grounded) { this.land(); return; }
+      Platform.ledge(this);
+    }
+    /* in the air: the stick drifts you (you keep facing the way you jumped: Light the other way is a back attack), ↓
+       falls fast, and letting go of Jump straight after a jump from the ground makes it a short hop */
+    airDrift(dt, k) {
+      const S = this.st, dir = this.stick();
+      if (dir) this.vel.x = U.smooth(this.vel.x, dir.x * S.speed * k, 4.5, dt);
+      if (this.shortOk && this.vel.y > 0 && !this.input.held.jump && this.m.time - this.jumpT < 0.14) { this.vel.y *= 0.58; this.shortOk = false; }
+      if (this.vel.y < 1.5 && this.stickY() < -0.7 && this.vel.y > -FASTFALL) { if (!this.fastFell && !U.quiet) FX.ring(_c.copy(this.pos).setY(this.pos.y + 1.6), { r1: 0.5, life: 0.18, color: 0xffffff }); this.fastFell = true; this.vel.y = -FASTFALL; }
+    }
+    /* HANGING ON A LEDGE: Jump jumps off it, toward (or ↑) climbs up, away (or ↓) lets go, Light / Heavy climbs up
+       with an attack, Dodge rolls onto the stage. Five seconds and you let go */
+    updLedge(dt) {
+      const I = this.input, St = this.m.arena.stage, side = this.ledgeSide, d = this.input.move;
+      this.vel.set(0, 0, 0); this.pos.set(side * (St.W + 0.3), St.top - 1.5, 0);
+      if (this.stateT < 0.12 || this.m.phase !== 'fight') return;
+      const toward = -side * d.x * (this.confT > 0 ? -1 : 1) > 0.5, away = side * d.x * (this.confT > 0 ? -1 : 1) > 0.5;
+      const climb = (state) => { this.pos.set(side * (St.W - 0.55), St.top, 0); this.grounded = true; this.plat = null; this.vel.set(0, 0, 0); this.yaw = side > 0 ? -HALF : HALF; this.setState(state || 'idle'); this.inv = Math.max(this.inv, 0.2); this.m.event('climb', { f: this }); };
+      if (I.take('jump')) { this.setState('air'); this.vel.set(-side * 2.2, this.st.jump * 1.02, 0); this.grounded = false; this.ledgeCd = 0.35; SFX.play('jump'); this.m.event('jump', { f: this, ledge: true }); return; }
+      if (I.take('light') || I.take('heavy')) { climb(); this.startMove(this.st.dashAtk, 'dash'); this.inv = Math.max(this.inv, 0.3); return; }
+      if (I.take('dodge')) { climb(); this.dodgeDir = new V3(-side, 0, 0); this.dodgeAir = false; this.setState('dodge'); this.inv = 0.4; SFX.play('dodge'); return; }
+      if (toward || this.stickY() > 0.6) { climb(); return; }
+      if (away || this.stickY() < -0.6 || this.stateT > 5) { this.setState('air'); this.ledgeCd = 0.45; this.grounded = false; return; }
+    }
+    /* HELPLESS: after the ↑ Special in the air you only drift down until you land or catch a ledge */
+    updHelpless(dt) {
+      this.airDrift(dt, 0.55);
+      this.physics(dt, 0);
+      if (this.grounded) { this.land(); this.recoverT = 0.12; return; }
+      Platform.ledge(this);
     }
     land() {
-      this.airJumps = this.st.airJumps; this.airDodges = this.st.airDodges; this.airStr = 0; this.airDashes = 0; this.pogos = 0;
+      this.airJumps = this.st.airJumps; this.airDodges = this.st.airDodges; this.airStr = 0; this.airDashes = 0; this.pogos = 0; this.ledgeUsed = false; this.fastFell = false; this.shortOk = false; this.upUsed = false;
       this.setState('idle'); this.groundT = 0;
       if (this.vel.y < -8) { SFX.play('land'); FX.burst(_c.copy(this.pos).setY(0.05), { n: 5, color: this.m.arena.dust, speed: 2, size: 0.07, life: 0.4, up: 0.4 }); }
     }
@@ -279,14 +339,22 @@
         if (I.take('dodge') && this.dodgeCd <= 0) { this.startDodge(); return true; }
         if (I.take('jump')) { this.jump(1); return true; }
         if (I.take('light')) {
-          const pw = this.pauseWin; this.pauseWin = null;
+          const pw = this.pauseWin, ad = this.attackDir(); this.pauseWin = null;
           if (pw && this.m.time >= pw.from && this.m.time <= pw.to) this.startMove(pw.id, 'light');   // the PAUSE branch
-          else if (this.m.time - this.lastDodgeEnd < 0.3 || this.state === 'dodge') this.startMove(S.dashAtk, 'dash');
+          else if (this.m.time - this.lastDodgeEnd < 0.3 || this.state === 'dodge' || (this.state === 'run' && this.runT > 0.22 && ad === 'f')) this.startMove(S.dashAtk, 'dash');
+          else if (ad === 'b') { this.yaw = -this.yaw; this.startMove(this.tiltMove('f'), 'light'); }
+          else if (ad) this.startMove(this.tiltMove(ad), 'light');
           else this.startLight();
           return true;
         }
         if (I.peek('heavy') && (I.held.guard || I.guardAt.heavy) && this.canSpear()) { I.take('heavy'); this.startMove('spearThrow', 'spear'); return true; }
-        if (I.take('heavy')) { this.startMove(this.leftMove('heavy'), 'heavy'); return true; }
+        if (I.take('heavy')) {
+          const ad = this.attackDir();
+          if (ad === 'u') this.startMove(this.knock('u'), 'launch');
+          else if (ad === 'd') this.startMove(this.knock('d'), 'heavy');
+          else { if (ad === 'b') this.yaw = -this.yaw; this.startMove(this.knock('f'), 'heavy'); }
+          return true;
+        }
         if (I.held.guard) { this.setState('guard'); this.guardStart = this.m.time; return true; }
       } else {
         if (I.take('jump')) {
@@ -296,16 +364,54 @@
         // DOWN DASH: Guard + Dodge in the air -- a fast dive to the floor (it spends your air dodge; no invincibility)
         if (I.peek('dodge') && (I.held.guard || I.guardAt.dodge) && this.airDodges > 0) { I.take('dodge'); this.airDodges--; this.startDownDash(); return true; }
         if (I.take('dodge') && this.airDodges > 0 && this.dodgeCd <= 0) { this.airDodges--; this.startDodge(); return true; }
-        if (I.take('light') && !this.airStr) { this.airStr = 1; this.startMove(this.airRoot(), 'air'); return true; }
+        if (I.take('light') && !this.airStr) {
+          const ad = this.attackDir(); this.airStr = 1;
+          if (ad === 'd') { const sp = this.airSpike(); if (sp) { this.startMove(sp, 'air'); return true; } }
+          if (ad === 'u') { this.startMove(this.tiltMove('u'), 'air'); return true; }
+          if (ad === 'b') this.yaw = -this.yaw;   // (a back attack: turn and swing)
+          this.startMove(this.airRoot(), 'air'); return true;
+        }
         if (I.peek('heavy') && (I.held.guard || I.guardAt.heavy) && this.canSpear()) { I.take('heavy'); this.startMove('spearThrow', 'spear'); return true; }
         if (I.take('heavy')) { this.startMove(this.leftMove('airHeavy'), 'airHeavy'); return true; }
       }
       return false;
     }
-    moveOk(id, where) { const mv = KB.MOVES[id]; return where !== 'air' || ['dash', 'proj', 'teleport', 'radial'].includes(mv.type); }
+    /* every Special works in the air except the ones that need the floor: a trap set on it, a leap off it, a summoning circle */
+    moveOk(id, where) { const mv = KB.MOVES[id]; return where !== 'air' || !['trap', 'summon', 'leap'].includes(mv.type); }
+    /* a Light with the stick: → the string's pause move, ↑ its launcher, ↓ its third (low) blow; one move, no string */
+    tiltMove(d) {
+      const R = KB.MOVES[this.lightRoot()] || {}, B = R.nx && R.nx.l && KB.MOVES[R.nx.l], C = B && B.nx && B.nx.l && KB.MOVES[B.nx.l], D4 = C && C.nx && C.nx.l && KB.MOVES[C.nx.l];
+      const pick = d === 'f' ? (B && B.nx && B.nx.p) || (B && B.id) : d === 'u' ? (D4 && D4.id) || this.leftMove('launch') : (C && C.id) || (B && B.id);
+      return this.tilts(pick || this.lightRoot());
+    }
+    /* a single blow, not a string: the move without its follow-ups (made once, kept) */
+    tilts(id) {
+      const k = 'tilt:' + id; if (KB.MOVES[k]) return k; const mv = KB.MOVES[id]; if (!mv) return id;
+      KB.MOVES[k] = Object.assign({}, mv, { id: k, nx: null }); return k;
+    }
+    /* the three KNOCKs (Heavy with the stick; hold Heavy to charge any of them): the side KNOCK is the L-arm's Heavy,
+       the up KNOCK its launcher, the down KNOCK a low blow all round (made from the Heavy, or its melee fallback) */
+    knock(d) {
+      const H = this.leftMove('heavy'), L = this.leftMove('launch');
+      if (d === 'f') return H;
+      const base = d === 'u' ? L : H, k = 'kn' + d + ':' + base; if (KB.MOVES[k]) return k;
+      const mv = KB.MOVES[base]; if (!mv) return base;
+      let o;
+      if (d === 'u') o = Object.assign({}, mv, { id: k, charge: 1, nx: null });
+      else {
+        const src = mv.type === 'melee' ? mv : KB.MOVES[(this.st.dry || {}).heavy] || KB.MOVES[L] || mv;
+        o = Object.assign({}, src, { id: k, name: 'Low ' + src.name, type: 'melee', pose: 'sweep', around: 1, reach: 0, rad: Math.max(1.55, src.rad || 1), h: 0.35, zone: 'low', lunge: 0, dist: 0,
+          kb: [Math.max(9, ((src.kb || [12])[0]) * 0.8), 7.5], launch: 1, launcher: 0, spike: 0, dive: 0, charge: 1, nx: null, round: 0, proj: null, multi: 0, auto: null,
+          dmg: Math.round((src.dmg || 50) * 0.9), su: Math.max(0.13, src.su || 0.15), ac: Math.max(0.1, src.ac || 0.1), rc: Math.max(0.32, src.rc || 0.32) });
+      }
+      KB.MOVES[k] = o; return k;
+    }
+    /* ↓ + Light in the air: the air string's second blow (its spike) on its own */
+    airSpike() { const A = KB.MOVES[this.airRoot()]; const n = A && A.nx && A.nx.l; return n ? this.tilts(n) : null; }
     jump(k) {
-      this.vel.y = this.st.jump * k * (this.broken.legs ? 0.8 : 1); this.grounded = false; this.setState('air'); if (k < 1) this.airStr = 0;
-      const d = this.stick(); if (d) { this.vel.x = d.x * this.st.speed * 0.9; this.vel.z = d.z * this.st.speed * 0.9; }
+      this.vel.y = this.st.jump * k * (this.broken.legs ? 0.8 : 1); this.grounded = false; this.plat = null; this.setState('air'); if (k < 1) this.airStr = 0;
+      this.jumpT = this.m.time; this.shortOk = k >= 1; this.fastFell = false;
+      const d = this.stick(); if (d) { this.vel.x = d.x * this.st.speed * 0.9; if (k < 1) this.faceX(d.x); }
       SFX.play('jump'); this.m.event('jump', { f: this, air: k < 1 });
       if (k < 1) FX.ring(_c.copy(this.pos).setY(this.pos.y + 0.1), { r1: 0.9, life: 0.25, color: 0xffffff });
     }
@@ -318,7 +424,7 @@
 
     /* ---------------------------------------------------------------- dodge */
     startDodge() {
-      const d = this.stick() || this.forward.multiplyScalar(-1);
+      const d = this.stick() || new V3(0, 0, 0);   // (no direction: a dodge on the spot)
       this.dodgeDir = d.clone(); this.setState('dodge'); this.move = null;
       const vanish = this.st.passive === 'vanish';
       this.inv = (this.grounded ? 0.22 : 0.18) * (vanish ? 1.6 : 1);
@@ -377,7 +483,7 @@
       while (b.tick >= 0.5 && b.left > 0) {
         b.tick -= 0.5; b.left--;
         let d = Math.round(b.dps * 0.5 * (1 - this.st.def)); if (this.m.training && this.m.training.godP2 && this.idx === 1) d = 0;
-        d = Math.min(d, Math.max(0, this.hp - 1)); this.hp -= d; if (b.by) b.by.records.dmg += d;
+        this.hp -= d; if (b.by) b.by.records.dmg += d;
         if (this.comboing && this.combo.by === b.by) this.combo.dmg += d;
         this.flash = Math.max(this.flash, 0.35); this.flashCol = pz ? 0x7aff5a : 0xff7a20;
         FX.burst(_c.copy(this.pos).setY(this.pos.y + 1), { n: 5, color: C3.slice(0, 2), glow: true, speed: 2, size: 0.08, gravity: -4, life: 0.4 });
@@ -533,13 +639,15 @@
       if (kind === 'special' && !mv.encore) this.lastSp = id;
       if (this.buffs.invis && kind !== 'special') { delete this.buffs.invis; }   // (SMOKE BOMB: attacking gives him away)
       if (mv.prone) this.proneT = mv.su + mv.ac + mv.rc;
+      this.moveGround = this.grounded;
       this.move = mv; this.kind = kind; this.moveT = 0; this.hitSet = new Set(); this.moveHit = false; this.charge = 0; this.fired = false; this.activeOn = false;
       this.lastSub = -1; this.acExt = 0; this.extraHits = 0; this.rapidUsed = 0; this.pauseWin = null; this.moveSerial = (this.moveSerial || 0) + 1; this.riseAir = false; this.leapDone = false; this.autoArm = false;
       this.beatOn = !!(mv.beat && this.st.sig === 'beat' && (kind === 'light' || kind === 'air') && Music.beat(this.m).near); this.beatShown = false;
       if (this.beatOn) FX.ring(_c.copy(this.pos).setY(0.08), { r0: 1.0, r1: 1.7, life: 0.25, color: 0xfff27a });
       if (mv.armorSU) this.giveArmor(mv.su, mv.oneArmor);
       if (this.buffs.berserk && kind !== 'super') this.giveArmor(mv.su + (mv.ac || 0), true);   // (BERSERKERGANG: every attack takes one hit of armour)
-      if (kind === 'special') { this.uses--; this.spReady = this.m.time + (this.st.spCd || 0); }
+      if (kind === 'special') { if (this.upAir(id)) this.upUsed = true; else { this.uses--; this.spReady = this.m.time + (this.st.spCd || 0); } }
+      this.upB = kind === 'special' && !!(this.st.cmd && id === this.st.cmd.dp);   // (the ↑ Special: a recovery)
       this.setState('attack'); this.aim(mv); this.m.event('move', { f: this, id, kind });
       if (kind === 'air' || kind === 'airHeavy') { this.vel.y = Math.max(this.vel.y, kind === 'air' ? (this.st.sig === 'hangtime' ? 4.2 : 2.2) : 3); }   // (BASKETBALL: hang time)
       if (mv.armor || (kind === 'dash' && this.st.perk === 'unstoppable')) this.giveArmor(mv.su + mv.ac, mv.oneArmor || this.st.perk === 'unstoppable');
@@ -586,7 +694,7 @@
       const mv = this.move, I = this.input;
       if (mv.type === 'super') return this.updSuper(dt);
       // hold Heavy to charge a KNOCK (up to 0.6 s); the VIKING's axe winds up any Light the same way (to 0.5 s)
-      const heavyCharge = mv.charge && this.kind === 'heavy' && I.held.heavy && this.charge < 0.6 && !this.autoArm;
+      const heavyCharge = mv.charge && (this.kind === 'heavy' || this.kind === 'launch') && I.held.heavy && this.charge < 0.6 && !this.autoArm;
       const lightCharge = mv.chargeL && this.kind === 'light' && I.held.light && this.charge < 0.5 && this.moveT > 0.03;
       if ((heavyCharge || lightCharge) && this.moveT >= mv.su * 0.6) {
         this.charge += dt; this.flash = 0.3; this.flashCol = lightCharge && this.charge >= 0.45 ? 0xff4020 : 0xffb030;
@@ -604,12 +712,15 @@
       if (mv.auto && this.kind === 'heavy' && !this.autoArm && t < su + 0.02 && I.take('heavy', 0.2)) { this.autoArm = true; this.flash = 0.15; this.flashCol = 0xffd060; }   // (acExt: unset until a first move; a Legend Art as your first move never ended)
       const F = this.forward;
       // movement through the move
-      if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; this.vel.z = F.z * sp; if (!this.grounded && !mv.hop) this.vel.y = 0; }
+      if (this.upB && t0 < su && t >= su) { this.vel.y = Math.max(this.vel.y, 15.5); this.grounded = false; this.riseAir = true; }   // the ↑ Special: up you go
+      if (this.upB && t >= su && t < su + ac + 0.1) this.vel.y = Math.max(this.vel.y, 4);
+      if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; if (!this.grounded && !mv.hop && !this.upB) this.vel.y = 0; }
       else if (mv.lunge && mv.type !== 'leap' && t > su * 0.4 && t < su + ac) {   // (a leap flies its own arc)
         // lunge in, but stop short of running past them
         const o = this.opp, near = o && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < (mv.reach || 1) * 0.85 && Math.abs(U.wrap(U.ang(this.pos, o.pos) - this.yaw)) < 1.2;
         const sp = near ? 0 : mv.lunge * (this.grounded ? 1 : 0.4); this.vel.x = U.smooth(this.vel.x, F.x * sp, 20, dt); this.vel.z = U.smooth(this.vel.z, F.z * sp, 20, dt); }
       else if (this.grounded) { this.vel.x = U.smooth(this.vel.x, 0, 14, dt); this.vel.z = U.smooth(this.vel.z, 0, 14, dt); }
+      if (this.moveGround && this.grounded && !this.upB) { const lo = this.plat ? this.plat.x1 + 0.1 : -this.m.arena.stage.W + 0.1, hi = this.plat ? this.plat.x2 - 0.1 : this.m.arena.stage.W - 0.1, nx = this.pos.x + this.vel.x * dt; if ((nx < lo && this.vel.x < 0) || (nx > hi && this.vel.x > 0)) this.vel.x = 0; }
       if (!this.grounded && (this.kind === 'air') && t < su + ac) this.vel.y = Math.max(this.vel.y, 0.6);
       if (this.kind === 'airHeavy' && t >= su) this.vel.y = Math.min(this.vel.y, -6);
       if (mv.dive && t >= su && !this.grounded) { this.vel.x = F.x * 7; this.vel.z = F.z * 7; this.vel.y = -12; }
@@ -628,7 +739,8 @@
         if (diving && this.grounded) { this.land(); FX.ring(_c.copy(this.pos).setY(0.05), { r1: 1.6, life: 0.3 }); SFX.play('land'); this.setState('idle'); this.vel.set(0, 0, 0); this.recoverT = 0.15; return; }
         // a string move with a pause branch: wait a beat, then Light
         const pw = this.kind === 'light' && mv.nx && mv.nx.p ? { id: mv.nx.p, from: this.m.time + 0.03, to: this.m.time + 0.6 } : null;
-        this.move = null; this.setState(this.grounded ? 'idle' : 'air'); this.pauseWin = pw;
+        const helpless = this.upB && !this.grounded; this.upB = false;
+        this.move = null; this.setState(this.grounded ? 'idle' : helpless ? 'helpless' : 'air'); this.pauseWin = pw;
       } else if (this.grounded && (this.kind === 'air') && t > su) { this.move = null; this.land(); }
     }
     cancels(mv, t, su, ac) {
@@ -779,7 +891,7 @@
       if (b.id === 'regen') { this.buffs.regen = b.t; this.regenRate = b.hp / b.t; this.m.call(this, b.call || 'REGEN', 'heal'); FX.burst(_c.copy(this.pos).setY(1), { n: 16, color: [0x66ffcc, 0xffffff], glow: true, speed: 2, gravity: -3, life: 0.7, size: 0.07 }); }
       if (b.id === 'iron') { this.armorT = b.t; this.armorHits = b.hits || 3; this.buffs.iron = b.t; this.m.call(this, b.call || 'IRON SHIRT', 'buff'); FX.ring(_c.copy(this.pos).setY(1), { r1: 1.5, life: 0.35, normal: new V3(0, 1, 0), color: 0xd8a830 }); }
       // UNIQUE SPECIALS
-      if (b.id === 'berserk') { this.hp = Math.max(1, this.hp - Math.round(this.maxHp * (b.cost || 0.1))); this.buffs.berserk = b.t; this.m.call(this, 'BERSERKERGANG', 'buff'); this.flash = 0.5; this.flashCol = 0xff3010; FX.burst(_c.copy(this.pos).setY(1.3), { n: 16, color: [0xff3010, 0xffd060], speed: 3, size: 0.09, life: 0.5 }); }
+      if (b.id === 'berserk') { this.hp -= Math.round(this.maxHp * (b.cost || 0.1)); this.buffs.berserk = b.t; this.m.call(this, 'BERSERKERGANG', 'buff'); this.flash = 0.5; this.flashCol = 0xff3010; FX.burst(_c.copy(this.pos).setY(1.3), { n: 16, color: [0xff3010, 0xffd060], speed: 3, size: 0.09, life: 0.5 }); }
       if (b.id === 'empower') { this.buffs.empower = b.t; this.m.call(this, b.call || 'EMPOWERED', 'buff'); FX.spark(this.fig.socket('wR', [0, 0, 8]), { color: 0xffffff, size: 1.4 }); }
       if (b.id === 'invis') { this.buffs.invis = b.t; this.m.call(this, 'VANISHED', 'buff'); }
       if (b.id === 'immov') { this.buffs.immov = b.t; this.armorT = Math.max(this.armorT, b.t); this.armorHits = 99; this.m.call(this, b.call || 'IMMOVABLE', 'buff'); FX.ring(_c.copy(this.pos).setY(0.1), { r1: 1.8, life: 0.4, normal: new V3(0, 1, 0), color: 0xd8a830 }); }
@@ -843,6 +955,7 @@
       if (this.superPhase === 'catch') {
         this.catchT += dt;
         const r = this.updCatch(mv, o, dt);
+        if (r === true && this.artBlocked(o)) return;
         if (r === true && this.swayOut(o)) return;
         if (r === true) this.beginSeq(o);
         else if (r === 'miss' || this.catchT > 2.2) this.superMiss();
@@ -862,6 +975,17 @@
       o.inv = Math.max(o.inv, 0.6); o.yaw = U.ang(o.pos, this.pos); o.swayT = 0.4; o.hype = Math.min(100, o.hype + 10);
       this.m.call(o, 'SWAY!', 'tech'); SFX.play('dodge'); this.m.event('evade', { f: o, by: this }); this.m.event('sway', { f: o, by: this });
       this.superMiss(); return true;
+    }
+    /* a GUARD stops a Legend Art: the catch fails, the guard takes most of it (a worn guard shatters), and the Art's
+       thrower is left open */
+    artBlocked(o) {
+      if (!o || !(o.state === 'guard' || o.state === 'guardstun' || (o.buffs.autoGuard && ['idle', 'run'].includes(o.state)))) return false;
+      o.guardHp -= o.guardMax * 0.6; o.guardIdle = 0; o.hype = Math.min(100, o.hype + 8);
+      const at = _c.copy(o.pos).setY(o.pos.y + 1).clone(); FX.spark(at, { color: 0x9fe8ff, size: 2.2 }); FX.ring(at, { r1: 2.2, life: 0.35, normal: new V3(0, 0, 1), color: 0x9fe8ff }); FX.addShake(0.4);
+      if (o.guardHp <= 0) { o.guardHp = 0; o.setState('gbreak'); SFX.play('gbreak'); this.m.call(o, 'GUARD CRUSH', 'bad'); }
+      else { o.setState('guardstun'); o.hitstun = 0.32; o.vel.x = (o.pos.x >= this.pos.x ? 1 : -1) * 6; SFX.play('jguard'); this.m.call(o, 'BLOCKED!', 'tech'); }
+      this.m.event('artblock', { f: o, by: this });
+      this.superMiss(); this.missT = -0.3; return true;
     }
     superMiss() {
       this.superPhase = 'miss'; this.missT = 0; this.obj.visible = true; this.inv = 0;
@@ -1150,7 +1274,7 @@
     updTumble(dt) {
       this.hitstun -= dt; this.floatT = Math.max(0, (this.floatT || 0) - dt);
       const g = GRAV * (0.68 + Math.min(0.7, this.combo.hits * 0.03 + this.combo.t * 0.05)) * (this.floatT > 0 ? 0.45 : 1);
-      this.physics(dt, 0, this.artFly ? 0 : 1, g);
+      this.physics(dt, 0, this.artFly ? 0 : 1.7, g);
       if (!this.spiked && this.vel.y < -11) this.vel.y = -11;
       const sp = Math.hypot(this.vel.x, this.vel.z);
       this.spin.rotation.x -= dt * (4 + sp * 0.7);
@@ -1190,17 +1314,15 @@
 
     /* ------------------------------------------------------------- physics */
     physics(dt, friction, drag, g, noFloor) {
-      if (friction) { const k = Math.exp(-friction * dt); this.vel.x *= k; this.vel.z *= k; }
-      if (drag) { const k = Math.exp(-drag * dt); this.vel.x *= k; this.vel.z *= k; }
+      if (friction) { const k = Math.exp(-friction * dt); this.vel.x *= k; }
+      if (drag) { const k = Math.exp(-drag * dt); this.vel.x *= k; }
       if (!this.grounded || this.vel.y > 0) this.vel.y -= (g || GRAV) * dt;
-      this.pos.x += this.vel.x * dt; this.pos.y += this.vel.y * dt; this.pos.z += this.vel.z * dt;
-      const A = this.m.arena, inside = Math.abs(this.pos.x) <= A.W + 0.05 && Math.abs(this.pos.z) <= A.D + 0.05;
-      if (!noFloor && inside && this.pos.y <= 0 && this.vel.y <= 0) {
-        if (!this.grounded && this.vel.y < -1) this.landSpeed = this.vel.y;
-        this.pos.y = 0; this.vel.y = 0; this.grounded = true;
-      } else if (this.pos.y > 0.001 || !inside) this.grounded = false;
+      const py = this.pos.y;
+      this.pos.x += this.vel.x * dt; this.pos.y += this.vel.y * dt;
+      Platform.floor(this, py, noFloor);   // (and it keeps the figure on the plane)
     }
-    clampInside() { const A = this.m.arena; this.pos.x = U.clamp(this.pos.x, -A.W + BODY, A.W - BODY); this.pos.z = U.clamp(this.pos.z, -A.D + BODY, A.D - BODY); }
+    /* put somewhere by a move (a teleport, a counter): kept on the plane, inside the blast zones, out of the stage's body */
+    clampInside() { const B = this.m.arena.stage.blast, St = this.m.arena.stage; this.pos.x = U.clamp(this.pos.x, -B.x + 1.5, B.x - 1.5); this.pos.z = 0; if (Math.abs(this.pos.x) < St.W && this.pos.y < St.top && this.pos.y > St.bot - 1.7) this.pos.y = St.top; }
     collide() {
       if (this.state === 'out') return;
       const A = this.m.arena; this.wallTouch = null;
@@ -1208,9 +1330,7 @@
         const p = w.sign * this.pos[w.axis], lim = w.lim - BODY;
         if (p <= lim) { if (!this.grounded && p > lim - 0.2) this.wallTouch = w; continue; }
         const speedIn = w.sign * this.vel[w.axis];
-        if (w.broken) {
-          if (this.state === 'tumble' || this.state === 'ko') { if (p > w.lim + 0.1) { this.setState('out'); this.outDone = false; this.endCombo(); } continue; }
-        }
+        if (w.broken) continue;   // (a broken wall is open: out that end)
         if ((this.state === 'tumble' || this.state === 'ko') && speedIn > 6 && !w.broken) { Combat.wallImpact(this, w, speedIn); continue; }
         this.pos[w.axis] = w.sign * lim; if (speedIn > 0) this.vel[w.axis] = 0;
         if (!this.grounded) this.wallTouch = w;
@@ -1221,7 +1341,8 @@
     shakeFig() { this.fig.root.position.x = (U.rand() - 0.5) * 0.06 * (this.inHitstun ? 1 : 0.3); }
     animate(dt) {
       this.fig.root.position.x = 0;
-      this.obj.rotation.y = this.yaw;
+      if (this.visYaw == null || dt <= 0) this.visYaw = this.yaw; else this.visYaw = U.turn(this.visYaw, this.yaw, 1 - Math.exp(-22 * dt));
+      this.obj.rotation.y = this.visYaw;
       let pose, rate = 18;
       const R = this.ready, st = this.state;
       if (st === 'attack' && this.move) {
@@ -1240,6 +1361,8 @@
         if (st === 'run') { this.phase += dt * (6 + this.st.speed); pose = Anim.run(R, this.phase, Math.hypot(this.vel.x, this.vel.z), this.build.armR.line); }
         else if (st === 'idle') { pose = Anim.idle(R, this.m.time + this.idx * 1.7, this.build, this); rate = 10; }
         else if (st === 'air') pose = Anim.blend(R, this.vel.y > 0 ? Anim.STATE.air : Anim.STATE.fall, 1, R);
+        else if (st === 'helpless') { pose = Anim.fill(Anim.STATE.fall); pose.armL = [-2.6, 0, 0.5]; pose.armR = [-2.6, 0, -0.5]; pose.head = [-0.3, 0, 0]; }
+        else if (st === 'ledge') { pose = Anim.fill(Anim.STATE.fall); pose.armL = [-3.0, 0, -0.15]; pose.armR = [-3.0, 0, 0.15]; pose.legL = [0.15, 0, 0.05]; pose.legR = [-0.25, 0, -0.05]; pose.torso = [-0.1, 0, 0]; rate = 24; }
         else if (st === 'ddash') { pose = Anim.blend(R, Anim.P.plunge.strike, 1, R); rate = 34; }
         else if (st === 'guard' || st === 'guardstun') pose = Anim.fill(Anim.STATE.guard);
         else if (st === 'gbreak') { pose = Anim.fill(Anim.STATE.stunned); pose.head[1] = Math.sin(this.stateT * 9) * 0.4; }
@@ -1338,7 +1461,7 @@
       let dir = o.dir ? o.dir.clone() : fwd(att.yaw);
       if (o.dir == null && mv.launch && att.stick && !o.proj) { const s = att.stick(); if (s) dir = dir.multiplyScalar(0.35).addScaledVector(s, 0.65).normalize(); }
       if (mv.kbBack) dir.copy(fwd(att.yaw)).multiplyScalar(-1);
-      dir.y = 0; if (dir.lengthSq() < 1e-4) dir.copy(fwd(att.yaw)); dir.normalize();
+      dir.y = 0; dir.z = 0; if (dir.lengthSq() < 1e-4) dir.set(vic.pos.x >= att.pos.x ? 1 : -1, 0, 0); dir.normalize();
 
       // ---- UNIQUE SPECIALS: BRIBED (their next hit does nothing), ON THE ROPES (nothing lands), GLOVE UP (a shot is caught)
       if (att.bribed && !o.force && o.kind !== 'super') { att.bribed = false; m.call(att, 'BRIBED', 'bad'); FX.burst(atPos, { n: 10, color: [0xffd84a, 0xfff4b0], speed: 3, size: 0.07, life: 0.5 }); return 'miss'; }
@@ -1376,7 +1499,7 @@
         return 'miss';
       }
       // ---- guard
-      const guarding = (vic.state === 'guard' || vic.state === 'guardstun' || (vic.buffs.autoGuard && ['idle', 'run'].includes(vic.state))) && !o.force && Combat.facing(vic, o.from || att.pos);   // (CHIVALRY: guards on its own)
+      const guarding = (vic.state === 'guard' || vic.state === 'guardstun' || (vic.buffs.autoGuard && ['idle', 'run'].includes(vic.state))) && !o.force;   // (CHIVALRY: guards on its own; a guard covers both sides)
       if (guarding && mv.type !== 'grab') {
         let just = vic.state === 'guard' && m.time - (vic.guardStart || -9) < 0.12;
         const overShield = att.st.sig === 'flail' && (o.kind === 'light' || o.kind === 'air');   // (CRUSADER: no Just Guard, twice the guard)
@@ -1392,7 +1515,7 @@
           return 'jguard';
         }
         const chip = Math.round(raw * 0.12 * vic.st.chip);
-        vic.hp = Math.max(1, vic.hp - chip); vic.guardHp -= raw * (mv.launch ? 1.0 : 0.7) * (overShield ? 2 : 1) * (mv.crush || 1); vic.guardIdle = 0; if (mv.gbreak) vic.guardHp = 0;   // (the VIKING's axe shatters it)
+        vic.hp -= chip; vic.guardHp -= raw * (mv.launch ? 1.0 : 0.7) * (overShield ? 2 : 1) * (mv.crush || 1); vic.guardIdle = 0; if (mv.gbreak) vic.guardHp = 0;   // (the VIKING's axe shatters it)
         if (vic.broken.armL === false) vic.armor.armL = Math.max(1, vic.armor.armL - raw * 0.25);
         att.hype = Math.min(100, att.hype + raw * 0.04 * att.st.hypeGain);
         if (vic.guardHp <= 0) {
@@ -1466,7 +1589,7 @@
         if (mv.disarm) { vic.disarmT = mv.disarm; m.call(vic, 'DISARMED', 'bad'); }
         if (mv.bribe) { vic.bribed = true; m.call(vic, 'BRIBED', 'bad'); FX.burst(_c.copy(vic.pos).setY(1.2), { n: 10, color: [0xffd84a, 0xfff4b0], speed: 2.5, size: 0.07, life: 0.5 }); }
         if (mv.brand) { vic.buffs.branded = mv.brand; vic.brandBy = att; m.call(vic, 'BRANDED', 'bad'); }
-        if (mv.wallBreak) vic.wallBreakNext = true;
+        if (mv.wallBreak) { vic.wallBreakNext = true; m.call(vic, m.arena.stage.walled ? 'MARKED: THE NEXT WALL BREAKS' : 'MARKED: THE NEXT KNOCK +35%', 'bad'); }
       }
       if (vic.buffs.branded && vic.brandBy === att && dmg > 0) { const h = Math.round(dmg * 0.4); att.hp = Math.min(att.maxHp, att.hp + h); m.call(att, '+' + h, 'heal'); }   // (the TEMPLAR's brand)
       if (att.buffs.morale && dmg > 0) { att.hp = Math.min(att.maxHp, att.hp + Math.round(att.maxHp * 0.03)); att.hype = Math.min(100, att.hype + 4); }   // (the CAPTAIN's colours)
@@ -1516,8 +1639,7 @@
       FX.burst(atPos, { n: 4 + Math.round(power * 4), color: [0xffffff, 0xffe080, KB.LINES[vic.build.core.line].pal.main], speed: 4 + power * 2, size: 0.07, life: 0.4, glow: true, gravity: 6 });
       FX.addShake(0.08 + power * 0.12);
       if (counter) m.call(vic, 'COUNTER', 'counter');
-      if (vic.hp <= 0 && vic.st.passive === 'undying' && !vic.undyingUsed) { vic.undyingUsed = true; vic.hp = 1; m.call(vic, 'NOT DEAD YET', 'tech'); FX.burst(_c.copy(vic.pos).setY(vic.pos.y + 1), { n: 18, color: [0x6affb0, 0xffffff], glow: true, speed: 3, size: 0.08, gravity: -2, life: 0.7 }); }
-      if (vic.hp <= 0) { vic.hp = 0; m.ko(vic, att, dir, mv); return 'ko'; }
+      vic.lastBy = att;   // (who to credit if they go out)
       if (o.pummel) { if (vic.combo.hits >= 2) m.comboShow(att, vic); return 'hit'; }   // a pummel: they're still held
       if (armored) {
         vic.flashCol = 0xffa040;
@@ -1549,13 +1671,16 @@
         vic.setState('hit'); vic.hitstun = mv.stun * decay; return 'hit';
       }
       if (mv.launch || vic.airborne || vic.state === 'tumble') {
-        let h = mv.kb[0] * kbk, v = mv.kb[1];
+        // DAMAGE %: a launch goes further the higher it is (platform.js); a MARK (a Siege Ram, a Gale Cannon) adds a third
+        const pc = vic.pct, mark = vic.wallBreakNext && mv.launch && !m.arena.stage.walled ? 1.35 : 1; if (mark > 1) vic.wallBreakNext = false;
+        let h = mv.kb[0] * kbk * (mv.launch ? Platform.scaleH(pc) : 0.55 + pc / 300) * mark, v = mv.kb[1];
         if (!mv.launch) { h *= 0.6; v = Math.max(v, 4.5); }
-        if (mv.spike) { v = mv.kb[1]; vic.spiked = true; } else vic.spiked = false;
-        vic.vel.set(dir.x * h, v * (v > 0 ? Math.min(1.15, kbk) : 1), dir.z * h);
-        vic.setState('tumble'); vic.grounded = v <= 0 && vic.pos.y <= 0.01; if (v > 0) vic.pos.y = Math.max(vic.pos.y, 0.02), vic.grounded = false;
+        if (mv.spike) { v = mv.kb[1] * (0.8 + pc / 250); vic.spiked = true; } else { vic.spiked = false; v *= mv.launch ? Platform.scaleV(pc) * mark : 0.92 + pc / 400; }
+        vic.vel.set(dir.x * h, v * (v > 0 ? Math.min(1.15, kbk) : 1), 0);
+        Platform.influence(vic, vic.vel);
+        vic.setState('tumble'); vic.grounded = v <= 0 && vic.grounded; if (v > 0) vic.pos.y += 0.02, vic.grounded = false;
         if (mv.trip) vic.hardKD = true;   // (tripped: they go down hard)
-        vic.hitstun = (0.26 + 0.026 * Math.hypot(h, v)) * decay;
+        vic.hitstun = Math.min(1.6, (0.26 + 0.026 * Math.hypot(h, v)) * decay);
         vic.hardKD = !!(mv.spike || o.kind === 'super' || o.kind === 'throw'); vic.kdT = 0;
         vic.yaw = Math.atan2(-dir.x, -dir.z);
       } else {
@@ -1577,7 +1702,7 @@
     /* a small hit inside a Legend Art */
     seqTick(att, vic, dmg, pos) {
       const d = Math.round(dmg * att.dmgMult('super') * (1 - vic.st.def) * Math.max(0.55, Combat.prorate(vic)));
-      vic.hp = Math.max(1, vic.hp - d); vic.combo.hits++; vic.combo.dmg += d; vic.combo.by = att; att.records.dmg += d;
+      vic.hp -= d; vic.combo.hits++; vic.combo.dmg += d; vic.combo.by = att; att.records.dmg += d; vic.lastBy = att;
       vic.flash = 0.6; vic.flashCol = 0xffffff; vic.hitstop = 0.03;
       const p = pos || _c.copy(vic.pos).setY(vic.pos.y + 1 + U.rnd(-0.3, 0.3)).clone();
       FX.spark(p, { size: 1.1 }); FX.burst(p, { n: 5, color: [0xffffff, 0xffe080], glow: true, speed: 5, size: 0.07, life: 0.35 });
@@ -1613,7 +1738,7 @@
     },
     bounceDamage(vic, base) {
       const d = Math.round(base * Math.max(0.4, Combat.prorate(vic)));
-      vic.hp = Math.max(vic.combo.by ? 0 : 1, vic.hp - d); vic.combo.dmg += d; if (vic.combo.by) vic.combo.by.records.dmg += d;
+      vic.hp -= d; vic.combo.dmg += d; if (vic.combo.by) vic.combo.by.records.dmg += d;
       return d;
     },
 
@@ -1654,23 +1779,23 @@
       FX.burst(contact.clone(), { n: 14, color: A.wallColors, speed: 4 + speedIn * 0.2, size: 0.1, dir: new V3(n.x, 0.3, n.z), life: 0.6 });
       m.call(vic, 'KNOCK//BACK' + (c.bounces > 1 ? ' ×' + c.bounces : ''), 'bounce', contact.clone());
       if (c.by) m.comboShow(c.by, vic);
-      if (vic.hp <= 0) m.ko(vic, c.by || vic.opp, new V3(n.x, 0, n.z), null);
     },
     wallBreak(vic, w, speedIn, contact) {
       const m = vic.m, A = m.arena, n = w.n, c = vic.combo, att = c.by || vic.opp;
       A.breakWall(w, contact);
       const dmg = Combat.bounceDamage(vic, (vic.maxHp * 0.06 + 70) * 1.0 / Math.max(0.4, Combat.prorate(vic)) * Math.max(0.6, Combat.prorate(vic)));
       c.bounces++;
-      vic.vel.set(-n.x * Math.max(9, speedIn * 0.8), 7, -n.z * Math.max(9, speedIn * 0.8));
+      // out through the hole, harder the higher their % (it's close to the blast zone at that end)
+      const out = Math.max(9, speedIn * 0.8) * Platform.scaleH(vic.pct) * 1.25;
+      vic.vel.set(-n.x * out, 6 + vic.pct * 0.02, 0);
       vic.pos[w.axis] = w.sign * (w.lim + 0.2);
-      vic.setState(vic.hp <= 0 ? 'ko' : 'out'); vic.outDone = false;
+      vic.setState('tumble'); vic.hitstun = 0.95; vic.spiked = false; vic.lastBy = att;
       if (att) { att.buffs.momentum = 8; att.records.breaks++; att.hype = Math.min(100, att.hype + 25); m.call(att, 'MOMENTUM', 'buff'); }
       SFX.play('wallbreak'); FX.addShake(1.1); m.slowmo(0.22, 0.75); m.hitstopAll(0.12);
       FX.ring(contact.clone(), { r1: 4, life: 0.5, normal: new V3(n.x, 0, n.z), color: 0xffd070 });
       m.call(vic, 'WALL BREAK!!', 'break', contact.clone());
       if (att) m.comboShow(att, vic);
       m.event('wallbreak', { vic, w });
-      if (vic.hp <= 0) m.ko(vic, att, new V3(-n.x, 0, -n.z), null, true);
     },
 
     /* a limb's armour hits zero: it pops off the figure */
