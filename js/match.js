@@ -903,8 +903,9 @@
     }
 
     /* ---------------------------------------------------- the SHIELD bubble
-       A see-through bubble in the figure's colour round its body while it shields, as big as what's left of the shield
-       (Combat.shieldR: the very size the game tests for a shield poke), going red as it runs low, with a bright rim; and
+       A see-through ball in the player's colour (P1 orange, P2 blue) round the body while it shields: a glossy shell and
+       a wire sphere, as big as what's left of the shield (Combat.shieldR: the very size the game tests for a shield
+       poke), flickering when it's nearly gone; and
        stars round the head while a broken shield has them dazed. Looks only. */
     const SHB = [];
     function updShields(dt) {
@@ -912,20 +913,21 @@
         let b = SHB[i];
         if (!b) {
           const g = new THREE.Group();
-          const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.32, depthWrite: false, toneMapped: false }));
-          const rim = new THREE.Mesh(new THREE.RingGeometry(0.93, 1.0, 48), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide, toneMapped: false, blending: THREE.AdditiveBlending }));
-          rim.position.z = 1.02; g.add(fill, rim); g.renderOrder = 5; scene.add(g);
+          // a see-through ball: a lit, glossy shell (it catches the light like a bubble) and a wire sphere over it
+          const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 22), new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.2, depthWrite: false, shininess: 110, specular: 0xffffff, emissive: 0x000000 }));
+          const rim = new THREE.Mesh(new THREE.SphereGeometry(1.004, 18, 12), new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, opacity: 0.45, depthWrite: false, toneMapped: false }));
+          fill.renderOrder = 5; rim.renderOrder = 6; g.add(fill, rim); scene.add(g);
           const stars = new THREE.Group(); for (let k = 0; k < 3; k++) { const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.17, 0), new THREE.MeshBasicMaterial({ color: 0xffe040, toneMapped: false, depthTest: false })); stars.add(s); } scene.add(stars);
-          b = SHB[i] = { g, fill, rim, stars, base: new THREE.Color(KB.LINES[f.build.core.line].pal.glow) };
+          b = SHB[i] = { g, fill, rim, stars, base: new THREE.Color(i === 0 ? 0xff6a3a : 0x3a9aff) };   // (the player's colour, as on the HUD)
         }
         const on = (f.state === 'guard' || f.state === 'guardstun') && !f.gone;
         b.g.visible = on;
         if (on) {
           const k = U.clamp(f.guardHp / (f.guardMax || 1), 0, 1), R = Combat.shieldR(f), c = Combat.shieldC(f);
           b.g.position.set(c.x, c.y, 0); b.g.scale.setScalar(R * (1 + 0.025 * Math.sin(M.time * 18)));
-          const col = b.base.clone().lerp(new THREE.Color(0xff2a1a), Math.pow(1 - k, 1.5));
-          b.fill.material.color.copy(col); b.rim.material.color.copy(col).lerp(new THREE.Color(0xffffff), 0.35);
-          b.fill.material.opacity = f.state === 'guardstun' ? 0.5 : 0.3; b.rim.material.opacity = 0.7 + 0.25 * Math.sin(M.time * 9);
+          const col = b.base, low = k < 0.3 ? 0.5 + 0.5 * Math.sin(M.time * 30) : 1;   // (nearly gone: it flickers)
+          b.fill.material.color.copy(col); b.fill.material.emissive.copy(col).multiplyScalar(0.4); b.rim.material.color.copy(col).lerp(new THREE.Color(0xffffff), 0.3);
+          b.fill.material.opacity = (f.state === 'guardstun' ? 0.36 : 0.22) * low; b.rim.material.opacity = (0.4 + 0.15 * Math.sin(M.time * 9)) * low; b.rim.rotation.y = M.time * 0.8;
         }
         const daze = f.state === 'gbreak' && f.grounded && !f.gone;
         b.stars.visible = daze;

@@ -133,17 +133,7 @@
     /* ---- WILL IT LAND: a blow's measured box (reach.js: KB.boxOf, as far forward, back, low and high as its hitboxes go)
        where it'll be when it comes out, against their body where they'll be then (their speed, and gravity if they're in
        the air: down onto whatever's under them). lead: how long until the blow starts */
-    canHit(id, lead) {
-      const f = this.f, o = f.opp, mv = id && KB.MOVES[id]; if (!mv || !o || o.gone || o.inv > 0.15) return false;
-      if (Combat.lying(o) && !(mv.otg || mv.spike || mv.zone === 'low' || mv.groundHit)) return false;
-      const B = KB.boxOf(mv), t = Math.max(0, lead || 0) + (mv.su || 0.08) + 0.03;
-      let ox = o.pos.x + o.vel.x * t, oy = o.pos.y + (o.grounded ? 0 : o.vel.y * t - 15 * t * t);
-      const g = Platform.groundAt(this.m, ox, o.pos.y + 0.05); if (g != null && oy < g) oy = g;
-      const dir = Math.sign(ox - f.pos.x) || (f.forward.x >= 0 ? 1 : -1), air = !f.grounded;
-      const fx = f.pos.x + (air ? f.vel.x * t : 0) + dir * Math.min(1.2, (mv.lunge || 0) * 0.12), fy = f.pos.y + (air ? f.vel.y * t - 15 * t * t : 0);
-      const rx = (ox - fx) * dir, ry = oy - fy, tum = o.state === 'tumble' || o.state === 'held', w = tum ? 0.55 : 0.33, h0 = tum ? -0.2 : 0.02, h1 = tum ? 2.0 : 1.83;
-      return rx + w > B[1] && rx - w < B[0] && ry + h1 > B[2] && ry + h0 < B[3];
-    }
+    canHit(id, lead) { const o = this.f.opp; return !!o && o.inv <= 0.15 && KB.willHit(this.f, o, id, lead); }   // (reach.js)
     /* ---- TECH CHASE: they've landed (knocked down, getting up, or rolling out of it): where they'll be and when they can
        be hit again; stand a blow's length off that spot, then throw it so it comes out as their invulnerability runs out
        (a better CPU reads it tighter). False when there's nothing to chase */

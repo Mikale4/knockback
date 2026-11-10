@@ -823,7 +823,12 @@
       if (a.grounded && a.state !== 'attack') return; if (dist > 0.8) toward(0.6);
       // a DIVE drives you down: it waits until they've come down to you (from below, it passes under them)
       const sm = KB.MOVES[s.m], down = sm && sm.type !== 'proj' && sm.dive && !sm.multi, top = down ? 1.0 : 1.5;   // (a spinning drill hits all round: it can go early)
-      if (a.state === 'air' || (a.state === 'attack' && a.moveHit)) if (dy < top && dy > -1.5 && dist < 2.2) press(s.k); return;
+      if (a.state === 'air' || (a.state === 'attack' && a.moveHit)) {
+        const lead = a.state === 'attack' && a.move ? Math.max(0, a.move.su + (a.curAc || a.move.ac) * 0.3 - a.moveT) : 0, leftA = a.move ? a.move.su + (a.curAc || a.move.ac) + a.move.rc - a.moveT : 1;
+        if (sm && (sm.type === 'melee' || sm.type === 'grab') && !down) { if (KB.willHit(a, d, s.m, lead) || (a.state === 'attack' && leftA < 0.08 && dy < top && dy > -1.5 && dist < 2.2)) press(s.k); }
+        else if (dy < top && dy > -1.5 && dist < 2.2) press(s.k);
+      }
+      return;
     }
     if (s.t === 'pause') { if (a.pauseWin && m.time >= a.pauseWin.from + 0.02) fake.held.light = true; return; }   // (pressed before the window opens, it would start the string over)
     if (s.t === 'dash') { if (a.state === 'dodge') { if (a.stateT > 0.13) press('light'); return; } if (dist > 1.8 && a.state !== 'attack') toward(); else { toward(); press('dodge'); } return; }
@@ -843,10 +848,12 @@
       const left = a.move ? a.move.su + a.move.ac + (a.acExt || 0) + a.move.rc - a.moveT : 0;
       if (canLink && ((a.move.nx || {}).l === s.m || s.k === 'heavy') && left < 0.1) { if (s.t === 'toward') toward(1); press(s.k); fake.held[s.k] = true; return; }
       const far = mv.type === 'proj' || mv.type === 'radial', hiY = far || s.k === 'special' ? 2.1 : 1.5, maxD = far ? Math.max(reach + 0.6, (mv.range || mv.rad || 2) + 0.3) : reach + 0.6;   // (a shot, a breath or a burst reaches higher and further than a swing; and nobody swings at someone right over their head)
-      if ((fresh || canLink) && yh > 0.15 && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD) { if (s.k !== 'heavy' || s.t === 'toward') toward(s.t === 'toward' ? 1 : 0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
+      const lead = canLink ? Math.max(0, a.move.su + (a.curAc || a.move.ac) * 0.3 - a.moveT) : 0;
+      const lands = far ? yh > 0.15 && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD : KB.willHit(a, d, s.m, lead);   // (a swing: its measured box against their body, reach.js)
+      if ((fresh || canLink) && lands) { if (s.k !== 'heavy' || s.t === 'toward') toward(s.t === 'toward' ? 1 : 0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
       if (!fresh) return;
-      const g = 30, vy = d.vel.y, y = Math.max(0, d.pos.y), tl = (vy + Math.sqrt(vy * vy + 2 * g * y)) / g;
-      const lx = d.pos.x + d.vel.x * tl, lz = d.pos.z + d.vel.z * tl, r0 = reach * 0.85;
+      const g = 30, vy = d.vel.y, gy = Platform.groundAt(m, d.pos.x, d.pos.y) || 0, y = Math.max(0, d.pos.y - gy), tl = (vy + Math.sqrt(vy * vy + 2 * g * y)) / g;
+      const lx = d.pos.x + d.vel.x * tl, lz = d.pos.z + d.vel.z * tl, r0 = far ? reach * 0.85 : U.clamp(KB.boxOf(mv)[0] * 0.65, 0.5, 1.6);
       const ox = a.pos.x - lx, oz = a.pos.z - lz, ol = Math.hypot(ox, oz) || 1, sx = lx + ox / ol * r0, sz = lz + oz / ol * r0;
       const mx = sx - a.pos.x, mz = sz - a.pos.z, ml = Math.hypot(mx, mz);
       if (ml > 0.25) { fake.move.x = mx / ml; fake.move.y = -mz / ml; }
@@ -854,6 +861,12 @@
     }
     if (fresh && dist > near && !(s.k === 'special')) { toward(); return; }
     if (busy) return;
+    const sm2 = KB.MOVES[s.m];
+    if (!fresh && a.move && a.moveHit && sm2 && (sm2.type === 'melee' || sm2.type === 'grab') && (s.k === 'light' || s.k === 'air')) {
+      const lead = Math.max(0, a.move.su + (a.curAc || a.move.ac) * 0.3 - a.moveT), leftL = a.move.su + (a.curAc || a.move.ac) + a.move.rc - a.moveT;
+      if (!KB.willHit(a, d, s.m, lead) && leftL > 0.12) return;   // (wait for it to land; the window's last moments press anyway)
+    }
+    if (fresh && sm2 && sm2.type === 'melee' && !KB.willHit(a, d, s.m, 0) && dist > 0.6) { toward(0.6); return; }
     if (s.t === 'toward') toward();
     press(s.k);
   }

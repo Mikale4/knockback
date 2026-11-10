@@ -20,6 +20,20 @@
     const r = mv.rad || 0.8, h = mv.around ? 1 : (mv.h || 1.1), f = mv.around ? r + 0.4 : (mv.reach || 1.15) + r * 0.6;
     return [f, mv.around ? -f : -0.3, h - r, h + r];
   };
+  /* WILL IT LAND: f's blow (id) started `lead` seconds from now: its box where it'll be when it comes out, against o's
+     body where o will be then (their speed, gravity if they're in the air, down onto whatever's under them; a bit bigger
+     tumbling, as the hurtboxes are). The CPU (ai.js) and a trial's demo both ask it */
+  KB.willHit = (f, o, id, lead) => {
+    const mv = id && KB.MOVES[id]; if (!mv || !o || o.gone) return false;
+    if (Combat.lying(o) && !(mv.otg || mv.spike || mv.zone === 'low' || mv.groundHit)) return false;
+    const B = KB.boxOf(mv), t = Math.max(0, lead || 0) + (mv.su || 0.08) + 0.03;
+    let ox = o.pos.x + o.vel.x * t, oy = o.pos.y + (o.grounded ? 0 : o.vel.y * t - 15 * t * t);
+    const g = Platform.groundAt(f.m, ox, o.pos.y + 0.05); if (g != null && oy < g) oy = g;
+    const dir = Math.sign(ox - f.pos.x) || (f.forward.x >= 0 ? 1 : -1), air = !f.grounded;
+    const fx = f.pos.x + (air ? f.vel.x * t : 0) + dir * Math.min(1.2, (mv.lunge || 0) * 0.12), fy = f.pos.y + (air ? f.vel.y * t - 15 * t * t : 0);
+    const T = o.state === 'tumble' || o.state === 'held' ? Combat.TUMBLE : 0, rx = (ox - fx) * dir, ry = oy - fy, w = 0.33 + T;
+    return rx + w > B[1] && rx - w < B[0] && ry + 1.83 + T > B[2] && ry + 0.02 - T < B[3];
+  };
   /* how far apart (middle to middle) two figures can be for a blow to land: its reach and half a body */
   KB.hitDist = mv => KB.boxOf(mv)[0] + 0.3;
 })();
