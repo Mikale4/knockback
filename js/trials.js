@@ -640,7 +640,20 @@
   const all = () => { if (!TRIALS.samurai) for (const l of KB.LINE_ORDER) TRIALS[l] = build(l); return TRIALS; };
   const allAdv = () => { if (!TRIALS_ADV.samurai) for (const l of KB.LINE_ORDER) TRIALS_ADV[l] = ADV[l] ? ADV[l]().map(t => Object.assign({ adv: true }, t)) : []; return TRIALS_ADV; };
   const allPro = () => { if (!TRIALS_PRO.samurai) for (const l of KB.LINE_ORDER) TRIALS_PRO[l] = PRO[l] ? PRO[l]().map(t => Object.assign({ pro: true, stars: 5 }, t)) : []; return TRIALS_PRO; };
-  const listOf = (line, tier) => (tier === 'pro' ? allPro() : tier === 'adv' ? allAdv() : all())[line];
+  /* routes cut back to the part that plays the same every time on the platform fighter's rules (they ran on past a
+     point that no longer holds): the steps up to there, and a note that says what they are */
+  const TRIM = { 'samurai:adv:5': 9, 'knight:adv:1': 12, 'monk:pro:4': 14, 'wrestler:pro:3': 13, 'football:pro:4': 20, 'boxer:adv:5': 12, 'fencer:pro:0': 12,
+    'weightlifter:pro:2': 13, 'bowler:pro:3': 6, 'basketball:adv:2': 7, 'cannoneer:pro:2': 8, 'blackbeard:pro:2': 9, 'storm:pro:2': 9 };
+  const trimmed = new Map();
+  const listOf = (line, tier) => {
+    const L = (tier === 'pro' ? allPro() : tier === 'adv' ? allAdv() : all())[line]; if (!L) return L;
+    return L.map((t, i) => {
+      const n = TRIM[line + ':' + tier + ':' + i]; if (!n || n >= t.steps.length) return t;
+      const k = line + ':' + tier + ':' + i;
+      if (!trimmed.has(k)) trimmed.set(k, Object.assign({}, t, { steps: t.steps.slice(0, n), note: 'The route: ' + t.steps.slice(0, n).map(stepName).join(' › ') + '.' }));
+      return trimmed.get(k);
+    });
+  };
 
   /* ------------------------------------------------- saved progress */
   const done = () => { const S = Auth.S; if (!S) return {}; return S.trials || (S.trials = {}); };
@@ -685,8 +698,12 @@
   function reset(why) {
     R.at = 0; R.combo = null; R.state = 'go'; R.started = {};
     const a = me(); a.spReady = 0; a.uses = a.st.uses; a.hype = 100; a.burst = 100; a.rounds = a.st.rounds; a.reloadT = 0; a.limits = {};
-    R.m.training.spot = R.trial.wall ? 'wall' : 'centre'; R.m.training.lastSpot = R.m.training.spot; R.m.trainReset();
-    if (!R.trial.wall) { const [p, d] = R.m.fighters; p.pos.set(-(R.trial.gap || 1.3), 0, 0.6); d.pos.set(0, 0, 0.6); p.yaw = Math.PI / 2; d.yaw = -Math.PI / 2; }
+    // the dummy starts each try at the trial's DAMAGE % (the launches carry about as far as the routes need)
+    // (a route off a wall starts by it, the dummy at a % where the KNOCK gets there hard enough to bounce)
+    const wallish = R.trial.wall || R.trial.steps.some(st => st.e === 'bounce');
+    R.m.training.pct = [0, R.trial.pct != null ? R.trial.pct : wallish ? Trials.WALL_PCT : Trials.PCT];
+    R.m.training.spot = wallish ? 'wall' : 'centre'; R.m.training.lastSpot = R.m.training.spot; R.m.trainReset();
+    if (!wallish) { const [p, d] = R.m.fighters; p.pos.set(-(R.trial.gap || 1.3), 0, 0.6); d.pos.set(0, 0, 0.6); p.yaw = Math.PI / 2; d.yaw = -Math.PI / 2; }
     for (const mn of R.m.minions.slice()) { if (mn.obj.parent) mn.obj.parent.remove(mn.obj); } R.m.minions.length = 0;
     if (R.trial.imps) { R.m.summon(me(), R.trial.imps, true); for (const mn of R.m.minions) if (mn.owner === me()) mn.carried = true; }
     R.note = why || ''; draw();
@@ -747,7 +764,7 @@
   function tick(dt) {
     if (!R || App.view !== R.m) return;
     const a = me(), d = dummy(), s = R.trial.steps[R.at];
-    a.hp = a.maxHp; d.hp = Math.max(d.hp, d.maxHp * 0.5); a.hype = R.at === 0 || (s && s.e === 'super') ? 100 : a.hype;
+    a.pct = 0; a.hype = R.at === 0 || (s && s.e === 'super') ? 100 : a.hype;
     if (Input.keyDown('KeyR')) { if (!R.rHeld) { R.rHeld = true; stopDemo(); reset(); return; } } else R.rHeld = false;
     if (R.state !== 'go') return;
     // the combo has to keep going (a Legend Art has its own catch)
@@ -765,11 +782,12 @@
   function demo(dt) {
     const a = me(), d = dummy(), s = R.trial.steps[R.at], m = R.m; if (!s || !fake) return;
     for (const k in fake.held) fake.held[k] = false; fake.move.x = 0; fake.move.y = 0;
+    if (a.shortOk && m.time - a.jumpT < 0.16) fake.held.jump = true;   // (Jump held through a jump off the ground: a full one, not a short hop)
     R.dk = (R.dk || 0) + 1; const tap = R.dk % 3 === 0;
     const dx = d.pos.x - a.pos.x, dz = d.pos.z - a.pos.z, dist = Math.hypot(dx, dz), dy = d.pos.y - a.pos.y;
     const toward = (k) => { fake.move.x = dx / (dist || 1) * (k || 1); fake.move.y = -dz / (dist || 1) * (k || 1); };
     const busy = a.state === 'attack' && !a.moveHit;
-    const press = b => { if (tap) fake.held[b] = true; };
+    const press = b => { if (tap) { fake.held[b] = true; if (b === 'heavy' && s.m && s.m === a.leftMove('heavy') && Math.abs(fake.move.x) < 0.5) toward(1); } };   // (the side KNOCK: Heavy with the stick at them)
     if (s.e === 'bounce' || s.e === 'art' || s.e === 'gbounce') return;
     if (s.e === 'jump') return press('jump');
     if (s.e === 'snap') { if (a.state === 'attack' && a.moveHit) press('snap'); return; }
@@ -822,9 +840,9 @@
       // (a press it can't cancel into waits for the move to end; one it can waits for them to come into reach, but never
       // past the last tenth of a second of the move: after that the cancel is gone and it's a fresh move, or the pause branch)
       const left = a.move ? a.move.su + a.move.ac + (a.acExt || 0) + a.move.rc - a.moveT : 0;
-      if (canLink && ((a.move.nx || {}).l === s.m || s.k === 'heavy') && left < 0.1) { if (s.t === 'toward') toward(0.3); press(s.k); fake.held[s.k] = true; return; }
+      if (canLink && ((a.move.nx || {}).l === s.m || s.k === 'heavy') && left < 0.1) { if (s.t === 'toward') toward(1); press(s.k); fake.held[s.k] = true; return; }
       const far = mv.type === 'proj' || mv.type === 'radial', hiY = far || s.k === 'special' ? 2.1 : 1.5, maxD = far ? Math.max(reach + 0.6, (mv.range || mv.rad || 2) + 0.3) : reach + 0.6;   // (a shot, a breath or a burst reaches higher and further than a swing; and nobody swings at someone right over their head)
-      if ((fresh || canLink) && yh > 0.15 && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD) { if (s.k !== 'heavy' || s.t === 'toward') toward(0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
+      if ((fresh || canLink) && yh > 0.15 && yh < hiY && dh > (fresh ? 0.45 : 0.2) && dh < maxD) { if (s.k !== 'heavy' || s.t === 'toward') toward(s.t === 'toward' ? 1 : 0.3); press(s.k); return; }   // (a plain Heavy wants the stick let go: tilted, it's the KNOCK)
       if (!fresh) return;
       const g = 30, vy = d.vel.y, y = Math.max(0, d.pos.y), tl = (vy + Math.sqrt(vy * vy + 2 * g * y)) / g;
       const lx = d.pos.x + d.vel.x * tl, lz = d.pos.z + d.vel.z * tl, r0 = reach * 0.85;
@@ -870,11 +888,12 @@
   /* ------------------------------------------------ start, leave, select */
   const Trials = {};
   Trials.list = (line, tier) => listOf(line, tier);
+  Trials.PCT = 0; Trials.WALL_PCT = 0;   // (the dummy's % at the start of a try, unless the trial says: off a wall, more)
   Trials.start = (line, i, tier) => {
     Trials.stop();
     tier = tier === 'adv' || tier === 'pro' ? tier : 'basic';
     const list = listOf(line, tier);
-    App.startMatch({ mode: 'training', trials: true, builds: [KB.mintBuild(line, 0), KB.mintBuild('knight', 0)], cpu: [null, null], arena: 'shelf', wins: 99, time: 999, bonus: true });
+    App.startMatch({ mode: 'training', trials: true, builds: [KB.mintBuild(line, 0), KB.mintBuild('knight', 0)], cpu: [null, null], arena: 'shelf', layout: 'flat', walled: true, wins: 99, time: 999, bonus: true });   // (no platforms to land on mid-combo)
     const m = App.view; m.training.meter = true; m.training.dummy = 'stand';
     R = { m, line, list, tier, i: i == null ? Math.max(0, list.findIndex((t, k) => !cleared(line, k, tier))) : i, at: 0, state: 'go', note: '', started: {} };
     if (R.i < 0) R.i = 0;

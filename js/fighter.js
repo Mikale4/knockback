@@ -12,9 +12,11 @@
      falls fast; let go of Jump at once for a short hop.
    - Light and Heavy take the stick's direction: Light alone is the string,
      → is the pause move, ↑ the launcher, ↓ the low move. Heavy is a KNOCK
-     (hold it to charge): alone or ←/→ the side KNOCK, ↑ the up KNOCK, ↓ the
-     down KNOCK (low, both sides). In the air, ↓ + Light is the spike. Guard
-     blocks from both sides, a Legend Art too (it costs most of the guard).
+     (hold it to charge): alone the neutral KNOCK (a slam into the floor: a
+     ground bounce), ←/→ the side KNOCK, ↑ the up KNOCK, ↓ the down KNOCK
+     (low, both sides). Special the same way: neutral, side, up (each figure's
+     own way back to the stage) and down. In the air, ↓ + Light is the spike.
+     Guard blocks from both sides, a Legend Art too (most of the guard).
    - WALLED STAGES have a wall at each end: a launch into one bounces back
      (KNOCK//BACK) for more, a dodge as you hit it from the second bounce on
      techs it, and enough stress breaks it open (out that end, the blast zone
@@ -252,8 +254,9 @@
       const mv = this.input.move, c = this.confT > 0 ? -1 : 1; return Math.abs(mv.x) < 0.3 ? null : _w.set(Math.sign(mv.x) * c * Math.min(1, Math.abs(mv.x) * 1.15), 0, 0).clone(); }   // (CHARMED: backwards)
     /* the stick's up and down (+1 up), and which way it points for an attack: 'f' (the way you face), 'b', 'u', 'd' or null */
     stickY() { const y = this.input.move.y; return (this.confT > 0 ? -1 : 1) * y; }
-    attackDir() {
-      const mv = this.input.move, c = this.confT > 0 ? -1 : 1, x = mv.x * c, y = mv.y * c;
+    attackDir() { return this.dirOf(this.input.move.x, this.input.move.y); }
+    dirOf(sx, sy) {
+      const c = this.confT > 0 ? -1 : 1, x = sx * c, y = sy * c;
       if (Math.hypot(x, y) < 0.45) return null;
       if (Math.abs(y) > Math.abs(x) * 0.85) return y > 0 ? 'u' : 'd';
       return (x > 0) === (this.forward.x > 0) ? 'f' : 'b';
@@ -352,6 +355,7 @@
           const ad = this.attackDir();
           if (ad === 'u') this.startMove(this.knock('u'), 'launch');
           else if (ad === 'd') this.startMove(this.knock('d'), 'heavy');
+          else if (!ad) this.startMove(this.knock('n'), 'heavy');
           else { if (ad === 'b') this.yaw = -this.yaw; this.startMove(this.knock('f'), 'heavy'); }
           return true;
         }
@@ -382,15 +386,21 @@
     tiltMove(d) {
       const R = KB.MOVES[this.lightRoot()] || {}, B = R.nx && R.nx.l && KB.MOVES[R.nx.l], C = B && B.nx && B.nx.l && KB.MOVES[B.nx.l], D4 = C && C.nx && C.nx.l && KB.MOVES[C.nx.l];
       const pick = d === 'f' ? (B && B.nx && B.nx.p) || (B && B.id) : d === 'u' ? (D4 && D4.id) || this.leftMove('launch') : (C && C.id) || (B && B.id);
-      return this.tilts(pick || this.lightRoot());
+      return this.tilts(pick || this.lightRoot(), d);
     }
-    /* a single blow, not a string: the move without its follow-ups (made once, kept) */
-    tilts(id) {
-      const k = 'tilt:' + id; if (KB.MOVES[k]) return k; const mv = KB.MOVES[id]; if (!mv) return id;
-      KB.MOVES[k] = Object.assign({}, mv, { id: k, nx: null }); return k;
+    /* a single blow, not a string: the move without its follow-ups (made once, kept). The UP TILT reaches higher (it
+       catches someone coming down on you); the DOWN TILT is low and quick and pops them up a little, to start a combo */
+    tilts(id, d) {
+      const k = 'tilt' + (d === 'u' || d === 'd' ? d : '') + ':' + id; if (KB.MOVES[k]) return k; const mv = KB.MOVES[id]; if (!mv) return id;
+      const o = Object.assign({}, mv, { id: k, nx: null });
+      if (d === 'u') { o.h = Math.max(mv.h || 1, 1.65); o.rad = (mv.rad || 1) + 0.2; }
+      if (d === 'd') Object.assign(o, { zone: 'low', h: 0.4, pose: 'sweep', kb: [2.5, 7], launch: 1, launcher: 0, finisher: 0, spike: 0, around: 0, multi: 0, reach: Math.max(1.1, mv.reach || 1.1), su: Math.min(mv.su || 0.08, 0.08), rc: Math.min(mv.rc || 0.22, 0.24) });
+      KB.MOVES[k] = o; return k;
     }
-    /* the three KNOCKs (Heavy with the stick; hold Heavy to charge any of them): the side KNOCK is the L-arm's Heavy,
-       the up KNOCK its launcher, the down KNOCK a low blow all round (made from the Heavy, or its melee fallback) */
+    /* the four KNOCKs (Heavy with the stick; hold Heavy to charge any of them): the side KNOCK is the L-arm's Heavy,
+       the up KNOCK its launcher, the down KNOCK a low blow all round, the neutral KNOCK an overhead slam just in front
+       that drives them into the floor (a ground bounce; off the stage, straight down). The last two are made from the
+       Heavy, or its melee fallback when the Heavy is a shot */
     knock(d) {
       const H = this.leftMove('heavy'), L = this.leftMove('launch');
       if (d === 'f') return H;
@@ -398,6 +408,12 @@
       const mv = KB.MOVES[base]; if (!mv) return base;
       let o;
       if (d === 'u') o = Object.assign({}, mv, { id: k, charge: 1, nx: null });
+      else if (d === 'n') {
+        const src = mv.type === 'melee' ? mv : KB.MOVES[(this.st.dry || {}).heavy] || KB.MOVES[L] || mv;
+        o = Object.assign({}, src, { id: k, name: src.name + ' Slam', type: 'melee', pose: 'overhead', around: 0, reach: Math.min(1.35, src.reach || 1.2), rad: Math.max(1.0, src.rad || 1), h: 0.6, zone: 'mid', lunge: 1.5, dist: 0,
+          kb: [1.5, -9], launch: 1, launcher: 0, spike: 1, dive: 0, charge: 1, nx: null, round: 0, proj: null, multi: 0, auto: null,
+          dmg: Math.round((src.dmg || 50) * 0.95), su: Math.max(0.17, src.su || 0.17), ac: Math.max(0.08, src.ac || 0.08), rc: Math.max(0.34, src.rc || 0.34) });
+      }
       else {
         const src = mv.type === 'melee' ? mv : KB.MOVES[(this.st.dry || {}).heavy] || KB.MOVES[L] || mv;
         o = Object.assign({}, src, { id: k, name: 'Low ' + src.name, type: 'melee', pose: 'sweep', around: 1, reach: 0, rad: Math.max(1.55, src.rad || 1), h: 0.35, zone: 'low', lunge: 0, dist: 0,
@@ -559,15 +575,15 @@
       if (this.rounds <= 0) { this.reloadT = this.st.reload; this.reloadCall(true); }
     }
     reloadCall(force) { if (!force && this.m.time - (this.reloadCallT || -9) < 0.8) return; this.reloadCallT = this.m.time; this.m.call(this, this.reloadT > 0 && !force ? this.st.ammoOut + ': ' + this.reloadT.toFixed(1) + ' s' : this.st.ammoOut, 'bad'); }
-    /* COMMAND SPECIALS: a direction held with Special, read on the screen: → is whichever side of the screen (left or
-       right) the opponent is on, so it's the same wherever they stand (it flips when you swap sides), ↑ is the stick
-       pushed up. → + Special, ← + Special and ↑ + Special are the three (keyed qcf, qcb and dp: they were motions once,
-       a quarter circle forward and back and a dragon punch); the diagonals count as → or ←; Special with the stick at
-       rest (or pulled straight down) is the plain one. Let go of the stick a moment before Special and it still counts.
+    /* THE FOUR SPECIALS: Special with the stick. At rest, the NEUTRAL Special (the head's own); ← or →, the SIDE
+       Special (you turn to face the way you pressed); ↑, the UP Special (each figure's own way back to the stage); ↓,
+       the DOWN Special. They're keyed qcf (side), dp (up) and qcb (down), from when they were stick motions. Let go of
+       the stick a moment before Special and it still counts.
        The CPU, a trial's demo and the harness just say which (cpu.cmd) and never read their stick for it. The camera never turns in a
        fight, so the screen's right is the world's +x (the same mapping stick() uses) and the sim never reads the camera */
     recMotion() {
       const mv = this.input.move, l = Math.hypot(mv.x, mv.y), H = this.mot || (this.mot = []), o = this.opp;
+      if (l > 0.45) this.lastDir = { x: mv.x, y: mv.y, t: this.m.time };
       // which side they're on: it only changes once they're clearly across (straight above or below keeps the last side)
       if (o && o.state !== 'out') { const dx = o.pos.x - this.pos.x; if (Math.abs(dx) > 0.35 || !this.mside) this.mside = dx >= 0 ? 1 : -1; }
       let c = 5;
@@ -579,14 +595,13 @@
       if (!last || last.c !== c) { H.push({ c, t: this.m.time }); if (H.length > 12) H.shift(); }
     }
     motion() {
-      const H = this.mot; if (!H || !H.length) return null;
-      let n = H.length - 1; const now = this.m.time;
-      if (H[n].c === 5 && n > 0 && now - H[n].t < 0.12) n--;   // (let go of the stick just before Special)
-      const c = H[n].c;
-      return c === 6 || c === 9 || c === 3 ? 'qcf' : c === 4 || c === 7 || c === 1 ? 'qcb' : c === 8 ? 'dp' : null;   // → ← ↑
+      const mv = this.input.move; let x = mv.x, y = mv.y;
+      if (Math.hypot(x, y) < 0.45 && this.lastDir && this.m.time - this.lastDir.t < 0.12) { x = this.lastDir.x; y = this.lastDir.y; }   // (let go of the stick just before Special)
+      const d = this.dirOf(x, y); this.spFace = d === 'f' || d === 'b' ? Math.sign(x) * (this.confT > 0 ? -1 : 1) : 0;
+      return d === 'u' ? 'dp' : d === 'd' ? 'qcb' : d ? 'qcf' : null;   // ↑ ↓ ← →
     }
     specialId() {
-      const S = this.st, cpu = this.input.cpu, c = cpu && cpu.cmd ? cpu.cmd : cpu && !cpu.stick ? null : this.motion();   // (the CPU, a trial demo and the harness just say which: their stick is for walking; online players' sticks are people's)
+      this.spFace = 0; const S = this.st, cpu = this.input.cpu, c = cpu && cpu.cmd ? cpu.cmd : cpu && !cpu.stick ? null : this.motion();   // (the CPU, a trial demo and the harness just say which: their stick is for walking; online players' sticks are people's)
       if (cpu && cpu.cmd) cpu.cmd = null;
       if (c) this.m.event('motion', { f: this, c });   // (the tutorial listens)
       const id = c && S.cmd && S.cmd[c];
@@ -601,7 +616,7 @@
       if (cmd) { this.mot.length = 0; this.m.call(this, KB.MOVES[id].name.toUpperCase(), 'small'); }
       this.startMove(id, 'special');
       // a command special goes at them wherever they are on the screen (the direction is their side of the screen, not straight at them)
-      if (cmd && o && o.state !== 'out' && this.move && this.move.id === id) this.yaw = U.ang(this.pos, o.pos);
+      if (this.move && this.move.id === id) { if (this.spFace) this.faceX(this.spFace); else if (cmd && o && o.state !== 'out') this.faceOpp(); }
     }
     /* a LEAP at them: it comes down where they were standing, and hits all round when it lands */
     startLeap(mv) {
@@ -751,9 +766,9 @@
       if (k === 'light') {
         if (nx.l && after && I.take('light', 0.25)) { this.startMove(nx.l, 'light'); return true; }
         if (hit && t >= su + ac * 0.3 && I.take('heavy', 0.25)) {
-          // Heavy in a string launches them up; held toward them, it's the KNOCK instead (back into the wall)
-          const s = this.stick(), d0 = I.dirAt.heavy, s0 = d0 && Math.hypot(d0.x, d0.y) > 0.3 ? new V3(d0.x, 0, -d0.y).normalize() : null, o = this.opp;
-          if ((s && s.dot(this.forward) > 0.5) || (s0 && s0.dot(this.forward) > 0.5)) this.startMove(this.leftMove('heavy'), 'heavy');
+          // Heavy in a string launches them up (alone, ↑ or ↓); with ← or → it's the KNOCK instead (← turns you round first)
+          const d0 = I.dirAt.heavy, ad = this.attackDir() || (d0 ? this.dirOf(d0.x, d0.y) : null), o = this.opp;
+          if (ad === 'f' || ad === 'b') { if (ad === 'b') this.yaw = -this.yaw; this.startMove(this.leftMove('heavy'), 'heavy'); }
           // PIRATE with the Flintlock: Heavy after the FIRST Light is a Quick Shot gun cancel (once a combo, then the string
           // starts over); after two or more it's the launcher like everyone's
           else if (this.st.gunCancel && mv.id === this.lightRoot() && !this.broken.armL && this.gunReady() && o && !o.combo.gun) {   // (an empty chamber: the launcher)
@@ -1189,9 +1204,10 @@
         if (!this.pummelHit && this.pummelT <= 0.12) { this.pummelHit = true; Combat.hit(this, o, KB.MOVES.pummel, { kind: 'throw', force: true, pummel: true, dir: F.clone(), at: _c.copy(o.pos).setY(o.pos.y + 1.1).clone() }); }
         return;
       }
-      const s = this.stick(), tilt = s && Math.hypot(I.move.x, I.move.y) > 0.7 && this.grabT > 0.15;
+      // the throws: ← / → / ↑ / ↓ (or Jump: up; Heavy alone: down)
+      const ad = this.attackDir(), tilt = ad && Math.hypot(I.move.x, I.move.y) > 0.7 && this.grabT > 0.15;
       if (I.take('jump')) return this.startThrow('u');
-      if (I.take('heavy') || tilt) { if (!s) return this.startThrow('d'); const dot = s.dot(F); return this.startThrow(dot < -0.5 ? 'b' : dot > 0.5 ? 'f' : 's', s); }
+      if (I.take('heavy') || tilt) return this.startThrow(ad || 'd');
       if (I.take('light')) { this.pummelT = 0.24; this.pummelHit = false; return; }
       if (this.grabT >= this.grabMax - o.held.esc) this.grabBreak();
     }
@@ -1274,7 +1290,7 @@
     updTumble(dt) {
       this.hitstun -= dt; this.floatT = Math.max(0, (this.floatT || 0) - dt);
       const g = GRAV * (0.68 + Math.min(0.7, this.combo.hits * 0.03 + this.combo.t * 0.05)) * (this.floatT > 0 ? 0.45 : 1);
-      this.physics(dt, 0, this.artFly ? 0 : 1.7, g);
+      this.physics(dt, 0, this.artFly ? 0 : this.combo.bounces || this.m.arena.stage.walled ? 1 : 1.7, g);   // (a walled stage, or off a wall: the old drag)   // (off a wall it carries back as far as it always did)
       if (!this.spiked && this.vel.y < -11) this.vel.y = -11;
       const sp = Math.hypot(this.vel.x, this.vel.z);
       this.spin.rotation.x -= dt * (4 + sp * 0.7);
@@ -1331,7 +1347,7 @@
         if (p <= lim) { if (!this.grounded && p > lim - 0.2) this.wallTouch = w; continue; }
         const speedIn = w.sign * this.vel[w.axis];
         if (w.broken) continue;   // (a broken wall is open: out that end)
-        if ((this.state === 'tumble' || this.state === 'ko') && speedIn > 6 && !w.broken) { Combat.wallImpact(this, w, speedIn); continue; }
+        if ((this.state === 'tumble' || this.state === 'ko') && speedIn > 3.5 && !w.broken) { Combat.wallImpact(this, w, speedIn); continue; }   // (a low-% KNOCK bounces too)
         this.pos[w.axis] = w.sign * lim; if (speedIn > 0) this.vel[w.axis] = 0;
         if (!this.grounded) this.wallTouch = w;
       }
@@ -1673,9 +1689,10 @@
       if (mv.launch || vic.airborne || vic.state === 'tumble') {
         // DAMAGE %: a launch goes further the higher it is (platform.js); a MARK (a Siege Ram, a Gale Cannon) adds a third
         const pc = vic.pct, mark = vic.wallBreakNext && mv.launch && !m.arena.stage.walled ? 1.35 : 1; if (mark > 1) vic.wallBreakNext = false;
-        let h = mv.kb[0] * kbk * (mv.launch ? Platform.scaleH(pc) : 0.55 + pc / 300) * mark * (att.st.sig === 'warlord' && mv.launch && !m.arena.stage.walled ? 1.1 : 1), v = mv.kb[1];
+        const wl = m.arena.stage.walled;
+        let h = mv.kb[0] * kbk * (mv.launch ? Platform.scaleH(pc, wl) : (wl ? 1 : 0.55) + pc / 300) * mark * (att.st.sig === 'warlord' && mv.launch && !m.arena.stage.walled ? 1.1 : 1), v = mv.kb[1];
         if (!mv.launch) { h *= 0.6; v = Math.max(v, 4.5); }
-        if (mv.spike) { v = mv.kb[1] * (0.8 + pc / 250); vic.spiked = true; } else { vic.spiked = false; v *= mv.launch ? Platform.scaleV(pc) * mark : 0.92 + pc / 400; }
+        if (mv.spike) { v = mv.kb[1] * ((wl ? 1 : 0.8) + pc / 250); vic.spiked = true; } else { vic.spiked = false; v *= mv.launch ? Platform.scaleV(pc, wl) * mark : (wl ? 1 : 0.92) + pc / 400; }
         vic.vel.set(dir.x * h, v * (v > 0 ? Math.min(1.15, kbk) : 1), 0);
         Platform.influence(vic, vic.vel);
         vic.setState('tumble'); vic.grounded = v <= 0 && vic.grounded; if (v > 0) vic.pos.y += 0.02, vic.grounded = false;
@@ -1786,7 +1803,7 @@
       const dmg = Combat.bounceDamage(vic, (vic.maxHp * 0.06 + 70) * 1.0 / Math.max(0.4, Combat.prorate(vic)) * Math.max(0.6, Combat.prorate(vic)));
       c.bounces++;
       // out through the hole, harder the higher their % (it's close to the blast zone at that end)
-      const out = Math.max(9, speedIn * 0.8) * Platform.scaleH(vic.pct) * 1.25;
+      const out = Math.max(9, speedIn * 0.8) * (0.55 + vic.pct / 110);
       vic.vel.set(-n.x * out, 6 + vic.pct * 0.02, 0);
       vic.pos[w.axis] = w.sign * (w.lim + 0.2);
       vic.setState('tumble'); vic.hitstun = 0.95; vic.spiked = false; vic.lastBy = att;

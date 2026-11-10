@@ -19,9 +19,11 @@
   const TEETER = ['hit', 'guardstun', 'gbreak', 'down', 'getup', 'grab', 'burst', 'guard'];
   const P = {
     PCT, HALF,
-    /* the launch grows with the %: horizontal from 0.3x at 0% (a shove) to 1.3x at 100%, vertical from 0.65x to 1.65x */
-    scaleH: pct => 0.3 + pct / 100,
-    scaleV: pct => 0.65 + pct / 100,
+    /* the launch grows with the %. On an open stage, horizontal from 0.3x at 0% (a shove) to 1.3x at 100%, vertical from
+       0.65x to 1.65x: the ring-outs. On a WALLED stage it's the old KNOCK//BACK: nearly full from the start (the walls
+       bounce them back for the combo), a little more with the %, and the way out is up */
+    scaleH: (pct, walled) => walled ? 1 + pct / 250 : 0.3 + pct / 100,
+    scaleV: (pct, walled) => walled ? 1 + Math.max(0, pct - 60) / 90 : 0.65 + pct / 100,   // (walled: steady through a combo, up past 60%: off the top at ~120%)
     /* INFLUENCE: the stick bends a launch up to ~14° toward it (only a real launch, only the side the stick is on) */
     influence(f, vel) {
       const s = f.input && f.input.move; if (!s) return;

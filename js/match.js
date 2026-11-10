@@ -16,7 +16,7 @@
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 300);
     FX.init(scene);
-    const arena = Arena.build(scene, opts.arena);
+    const arena = Arena.build(scene, opts.arena, { layout: opts.layout, walled: opts.walled });
     const M = {
       opts, scene, camera, arena, time: 0, phase: 'intro', phaseT: 0, round: 1, wins: [0, 0], clock: opts.time,
       frozen: false, freezeT: 0, freezer: null, slow: 1, slowT: 0, paused: false, projs: [], picks: [], clones: [], fx: [], minions: [], cine: null, camShot: null,

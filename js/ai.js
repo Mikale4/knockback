@@ -131,6 +131,7 @@
       // a press lasts one frame: release last frame's pulses
       for (const a of Input.ACTIONS) this.held[a] = false;
       for (const a of this.pulse) this.held[a] = true; this.pulse.clear();
+      if (this.f.shortOk && this.m.time - this.f.jumpT < 0.16 && !this.shortHop) this.held.jump = true;   // (Jump held through a jump off the ground: a full one)
       const f = this.f, o = f.opp, m = this.m; if (!o) return;
       if (m.cine) { this.stop(); this.guardT = 0; return; }
       if (this.play) return this.playThink(dt);   // TRAINING: the dummy plays your recording (lab.js)

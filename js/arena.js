@@ -57,7 +57,9 @@
     },
   };
 
-  function build(scene, id) {
+  /* o: { layout, walled } overrides the theme's (the combo trials: the shelf, flat and walled) */
+  function build(scene, id, o) {
+    o = o || {};
     const T = THEMES[id] || THEMES.shelf;
     const group = new THREE.Group(); scene.add(group);
     scene.fog = new THREE.Fog(T.fog, T.fogR ? T.fogR[0] : 26, T.fogR ? T.fogR[1] : 70);
@@ -88,7 +90,7 @@
       }
     }
     const body = VX.object(bg, AS, { cast: false }); body.position.set(0.125, -0.125, 0.125); group.add(body);
-    const layout = LAYOUTS[T.layout] ? T.layout : layoutOf(id), plats = [];
+    const layout = LAYOUTS[o.layout] ? o.layout : LAYOUTS[T.layout] ? T.layout : layoutOf(id), plats = [];
     for (const [cx, py, w] of LAYOUTS[layout]) {
       const n = Math.round(w / AS), x0 = Math.round(cx / AS - n / 2), pg = new VX.Grid(); pg.jit = 0.04;
       const edge = T.edge != null ? T.edge : Models.shade(T.floor(32, 24), 1.2);
@@ -96,7 +98,7 @@
       const o = VX.object(pg, AS, { cast: true }); o.position.set(0.125, py - 0.125, 0.125); group.add(o);
       plats.push({ x1: x0 * AS, x2: (x0 + n) * AS, y: py, soft: true, obj: o });
     }
-    const walled = walledOf(id, T);
+    const walled = o.walled != null ? !!o.walled : walledOf(id, T);
     const stage = { W, top: 0, bot: -DEPTH * AS, plats, layout, walled, blast: walled ? { x: W + 7, top: 13, bot: -9 } : { x: W + 11, top: 17, bot: -9 } };
     // the walls (a walled stage): the theme's wall pattern up the face the camera sees
     const walls = [];

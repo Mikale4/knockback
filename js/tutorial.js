@@ -175,8 +175,8 @@
     },
     {
       id: 'cmd', title: 'COMMAND SPECIALS', need: 3,
-      text: () => { const C = me().st.cmd || {}; return ['Three more Specials: hold a direction and press Special. \u2192 is the side of the screen the dummy is on (right, now). ',
-        el('b', null, '\u2192'), ' + ', K('special'), ': ', nm(C.qcf), '. ', el('b', null, '\u2190'), ' + ', K('special'), ': ', nm(C.qcb), '. ', el('b', null, '\u2191'), ' + ', K('special'), ': ', nm(C.dp), '. Do each one once (the stick at rest is your plain Special).']; },
+      text: () => { const C = me().st.cmd || {}; return ['Special takes the stick too: at rest it\u2019s your neutral Special, and three more. ',
+        el('b', null, '\u2190 / \u2192'), ' + ', K('special'), ': ', nm(C.qcf), ' (the side Special: you face the way you press). ', el('b', null, '\u2191'), ' + ', K('special'), ': ', nm(C.dp), ' (the up Special: your way back to the stage). ', el('b', null, '\u2193'), ' + ', K('special'), ': ', nm(C.qcb), ' (the down Special). Do each one once.']; },
       setup() { place(-2.4, 0); S.motions = new Set(); },
       tick() { const a = me(); a.uses = a.st.uses; a.spReady = 0; },
       on(k, d) { if (k === 'motion' && d.f === me()) { S.motions.add(d.c); return S.motions.size; } },
