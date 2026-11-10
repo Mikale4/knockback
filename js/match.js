@@ -948,14 +948,14 @@
           g.rotation.x += p.spin.x * dt; g.rotation.y += p.spin.y * dt; g.rotation.z += p.spin.z * dt;
           for (const w of arena.walls) if (!w.broken && w.sign * g.position[w.axis] > w.lim - 0.2) { g.position[w.axis] = w.sign * (w.lim - 0.2); p.vel[w.axis] *= -0.5; }
           // it lands on whatever is under it: the stage, a platform, a stone pillar
-          const gy = p.backAt == null ? Platform.groundAt(M, g.position.x, py - 0.14) : null;
-          if (gy != null && g.position.y < gy + 0.15 && p.vel.y < 0) { g.position.y = gy + 0.15; p.floorY = gy; p.vel.y *= -0.35; p.vel.x *= 0.6; p.vel.z *= 0.6; p.spin.multiplyScalar(0.5); if (Math.abs(p.vel.y) < 1.2) { p.rest = true; g.rotation.x = Math.PI / 2 * Math.round(g.rotation.x / (Math.PI / 2)); g.rotation.z = Math.PI / 2 * Math.round(g.rotation.z / (Math.PI / 2)); } }
+          const St0 = arena.stage, gy = p.backAt != null ? null : p.fallIn ? (St0 && Math.abs(g.position.x) <= St0.W && py >= St0.top - 0.2 ? St0.top : null) : Platform.groundAt(M, g.position.x, py - 0.14);
+          if (gy != null && g.position.y < gy + 0.15 && p.vel.y < 0) { g.position.y = gy + 0.15; p.floorY = gy; p.fallIn = false; p.vel.y *= -0.35; p.vel.x *= 0.6; p.vel.z *= 0.6; p.spin.multiplyScalar(0.5); if (Math.abs(p.vel.y) < 1.2) { p.rest = true; g.rotation.x = Math.PI / 2 * Math.round(g.rotation.x / (Math.PI / 2)); g.rotation.z = Math.PI / 2 * Math.round(g.rotation.z / (Math.PI / 2)); } }
           // off the stage: it's gone a few seconds, then it falls back onto the stage out of the sky
           const St = arena.stage, off = g.position.y < arena.outY || (St && g.position.y < St.top - 4 && Math.abs(g.position.x) > St.W - 0.2);
           if (off && p.backAt == null) { p.backAt = M.time + 3; g.visible = false; p.vel.set(0, 0, 0); }
           if (p.backAt != null) {
             if (M.time < p.backAt) continue;
-            const W = St ? St.W : arena.W; p.backAt = null; g.visible = true; g.position.set(U.rnd(-W + 1.5, W - 1.5), (St ? St.top : 0) + 13, 0); p.vel.set(0, -2, 0); p.t = 0.6;
+            const W = St ? St.W : arena.W; p.backAt = null; p.fallIn = true; g.visible = true; g.position.set(U.rnd(-W + 1.5, W - 1.5), (St ? St.top : 0) + 13, 0); p.vel.set(0, -2, 0); p.t = 0.6;
             if (!U.quiet) { FX.burst(g.position.clone(), { n: 12, color: [0xffffff, 0xfff27a], glow: true, speed: 3, size: 0.07, life: 0.5, gravity: -1 }); M.call(p.owner, ({ head: 'HEAD', armL: 'L-ARM', armR: 'R-ARM', legs: 'LEGS' }[p.part] || 'PART') + ' FALLING BACK IN', 'small'); }
             continue;
           }

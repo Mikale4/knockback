@@ -742,7 +742,8 @@
       if (mv.type === 'dash' && t >= su && t < su + ac) { const sp = mv.dist / ac; this.vel.x = F.x * sp; if (!this.grounded && !mv.hop && !this.upB) this.vel.y = 0; }
       else if (mv.lunge && mv.type !== 'leap' && t > su * 0.4 && t < su + ac) {   // (a leap flies its own arc)
         // lunge in, but stop short of running past them
-        const o = this.opp, near = o && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < (mv.reach || 1) * 0.85 && Math.abs(U.wrap(U.ang(this.pos, o.pos) - this.yaw)) < 1.2;
+        // (the blow's real reach, reach.js: a fist steps in closer than a lance before it stops)
+        const o = this.opp, stopAt = mv.vReach != null ? mv.vReach * 0.7 + 0.25 : (mv.reach || 1) * 0.85, near = o && Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z) < stopAt && Math.abs(U.wrap(U.ang(this.pos, o.pos) - this.yaw)) < 1.2;
         const sp = near ? 0 : mv.lunge * (this.grounded ? 1 : 0.4); this.vel.x = U.smooth(this.vel.x, F.x * sp, 20, dt); this.vel.z = U.smooth(this.vel.z, F.z * sp, 20, dt); }
       else if (this.grounded) { this.vel.x = U.smooth(this.vel.x, 0, 14, dt); this.vel.z = U.smooth(this.vel.z, 0, 14, dt); }
       if (this.moveGround && this.grounded && !this.upB) { const lo = this.plat ? this.plat.x1 + 0.1 : -this.m.arena.stage.W + 0.1, hi = this.plat ? this.plat.x2 - 0.1 : this.m.arena.stage.W - 0.1, nx = this.pos.x + this.vel.x * dt; if ((nx < lo && this.vel.x < 0) || (nx > hi && this.vel.x > 0)) this.vel.x = 0; }
@@ -1847,7 +1848,10 @@
         vic.yaw = Math.atan2(-dir.x, -dir.z);
       } else {
         vic.setState('hit'); vic.hitstun = (mv.stun || 0.3) * (counter ? 1.3 : 1) * Math.max(0.6, decay) * (ranged ? Math.max(0.5, rk) : 1);
-        vic.vel.x = dir.x * mv.kb[0] * kbk * rk; vic.vel.z = dir.z * mv.kb[0] * kbk * rk; vic.yaw = Math.atan2(-dir.x, -dir.z);
+        // (a blow in the middle of a string pushes them back about half as far: the next one is meant to reach them; the
+        // string's last blow, and everything else, the full push)
+        const midString = (o.kind === 'light' || o.kind === 'air') && mv.nx && mv.nx.l ? 0.5 : 1;
+        vic.vel.x = dir.x * mv.kb[0] * kbk * rk * midString; vic.vel.z = dir.z * mv.kb[0] * kbk * rk * midString; vic.yaw = Math.atan2(-dir.x, -dir.z);
         // CRUMPLE (they fold up, then fall down) and DIZZY (they stand there rubbing their eyes)
         const crumple = mv.crumple || (emp ? 1.0 : 0) || (mv.chargeL && (o.charge || 0) >= 0.45 ? 0.9 : 0);
         let bout = 0; if (mv.touche) { vic.touche++; vic.toucheT = 10; m.call(vic, 'TOUCH\u00c9 ' + vic.touche, 'counter'); if (vic.touche >= 3) { vic.touche = 0; bout = 2.0; m.call(att, 'BOUT!', 'buff'); } }   // (the FENCER: three touchés win the bout)

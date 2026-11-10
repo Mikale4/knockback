@@ -15,7 +15,7 @@
   const L = {
     react: [0.42, 0.28, 0.17, 0.1], aggro: [0.35, 0.55, 0.7, 0.82], guard: [0.12, 0.32, 0.55, 0.72],
     tech: [0.08, 0.35, 0.62, 0.88], burst: [0.25, 0.55, 0.8, 0.95], skill: [0.35, 0.62, 0.85, 0.97], wallAim: [0.2, 0.5, 0.8, 0.95],
-    fumble: [0.3, 0.14, 0.03, 0],      // the chance any one link of a combo is missed
+    fumble: [0.3, 0.12, 0.02, 0],      // the chance any one link of a combo is missed
     route: [0, 0.35, 0.85, 0.97],      // the chance a combo is played to a plan rather than mashed
     punish: [0.15, 0.45, 0.85, 1],     // the chance a free hit gets taken (rebound, crumple, dizzy, asleep, a whiffed swing)
     ender: [0.15, 0.4, 0.8, 0.95],     // the chance a full combo is cashed in with a Legend Art
@@ -130,6 +130,62 @@
       for (let k = 0; k < 3; k++) { const z = Z.find(q => x > q.x0 && x < q.x1); if (!z) break; x = dir > 0 ? z.x1 + 0.2 : z.x0 - 0.2; }
       return x;
     }
+    /* ---- WILL IT LAND: a blow's measured box (reach.js: KB.boxOf, as far forward, back, low and high as its hitboxes go)
+       where it'll be when it comes out, against their body where they'll be then (their speed, and gravity if they're in
+       the air: down onto whatever's under them). lead: how long until the blow starts */
+    canHit(id, lead) {
+      const f = this.f, o = f.opp, mv = id && KB.MOVES[id]; if (!mv || !o || o.gone || o.inv > 0.15) return false;
+      if (Combat.lying(o) && !(mv.otg || mv.spike || mv.zone === 'low' || mv.groundHit)) return false;
+      const B = KB.boxOf(mv), t = Math.max(0, lead || 0) + (mv.su || 0.08) + 0.03;
+      let ox = o.pos.x + o.vel.x * t, oy = o.pos.y + (o.grounded ? 0 : o.vel.y * t - 15 * t * t);
+      const g = Platform.groundAt(this.m, ox, o.pos.y + 0.05); if (g != null && oy < g) oy = g;
+      const dir = Math.sign(ox - f.pos.x) || (f.forward.x >= 0 ? 1 : -1), air = !f.grounded;
+      const fx = f.pos.x + (air ? f.vel.x * t : 0) + dir * Math.min(1.2, (mv.lunge || 0) * 0.12), fy = f.pos.y + (air ? f.vel.y * t - 15 * t * t : 0);
+      const rx = (ox - fx) * dir, ry = oy - fy, tum = o.state === 'tumble' || o.state === 'held', w = tum ? 0.55 : 0.33, h0 = tum ? -0.2 : 0.02, h1 = tum ? 2.0 : 1.83;
+      return rx + w > B[1] && rx - w < B[0] && ry + h1 > B[2] && ry + h0 < B[3];
+    }
+    /* ---- TECH CHASE: they've landed (knocked down, getting up, or rolling out of it): where they'll be and when they can
+       be hit again; stand a blow's length off that spot, then throw it so it comes out as their invulnerability runs out
+       (a better CPU reads it tighter). False when there's nothing to chase */
+    techChase(dt) {
+      const f = this.f, o = f.opp, lv = this.lv; if (lv < 1 || !f.grounded) return false;
+      let T = null, ex = o.pos.x;
+      if (o.state === 'down') T = (o.kdT || (o.hardKD ? 0.85 : 0.6)) - o.stateT + 0.45;
+      else if (o.state === 'getup') T = Math.max(0, o.inv);
+      else if (o.state === 'dodge' && !o.dodgeAir && o.grounded) {
+        // a roll: where it stops (it slows to a halt over 0.3 s, then holds a tenth)
+        const RT = 0.3, dist = 3.3 * (o.st.dodgeDist || 1), s = Math.min(RT, o.stateT), left = (dist / RT) * (1.5 * (RT - s) - (RT * RT - s * s) / (2 * RT));
+        ex = U.clamp(o.pos.x + (o.dodgeDir ? o.dodgeDir.x : 0) * left, -this.m.arena.stage.W + 0.5, this.m.arena.stage.W - 0.5); T = Math.max(0, o.inv, RT + 0.1 - o.stateT);
+      } else return false;
+      if (Math.abs(o.pos.y - f.pos.y) > 1.2) return false;   // (they're on another level: the platform code takes it)
+      const late = [0.25, 0.12, 0.05, 0][lv], id = f.lightRoot(), mv = KB.MOVES[id] || {}, B = KB.boxOf(mv), su = mv.su || 0.08;
+      const side = f.pos.x <= ex ? -1 : 1, want = ex + side * U.clamp(B[0] * 0.7, 0.55, 1.6), dx = want - f.pos.x;
+      if (T > su + 0.04 + late) {
+        if (Math.abs(dx) > 0.12) this.stickTo(dx, 0, U.clamp(Math.abs(dx) / 0.5, 0.25, 1), true); else { this.stop(); f.faceX(ex - f.pos.x); }
+        return true;
+      }
+      this.stop(); f.faceX(ex - f.pos.x);
+      if (this.wait <= 0 && this.canHit(id, Math.max(0, T - su))) { this.press('light'); this.wait = 0.25; }   // (a meaty one)
+      return true;
+    }
+    /* the move a button makes from here (stick: 'n' at rest, 'f' toward them, 'u' up, 'd' down) */
+    moveFor(btn, stick) {
+      const f = this.f;
+      if (!f.grounded) return btn === 'light' ? f.st.air : btn === 'heavy' ? f.leftMove('airHeavy') : null;
+      if (btn === 'light') return stick === 'n' ? f.lightRoot() : f.tiltMove(stick);
+      if (btn === 'heavy') return f.knock(stick === 'n' ? 'n' : stick);
+      return null;
+    }
+    /* press a button with the stick that way ('f' toward them, 'u', 'd', 'n') */
+    pressWith(btn, stick) {
+      const f = this.f, o = f.opp, dx = Math.sign(o.pos.x - f.pos.x) || 1;
+      if (stick === 'f') { this.stickTo(dx, 0, 1, true); this.move.y = 0; } else if (stick === 'u') { this.move.x = 0; this.move.y = 1; } else if (stick === 'd') { this.move.x = 0; this.move.y = -1; } else this.stop();
+      this.press(btn); this.pressStick = { btn, x: this.move.x, y: this.move.y, t: this.m.time };
+    }
+    /* the best blow that lands from here (a list of [button, stick] to try, in order): null if none */
+    bestHit(opts, lead) { for (const [b, s] of opts) { const id = this.moveFor(b, s); if (id && this.canHit(id, lead)) return [b, s, id]; } return null; }
+    /* how far above us they are (their feet against ours), and whether they're standing on something up there */
+    above() { const f = this.f, o = f.opp; return { dy: o.pos.y - f.pos.y, dx: o.pos.x - f.pos.x, onPlat: o.grounded && !!o.plat }; }
     /* how far away a Legend Art can still catch them */
     /* COMMAND SPECIALS: which of the three suits the distance (null: none of them) */
     pickCmd(C, d, o) {
@@ -156,6 +212,11 @@
 
     think(dt) {
       this.crossT = (this.crossT || 0) - dt; this.thinkMain(dt);
+      // the stick on the frame a press goes in: a tilt or a KNOCK the way it was meant (pressWith), and a plain Light
+      // with the stick let go (held over, a Light is a single tilt, not the string)
+      const P = this.pressStick;
+      if (P && this.held[P.btn] && this.m.time - P.t < 0.06) { this.move.x = P.x; this.move.y = P.y; this.pressStick = null; }
+      else { if (P && this.m.time - P.t >= 0.06) this.pressStick = null; if (this.held.light && this.f.state !== 'attack') { this.move.x = 0; this.move.y = 0; } }
       if (this.crossT > 0 && !this.f.grounded && !this.f.inHitstun) { this.move.x = this.crossDir; this.held.jump = true; }   // (over a hazard: all the way)
     }
     thinkMain(dt) {
@@ -224,11 +285,13 @@
             }
           }
           if (f.hitstun <= 0 && r() < 0.3 + lv * 0.15) this.press('jump');
-          if (f.pos.y < 0.6 && f.vel.y < 0 && r() < 0.15 + lv * 0.2) this.press('dodge');
+          const gy = Platform.groundAt(m, f.pos.x, f.pos.y) ?? -99;
+          if (f.pos.y - gy < 0.6 && f.vel.y < 0 && this.techMix == null) this.techMix = r() < 0.15 + lv * 0.2 ? (r() < 0.5 ? 1 : r() < 0.6 ? -1 : 0) : null;
+          if (f.pos.y - gy < 0.6 && f.vel.y < 0 && this.techMix != null) { const o = f.opp, toward = o && o.pos.x > f.pos.x ? 1 : -1; this.move.x = this.techMix * toward; this.press('dodge'); }
         }
         return true;
       }
-      this.techRoll = null;
+      this.techRoll = null; this.techMix = null;
       if (f.state === 'down' || f.state === 'getup' || f.state === 'gbreak' || f.state === 'out' || f.state === 'ko') { this.stop(); return true; }
       return false;
     }
@@ -313,6 +376,20 @@
       if (f.kind === 'heavy' && this.wantChase && lv >= 2 && f.hype >= 50 && o.state === 'tumble' && o.combo.by === f && d > 2.6) { this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, 1, true); this.press('snap'); return; }
       if (!this.next) this.next = this.nextLink(mv, d);
       const n = this.next;
+      // TIMED LINKS: the string's next blow (on the ground or in the air) goes when it'll land, not the moment this one hit;
+      // if it won't land before the window shuts (they've been knocked up out of its reach), something that will: an up
+      // tilt or the up KNOCK under them, a jump after them, or let the combo go rather than swing at air
+      const left = mv.su + (f.curAc || mv.ac) + mv.rc - f.moveT, nxt = mv.nx && mv.nx.l;
+      if (n.btn === 'light' && nxt && n.stick !== 'aim' && lv >= 1) {
+        const lead = Math.max(0, mv.su + (f.curAc || mv.ac) * 0.3 - f.moveT);
+        if (!this.canHit(nxt, lead)) {
+          if (left > 0.1) { this.stop(); return; }
+          const alt = f.grounded ? this.bestHit([['light', 'u'], ['heavy', 'u'], ['light', 'd']], 0.05) : this.bestHit([['heavy', 'n']], 0.05);
+          if (alt) { this.next = { btn: alt[0] }; this.pressWith(alt[0], alt[1]); return; }
+          if (f.grounded && f.opp.pos.y - f.pos.y > 1.2 && f.kind !== 'air') { this.next = {}; this.press('jump'); return; }
+          this.next = {}; return;
+        }
+      }
       if (n.stick === 'aim') this.stickTo(n.x, n.z, 1, true); else if (n.stick === 'none') this.stop();
       if (n.guard) { this.held.guard = true; this.guardT = Math.max(this.guardT, 0.1); }   // Guard + Special: the Part Toss
       if (n.btn) this.press(n.btn);   // tapped every other frame until the move takes it
@@ -321,9 +398,25 @@
     /* ---- in the air */
     inAir(dt, d) {
       const f = this.f, o = f.opp, r = Math.random;
+      if (this.climb > 0) {   // (going up onto a platform: them, or a part of ours lying up there)
+        this.climb -= dt; const T = this.climbTo || o.pos, dy = T.y - f.pos.y; this.stickTo(T.x - f.pos.x, 0, 0.7, true);
+        if (dy > 0.6 && f.vel.y < 1.5 && f.airJumps > 0) { this.press('jump'); this.climb = 0; } if (dy < 0.4) this.climb = 0;
+        if (this.climb <= 0) this.climbTo = null; return;
+      }
       const toward = (k) => this.stickTo(o.pos.x - f.pos.x, o.pos.z - f.pos.z, k);
       if (this.pogoNext && !f.airStr && d < 2.4) { this.pogoNext = false; toward(0.6); this.press('light'); return; }
-      if (o.state === 'tumble' && d < 2 && Math.abs(o.pos.y - f.pos.y) < 1.4 && !f.airStr) { toward(0.6); this.press('light'); return; }
+      const lv = this.lv, A = f.st.air, AH = f.leftMove('airHeavy'), dy = o.pos.y - f.pos.y, dx = o.pos.x - f.pos.x;
+      if (lv >= 1 && !f.airStr && !o.gone && !['down', 'getup', 'out'].includes(o.state)) {
+        if (this.canHit(A)) { this.stickTo(dx, 0, 0.3, true); this.press('light'); return; }
+        if (dy < -0.5 && this.canHit(AH) && r() < 0.5) { this.stickTo(dx, 0, 0.3, true); this.press('heavy'); return; }
+        // line up with them: a box's length in front of them, at their height (a double jump if they're above our reach)
+        const B = KB.boxOf(KB.MOVES[A] || {}), want = o.pos.x - Math.sign(dx || 1) * Math.max(0.5, B[0] * 0.55);
+        if (Math.abs(dx) < 4.5 && (o.state === 'tumble' || !o.grounded || Math.abs(dy) < 1.5)) {
+          this.stickTo(want - f.pos.x, 0, Math.abs(want - f.pos.x) > 0.3 ? 1 : 0.2, true);
+          if (f.airJumps > 0 && dy > 1.0 && f.vel.y < 2.5 && !f.broken.legs && r() < 0.2 + lv * 0.15) this.press('jump');
+          return;
+        }
+      } else if (o.state === 'tumble' && d < 2 && Math.abs(o.pos.y - f.pos.y) < 1.4 && !f.airStr) { toward(0.6); this.press('light'); return; }
       if (o.state === 'tumble' && f.airJumps > 0 && o.pos.y > f.pos.y + 1 && r() < 0.05 + this.lv * 0.05) { this.press('jump'); return; }
       // DOWN DASH: nothing to do up here and they're on the ground: get back down fast
       if (this.lv >= 1 && f.airDodges > 0 && o.grounded && o.state !== 'tumble' && f.pos.y > 1.3 && f.vel.y < 2 && r() < 0.015 + this.lv * 0.015) { toward(1); this.press('guard'); this.press('dodge'); return; }
@@ -373,12 +466,19 @@
       if (f.spearOut && f.spear && f.spear.at && !(d < 2 && r() < 0.5)) { this.stickTo(f.spear.at.x - f.pos.x, f.spear.at.z - f.pos.z, 1, true); return; }
       // ---- go get our ball (MODERN SPORTS): it's on the floor, and the throws wait on it
       for (const k in f.balls) { const b = f.balls[k]; if (b && b.ph !== 'fly' && Math.abs(b.pos.x) < m.arena.W && Math.abs(b.pos.z) < m.arena.D && !(d < 2.2 && r() < 0.6)) { this.stickTo(b.pos.x - f.pos.x, b.pos.z - f.pos.z, 1, true); return; } }
-      // ---- go get a part that fell off (it always rests inside the walls, so walk straight to it)
-      const pick = m.picks.find(p => p.rest && f.broken[p.part]);
-      if (pick && d > 2.6) { this.stickTo(pick.grp.position.x - f.pos.x, pick.grp.position.z - f.pos.z, 1, true); return; }
+      // ---- go get a part we've lost (ours or theirs, lying where we can reach it): unless they're right on top of us, it
+      // matters more than the next swing; up onto a platform for it, or down off one
+      let pick = null, pd = 1e9; for (const p of m.picks) if (p.rest && p.backAt == null && f.broken[p.part]) { const e = Math.abs(p.grp.position.x - f.pos.x) + Math.abs(p.grp.position.y - f.pos.y); if (e < pd) { pd = e; pick = p; } }
+      if (pick && (d > 1.7 || o.state !== 'attack') && !(o.combo.by === f && o.inHitstun) && lv >= 0) {
+        const px = pick.grp.position.x, dy = pick.grp.position.y - 0.15 - f.pos.y, dx = px - f.pos.x;
+        if (dy > 0.8) { if (Math.abs(dx) < 1.6) { this.stickTo(dx, 0, 0.6, true); this.press('jump'); this.climb = 0.9; this.climbTo = { x: px, y: pick.grp.position.y }; } else this.stickTo(dx, 0, 1, true); return; }
+        if (dy < -0.8 && f.plat && Math.abs(dx) < 1.8) { this.move.x = 0; this.move.y = -1; return; }
+        this.stickTo(dx, 0, 1, true); return;
+      }
 
       // ---- chase a bouncing opponent (not our combo: a stray hit, a projectile)
       if (o.state === 'tumble') { this.chase(dt, d, R); return; }
+      if ((o.state === 'down' || o.state === 'getup' || (o.state === 'dodge' && !o.dodgeAir)) && this.techChase(dt)) return;
       if (o.state === 'down' || o.state === 'getup' || o.state === 'out') { // set up, don't swing into invulnerability
         const keep = 2.2; if (d < keep) this.stickTo(f.pos.x - o.pos.x, f.pos.z - o.pos.z, 0.5); else this.stop(); return;
       }
@@ -402,6 +502,18 @@
       }
       const heavy = KB.MOVES[f.st.heavy];
       if (heavy.type === 'proj' && !(heavy.ball && f.ballOut(heavy.ball)) && !(heavy.round && !f.gunReady()) && d > 2.5 && d < heavy.range + 1 && r() < 0.012 * (lv + 1)) { this.press('heavy'); this.wait = 0.5; return; }
+      // UP AND DOWN: they're on a platform over us (or in the air up there): an up tilt or up KNOCK if one reaches, else
+      // up after them (a double jump onto a high platform); below us: down through ours, or off its end, to them
+      const U2 = this.above();
+      if (lv >= 1 && U2.dy > 1.15 && Math.abs(U2.dx) < 3.6) {
+        const up = this.bestHit([['light', 'u'], ['heavy', 'u']]);
+        if (up) { if (r() < L.aggro[lv] * dt * 10) { this.pressWith(up[0], up[1]); this.wait = L.react[lv] * 0.6; } else this.stop(); return; }
+        if (U2.onPlat || o.grounded) { if (Math.abs(U2.dx) > 1.6) { this.stickTo(U2.dx, 0, 1, true); return; } this.stickTo(U2.dx, 0, 0.5, true); this.press('jump'); this.climb = 0.9; this.climbTo = null; return; }
+      }
+      if (lv >= 1 && U2.dy < -1.15 && f.plat && Math.abs(U2.dx) < 4) {
+        if (Math.abs(U2.dx) < 1.8) { this.move.x = 0; this.move.y = -1; return; }   // (↓ drops through)
+        this.stickTo(U2.dx, 0, 1, true); return;
+      }
       if (d > 3.2) {
         this.stickTo(o.pos.x - f.pos.x + this.strafe * 0.6, o.pos.z - f.pos.z);
         if (d < 4.6 && r() < 0.02 * (lv + 1) && !this.zoneAhead(Math.sign(o.pos.x - f.pos.x) || 1, 0, o.pos.x)) { this.press('dodge'); this.dashing = 0.35; }
@@ -415,7 +527,8 @@
         else { this.stickTo(-(o.pos.z - f.pos.z) * this.strafe, (o.pos.x - f.pos.x) * this.strafe, 0.6); if (r() < 0.01) this.strafe *= -1; }
         return;
       }
-      // in range
+      // in range: but only throw what'll land (a CPU that can't reach them walks in closer instead)
+      if (lv >= 1 && !this.canHit(f.lightRoot()) && !this.canHit(this.moveFor('heavy', 'n')) && !(o.state === 'guard')) { toward(0.8); return; }
       this.stop(); this.plan = null;
       if (r() < L.aggro[lv] * dt * 8) {
         if (o.state === 'guard' && r() < 0.5 + lv * 0.12) { this.guardT = 0.12; this.held.guard = true; this.press('light'); }
@@ -432,7 +545,7 @@
     /* get to a tumbling or stunned opponent and hit them again; false when there's nothing to do */
     chase(dt, d, R) {
       const f = this.f, o = f.opp, A = this.m.arena, lv = this.lv, r = Math.random;
-      if (o.state === 'down') return this.otg(dt, d, R);
+      if (o.state === 'down') return this.otg(dt, d, R) || this.techChase(dt);
       if (o.state === 'hit') {
         // crumpled, dizzy or asleep, or plain hitstun with time left on it: walk in and start a string
         const left = o.hitstun - o.stateT, free = o.crumpled || o.dizzy;
@@ -450,6 +563,12 @@
       const tx = U.clamp(o.pos.x + o.vel.x * 0.25, -lim(A.W), lim(A.W)), tz = U.clamp(o.pos.z + o.vel.z * 0.25, -lim(A.D), lim(A.D));
       this.stickTo(tx - f.pos.x, tz - f.pos.z);
       if (this.wait > 0) return true;
+      if (lv >= 1) {
+        const aim = this.wallAim(f, o), hit = this.bestHit(aim && o.combo.bounces < 2 && r() < 0.35 ? [['heavy', 'f'], ['light', 'n'], ['light', 'u'], ['heavy', 'u']] : [['light', 'n'], ['light', 'u'], ['heavy', 'u'], ['heavy', 'f']]);
+        if (hit) { if (hit[1] === 'f' && aim) { this.stickTo(aim.x, aim.z, 1, true); this.press(hit[0]); } else this.pressWith(hit[0], hit[1]); this.wait = L.react[lv] * 0.5; }
+        else if (o.pos.y - f.pos.y > 1.3 && Math.abs(o.pos.x - f.pos.x) < 2.2 && r() < 0.06 * lv) this.press('jump');
+        return true;
+      }
       if (d < R + 0.25 && o.pos.y < 1.8) {
         const aim = this.wallAim(f, o);
         const knock = o.pos.y > 0.7 && (lv < 2 ? r() < 0.4 : aim && o.combo.bounces < 2 && r() < 0.35);

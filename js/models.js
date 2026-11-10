@@ -665,6 +665,9 @@
     F.partBoxes = (name, out) => {
       out = out || []; out.length = 0;
       const grp = parts[name]; if (!grp || F.detached[name] || !grp.parent) return out;
+      // (only while it's on the figure: a weapon still in the hand of an arm that's been knocked off is lying on the floor,
+      // and its place there is no part of this figure, nor kept up to date between drawn frames)
+      for (let q = grp; q !== root; q = q.parent) if (!q) return out;
       const lb = localBox(grp); if (!lb) return out;
       const sz = lb.getSize(_bs), ax = sz.x >= sz.y && sz.x >= sz.z ? 'x' : sz.y >= sz.z ? 'y' : 'z';
       const n = Math.max(1, Math.min(4, Math.round(sz[ax] * grp.matrixWorld.getMaxScaleOnAxis() / 0.32))), m = grp.matrixWorld;
